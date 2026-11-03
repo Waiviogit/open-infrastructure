@@ -10,6 +10,7 @@ import { HasSessionService } from './has-session.service';
 import { HiveChainContextService } from './hive-chain-context.service';
 import { HiveAccountGenerateService } from './hive-account-generate.service';
 import { HivePostingAuthorityGrantBuildService } from './hive-posting-authority-grant-build.service';
+import { HiveProfileUpdateBuildService } from './hive-profile-update-build.service';
 import { HivePostBuildService } from './hive-post-build.service';
 import { IpfsUploadService } from './ipfs-upload.service';
 import { LocalKeysService } from './local-keys.service';
@@ -43,6 +44,7 @@ import { WalletSignerResolverService } from './wallet-signer-resolver.service';
     WalletDelegationBuildService,
     HiveEngineDepositBuildService,
     HivePostingAuthorityGrantBuildService,
+    HiveProfileUpdateBuildService,
     HiveAccountGenerateService,
     IpfsUploadService,
   ],
@@ -52,6 +54,7 @@ import { WalletSignerResolverService } from './wallet-signer-resolver.service';
     WalletDelegationBuildService,
     HiveEngineDepositBuildService,
     HivePostingAuthorityGrantBuildService,
+    HiveProfileUpdateBuildService,
     HiveAccountGenerateService,
     WaivioAuthOrchestratorService,
     WaivioAuthSessionService,

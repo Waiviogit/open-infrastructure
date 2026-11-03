@@ -54,6 +54,7 @@ CI publishes a **portable archive** (`agent-wallet-portable.tar.gz`: `main.js`, 
 | Hive Engine deposit instructions | skill `hive-engine-deposit-for-agents` |
 | Hive posting authority / act-as grantor | skill `hive-account-authority-for-agents` |
 | Hive account key generation (free name) | [hive-account-keys.md](hive-account-keys.md) |
+| Hive account profile (avatar, cover, name, bio) | [hive-profile-update.md](hive-profile-update.md) |
 | HAS login from chat (Telegram, Slack) | skill `has-login-from-chat` |
 | IPFS image upload + avatar/gallery policy | skill `ipfs-image-upload` |
 | IPFS file upload + ODL batch import | skill `ipfs-file-upload` |
@@ -73,6 +74,7 @@ CI publishes a **portable archive** (`agent-wallet-portable.tar.gz`: `main.js`, 
 | `odl_build_gallery_item` | `ops`, `opsCount`, `bytes` — gallery item (+ album ensure when needed) |
 | `hive_build_post` | `ops`, `opsCount: 2`, `json_metadata`, `warnings` — root Hive post (`comment` + `comment_options`); `author` may be a grantor |
 | `hive_build_posting_authority_grant` | `ops`, `keyType: active`, `signerAccount`, `canSignLocally`, `warnings` — grant/revoke posting `account_auths` |
+| `hive_build_profile_update` | `ops`, `keyType: posting`, `signerAccount`, `canSignLocally`, `changedFields`, `profile`, `warnings` — `account_update2` on `posting_json_metadata` (account avatar/profile, not objects) |
 | `hive_generate_account_keys` | `{ account, masterPassword, keys.{owner,active,posting,memo}.{private,public} }` for a free name — save the full object; no `account_create`, no `accounts.json` write |
 
 Leo object threads (Social > Threads) are **not** built by agent-wallet — see skill `hive-thread-create`: agents hand-build one `comment` op and broadcast via `wallet_broadcast`.

@@ -14,6 +14,7 @@ import { HiveEngineDepositBuildService } from '../domain/hive-engine-deposit-bui
 import { WalletDelegationBuildService } from '../domain/wallet-delegation-build.service';
 import { HiveAccountGenerateService } from '../domain/hive-account-generate.service';
 import { HivePostingAuthorityGrantBuildService } from '../domain/hive-posting-authority-grant-build.service';
+import { HiveProfileUpdateBuildService } from '../domain/hive-profile-update-build.service';
 import { AGENT_WALLET_MCP_INSTRUCTIONS } from './mcp-instructions';
 import { registerAgentWalletTools } from './register-agent-wallet-tools';
 
@@ -34,6 +35,7 @@ export class McpService {
     private readonly walletDelegationBuild: WalletDelegationBuildService,
     private readonly hiveEngineDepositBuild: HiveEngineDepositBuildService,
     private readonly postingAuthorityGrantBuild: HivePostingAuthorityGrantBuildService,
+    private readonly profileUpdateBuild: HiveProfileUpdateBuildService,
     private readonly hiveAccountGenerate: HiveAccountGenerateService,
   ) {}
 
@@ -59,6 +61,7 @@ export class McpService {
       walletDelegationBuild: this.walletDelegationBuild,
       hiveEngineDepositBuild: this.hiveEngineDepositBuild,
       postingAuthorityGrantBuild: this.postingAuthorityGrantBuild,
+      profileUpdateBuild: this.profileUpdateBuild,
       hiveAccountGenerate: this.hiveAccountGenerate,
     });
     return server;

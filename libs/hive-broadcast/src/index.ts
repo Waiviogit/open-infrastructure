@@ -64,6 +64,18 @@ export {
   type MergeHiveAccountAuthsInput,
 } from './hive-account-authority-operations';
 export {
+  HIVE_PROFILE_FIELDS,
+  HIVE_PROFILE_METADATA_VERSION,
+  buildAccountUpdate2ProfileOp,
+  mergeHiveProfileMetadata,
+  parseHiveAccountMetadata,
+  type BuildAccountUpdate2ProfileOpInput,
+  type HiveProfileField,
+  type HiveProfilePatch,
+  type MergeHiveProfileMetadataInput,
+  type MergeHiveProfileMetadataResult,
+} from './hive-account-profile-operations';
+export {
   buildOdlUpdateCreateOp,
   buildOdlGalleryItemWithAlbumEnsureOp,
   buildOdlUpdateCreateWithRankVoteOp,

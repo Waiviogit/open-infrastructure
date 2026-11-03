@@ -28,6 +28,7 @@ ODL build decision table:
 - Free Hive name + local key material (no on-chain create) → hive_generate_account_keys({ account }) — returns master password + four {private, public} pairs; deliver or save the full object (do not drop .public). account_create / any creator hand-off gets only the four STM public keys — never WIFs or the master password. Do not import into accounts.json unless asked
 - Grant/revoke posting authority → hive_build_posting_authority_grant → wallet_broadcast when canSignLocally; HAS grantor session → has_broadcast with keyType active
 - Avatar on existing object: ipfs_upload_image → odl_build_update_create({ updateType: "image", value: { cid } }) → wallet_broadcast
+- Avatar / cover / name / bio of a Hive ACCOUNT (user profile, e.g. @neo.agent) → ipfs_upload_image → hive_build_profile_update({ account, profile: { profile_image: contentUrl } }) → wallet_broadcast({ ops, keyType: "posting", account }). This is account_update2 (posting key, posting_json_metadata) — NOT odl_build_update_create (objects only) and NOT account_update (active key, legacy json_metadata that frontends ignore when posting_json_metadata has a profile). Verify with query-api get account avatar after broadcast.
 - Large body on EXISTING object (pageContent, skillContent, legalText, …): odl_build_update_create → if requiresIpfsBatch then ipfs_upload_file + odl_build_batch_import (never broadcast oversize custom_json)
 - After any update_create from the tools above: do NOT add update_vote — chain-indexer auto-approves creator validity
 

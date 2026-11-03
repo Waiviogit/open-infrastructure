@@ -6,12 +6,14 @@ import { HasSessionService } from '../domain/has-session.service';
 import { HivePostBuildService } from '../domain/hive-post-build.service';
 import { HiveAccountGenerateService } from '../domain/hive-account-generate.service';
 import { HivePostingAuthorityGrantBuildService } from '../domain/hive-posting-authority-grant-build.service';
+import { HiveProfileUpdateBuildService } from '../domain/hive-profile-update-build.service';
 import { IpfsUploadService } from '../domain/ipfs-upload.service';
 import { NotificationsSocketService } from '../domain/notifications-socket.service';
 import { OslMessagingService } from '../domain/osl-messaging.service';
 import { WaivioAuthOrchestratorService } from '../domain/waivio-auth-orchestrator.service';
 import { HiveEngineDepositBuildService } from '../domain/hive-engine-deposit-build.service';
 import { WalletDelegationBuildService } from '../domain/wallet-delegation-build.service';
+import { HIVE_PROFILE_TEXT_MAX_LENGTH } from '../constants/hive-profile';
 import { jsonToolResult, toolError } from './mcp-tool.helpers';
 
 export function registerAgentWalletTools(
@@ -29,6 +31,7 @@ export function registerAgentWalletTools(
     walletDelegationBuild: WalletDelegationBuildService;
     hiveEngineDepositBuild: HiveEngineDepositBuildService;
     postingAuthorityGrantBuild: HivePostingAuthorityGrantBuildService;
+    profileUpdateBuild: HiveProfileUpdateBuildService;
     hiveAccountGenerate: HiveAccountGenerateService;
   },
 ): void {
@@ -710,6 +713,50 @@ export function registerAgentWalletTools(
         const result =
           await deps.postingAuthorityGrantBuild.buildPostingAuthorityGrant(args);
         return jsonToolResult(result);
+      } catch (error) {
+        return toolError((error as Error).message);
+      }
+    },
+  );
+
+  const profileText = (label: string) =>
+    z
+      .string()
+      .max(HIVE_PROFILE_TEXT_MAX_LENGTH)
+      .nullable()
+      .optional()
+      .describe(`${label}. String sets it, null removes it, omit to keep current`);
+  const profileUrl = (label: string) =>
+    z
+      .string()
+      .url()
+      .refine((value) => /^https?:\/\//i.test(value), 'must be an http(s) URL')
+      .nullable()
+      .optional()
+      .describe(`${label}. String sets it, null removes it, omit to keep current`);
+
+  server.registerTool(
+    'hive_build_profile_update',
+    {
+      description:
+        'Update a Hive ACCOUNT profile (user avatar, cover, display name, about, location, website) — not an ODL object. Reads the live account, merges the patch into posting_json_metadata.profile (all other keys preserved) and builds one account_update2 op signed with the POSTING key. For the avatar: ipfs_upload_image first, then pass its contentUrl as profile_image. Broadcast with wallet_broadcast({ ops, keyType: "posting", account }) or has_broadcast({ ops, keyType: "posting" }) when the HAS session is that account. Never use account_update (active key, legacy json_metadata) for profile changes.',
+      inputSchema: z.object({
+        account: z.string().min(1).describe('Hive account whose profile is changed (also the signer)'),
+        profile: z
+          .object({
+            name: profileText('Display name'),
+            about: profileText('Short bio'),
+            location: profileText('Location'),
+            website: profileUrl('Website URL'),
+            profile_image: profileUrl('Avatar image URL (ipfs_upload_image contentUrl)'),
+            cover_image: profileUrl('Cover image URL'),
+          })
+          .strict(),
+      }),
+    },
+    async (args) => {
+      try {
+        return jsonToolResult(await deps.profileUpdateBuild.buildProfileUpdate(args));
       } catch (error) {
         return toolError((error as Error).message);
       }

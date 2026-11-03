@@ -27,6 +27,7 @@ export type HiveAccountAuthorityRow = {
   name: string;
   memo_key: string;
   json_metadata: string;
+  posting_json_metadata: string;
   posting: {
     weight_threshold: number;
     account_auths: [string, number][];
@@ -82,6 +83,7 @@ export class HiveChainContextService {
       name: row.name,
       memo_key: String(row.memo_key),
       json_metadata: serializeHiveJsonMetadata(row.json_metadata),
+      posting_json_metadata: serializeHiveJsonMetadata(row.posting_json_metadata),
       posting: {
         weight_threshold: Number(row.posting.weight_threshold),
         account_auths: row.posting.account_auths.map(([account, weight]) => [
