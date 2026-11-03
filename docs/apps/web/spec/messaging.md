@@ -18,15 +18,15 @@ related:
 | Surface | Route / tab | Data |
 |---------|-------------|------|
 | Profile inbox | `/@viewer/messages` (logged-in account menu) | Viewer DM + group channels |
-| Object activity | `/object/:id/reviews/activity` (Reviews → Activity) | Single object channel (plain only) |
+| Object activity | `/object/:id/social/activity` (Social → Activity) | Single object channel (plain only) |
 
-Legacy `/object/:id/messages` and `/object/:id/reviews/messages` resolve to Activity.
+Legacy `/object/:id/messages` and `/object/:id/social/messages` resolve to Activity.
 
 Messages is not a Posts submenu tab. Direct URL to another user's messages redirects to the viewer's inbox.
 
 ## Layout
 
-Profile inbox uses three columns on desktop: channel list (left rail), chat (center), About (right rail). Object **Activity** is a feed column under Reviews (no chat card frame).
+Profile inbox uses three columns on desktop: channel list (left rail), chat (center), About (right rail). Object **Activity** is a feed column under Social (no chat card frame).
 
 | Shell | Class / variant | Notes |
 |-------|-----------------|-------|
@@ -97,7 +97,7 @@ Optional group title is shown when two or more users are selected. `channel_id` 
 
 Object **Activity** always renders compose + feed, even when query-api has no channel yet. Messages are fetched even without a native channel (mention cross-posts). Object channels do **not** show a member roster. **Encryption is not supported** on object channels (UI plain-only; indexer warn-skips encrypted `message_create`).
 
-**Mention cross-post:** when Activity body links other objects (`/object/{id}` from Insert Object or pasted paths), chain-indexer stores `linked_object_ids` on the single source row. Other objects' Activity feeds include that message; foreign rows show a **From {name}** link to `/object/{id}/reviews/activity`. Reply/edit/delete on foreign rows use the message's `channel_id` (source channel); new compose still targets the page object channel.
+**Mention cross-post:** when Activity body links other objects (`/object/{id}` from Insert Object or pasted paths), chain-indexer stores `linked_object_ids` on the single source row. Other objects' Activity feeds include that message; foreign rows show a **From {name}** link to `/object/{id}/social/activity`. Reply/edit/delete on foreign rows use the message's `channel_id` (source channel); new compose still targets the page object channel.
 
 After send, the web client invalidates Activity cache tags for `/object/` slugs in the markdown body (not only the page object).
 

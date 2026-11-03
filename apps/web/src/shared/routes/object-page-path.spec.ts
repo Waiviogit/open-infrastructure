@@ -5,7 +5,7 @@ describe('isPathnameWithinObjectPage', () => {
 
   it('accepts the object root and its sub-routes', () => {
     expect(isPathnameWithinObjectPage(objectId, '/object/yrc-spaghetti-carbonara')).toBe(true);
-    expect(isPathnameWithinObjectPage(objectId, '/object/yrc-spaghetti-carbonara/reviews')).toBe(
+    expect(isPathnameWithinObjectPage(objectId, '/object/yrc-spaghetti-carbonara/social')).toBe(
       true,
     );
     expect(

@@ -101,7 +101,7 @@ describe('resolveMessageLinkedObjectIds', () => {
   it('extracts /object/ slug from full URL', () => {
     expect(
       resolveMessageLinkedObjectIds({
-        body: 'https://waiviodev.com/object/dish-1/reviews',
+        body: 'https://waiviodev.com/object/dish-1/social',
         nativeObjectId: 'rest-1',
         existingObjectIds: existing,
       }),

@@ -9,7 +9,7 @@ import { isMenuInHostTargetType } from './object-menu.constants';
 export type ObjectDefaultLanding =
   | { kind: 'hostContent' }
   | { kind: 'nestedInHost'; targetObjectId: string }
-  | { kind: 'primaryTab'; segment: 'reviews' | 'newsfeed' | 'description' | 'widget' | 'list' }
+  | { kind: 'primaryTab'; segment: 'social' | 'newsfeed' | 'description' | 'widget' | 'list' }
   | { kind: 'routeStub'; segment: 'blog' | 'newsFilter'; ref: string };
 
 const HOST_SWITCHER_KINDS = new Set<ObjectSwitcherKind>([
@@ -62,13 +62,13 @@ function menuItemMatchesKey(item: ProjectedMenuItem, key: string): boolean {
 function resolveMenuItemLanding(item: ProjectedMenuItem): ObjectDefaultLanding {
   const targetId = item.link_to_object?.trim();
   if (!targetId) {
-    return { kind: 'primaryTab', segment: 'reviews' };
+    return { kind: 'primaryTab', segment: 'social' };
   }
   const type = menuItemTargetType(item) ?? '';
   if (isMenuInHostTargetType(type)) {
     return { kind: 'nestedInHost', targetObjectId: targetId };
   }
-  return { kind: 'primaryTab', segment: 'reviews' };
+  return { kind: 'primaryTab', segment: 'social' };
 }
 
 function readStringField(value: unknown): string | null {
@@ -202,11 +202,11 @@ function resolveDefaultLinkLanding(
     }
   }
 
-  return { kind: 'primaryTab', segment: 'reviews' };
+  return { kind: 'primaryTab', segment: 'social' };
 }
 
 /**
- * Legacy object page UX (waivio #5205): when default link is Reviews but there are no
+ * Legacy object page UX (waivio #5205): when default link is Social but there are no
  * linked posts and Description content exists, open Description so the center column is not empty.
  * @see https://github.com/Waiviogit/waivio/issues/5205
  */
@@ -217,7 +217,7 @@ export function applyDescriptionFallbackToDefaultLanding(
     hasDescriptionPageContent: boolean;
   },
 ): ObjectDefaultLanding {
-  if (landing.kind !== 'primaryTab' || landing.segment !== 'reviews') {
+  if (landing.kind !== 'primaryTab' || landing.segment !== 'social') {
     return landing;
   }
   if (input.postsCount > 0 || !input.hasDescriptionPageContent) {
@@ -281,5 +281,5 @@ export function resolveObjectDefaultLanding(
     return resolveDefaultLinkLanding(viewLike, deps);
   }
 
-  return { kind: 'primaryTab', segment: 'reviews' };
+  return { kind: 'primaryTab', segment: 'social' };
 }

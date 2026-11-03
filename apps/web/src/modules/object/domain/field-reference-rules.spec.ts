@@ -11,7 +11,7 @@ describe('field-reference-rules path segments', () => {
     expect(resolveFieldReferenceTypeFromPathSegment('products')).toBe('product');
     expect(resolveFieldReferenceTypeFromPathSegment('service-offers')).toBe('service_offer');
     expect(resolveFieldReferenceTypeFromPathSegment('service-requests')).toBe('service_request');
-    expect(resolveFieldReferenceTypeFromPathSegment('reviews')).toBeNull();
+    expect(resolveFieldReferenceTypeFromPathSegment('social')).toBeNull();
   });
 
   it('maps singular object types to plural path segments', () => {

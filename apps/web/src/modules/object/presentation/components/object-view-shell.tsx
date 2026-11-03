@@ -14,7 +14,7 @@ export type ObjectViewShellProps = {
   rightRail: ReactNode;
   /** Mobile stacking mode below `lg`; desktop layout is unchanged. */
   mobileLayout?: ObjectMobileCenterLayout;
-  /** Reviews preview for standard-object mobile Details landing. */
+  /** Social preview for standard-object mobile Details landing. */
   mobileSocialSlot?: ReactNode;
 };
 

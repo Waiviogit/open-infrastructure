@@ -93,7 +93,7 @@ describe('resolveObjectDefaultLanding', () => {
     expect(landing).toEqual({ kind: 'nestedInHost', targetObjectId: 'recipes-list' });
   });
 
-  it('returns primaryTab reviews for business menuItem with external product target', () => {
+  it('returns primaryTab social for business menuItem with external product target', () => {
     const landing = resolveObjectDefaultLanding(
       view('business', {
         menuItem: [
@@ -109,7 +109,7 @@ describe('resolveObjectDefaultLanding', () => {
       'business',
       DEPS,
     );
-    expect(landing).toEqual({ kind: 'primaryTab', segment: 'reviews' });
+    expect(landing).toEqual({ kind: 'primaryTab', segment: 'social' });
   });
 
   it('uses sortCustom.include first key for custom sort landing', () => {
@@ -161,14 +161,14 @@ describe('resolveObjectDefaultLanding', () => {
     expect(landing).toEqual({ kind: 'nestedInHost', targetObjectId: 'nested-list' });
   });
 
-  it('returns primaryTab reviews for empty business object', () => {
+  it('returns primaryTab social for empty business object', () => {
     const landing = resolveObjectDefaultLanding(
       view('business', {}),
       'default',
       'business',
       DEPS,
     );
-    expect(landing).toEqual({ kind: 'primaryTab', segment: 'reviews' });
+    expect(landing).toEqual({ kind: 'primaryTab', segment: 'social' });
   });
 
   it('returns routeStub for newsFilter when no menu or listItem', () => {
@@ -185,28 +185,28 @@ describe('resolveObjectDefaultLanding', () => {
 });
 
 describe('applyDescriptionFallbackToDefaultLanding', () => {
-  it('opens description when default is reviews, no posts, and description exists', () => {
+  it('opens description when default is social, no posts, and description exists', () => {
     const landing = applyDescriptionFallbackToDefaultLanding(
-      { kind: 'primaryTab', segment: 'reviews' },
+      { kind: 'primaryTab', segment: 'social' },
       { postsCount: 0, hasDescriptionPageContent: true },
     );
     expect(landing).toEqual({ kind: 'primaryTab', segment: 'description' });
   });
 
-  it('keeps reviews when posts exist', () => {
+  it('keeps social when posts exist', () => {
     const landing = applyDescriptionFallbackToDefaultLanding(
-      { kind: 'primaryTab', segment: 'reviews' },
+      { kind: 'primaryTab', segment: 'social' },
       { postsCount: 3, hasDescriptionPageContent: true },
     );
-    expect(landing).toEqual({ kind: 'primaryTab', segment: 'reviews' });
+    expect(landing).toEqual({ kind: 'primaryTab', segment: 'social' });
   });
 
-  it('keeps reviews when no description content', () => {
+  it('keeps social when no description content', () => {
     const landing = applyDescriptionFallbackToDefaultLanding(
-      { kind: 'primaryTab', segment: 'reviews' },
+      { kind: 'primaryTab', segment: 'social' },
       { postsCount: 0, hasDescriptionPageContent: false },
     );
-    expect(landing).toEqual({ kind: 'primaryTab', segment: 'reviews' });
+    expect(landing).toEqual({ kind: 'primaryTab', segment: 'social' });
   });
 
   it('does not override nestedInHost landing', () => {

@@ -43,7 +43,7 @@ export function objectTypeHasDetailsTab(objectTypeKey: string): boolean {
 export const OBJECT_PAGE_PATH_TAB_SEGMENTS = [
   'list',
   'widget',
-  'reviews',
+  'social',
   'updates',
   'followers',
   'ownership',
@@ -248,29 +248,29 @@ export function isFieldReferenceFeedPathSegment(segment: string): boolean {
   return isFieldReferencePathSegment(segment);
 }
 
-/** Internal query param when proxy rewrites `/object/:id/reviews/:feedSub`. */
-export const OBJECT_PAGE_REVIEWS_SUB_PARAM = 'reviews_sub';
+/** Internal query param when proxy rewrites `/object/:id/social/:feedSub`. */
+export const OBJECT_PAGE_SOCIAL_SUB_PARAM = 'social_sub';
 
-/** Path segments under `/object/:id/reviews/…` (Posts, Threads, Activity). */
-export const REVIEWS_FEED_PATH_SEGMENTS = ['posts', 'threads', 'activity'] as const;
+/** Path segments under `/object/:id/social/…` (Posts, Threads, Activity). */
+export const SOCIAL_FEED_PATH_SEGMENTS = ['posts', 'threads', 'activity'] as const;
 
-/** Legacy Reviews sub-tab segment; maps to {@link ReviewsFeedSubType} `activity`. */
-export const LEGACY_REVIEWS_MESSAGES_SEGMENT = 'messages' as const;
+/** Legacy Social sub-tab segment; maps to {@link SocialFeedSubType} `activity`. */
+export const LEGACY_SOCIAL_MESSAGES_SEGMENT = 'messages' as const;
 
 export function buildObjectFollowersPath(objectId: string): string {
   return `/object/${encodeURIComponent(objectId)}/followers`;
 }
 
-/** @deprecated Prefer {@link buildObjectReviewsSubPath} with `activity`. */
+/** @deprecated Prefer {@link buildObjectSocialSubPath} with `activity`. */
 export function buildObjectMessagesPath(objectId: string): string {
-  return buildObjectReviewsSubPath(objectId, 'activity');
+  return buildObjectSocialSubPath(objectId, 'activity');
 }
 
-export function buildObjectReviewsSubPath(
+export function buildObjectSocialSubPath(
   objectId: string,
-  sub: (typeof REVIEWS_FEED_PATH_SEGMENTS)[number],
+  sub: (typeof SOCIAL_FEED_PATH_SEGMENTS)[number],
 ): string {
-  const base = `/object/${encodeURIComponent(objectId)}/reviews`;
+  const base = `/object/${encodeURIComponent(objectId)}/social`;
   return sub === 'posts' ? base : `${base}/${sub}`;
 }
 

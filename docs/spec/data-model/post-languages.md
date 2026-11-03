@@ -42,7 +42,7 @@ Legacy Mongo posts stored `languages: ['en-US', …]`. The migration script [`sc
 
 Request locales are often full tags (`en-US` from `Accept-Language`). Filters expand via `expandPostLanguageTags()` in `@opden-data-layer/core` so `en-US` matches stored `en`.
 
-Used today for **hashtag** object Reviews feeds — see [object-posts-feed.md](../../apps/query-api/spec/object-posts-feed.md).
+Used today for **hashtag** object Social feeds — see [object-posts-feed.md](../../apps/query-api/spec/object-posts-feed.md).
 
 ## Schema
 

@@ -10,7 +10,7 @@ import {
 export const DEMO_OBJECT_IDS = new Set(['demo-shop', 'demo-newsfeed']);
 
 const MOCK_PRIMARY_TABS: ObjectPrimaryTabView[] = [
-  { segment: 'reviews', label: 'Reviews' },
+  { segment: 'social', label: 'Social' },
   { segment: 'gallery', label: 'Gallery' },
   { segment: 'updates', label: 'Updates', count: 25 },
   { segment: 'followers', label: 'Followers', count: 0 },

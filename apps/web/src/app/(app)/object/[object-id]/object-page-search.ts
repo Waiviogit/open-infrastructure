@@ -1,10 +1,10 @@
 import {
   FOLLOWERS_SUB_VALUES,
   OWNERSHIP_SUB_VALUES,
-  REVIEWS_FEED_SUB_VALUES,
+  SOCIAL_FEED_SUB_VALUES,
   type FollowersSubType,
   type OwnershipSubType,
-  type ReviewsFeedSubType,
+  type SocialFeedSubType,
 } from '@/modules/object/domain/object-page.types';
 import {
   DETAILS_PRIMARY_TAB_SEGMENT,
@@ -18,9 +18,9 @@ import {
   OBJECT_PAGE_UPDATE_ID_PARAM,
   OBJECT_PAGE_PATH_TAB_SEGMENTS,
   OBJECT_PAGE_VIEW_PATH_PARAM,
-  OBJECT_PAGE_REVIEWS_SUB_PARAM,
-  REVIEWS_FEED_PATH_SEGMENTS,
-  LEGACY_REVIEWS_MESSAGES_SEGMENT,
+  OBJECT_PAGE_SOCIAL_SUB_PARAM,
+  SOCIAL_FEED_PATH_SEGMENTS,
+  LEGACY_SOCIAL_MESSAGES_SEGMENT,
   isFieldReferenceFeedPathSegment,
   resolveCategoryNameFromObjectUrl,
   resolveCategoryNameForObjectPage,
@@ -31,7 +31,7 @@ import { parseViewPathFromSearchParam } from '@/modules/object/domain/object-pag
 import type { ObjectNestedViewResolved } from '@/modules/object/domain/object-page.types';
 import type { ObjectDefaultLanding } from '@/modules/object/domain/resolve-object-default-landing';
 
-/** Search param for the object profile primary tab (Reviews, Updates, …). */
+/** Search param for the object profile primary tab (Social, Updates, …). */
 export const OBJECT_PAGE_PRIMARY_TAB_PARAM = 'tab';
 
 /** Supervised vs exclusive lists under the Ownership tab (`?sub=`). Also used for Followers sub (`followed` / `favorited`). */
@@ -47,10 +47,10 @@ export {
   OBJECT_PAGE_FIELD_REFERENCE_TYPE_PARAM,
   OBJECT_PAGE_UPDATE_ID_PARAM,
   OBJECT_PAGE_VIEW_PATH_PARAM,
-  OBJECT_PAGE_REVIEWS_SUB_PARAM,
+  OBJECT_PAGE_SOCIAL_SUB_PARAM,
 };
 
-export type { FollowersSubType, OwnershipSubType, ReviewsFeedSubType };
+export type { FollowersSubType, OwnershipSubType, SocialFeedSubType };
 
 /** @deprecated Use {@link OwnershipSubType} */
 export type AuthoritySubType = OwnershipSubType;
@@ -97,49 +97,49 @@ export function parseFollowersSubTypeParam(
   return 'followed';
 }
 
-export function parseReviewsFeedSubParam(
+export function parseSocialFeedSubParam(
   sp: Record<string, string | string[] | undefined>,
-): ReviewsFeedSubType {
-  const v = firstSearchParam(sp, OBJECT_PAGE_REVIEWS_SUB_PARAM)?.trim();
-  if (v === LEGACY_REVIEWS_MESSAGES_SEGMENT) {
+): SocialFeedSubType {
+  const v = firstSearchParam(sp, OBJECT_PAGE_SOCIAL_SUB_PARAM)?.trim();
+  if (v === LEGACY_SOCIAL_MESSAGES_SEGMENT) {
     return 'activity';
   }
-  if (v && REVIEWS_FEED_SUB_VALUES.includes(v as ReviewsFeedSubType)) {
-    return v as ReviewsFeedSubType;
+  if (v && SOCIAL_FEED_SUB_VALUES.includes(v as SocialFeedSubType)) {
+    return v as SocialFeedSubType;
   }
   const tab = firstSearchParam(sp, OBJECT_PAGE_PRIMARY_TAB_PARAM)?.trim();
-  if (tab === LEGACY_REVIEWS_MESSAGES_SEGMENT) {
+  if (tab === LEGACY_SOCIAL_MESSAGES_SEGMENT) {
     return 'activity';
   }
   return 'posts';
 }
 
-function normalizeLegacyReviewsFeedSub(segment: string): ReviewsFeedSubType | null {
-  if (segment === LEGACY_REVIEWS_MESSAGES_SEGMENT) {
+function normalizeLegacySocialFeedSub(segment: string): SocialFeedSubType | null {
+  if (segment === LEGACY_SOCIAL_MESSAGES_SEGMENT) {
     return 'activity';
   }
-  if (REVIEWS_FEED_SUB_VALUES.includes(segment as ReviewsFeedSubType)) {
-    return segment as ReviewsFeedSubType;
+  if (SOCIAL_FEED_SUB_VALUES.includes(segment as SocialFeedSubType)) {
+    return segment as SocialFeedSubType;
   }
   return null;
 }
 
-/** Resolves Reviews sub-tab from visible pathname (and proxy-injected `?reviews_sub=`). */
-export function resolveReviewsFeedSubFromObjectUrl(
+/** Resolves Social sub-tab from visible pathname (and proxy-injected `?social_sub=`). */
+export function resolveSocialFeedSubFromObjectUrl(
   objectId: string,
   pathname: string,
   searchParams: URLSearchParams,
-): ReviewsFeedSubType {
+): SocialFeedSubType {
   const base = `/object/${encodeURIComponent(objectId)}`;
   const path = normalizePathname(pathname);
   const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const subMatch = path.match(
     new RegExp(
-      `^${escapedBase}/reviews/(${[...REVIEWS_FEED_PATH_SEGMENTS, LEGACY_REVIEWS_MESSAGES_SEGMENT].join('|')})$`,
+      `^${escapedBase}/social/(${[...SOCIAL_FEED_PATH_SEGMENTS, LEGACY_SOCIAL_MESSAGES_SEGMENT].join('|')})$`,
     ),
   );
   if (subMatch?.[1]) {
-    const normalized = normalizeLegacyReviewsFeedSub(subMatch[1]);
+    const normalized = normalizeLegacySocialFeedSub(subMatch[1]);
     if (normalized) {
       return normalized;
     }
@@ -147,14 +147,14 @@ export function resolveReviewsFeedSubFromObjectUrl(
   if (path === `${base}/messages`) {
     return 'activity';
   }
-  const fromQuery = searchParams.get(OBJECT_PAGE_REVIEWS_SUB_PARAM)?.trim();
+  const fromQuery = searchParams.get(OBJECT_PAGE_SOCIAL_SUB_PARAM)?.trim();
   if (fromQuery) {
-    const normalized = normalizeLegacyReviewsFeedSub(fromQuery);
+    const normalized = normalizeLegacySocialFeedSub(fromQuery);
     if (normalized) {
       return normalized;
     }
   }
-  if (searchParams.get(OBJECT_PAGE_PRIMARY_TAB_PARAM)?.trim() === LEGACY_REVIEWS_MESSAGES_SEGMENT) {
+  if (searchParams.get(OBJECT_PAGE_PRIMARY_TAB_PARAM)?.trim() === LEGACY_SOCIAL_MESSAGES_SEGMENT) {
     return 'activity';
   }
   return 'posts';
@@ -229,15 +229,15 @@ export function resolvePrimarySegmentFromObjectUrl(
   }
   const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   if (
-    path === `${base}/reviews` ||
+    path === `${base}/social` ||
     new RegExp(
-      `^${escapedBase}/reviews/(${[...REVIEWS_FEED_PATH_SEGMENTS, LEGACY_REVIEWS_MESSAGES_SEGMENT].join('|')})$`,
+      `^${escapedBase}/social/(${[...SOCIAL_FEED_PATH_SEGMENTS, LEGACY_SOCIAL_MESSAGES_SEGMENT].join('|')})$`,
     ).test(path)
   ) {
-    return 'reviews';
+    return 'social';
   }
   if (path === `${base}/messages`) {
-    return 'reviews';
+    return 'social';
   }
   for (const segment of PATH_TAB_SEGMENTS) {
     if (path === `${base}/${segment}`) {
@@ -251,8 +251,8 @@ export function resolvePrimarySegmentFromObjectUrl(
   if (tab === 'authority') {
     return 'ownership';
   }
-  if (tab === LEGACY_REVIEWS_MESSAGES_SEGMENT) {
-    return 'reviews';
+  if (tab === LEGACY_SOCIAL_MESSAGES_SEGMENT) {
+    return 'social';
   }
   return tab ?? '';
 }
@@ -355,7 +355,7 @@ export function resolveDefaultPrimarySegmentFromLanding(
           ? DETAILS_PRIMARY_TAB_SEGMENT
           : OBJECT_PAGE_DESCRIPTION_SEGMENT;
       }
-      if (landing.segment === 'reviews' && hasDetailsTab) {
+      if (landing.segment === 'social' && hasDetailsTab) {
         return DETAILS_PRIMARY_TAB_SEGMENT;
       }
       if (allowed.has(landing.segment)) {
@@ -366,7 +366,7 @@ export function resolveDefaultPrimarySegmentFromLanding(
       if (hasDetailsTab) {
         return DETAILS_PRIMARY_TAB_SEGMENT;
       }
-      return allowed.has('reviews') ? 'reviews' : '';
+      return allowed.has('social') ? 'social' : '';
     case 'nestedInHost':
     case 'hostContent':
       return hasDetailsTab ? DETAILS_PRIMARY_TAB_SEGMENT : '';
@@ -377,7 +377,7 @@ export function resolveDefaultPrimarySegmentFromLanding(
 
 /**
  * Resolves active primary tab from URL, falling back to SSR default landing when the URL is
- * clean (`/object/:id` with no `?tab=` or path segment) so default Details/Reviews can show without
+ * clean (`/object/:id` with no `?tab=` or path segment) so default Details/Social can show without
  * an extra path segment.
  */
 export function resolvePrimarySegmentForObjectPage(

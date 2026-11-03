@@ -257,7 +257,7 @@ export function MessageRow({
           {message.source_object ? (
             <p className="mb-1 text-caption">
               <OptimisticNavLink
-                href={`/object/${encodeURIComponent(message.source_object.object_id)}/reviews/activity`}
+                href={`/object/${encodeURIComponent(message.source_object.object_id)}/social/activity`}
                 className="text-link hover:underline"
               >
                 {t('object_activity_source_from').replace(

@@ -175,7 +175,7 @@ function buildPrimaryTabs(input: {
   expertsCount: number;
 }): ObjectPrimaryTabView[] {
   const base: ObjectPrimaryTabView[] = [
-    { segment: 'reviews', label: 'Reviews' },
+    { segment: 'social', label: 'Social' },
     { segment: 'gallery', label: 'Gallery' },
     { segment: 'updates', label: 'Updates', count: input.updatesCount },
     { segment: 'followers', label: 'Followers', count: input.followersCount },

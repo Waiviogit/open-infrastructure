@@ -81,7 +81,7 @@ Gated by hero Edit toggle + `viewerUsername` from server.
 | Segment | Spec |
 |---------|------|
 | Navigation / tabs / `?path=` | [navigation.md](navigation.md) |
-| Reviews (Posts / Threads / Activity) | [routes/reviews.md](routes/reviews.md) |
+| Social (Posts / Threads / Activity) | [routes/social.md](routes/social.md) |
 | Updates | [routes/updates.md](routes/updates.md) |
 | Gallery | [routes/gallery.md](routes/gallery.md) |
 | Followers | [routes/followers.md](routes/followers.md) |

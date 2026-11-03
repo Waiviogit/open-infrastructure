@@ -11,7 +11,7 @@ export function objectPath(objectIdOrPermlink: string): string {
 }
 
 export function objectActivityPath(objectId: string): string {
-  return `/object/${encodeURIComponent(objectId)}/reviews/activity`;
+  return `/object/${encodeURIComponent(objectId)}/social/activity`;
 }
 
 export function objectUpdatePath(objectId: string, updateId: string): string {

@@ -64,11 +64,11 @@ import {
   OBJECT_PAGE_CATEGORY_NAME_PARAM,
   OBJECT_PAGE_FIELD_REFERENCE_TYPE_PARAM,
   OBJECT_PAGE_PRIMARY_TAB_PARAM,
-  OBJECT_PAGE_REVIEWS_SUB_PARAM,
+  OBJECT_PAGE_SOCIAL_SUB_PARAM,
   OBJECT_PAGE_UPDATE_ID_PARAM,
   parseFollowersSubTypeParam,
   parseOwnershipSubTypeParam,
-  parseReviewsFeedSubParam,
+  parseSocialFeedSubParam,
   parseViewPathParam,
   resolveDefaultPrimarySegmentFromLanding,
   resolveFieldReferenceTypeForObjectPage,
@@ -242,19 +242,19 @@ export async function generateMetadata({
     const galleryLabel =
       typeof messages.gallery === 'string' ? messages.gallery : 'Gallery';
     title = `${baseTitle} · ${galleryLabel}`;
-  } else if (tab === 'reviews') {
-    const reviewsSub = firstSearchParam(sp, OBJECT_PAGE_REVIEWS_SUB_PARAM)?.trim();
-    if (reviewsSub === 'activity') {
+  } else if (tab === 'social') {
+    const socialSub = firstSearchParam(sp, OBJECT_PAGE_SOCIAL_SUB_PARAM)?.trim();
+    if (socialSub === 'activity') {
       const activityLabel =
-        typeof messages.object_reviews_activity === 'string'
-          ? messages.object_reviews_activity
+        typeof messages.object_social_activity === 'string'
+          ? messages.object_social_activity
           : 'Activity';
       title = `${baseTitle} · ${activityLabel}`;
     }
   } else if (tab === 'messages') {
     const activityLabel =
-      typeof messages.object_reviews_activity === 'string'
-        ? messages.object_reviews_activity
+      typeof messages.object_social_activity === 'string'
+        ? messages.object_social_activity
         : 'Activity';
     title = `${baseTitle} · ${activityLabel}`;
   } else if (tab === 'widget') {
@@ -357,8 +357,8 @@ export default async function ObjectDetailPage({
 
   const pathIds = parseViewPathParam(sp);
   const initialPrimarySegment = resolveInitialPrimarySegment(model, objectId, sp, pathIds);
-  const reviewsFeedSub = parseReviewsFeedSubParam(sp);
-  const onReviewsTab = initialPrimarySegment === 'reviews';
+  const socialFeedSub = parseSocialFeedSubParam(sp);
+  const onSocialTab = initialPrimarySegment === 'social';
   const activeCategoryName =
     initialPrimarySegment === CATEGORY_PRIMARY_SEGMENT ? parseCategoryNameParam(sp) : null;
   const activeFieldReferenceType =
@@ -536,7 +536,7 @@ export default async function ObjectDetailPage({
     ) : null;
 
   const postsFeedSlot =
-    onReviewsTab && reviewsFeedSub === 'posts' ? (
+    onSocialTab && socialFeedSub === 'posts' ? (
       <Suspense key="object-posts-feed" fallback={<FeedPostsLoadingSkeleton />}>
         <ObjectPagePostsFeedSection
           objectId={objectId}
@@ -546,7 +546,7 @@ export default async function ObjectDetailPage({
     ) : null;
 
   const threadsFeedSlot =
-    onReviewsTab && reviewsFeedSub === 'threads' ? (
+    onSocialTab && socialFeedSub === 'threads' ? (
       <ObjectThreadsFeedList
         key="object-threads-feed"
         objectId={objectId}
@@ -555,7 +555,7 @@ export default async function ObjectDetailPage({
     ) : null;
 
   const activityFeedSlot =
-    onReviewsTab && reviewsFeedSub === 'activity' ? (
+    onSocialTab && socialFeedSub === 'activity' ? (
       <ObjectPageActivityFeedSection
         key="object-activity-feed"
         objectId={objectId}

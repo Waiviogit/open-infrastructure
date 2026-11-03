@@ -9,7 +9,7 @@ jest.mock('@/i18n/providers/i18n-provider', () => ({
   useI18n: () => ({
     t: (key: string) =>
       ({
-        reviews: 'Reviews',
+        object_social_title: 'Social',
         object_right_show_more: 'Show more',
       })[key] ?? key,
   }),
@@ -25,7 +25,7 @@ jest.mock('@/modules/feed/presentation', () => ({
   ),
 }));
 
-import { ObjectRightReviewsSection } from './object-right-reviews-section';
+import { ObjectRightSocialSection } from './object-right-social-section';
 
 function makePost(id: string) {
   return {
@@ -62,23 +62,23 @@ function makePage(itemCount: number, hasMore: boolean): UserBlogFeedPage {
   };
 }
 
-describe('ObjectRightReviewsSection', () => {
+describe('ObjectRightSocialSection', () => {
   it('renders section title as h2 with text-section and font-weight-strong', () => {
     render(
-      <ObjectRightReviewsSection
+      <ObjectRightSocialSection
         objectId="ehk-catch"
         page={makePage(2, false)}
         currentUsername={null}
       />,
     );
 
-    const heading = screen.getByRole('heading', { level: 2, name: 'Reviews' });
+    const heading = screen.getByRole('heading', { level: 2, name: 'Social' });
     expect(heading).toHaveClass('text-section', 'font-weight-strong', 'text-fg');
   });
 
-  it('shows 5 of 6 posts and links Show more to Reviews tab', () => {
+  it('shows 5 of 6 posts and links Show more to Social tab', () => {
     render(
-      <ObjectRightReviewsSection
+      <ObjectRightSocialSection
         objectId="ehk-catch"
         page={makePage(6, true)}
         currentUsername={null}
@@ -88,13 +88,13 @@ describe('ObjectRightReviewsSection', () => {
     expect(screen.getByTestId('feed-list').querySelectorAll('li')).toHaveLength(5);
     expect(screen.getByRole('link', { name: 'Show more' })).toHaveAttribute(
       'href',
-      '/object/ehk-catch/reviews',
+      '/object/ehk-catch/social',
     );
   });
 
   it('omits the section when there are no posts', () => {
     const { container } = render(
-      <ObjectRightReviewsSection
+      <ObjectRightSocialSection
         objectId="ehk-catch"
         page={makePage(0, false)}
         currentUsername={null}
@@ -106,7 +106,7 @@ describe('ObjectRightReviewsSection', () => {
 
   it('shows 5 posts without Show more when hasMore is false', () => {
     render(
-      <ObjectRightReviewsSection
+      <ObjectRightSocialSection
         objectId="ehk-catch"
         page={makePage(5, false)}
         currentUsername={null}

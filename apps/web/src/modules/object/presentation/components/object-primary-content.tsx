@@ -44,11 +44,11 @@ import type { RelatedAlbumListView, RelatedAlbumPreviewView } from '../../domain
 import { ObjectListContent } from './object-list-content';
 import { ObjectDescriptionBody } from './object-description-body';
 import { ObjectPageContentBody } from './object-page-content-body';
-import { ObjectWriteReviewPrompt } from './object-write-review-prompt';
+import { ObjectWritePostPrompt } from './object-write-post-prompt';
 import { ObjectThreadComposeBar } from './object-thread-compose-bar';
 import { ObjectWidgetContent } from './object-widget-content';
 
-const REVIEWS_SEGMENT = 'reviews';
+const SOCIAL_SEGMENT = 'social';
 
 /** Menu landing (`/object/:id`) — center column shows first menu item / nested catalog. */
 const MENU_LANDING_SEGMENT = '';
@@ -101,7 +101,7 @@ function centerHintForKind(kind: ObjectSwitcherKind): string {
     case 'group':
       return 'Group workspace (mock).';
     case 'default':
-      return 'Reviews and discussions (mock).';
+      return 'Social and discussions (mock).';
     default: {
       const _e: never = kind;
       return _e;
@@ -160,11 +160,11 @@ export type ObjectPrimaryContentProps = {
   menuRootName?: string | null;
   /** Injected feed (client) when the Updates tab is active. */
   objectUpdatesFeed?: ReactNode;
-  /** Injected posts feed when Reviews > Posts sub-tab is active. */
+  /** Injected posts feed when Social > Posts sub-tab is active. */
   objectPostsFeed?: ReactNode;
-  /** Injected threads feed when Reviews > Threads sub-tab is active. */
+  /** Injected threads feed when Social > Threads sub-tab is active. */
   objectThreadsFeed?: ReactNode;
-  /** Injected activity feed when Reviews > Activity sub-tab is active. */
+  /** Injected activity feed when Social > Activity sub-tab is active. */
   objectActivityFeed?: ReactNode;
   /** Injected feed (client) when the Followers tab is active. */
   objectFollowersFeed?: ReactNode | null;
@@ -529,7 +529,7 @@ export function ObjectPrimaryContent({
 
     if (
       currentView.objectType === 'widget' &&
-      activePrimarySegment !== REVIEWS_SEGMENT
+      activePrimarySegment !== SOCIAL_SEGMENT
     ) {
       return <ObjectWidgetContent config={currentView.widgetConfig} />;
     }
@@ -628,7 +628,7 @@ export function ObjectPrimaryContent({
 
   if (
     activePrimarySegment !== MENU_LANDING_SEGMENT &&
-    activePrimarySegment !== REVIEWS_SEGMENT &&
+    activePrimarySegment !== SOCIAL_SEGMENT &&
     activePrimarySegment !== DETAILS_PRIMARY_TAB_SEGMENT
   ) {
     if (activePrimarySegment === 'ownership' && objectOwnershipFeed != null) {
@@ -826,11 +826,11 @@ export function ObjectPrimaryContent({
   const isMenuLanding = activePrimarySegment === MENU_LANDING_SEGMENT;
   const isDetailsTab = activePrimarySegment === DETAILS_PRIMARY_TAB_SEGMENT;
   const isDetailsOrMenuLanding = isMenuLanding || isDetailsTab;
-  const isReviewsTab = activePrimarySegment === REVIEWS_SEGMENT;
-  const onReviewsCenter = isReviewsTab && nestedStack.length === 0;
-  const onReviewsPostsTab = onReviewsCenter && activeFeedSubSegment === 'posts';
-  const onReviewsThreadsTab = onReviewsCenter && activeFeedSubSegment === 'threads';
-  const onReviewsActivityTab = onReviewsCenter && activeFeedSubSegment === 'activity';
+  const isSocialTab = activePrimarySegment === SOCIAL_SEGMENT;
+  const onSocialCenter = isSocialTab && nestedStack.length === 0;
+  const onSocialPostsTab = onSocialCenter && activeFeedSubSegment === 'posts';
+  const onSocialThreadsTab = onSocialCenter && activeFeedSubSegment === 'threads';
+  const onSocialActivityTab = onSocialCenter && activeFeedSubSegment === 'activity';
 
   return (
     <FeedColumn>
@@ -843,7 +843,7 @@ export function ObjectPrimaryContent({
           onNavigateTo={navigateToDepth}
         />
       ) : null}
-      {onReviewsCenter && feedSubTabs.length > 0 ? (
+      {onSocialCenter && feedSubTabs.length > 0 ? (
         <div
           key="feed-sub-nav"
           className="rounded-card border border-border bg-bg px-card-padding pt-2"
@@ -855,15 +855,15 @@ export function ObjectPrimaryContent({
           />
         </div>
       ) : null}
-      {onReviewsPostsTab && currentView.objectType === 'default' ? (
-        <ObjectWriteReviewPrompt
-          key="write-review-prompt"
+      {onSocialPostsTab && currentView.objectType === 'default' ? (
+        <ObjectWritePostPrompt
+          key="write-post-prompt"
           objectId={objectId}
           viewerUsername={viewerUsername}
           onRequireLogin={onRequireLogin}
         />
       ) : null}
-      {onReviewsThreadsTab && currentView.objectType === 'default' ? (
+      {onSocialThreadsTab && currentView.objectType === 'default' ? (
         <ObjectThreadComposeBar
           key="thread-compose-bar"
           objectId={objectId}
@@ -872,12 +872,12 @@ export function ObjectPrimaryContent({
           onRequireLogin={onRequireLogin}
         />
       ) : null}
-      {onReviewsPostsTab && objectPostsFeed != null ? (
-        <Fragment key="reviews-posts-feed">{objectPostsFeed}</Fragment>
-      ) : onReviewsThreadsTab && objectThreadsFeed != null ? (
-        <Fragment key="reviews-threads-feed">{objectThreadsFeed}</Fragment>
-      ) : onReviewsActivityTab && objectActivityFeed != null ? (
-        <Fragment key="reviews-activity-feed">{objectActivityFeed}</Fragment>
+      {onSocialPostsTab && objectPostsFeed != null ? (
+        <Fragment key="social-posts-feed">{objectPostsFeed}</Fragment>
+      ) : onSocialThreadsTab && objectThreadsFeed != null ? (
+        <Fragment key="social-threads-feed">{objectThreadsFeed}</Fragment>
+      ) : onSocialActivityTab && objectActivityFeed != null ? (
+        <Fragment key="social-activity-feed">{objectActivityFeed}</Fragment>
       ) : (
         <Fragment key="center-type-content">{renderTypeContent()}</Fragment>
       )}

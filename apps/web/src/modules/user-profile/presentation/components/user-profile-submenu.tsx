@@ -16,7 +16,7 @@ export type UserProfileSubmenuProps = {
 };
 
 /**
- * Center-column sub-tabs (profile main layout), parity with object Reviews
+ * Center-column sub-tabs (profile main layout), parity with object Social
  * {@link ObjectPrimaryContent} + {@link ObjectFeedSubNav}.
  */
 export function UserProfileSubmenu({

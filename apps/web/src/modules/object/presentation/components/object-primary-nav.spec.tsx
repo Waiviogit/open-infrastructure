@@ -43,7 +43,7 @@ const messages = {
 
 function renderNav(
   tabs: Parameters<typeof ObjectPrimaryNav>[0]['tabs'],
-  activeSegment = 'reviews',
+  activeSegment = 'social',
 ) {
   return render(
     <I18nProvider locale="en-US" messages={messages}>
@@ -55,7 +55,7 @@ function renderNav(
 describe('ObjectPrimaryNav', () => {
   it('renders a space between Followers label and zero count', () => {
     renderNav([
-      { segment: 'reviews', label: 'Reviews' },
+      { segment: 'social', label: 'Social' },
       { segment: 'followers', label: 'Followers', count: 0 },
     ]);
 
@@ -64,7 +64,7 @@ describe('ObjectPrimaryNav', () => {
 
   it('renders a space between Experts label and count', () => {
     renderNav([
-      { segment: 'reviews', label: 'Reviews' },
+      { segment: 'social', label: 'Social' },
       { segment: 'experts', label: 'Experts', count: 3 },
     ]);
 
@@ -73,14 +73,14 @@ describe('ObjectPrimaryNav', () => {
 
   it('does not render a More overflow menu', () => {
     renderNav([
-      { segment: 'reviews', label: 'Reviews' },
+      { segment: 'social', label: 'Social' },
       { segment: 'gallery', label: 'Gallery' },
       { segment: 'updates', label: 'Updates' },
       { segment: 'experts', label: 'Experts' },
     ]);
 
     expect(screen.queryByRole('button', { name: /more/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reviews' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Social' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Experts' })).toBeInTheDocument();
   });
 });

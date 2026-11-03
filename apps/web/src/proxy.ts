@@ -15,8 +15,8 @@ import {
   OBJECT_PAGE_FIELD_REFERENCES_PATH_SEGMENT,
   OBJECT_PAGE_UPDATE_ID_PARAM,
   OBJECT_PAGE_PATH_TAB_SEGMENTS,
-  OBJECT_PAGE_REVIEWS_SUB_PARAM,
-  REVIEWS_FEED_PATH_SEGMENTS,
+  OBJECT_PAGE_SOCIAL_SUB_PARAM,
+  SOCIAL_FEED_PATH_SEGMENTS,
 } from '@/modules/object/domain/object-page-url.constants';
 import { isUserProfileReservedFirstSegment } from '@/modules/user-profile/presentation/components/profile-path';
 import {
@@ -128,28 +128,28 @@ export async function proxy(request: NextRequest) {
     return finish(NextResponse.rewrite(url));
   }
 
-  const legacyReviewsMessagesMatch = pathname.match(
-    /^\/object\/([^/]+)\/reviews\/messages\/?$/,
+  const legacySocialMessagesMatch = pathname.match(
+    /^\/object\/([^/]+)\/social\/messages\/?$/,
   );
-  if (legacyReviewsMessagesMatch) {
-    const id = legacyReviewsMessagesMatch[1];
+  if (legacySocialMessagesMatch) {
+    const id = legacySocialMessagesMatch[1];
     const url = request.nextUrl.clone();
     url.pathname = `/object/${id}`;
-    url.searchParams.set('tab', 'reviews');
-    url.searchParams.set(OBJECT_PAGE_REVIEWS_SUB_PARAM, 'activity');
+    url.searchParams.set('tab', 'social');
+    url.searchParams.set(OBJECT_PAGE_SOCIAL_SUB_PARAM, 'activity');
     return finish(NextResponse.rewrite(url));
   }
 
-  const reviewsSubMatch = pathname.match(
-    new RegExp(`^/object/([^/]+)/reviews/(${REVIEWS_FEED_PATH_SEGMENTS.join('|')})/?$`),
+  const socialSubMatch = pathname.match(
+    new RegExp(`^/object/([^/]+)/social/(${SOCIAL_FEED_PATH_SEGMENTS.join('|')})/?$`),
   );
-  if (reviewsSubMatch) {
-    const id = reviewsSubMatch[1];
-    const sub = reviewsSubMatch[2];
+  if (socialSubMatch) {
+    const id = socialSubMatch[1];
+    const sub = socialSubMatch[2];
     const url = request.nextUrl.clone();
     url.pathname = `/object/${id}`;
-    url.searchParams.set('tab', 'reviews');
-    url.searchParams.set(OBJECT_PAGE_REVIEWS_SUB_PARAM, sub);
+    url.searchParams.set('tab', 'social');
+    url.searchParams.set(OBJECT_PAGE_SOCIAL_SUB_PARAM, sub);
     return finish(NextResponse.rewrite(url));
   }
 
@@ -158,8 +158,8 @@ export async function proxy(request: NextRequest) {
     const id = legacyObjectMessagesMatch[1];
     const url = request.nextUrl.clone();
     url.pathname = `/object/${id}`;
-    url.searchParams.set('tab', 'reviews');
-    url.searchParams.set(OBJECT_PAGE_REVIEWS_SUB_PARAM, 'activity');
+    url.searchParams.set('tab', 'social');
+    url.searchParams.set(OBJECT_PAGE_SOCIAL_SUB_PARAM, 'activity');
     return finish(NextResponse.rewrite(url));
   }
 

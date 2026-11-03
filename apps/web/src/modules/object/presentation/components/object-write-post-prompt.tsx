@@ -6,7 +6,7 @@ import { PencilIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { appendAttachObjectToEditorPath } from '@/modules/editor/domain/post-editor-object-create-return';
 
-export type ObjectWriteReviewPromptProps = {
+export type ObjectWritePostPromptProps = {
   objectId: string;
   viewerUsername?: string | null;
   onRequireLogin?: () => void;
@@ -18,11 +18,11 @@ const promptClassName =
 const penIconClassName =
   'inline-flex size-10 shrink-0 items-center justify-center rounded-pill border border-accent text-accent';
 
-export function ObjectWriteReviewPrompt({
+export function ObjectWritePostPrompt({
   objectId,
   viewerUsername = null,
   onRequireLogin,
-}: ObjectWriteReviewPromptProps) {
+}: ObjectWritePostPromptProps) {
   const { t } = useI18n();
   const href = appendAttachObjectToEditorPath('/editor', objectId);
   const isLoggedIn = (viewerUsername?.trim() ?? '') !== '';
@@ -32,7 +32,7 @@ export function ObjectWriteReviewPrompt({
       <span className={penIconClassName} aria-hidden>
         <PencilIcon size={20} />
       </span>
-      <span className="text-body-sm font-weight-label text-fg">{t('write_review')}</span>
+      <span className="text-body-sm font-weight-label text-fg">{t('object_social_write_post')}</span>
     </>
   );
 

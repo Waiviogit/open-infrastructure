@@ -1,12 +1,12 @@
 ---
-id: web-pages-object-reviews
-title: Object page — Reviews tab
-description: "Reviews center column: Posts, Threads, and Activity sub-tabs with compose entry points."
+id: web-pages-object-social
+title: Object page — Social tab
+description: "Social center column: Posts, Threads, and Activity sub-tabs with compose entry points."
 type: spec
 status: active
 scope: web
-tags: [web, page, object, reviews]
-updated_at: 2026-08-26
+tags: [web, page, object, social]
+updated_at: 2026-11-03
 related:
   - docs/apps/web/spec/pages/object/page-shell.md
   - docs/apps/web/spec/pages/object/navigation.md
@@ -14,7 +14,7 @@ related:
   - docs/apps/query-api/spec/object-threads-feed.md
 ---
 
-# Object page — Reviews tab
+# Object page — Social tab
 
 **Back:** [page-shell.md](../page-shell.md) · [navigation.md](../navigation.md)
 
@@ -22,22 +22,22 @@ related:
 
 | Sub-tab | URL param | Content |
 |---------|-----------|---------|
-| Posts | `reviews_sub=posts` (default) | Object-linked Hive posts feed |
-| Threads | `reviews_sub=threads` | Leo threads whose `hashtags` contain the object id |
-| Activity | `reviews_sub=activity` | OSL object channel messages |
+| Posts | `social_sub=posts` (default) | Object-linked Hive posts feed |
+| Threads | `social_sub=threads` | Leo threads whose `hashtags` contain the object id |
+| Activity | `social_sub=activity` | OSL object channel messages |
 
 Shell: [`ObjectPrimaryContent`](../../../../../apps/web/src/modules/object/presentation/components/object-primary-content.tsx) + [`ObjectFeedSubNav`](../../../../../apps/web/src/modules/object/presentation/components/object-feed-sub-nav.tsx).
 
 ## Posts compose
 
-- **When:** Reviews > **Posts** only (not Threads or Activity).
+- **When:** Social > **Posts** only (not Threads or Activity).
 - **Placement:** Below the Posts/Threads/Activity sub-nav, above the feed.
-- **UI:** [`ObjectWriteReviewPrompt`](../../../../../apps/web/src/modules/object/presentation/components/object-write-review-prompt.tsx) — pen icon, `write_review` i18n, links to `/editor?attachObject={objectId}`.
-- **Empty feed:** No redundant “Reviews” heading — muted `object_reviews_empty_posts` only.
+- **UI:** [`ObjectWritePostPrompt`](../../../../../apps/web/src/modules/object/presentation/components/object-write-post-prompt.tsx) — pen icon, `object_social_write_post` i18n ("Write a post"), links to `/editor?attachObject={objectId}`.
+- **Empty feed:** No redundant heading — muted `object_social_empty_posts` ("No posts yet.") only.
 
 ## Threads compose
 
-- **When:** Reviews > **Threads** only.
+- **When:** Social > **Threads** only.
 - **Placement:** Below sub-nav, above the threads feed (including empty state).
 - **UI:** [`ObjectThreadComposeBar`](../../../../../apps/web/src/modules/object/presentation/components/object-thread-compose-bar.tsx):
   - Non-removable **Posting in:** chip ([`ObjectThreadAnchorChip`](../../../../../apps/web/src/modules/object/presentation/components/object-thread-anchor-chip.tsx)) — discover-style pill + object name (no thumbnail).
@@ -53,6 +53,6 @@ See [messaging.md](../../../messaging.md) — [`ObjectActivityComposeBar`](../..
 ## Verification
 
 ```bash
-pnpm nx test web --testPathPatterns="object-primary-content|object-write-review|object-thread|append-object-anchor"
+pnpm nx test web --testPathPatterns="object-primary-content|object-write-post|object-thread|append-object-anchor"
 pnpm typecheck:web
 ```

@@ -5,16 +5,16 @@ import {
   buildObjectSimilarPath,
   buildObjectListPath,
   buildObjectWidgetPath,
-  buildObjectReviewsSubPath,
+  buildObjectSocialSubPath,
 } from '@/modules/object/domain/object-page-url.constants';
 
 import {
   OBJECT_PAGE_OWNERSHIP_SUB_PARAM,
   OBJECT_PAGE_PRIMARY_TAB_PARAM,
-  OBJECT_PAGE_REVIEWS_SUB_PARAM,
+  OBJECT_PAGE_SOCIAL_SUB_PARAM,
   OBJECT_PAGE_VIEW_PATH_PARAM,
 } from './object-page-search';
-import type { ReviewsFeedSubType } from '@/modules/object/domain/object-page.types';
+import type { SocialFeedSubType } from '@/modules/object/domain/object-page.types';
 import { LIST_PRIMARY_TAB_SEGMENT } from '@/modules/object/domain/list.constants';
 import {
   DETAILS_PRIMARY_TAB_SEGMENT,
@@ -36,13 +36,13 @@ export function buildObjectPrimaryTabNavigation(
   const base = `/object/${id}`;
   const u = new URLSearchParams(searchParams.toString());
 
-  if (segment === 'reviews') {
+  if (segment === 'social') {
     u.delete(OBJECT_PAGE_VIEW_PATH_PARAM);
     u.delete(OBJECT_PAGE_OWNERSHIP_SUB_PARAM);
-    u.delete(OBJECT_PAGE_REVIEWS_SUB_PARAM);
+    u.delete(OBJECT_PAGE_SOCIAL_SUB_PARAM);
     const qs = u.toString();
     return {
-      href: qs ? `${base}/reviews?${qs}` : `${base}/reviews`,
+      href: qs ? `${base}/social?${qs}` : `${base}/social`,
       method: 'push',
     };
   }
@@ -132,7 +132,7 @@ export function buildObjectPrimaryTabNavigation(
     u.delete(OBJECT_PAGE_PRIMARY_TAB_PARAM);
     u.delete(OBJECT_PAGE_OWNERSHIP_SUB_PARAM);
     u.delete(OBJECT_PAGE_VIEW_PATH_PARAM);
-    u.delete(OBJECT_PAGE_REVIEWS_SUB_PARAM);
+    u.delete(OBJECT_PAGE_SOCIAL_SUB_PARAM);
     u.delete('sort');
     u.delete('update_type');
     u.delete('locale');
@@ -236,18 +236,18 @@ export function buildObjectFollowersSubHref(
   return qs ? `${base}/followers?${qs}` : `${base}/followers`;
 }
 
-export function buildObjectReviewsSubHref(
+export function buildObjectSocialSubHref(
   objectId: string,
   searchParams: URLSearchParams,
-  sub: ReviewsFeedSubType,
+  sub: SocialFeedSubType,
 ): string {
   const u = new URLSearchParams(searchParams.toString());
   u.delete(OBJECT_PAGE_PRIMARY_TAB_PARAM);
-  u.delete(OBJECT_PAGE_REVIEWS_SUB_PARAM);
+  u.delete(OBJECT_PAGE_SOCIAL_SUB_PARAM);
   u.delete(OBJECT_PAGE_OWNERSHIP_SUB_PARAM);
   u.delete(OBJECT_PAGE_VIEW_PATH_PARAM);
   const qs = u.toString();
-  const path = buildObjectReviewsSubPath(objectId, sub);
+  const path = buildObjectSocialSubPath(objectId, sub);
   return qs ? `${path}?${qs}` : path;
 }
 

@@ -19,7 +19,7 @@ import {
   resolveDefaultPrimarySegmentFromLanding,
   resolvePrimarySegmentForObjectPage,
   resolvePrimarySegmentFromObjectUrl,
-  resolveReviewsFeedSubFromObjectUrl,
+  resolveSocialFeedSubFromObjectUrl,
   resolveUpdateIdFromObjectUrl,
   sanitizeNestedStack,
 } from './object-page-search';
@@ -30,18 +30,18 @@ describe('resolvePrimarySegmentForObjectPage', () => {
   const objectId = 'test-obj';
   const base = `/object/${encodeURIComponent(objectId)}`;
 
-  it('returns explicit path segment reviews', () => {
+  it('returns explicit path segment social', () => {
     expect(
       resolvePrimarySegmentForObjectPage(
         objectId,
-        `${base}/reviews`,
+        `${base}/social`,
         new URLSearchParams(),
         '',
       ),
-    ).toBe('reviews');
+    ).toBe('social');
   });
 
-  it('maps legacy /messages path to reviews primary tab', () => {
+  it('maps legacy /messages path to social primary tab', () => {
     expect(
       resolvePrimarySegmentForObjectPage(
         objectId,
@@ -49,18 +49,18 @@ describe('resolvePrimarySegmentForObjectPage', () => {
         new URLSearchParams(),
         '',
       ),
-    ).toBe('reviews');
+    ).toBe('social');
   });
 
-  it('maps /reviews/messages path to reviews primary tab', () => {
+  it('maps /social/messages path to social primary tab', () => {
     expect(
       resolvePrimarySegmentForObjectPage(
         objectId,
-        `${base}/reviews/messages`,
+        `${base}/social/messages`,
         new URLSearchParams(),
         '',
       ),
-    ).toBe('reviews');
+    ).toBe('social');
   });
 
   it('returns explicit path segment description', () => {
@@ -110,13 +110,13 @@ describe('resolvePrimarySegmentForObjectPage', () => {
   it('returns explicit ?tab= over default landing', () => {
     const sp = new URLSearchParams();
     sp.set(OBJECT_PAGE_PRIMARY_TAB_PARAM, 'updates');
-    expect(resolvePrimarySegmentForObjectPage(objectId, base, sp, 'reviews')).toBe('updates');
+    expect(resolvePrimarySegmentForObjectPage(objectId, base, sp, 'social')).toBe('updates');
   });
 
   it('returns default segment when ?path= is present on clean pathname', () => {
     const sp = new URLSearchParams();
     sp.set(OBJECT_PAGE_VIEW_PATH_PARAM, 'nested-list');
-    expect(resolvePrimarySegmentForObjectPage(objectId, base, sp, 'reviews')).toBe('reviews');
+    expect(resolvePrimarySegmentForObjectPage(objectId, base, sp, 'social')).toBe('social');
   });
 
   it('returns details segment when ?path= is present and Details is default', () => {
@@ -129,8 +129,8 @@ describe('resolvePrimarySegmentForObjectPage', () => {
 
   it('falls back to default landing segment on clean URL', () => {
     expect(
-      resolvePrimarySegmentForObjectPage(objectId, base, new URLSearchParams(), 'reviews'),
-    ).toBe('reviews');
+      resolvePrimarySegmentForObjectPage(objectId, base, new URLSearchParams(), 'social'),
+    ).toBe('social');
   });
 
   it('falls back to empty segment on clean URL for nested default landing', () => {
@@ -141,19 +141,19 @@ describe('resolvePrimarySegmentForObjectPage', () => {
 });
 
 describe('resolveDefaultPrimarySegmentFromLanding', () => {
-  const tabs = ['reviews', 'updates', 'gallery'] as const;
-  const tabsWithDetails = ['details', 'reviews', 'updates', 'gallery'] as const;
+  const tabs = ['social', 'updates', 'gallery'] as const;
+  const tabsWithDetails = ['details', 'social', 'updates', 'gallery'] as const;
 
-  it('maps primaryTab reviews', () => {
+  it('maps primaryTab social', () => {
     expect(
-      resolveDefaultPrimarySegmentFromLanding({ kind: 'primaryTab', segment: 'reviews' }, tabs),
-    ).toBe('reviews');
+      resolveDefaultPrimarySegmentFromLanding({ kind: 'primaryTab', segment: 'social' }, tabs),
+    ).toBe('social');
   });
 
-  it('maps primaryTab reviews to details when Details tab exists', () => {
+  it('maps primaryTab social to details when Details tab exists', () => {
     expect(
       resolveDefaultPrimarySegmentFromLanding(
-        { kind: 'primaryTab', segment: 'reviews' },
+        { kind: 'primaryTab', segment: 'social' },
         tabsWithDetails,
       ),
     ).toBe(DETAILS_PRIMARY_TAB_SEGMENT);
@@ -193,7 +193,7 @@ describe('resolveDefaultPrimarySegmentFromLanding', () => {
   });
 
   it('maps primaryTab widget when tab exists', () => {
-    const widgetTabs = ['widget', 'reviews', 'updates'] as const;
+    const widgetTabs = ['widget', 'social', 'updates'] as const;
     expect(
       resolveDefaultPrimarySegmentFromLanding(
         { kind: 'primaryTab', segment: 'widget' },
@@ -211,13 +211,13 @@ describe('resolveDefaultPrimarySegmentFromLanding', () => {
     ).toBe('');
   });
 
-  it('maps routeStub to reviews when tab exists', () => {
+  it('maps routeStub to social when tab exists', () => {
     expect(
       resolveDefaultPrimarySegmentFromLanding(
         { kind: 'routeStub', segment: 'blog', ref: 'alice' },
         tabs,
       ),
-    ).toBe('reviews');
+    ).toBe('social');
   });
 
   it('maps routeStub to details when Details tab exists', () => {
@@ -309,7 +309,7 @@ describe('resolveFieldReferenceTypeFromObjectUrl', () => {
 
   it('returns null for unrelated paths', () => {
     expect(
-      resolveFieldReferenceTypeFromObjectUrl(objectId, `${base}/reviews`),
+      resolveFieldReferenceTypeFromObjectUrl(objectId, `${base}/social`),
     ).toBeNull();
   });
 });
@@ -366,7 +366,7 @@ describe('resolveCategoryNameFromObjectUrl', () => {
   });
 
   it('returns null for unrelated paths', () => {
-    expect(resolveCategoryNameFromObjectUrl(objectId, `${base}/reviews`)).toBeNull();
+    expect(resolveCategoryNameFromObjectUrl(objectId, `${base}/social`)).toBeNull();
   });
 });
 
@@ -417,7 +417,7 @@ describe('resolveGalleryAlbumFromObjectUrl', () => {
   });
 
   it('returns null for unrelated paths', () => {
-    expect(resolveGalleryAlbumFromObjectUrl(objectId, `${base}/reviews`)).toBeNull();
+    expect(resolveGalleryAlbumFromObjectUrl(objectId, `${base}/social`)).toBeNull();
   });
 });
 
@@ -541,36 +541,36 @@ describe('resolvePrimarySegmentFromObjectUrl widget', () => {
 
   it('prefers pathname widget segment over conflicting ?tab=', () => {
     const sp = new URLSearchParams();
-    sp.set(OBJECT_PAGE_PRIMARY_TAB_PARAM, 'reviews');
+    sp.set(OBJECT_PAGE_PRIMARY_TAB_PARAM, 'social');
     expect(resolvePrimarySegmentFromObjectUrl('abc', '/object/abc/widget', sp)).toBe('widget');
   });
 });
 
-describe('resolveReviewsFeedSubFromObjectUrl', () => {
+describe('resolveSocialFeedSubFromObjectUrl', () => {
   const objectId = 'test-obj';
   const base = `/object/${encodeURIComponent(objectId)}`;
 
-  it('returns posts for bare reviews path', () => {
+  it('returns posts for bare social path', () => {
     expect(
-      resolveReviewsFeedSubFromObjectUrl(objectId, `${base}/reviews`, new URLSearchParams()),
+      resolveSocialFeedSubFromObjectUrl(objectId, `${base}/social`, new URLSearchParams()),
     ).toBe('posts');
   });
 
-  it('returns activity from reviews sub-path', () => {
+  it('returns activity from social sub-path', () => {
     expect(
-      resolveReviewsFeedSubFromObjectUrl(
+      resolveSocialFeedSubFromObjectUrl(
         objectId,
-        `${base}/reviews/activity`,
+        `${base}/social/activity`,
         new URLSearchParams(),
       ),
     ).toBe('activity');
   });
 
-  it('maps legacy /reviews/messages path to activity', () => {
+  it('maps legacy /social/messages path to activity', () => {
     expect(
-      resolveReviewsFeedSubFromObjectUrl(
+      resolveSocialFeedSubFromObjectUrl(
         objectId,
-        `${base}/reviews/messages`,
+        `${base}/social/messages`,
         new URLSearchParams(),
       ),
     ).toBe('activity');
@@ -578,13 +578,13 @@ describe('resolveReviewsFeedSubFromObjectUrl', () => {
 
   it('maps legacy /messages path to activity', () => {
     expect(
-      resolveReviewsFeedSubFromObjectUrl(objectId, `${base}/messages`, new URLSearchParams()),
+      resolveSocialFeedSubFromObjectUrl(objectId, `${base}/messages`, new URLSearchParams()),
     ).toBe('activity');
   });
 
   it('returns threads from proxy query param', () => {
     const sp = new URLSearchParams();
-    sp.set('reviews_sub', 'threads');
-    expect(resolveReviewsFeedSubFromObjectUrl(objectId, base, sp)).toBe('threads');
+    sp.set('social_sub', 'threads');
+    expect(resolveSocialFeedSubFromObjectUrl(objectId, base, sp)).toBe('threads');
   });
 });

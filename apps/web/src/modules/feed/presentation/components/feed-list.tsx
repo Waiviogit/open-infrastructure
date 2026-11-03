@@ -6,7 +6,7 @@ export type FeedListProps = {
   items: FeedStoryView[];
   feedTab: FeedTab;
   currentUsername: string | null;
-  /** Extra cache/path revalidation after a Hive broadcast (e.g. object Reviews feed). */
+  /** Extra cache/path revalidation after a Hive broadcast (e.g. object Social feed). */
   onBroadcastRevalidate?: () => Promise<void>;
 };
 

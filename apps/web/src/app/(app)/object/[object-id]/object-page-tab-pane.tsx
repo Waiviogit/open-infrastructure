@@ -9,9 +9,9 @@ import type {
   ObjectNestedViewResolved,
   ObjectPageViewModel,
   OwnershipSubType,
-  ReviewsFeedSubType,
+  SocialFeedSubType,
 } from '@/modules/object/domain/object-page.types';
-import { REVIEWS_FEED_SUB_VALUES } from '@/modules/object/domain/object-page.types';
+import { SOCIAL_FEED_SUB_VALUES } from '@/modules/object/domain/object-page.types';
 import type { RelatedAlbumListView, RelatedAlbumPreviewView } from '@/modules/object/domain/related-album.types';
 import {
   ObjectFollowersSubNav,
@@ -43,8 +43,8 @@ import { loadMoreObjectFieldReferencesAction } from './field-references/load-mor
 import { loadMoreCategoryObjectsAction } from './category/load-more-category-objects.actions';
 import { revalidateObjectAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 import { useObjectPageShell } from './object-page-shell-context';
-import { resolveCategoryNameForObjectPage, resolveFieldReferenceTypeForObjectPage, resolveReviewsFeedSubFromObjectUrl } from './object-page-search';
-import { buildObjectReviewsSubHref } from './object-page-navigation';
+import { resolveCategoryNameForObjectPage, resolveFieldReferenceTypeForObjectPage, resolveSocialFeedSubFromObjectUrl } from './object-page-search';
+import { buildObjectSocialSubHref } from './object-page-navigation';
 import { useObjectScopedLocation } from './use-object-scoped-location';
 import { useInstantNavigation } from '@/shared/presentation';
 import {
@@ -133,18 +133,18 @@ export function ObjectPageTabPane({
   const effectiveFieldReferenceType =
     activeFieldReferenceType ?? fieldReferenceTypeFromUrl;
   const activeFeedSubSegment = useMemo(
-    () => resolveReviewsFeedSubFromObjectUrl(model.objectId, pathname, searchParams),
+    () => resolveSocialFeedSubFromObjectUrl(model.objectId, pathname, searchParams),
     [model.objectId, pathname, searchParams],
   );
   const onFeedSubSelect = useCallback(
     (segment: string) => {
-      if (!REVIEWS_FEED_SUB_VALUES.includes(segment as ReviewsFeedSubType)) {
+      if (!SOCIAL_FEED_SUB_VALUES.includes(segment as SocialFeedSubType)) {
         return;
       }
-      const href = buildObjectReviewsSubHref(
+      const href = buildObjectSocialSubHref(
         model.objectId,
         new URLSearchParams(searchParams.toString()),
-        segment as ReviewsFeedSubType,
+        segment as SocialFeedSubType,
       );
       navigateInstant({ href, method: 'replace', scroll: false });
     },

@@ -22,7 +22,7 @@ jest.mock('next/link', () => ({
 jest.mock('@/i18n/providers/i18n-provider', () => ({
   useI18n: () => ({
     t: (key: string) =>
-      key === 'write_review' ? 'Write a review' : key,
+      key === 'object_social_write_post' ? 'Write a post' : key,
   }),
 }));
 
@@ -30,14 +30,14 @@ jest.mock('@/modules/editor/domain/post-editor-object-create-return', () => ({
   appendAttachObjectToEditorPath: (_path: string, id: string) => `/editor?attachObject=${id}`,
 }));
 
-import { ObjectWriteReviewPrompt } from './object-write-review-prompt';
+import { ObjectWritePostPrompt } from './object-write-post-prompt';
 
-describe('ObjectWriteReviewPrompt', () => {
-  it('shows pen label and write_review copy for logged-in users', () => {
+describe('ObjectWritePostPrompt', () => {
+  it('shows pen label and write post copy for logged-in users', () => {
     render(
-      <ObjectWriteReviewPrompt objectId="waivio" viewerUsername="alice" />,
+      <ObjectWritePostPrompt objectId="waivio" viewerUsername="alice" />,
     );
-    expect(screen.getByText('Write a review')).toBeInTheDocument();
+    expect(screen.getByText('Write a post')).toBeInTheDocument();
     expect(screen.getByRole('link')).toHaveAttribute(
       'href',
       '/editor?attachObject=waivio',
@@ -47,12 +47,12 @@ describe('ObjectWriteReviewPrompt', () => {
   it('uses button when logged out', () => {
     const onRequireLogin = jest.fn();
     render(
-      <ObjectWriteReviewPrompt
+      <ObjectWritePostPrompt
         objectId="waivio"
         viewerUsername={null}
         onRequireLogin={onRequireLogin}
       />,
     );
-    expect(screen.getByRole('button', { name: /Write a review/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Write a post/i })).toBeInTheDocument();
   });
 });

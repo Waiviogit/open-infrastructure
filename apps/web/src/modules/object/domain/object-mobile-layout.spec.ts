@@ -26,11 +26,11 @@ describe('resolveObjectMobileCenterLayout', () => {
     ).toBe('standardEdit');
   });
 
-  it('maps standard Reviews tab to centerOnly', () => {
+  it('maps standard Social tab to centerOnly', () => {
     expect(
       resolveObjectMobileCenterLayout({
         objectTypeKey: 'restaurant',
-        activePrimarySegment: 'reviews',
+        activePrimarySegment: 'social',
         hasPath: false,
         isEditMode: false,
       }),
@@ -103,11 +103,11 @@ describe('resolveObjectMobileCenterLayout', () => {
     ).toBe('centerOnly');
   });
 
-  it('maps special edit on Reviews to centerOnly', () => {
+  it('maps special edit on Social to centerOnly', () => {
     expect(
       resolveObjectMobileCenterLayout({
         objectTypeKey: 'list',
-        activePrimarySegment: 'reviews',
+        activePrimarySegment: 'social',
         hasPath: false,
         isEditMode: true,
       }),
@@ -176,11 +176,11 @@ describe('resolveObjectMobileCenterLayout', () => {
 describe('isSpecialHostLanding', () => {
   it('detects list host landing', () => {
     expect(isSpecialHostLanding('list', 'list')).toBe(true);
-    expect(isSpecialHostLanding('list', 'reviews')).toBe(false);
+    expect(isSpecialHostLanding('list', 'social')).toBe(false);
   });
 
   it('detects page host landing on empty segment', () => {
     expect(isSpecialHostLanding('page', '')).toBe(true);
-    expect(isSpecialHostLanding('page', 'reviews')).toBe(false);
+    expect(isSpecialHostLanding('page', 'social')).toBe(false);
   });
 });

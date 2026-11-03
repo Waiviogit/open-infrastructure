@@ -26,8 +26,8 @@ jest.mock('../../application/actions/resolve-nested-object-path.action', () => (
   resolveNestedObjectPathAction: jest.fn(),
 }));
 
-jest.mock('./object-write-review-prompt', () => ({
-  ObjectWriteReviewPrompt: () => <div data-testid="write-review-prompt" />,
+jest.mock('./object-write-post-prompt', () => ({
+  ObjectWritePostPrompt: () => <div data-testid="write-post-prompt" />,
 }));
 
 jest.mock('./object-thread-compose-bar', () => ({
@@ -79,7 +79,7 @@ const EMPTY_NESTED_STACK: never[] = [];
 
 const baseProps = {
   objectId: 'waivio',
-  activePrimarySegment: 'reviews',
+  activePrimarySegment: 'social',
   activeFeedSubSegment: 'posts',
   feedSubTabs: [
     { segment: 'posts', label: 'Posts' },
@@ -93,19 +93,19 @@ const baseProps = {
   onFeedSubSelect: jest.fn(),
 };
 
-describe('ObjectPrimaryContent Reviews compose chrome', () => {
-  it('renders write-review prompt only on Reviews > Posts', () => {
+describe('ObjectPrimaryContent Social compose chrome', () => {
+  it('renders write-review prompt only on Social > Posts', () => {
     render(
       <ObjectPrimaryContent
         {...baseProps}
         objectPostsFeed={<div data-testid="object-posts-feed">Feed</div>}
       />,
     );
-    expect(screen.getByTestId('write-review-prompt')).toBeInTheDocument();
+    expect(screen.getByTestId('write-post-prompt')).toBeInTheDocument();
     expect(screen.queryByTestId('thread-compose-bar')).not.toBeInTheDocument();
   });
 
-  it('renders thread compose bar only on Reviews > Threads', () => {
+  it('renders thread compose bar only on Social > Threads', () => {
     render(
       <ObjectPrimaryContent
         {...baseProps}
@@ -114,12 +114,12 @@ describe('ObjectPrimaryContent Reviews compose chrome', () => {
       />,
     );
     expect(screen.getByTestId('thread-compose-bar')).toBeInTheDocument();
-    expect(screen.queryByTestId('write-review-prompt')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('write-post-prompt')).not.toBeInTheDocument();
   });
 });
 
-describe('ObjectPrimaryContent Reviews posts feed', () => {
-  it('renders injected object posts feed on Reviews > Posts', () => {
+describe('ObjectPrimaryContent Social posts feed', () => {
+  it('renders injected object posts feed on Social > Posts', () => {
     render(
       <ObjectPrimaryContent
         {...baseProps}
@@ -130,15 +130,15 @@ describe('ObjectPrimaryContent Reviews posts feed', () => {
     expect(screen.queryByText(/Posts list placeholder/)).not.toBeInTheDocument();
   });
 
-  it('falls back to type content when Reviews > Posts has no feed slot', () => {
+  it('falls back to type content when Social > Posts has no feed slot', () => {
     render(<ObjectPrimaryContent {...baseProps} />);
-    expect(screen.getByText(/Reviews and discussions \(mock\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Social and discussions \(mock\)/)).toBeInTheDocument();
     expect(screen.getByText(/Posts list placeholder/)).toBeInTheDocument();
   });
 });
 
-describe('ObjectPrimaryContent Reviews threads feed', () => {
-  it('renders injected object threads feed on Reviews > Threads', () => {
+describe('ObjectPrimaryContent Social threads feed', () => {
+  it('renders injected object threads feed on Social > Threads', () => {
     render(
       <ObjectPrimaryContent
         {...baseProps}
@@ -150,20 +150,20 @@ describe('ObjectPrimaryContent Reviews threads feed', () => {
     expect(screen.queryByText(/Posts list placeholder/)).not.toBeInTheDocument();
   });
 
-  it('falls back to type content when Reviews > Threads has no feed slot', () => {
+  it('falls back to type content when Social > Threads has no feed slot', () => {
     render(
       <ObjectPrimaryContent
         {...baseProps}
         activeFeedSubSegment="threads"
       />,
     );
-    expect(screen.getByText(/Reviews and discussions \(mock\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Social and discussions \(mock\)/)).toBeInTheDocument();
     expect(screen.getByText(/Posts list placeholder/)).toBeInTheDocument();
   });
 });
 
 describe('ObjectPrimaryContent activity feed', () => {
-  it('renders injected object activity feed on Reviews > Activity', () => {
+  it('renders injected object activity feed on Social > Activity', () => {
     render(
       <ObjectPrimaryContent
         {...baseProps}
@@ -188,7 +188,7 @@ describe('ObjectPrimaryContent details tab', () => {
       'Catch Kitchen serves modern cuisine.',
     );
     expect(screen.queryByTestId('feed-sub-nav')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('write-review-prompt')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('write-post-prompt')).not.toBeInTheDocument();
   });
 });
 
@@ -210,7 +210,7 @@ describe('ObjectPrimaryContent widget tab', () => {
     expect(screen.queryByText(/Embedded widget \(mock\)/)).not.toBeInTheDocument();
   });
 
-  it('does not render widget tab content on reviews segment', () => {
+  it('does not render widget tab content on social segment', () => {
     render(
       <ObjectPrimaryContent
         {...baseProps}

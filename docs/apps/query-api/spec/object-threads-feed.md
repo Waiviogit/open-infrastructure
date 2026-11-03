@@ -14,7 +14,7 @@ related:
 
 # Object threads feed
 
-`POST /query/v1/objects/:objectId/threads` — paginated threads for an object's Reviews > Threads sub-tab.
+`POST /query/v1/objects/:objectId/threads` — paginated threads for an object's Social > Threads sub-tab.
 
 ## Purpose
 
@@ -67,7 +67,7 @@ Same `UserBlogFeedResponse` as user threads:
 
 ## Web integration
 
-- Lazy client fetch: `ObjectThreadsFeedList` mounts only when Reviews > **Threads** sub-tab is active (no SSR fetch on Reviews landing).
+- Lazy client fetch: `ObjectThreadsFeedList` mounts only when Social > **Threads** sub-tab is active (no SSR fetch on Social landing).
 - Cache tag: `query-api:object:{id}:threads-feed`; invalidated via `revalidateObjectAfterBroadcast`.
 
 ## MCP

@@ -738,7 +738,7 @@ describe('projectedObjectWithCountsToPageModel product left-rail order', () => {
 
     const model = projectedObjectWithCountsToPageModel(api);
     expect(model.primaryTabs[0]).toEqual({ segment: 'widget', label: 'Widget' });
-    expect(model.primaryTabs[1]?.segment).toBe('reviews');
+    expect(model.primaryTabs[1]?.segment).toBe('social');
     expect(model.widgetConfig).toEqual({
       column: 'one',
       type: 'Widget',
@@ -760,7 +760,7 @@ describe('projectedObjectWithCountsToPageModel product left-rail order', () => {
 
     const model = projectedObjectWithCountsToPageModel(api);
     expect(model.primaryTabs[0]).toEqual({ segment: 'details', label: 'Details' });
-    expect(model.primaryTabs[1]?.segment).toBe('reviews');
+    expect(model.primaryTabs[1]?.segment).toBe('social');
     expect(model.primaryTabs.some((tab) => tab.segment === 'widget')).toBe(false);
     expect(model.widgetConfig).toBeNull();
   });
@@ -779,7 +779,7 @@ describe('projectedObjectWithCountsToPageModel product left-rail order', () => {
 
     const model = projectedObjectWithCountsToPageModel(api);
     expect(model.primaryTabs[0]).toEqual({ segment: 'details', label: 'Details' });
-    expect(model.primaryTabs[1]?.segment).toBe('reviews');
+    expect(model.primaryTabs[1]?.segment).toBe('social');
   });
 
   it('does not prepend Details tab for page host type', () => {
@@ -795,7 +795,7 @@ describe('projectedObjectWithCountsToPageModel product left-rail order', () => {
     };
 
     const model = projectedObjectWithCountsToPageModel(api);
-    expect(model.primaryTabs[0]?.segment).toBe('reviews');
+    expect(model.primaryTabs[0]?.segment).toBe('social');
     expect(model.primaryTabs.some((tab) => tab.segment === 'details')).toBe(false);
   });
 
@@ -813,7 +813,7 @@ describe('projectedObjectWithCountsToPageModel product left-rail order', () => {
 
     const model = projectedObjectWithCountsToPageModel(api);
     expect(model.primaryTabs[0]).toEqual({ segment: 'list', label: 'List' });
-    expect(model.primaryTabs[1]?.segment).toBe('reviews');
+    expect(model.primaryTabs[1]?.segment).toBe('social');
   });
 });
 

@@ -29,7 +29,7 @@ export type ObjectSidebarMiniCardView = {
   imageSrc?: string | null;
 };
 
-/** Horizontal tabs under hero (Reviews, Gallery, …). */
+/** Horizontal tabs under hero (Social, Gallery, …). */
 export type ObjectPrimaryTabView = {
   segment: string;
   /** Display label from API or mock — not an i18n key. */
@@ -51,11 +51,11 @@ export type AuthoritySubType = OwnershipSubType;
 /** @deprecated Use {@link OWNERSHIP_SUB_VALUES} */
 export const AUTHORITY_SUB_VALUES = OWNERSHIP_SUB_VALUES;
 
-/** Posts / Threads / Activity row under Reviews. */
-export const REVIEWS_FEED_SUB_VALUES = ['posts', 'threads', 'activity'] as const;
-export type ReviewsFeedSubType = (typeof REVIEWS_FEED_SUB_VALUES)[number];
+/** Posts / Threads / Activity row under Social. */
+export const SOCIAL_FEED_SUB_VALUES = ['posts', 'threads', 'activity'] as const;
+export type SocialFeedSubType = (typeof SOCIAL_FEED_SUB_VALUES)[number];
 
-/** Posts / Threads / Activity row under Reviews (mock-only). */
+/** Posts / Threads / Activity row under Social (mock-only). */
 export type ObjectFeedSubTabView = {
   segment: string;
   /** Display label from API or mock — not an i18n key. */

@@ -55,7 +55,7 @@ export function ObjectPostsFeedList({
   if (items.length === 0) {
     return (
       <section className="rounded-card border border-border bg-surface/80 p-card-padding">
-        <p className="text-body-sm text-muted">{t('object_reviews_empty_posts')}</p>
+        <p className="text-body-sm text-muted">{t('object_social_empty_posts')}</p>
       </section>
     );
   }

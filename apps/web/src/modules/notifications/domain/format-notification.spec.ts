@@ -130,7 +130,7 @@ describe('resolveNotificationHref', () => {
         objectName: 'Shop',
       },
     });
-    expect(resolveNotificationHref(notification, formatted)).toBe('/object/obj-1/reviews/activity');
+    expect(resolveNotificationHref(notification, formatted)).toBe('/object/obj-1/social/activity');
   });
 });
 

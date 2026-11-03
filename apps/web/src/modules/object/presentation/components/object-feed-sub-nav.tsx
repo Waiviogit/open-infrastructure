@@ -17,7 +17,7 @@ function resolveFeedSubTabLabel(
     case 'threads':
       return t('threads');
     case 'activity':
-      return t('object_reviews_activity');
+      return t('object_social_activity');
     default:
       return tab.label;
   }

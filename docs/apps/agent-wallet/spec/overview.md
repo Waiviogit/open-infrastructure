@@ -75,7 +75,7 @@ CI publishes a **portable archive** (`agent-wallet-portable.tar.gz`: `main.js`, 
 | `hive_build_posting_authority_grant` | `ops`, `keyType: active`, `signerAccount`, `canSignLocally`, `warnings` — grant/revoke posting `account_auths` |
 | `hive_generate_account_keys` | `{ account, masterPassword, keys.{owner,active,posting,memo}.{private,public} }` for a free name — save the full object; no `account_create`, no `accounts.json` write |
 
-Leo object threads (Reviews > Threads) are **not** built by agent-wallet — see skill `hive-thread-create`: agents hand-build one `comment` op and broadcast via `wallet_broadcast`.
+Leo object threads (Social > Threads) are **not** built by agent-wallet — see skill `hive-thread-create`: agents hand-build one `comment` op and broadcast via `wallet_broadcast`.
 
 | `has_broadcast` | `requestId` |
 | `has_broadcast_status` | `signed` / `rejected` / `error` / `expired`, `transactionId` |

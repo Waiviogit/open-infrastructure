@@ -32,7 +32,7 @@ Covers all navigation behaviour on the object detail page (`/object/[object-id]`
 | `/object/:id?path=a,b` | User navigated nested stack `[a, b]` (not default SSR nested) | **Details** when Details tab exists; otherwise none |
 | `/object/:id/widget` | Widget embed (widget host objects) | Widget |
 | `/object/:id/list` | List catalog (list host objects) | List |
-| `/object/:id/reviews` | Reviews tab | Reviews |
+| `/object/:id/social` | Social tab (Posts / Threads / Activity) | Social |
 | `/object/:id/updates` | Updates feed | Updates |
 | `/object/:id/followers` | Followers list | Followers |
 | `/object/:id/ownership` | Ownership list | Ownership |
@@ -61,7 +61,7 @@ All `/object/:id/<tab>` paths are rewritten server-side to `/object/:id` with `?
 
 On every URL change (including browser back/forward), `ObjectPageClient` calls `resolvePrimarySegmentForObjectPage` in `apps/web/src/app/(app)/object/[object-id]/object-page-search.ts`:
 
-1. `resolvePrimarySegmentFromObjectUrl` — check `pathname` for `/object/:id/reviews|updates|followers|ownership|description|gallery|gallery/album/:name|category/:name|experts|related|similar|add-on`, then legacy `?tab=`.
+1. `resolvePrimarySegmentFromObjectUrl` — check `pathname` for `/object/:id/social|updates|followers|ownership|description|gallery|gallery/album/:name|category/:name|experts|related|similar|add-on`, then legacy `?tab=`.
 2. If that returns a segment, use it (explicit tab in URL).
 3. If `?path=` is present, use SSR default tab (`Details` when the object has a Details tab).
 4. Otherwise keep the SSR default tab from default landing (`initialPrimarySegment`) — e.g. **Details** on clean `/object/:id` for standard objects without requiring a path segment.
@@ -77,7 +77,7 @@ Implemented in `onPrimarySelect` in `apps/web/src/app/(app)/object/[object-id]/o
 | Tab | Router method | Target URL | Params cleared |
 |---|---|---|---|
 | `details` | `replace` | `/object/:id` | `?tab=`, `?sub=`, `?path=`, `sort`, `update_type`, `locale` |
-| `reviews` | `push` | `/object/:id/reviews` | `?path=`, `?sub=` |
+| `social` | `push` | `/object/:id/social` | `?path=`, `?sub=` |
 | `updates` | `replace` | `/object/:id/updates` | `?tab=`, `?sub=` |
 | `followers` | `replace` | `/object/:id/followers` | `?tab=`, `?sub=` |
 | `ownership` | `replace` | `/object/:id/ownership` (legacy `/authority` → same) | `?tab=` |
@@ -87,7 +87,7 @@ Implemented in `onPrimarySelect` in `apps/web/src/app/(app)/object/[object-id]/o
 | `list` | `replace` | `/object/:id/list` | `?tab=`, `?sub=`, `?path=`, `sort`, `update_type`, `locale` |
 | Other | `replace` | `/object/:id?tab=<seg>` | `?tab=`, `?sub=`, `sort`, `update_type`, `locale` |
 
-**History note:** `reviews` uses `router.push` so the menu landing remains reachable via browser back. All other tabs use `router.replace` (they do not add a history entry).
+**History note:** `social` uses `router.push` so the menu landing remains reachable via browser back. All other tabs use `router.replace` (they do not add a history entry).
 
 ---
 
@@ -100,7 +100,7 @@ activePrimarySegment === ''   → Menu landing (host types without Details tab):
 activePrimarySegment === 'details' → Details tab: nested menu catalog when present, else description + preview gallery
                                 Breadcrumbs visible when nestedStack.length > 0 or defaultNestedContent exists
                                 On mobile (< lg), standard objects show left-rail Details, reviews, and the view-mode right-rail lists instead of nested center content — see [page-shell.md](page-shell.md) § Mobile stacking
-activePrimarySegment === 'reviews' → Reviews column (Write-review prompt + sub-nav for `default` type)
+activePrimarySegment === 'social' → Social column (Write-a-post prompt + sub-nav for `default` type)
                                      No defaultNestedContent injected
 activePrimarySegment === 'widget'  → Widget embed (`ObjectWidgetContent`) for widget host objects
 activePrimarySegment === 'list'      → List catalog (`ObjectListContent`) with breadcrumbs + nested drill
@@ -115,17 +115,17 @@ When the URL has **no** `?tab=` and **no** `?path=`, SSR derives tab + center co
 |---|---|---|---|
 | `hostContent` | none (host types) or **Details** (when tab exists) | Host `listItems` / `pageContent` / type stub | clean `/object/:id` |
 | `nestedInHost` | **Details** (standard objects) or none (host types) | SSR `defaultNestedContent` for `targetObjectId` | clean (no `?path=`) |
-| `primaryTab` (`reviews`) | **Details** (standard objects) or Reviews (legacy) | Description body or nested menu; Reviews at `/reviews` | clean `/object/:id` |
+| `primaryTab` (`social`) | **Details** (standard objects) or Social (legacy) | Description body or nested menu; Social at `/social` | clean `/object/:id` |
 | `primaryTab` (`description`) | **Details** (standard objects) or Description | Description + gallery interleave | clean `/object/:id` |
-| `routeStub` (`blog`, `newsFilter`) | **Details** (standard objects) or Reviews (v1 fallback) | Nested menu or description; Reviews at `/reviews` | clean — full routes **TODO** |
+| `routeStub` (`blog`, `newsFilter`) | **Details** (standard objects) or Social (v1 fallback) | Nested menu or description; Social at `/social` | clean — full routes **TODO** |
 
 Priority (matches processor):
 
 1. `sortCustom.include[0]` → menu / listItem / blog / newsFilter target
 2. Host type (`list`, `page`, `widget`, `newsfeed`, `shop`, `webpage`, `map`, `group`, `html`) → `hostContent`
 3. Business-like types (`business`, `restaurant`, `place`, …) → `getDefaultLink` chain: first `menuItem`, then legacy `listItem`, then `newsFilter` / `blog`, else reviews
-4. When step 3 yields Reviews and `posts_count === 0` and description text or gallery exists → **Description** (legacy waivio [#5205](https://github.com/Waiviogit/waivio/issues/5205))
-5. Other types → `primaryTab: reviews`
+4. When step 3 yields Social and `posts_count === 0` and description text or gallery exists → **Description** (legacy waivio [#5205](https://github.com/Waiviogit/waivio/issues/5205))
+5. Other types → `primaryTab: social`
 
 Explicit `?tab=` or `?path=` in the URL **overrides** default landing.
 
@@ -268,10 +268,10 @@ Menu order follows `sortCustom.include`, then remaining `menuItem` rows (`sortLi
 |---|---|---|
 | `defaultShowLink` API field | Computed by object-processor, used by cards/links | **Not exposed** — same logic in `resolveObjectDefaultLanding` |
 | Business landing with nested menu | Processor URL `/menu#target`; UI sometimes showed Reviews on bare URL | `nestedInHost` + clean URL + menu landing tab state |
-| Business landing with no menu | Reviews tab + posts feed | `primaryTab: reviews` on clean URL |
+| Business landing with no menu | Social tab + posts feed | `primaryTab: social` on clean URL |
 | Nested menu in host | `#hash` on `/menu`, `/page`, … | `?path=` stack when user navigates; default nested uses SSR only (clean URL) |
-| List host landing tab | List tab active | **List** tab prepended before Reviews; default landing `primaryTab: list`; center catalog only (no left-rail listItem menu fallback) |
-| Widget host landing tab | Widget tab active | **Widget** tab prepended before Reviews; default landing `primaryTab: widget` |
+| List host landing tab | List tab active | **List** tab prepended before Social; default landing `primaryTab: list`; center catalog only (no left-rail listItem menu fallback) |
+| Widget host landing tab | Widget tab active | **Widget** tab prepended before Social; default landing `primaryTab: widget` |
 | `blog` / `newsFilter` default | Dedicated routes | `routeStub` → reviews fallback until routes exist |
 
 ---
@@ -300,8 +300,8 @@ Menu order follows `sortCustom.include`, then remaining `menuItem` rows (`sortLi
 ## Verification
 
 - Manual: open `/object/:id`, drill into nested list items, use breadcrumbs and browser back/forward — tab highlight and center column must match URL at each step.
-- Manual: select Reviews tab, press browser back — must return to menu landing with no tab highlighted.
-- Manual: business with first in-host menu item — center shows nested list on clean URL; business with only external menu target — Reviews tab + reviews content.
+- Manual: select Social tab, press browser back — must return to menu landing with no tab highlighted.
+- Manual: business with first in-host menu item — center shows nested list on clean URL; business with only external menu target — Social tab + Social content.
 - Manual: object with gallery items — left rail carousel loops with prev/next; `/object/:id/description` shows interleaved text + photos.
 - Unit: `pnpm nx test web --testPathPatterns=build-description-page-blocks`
 - Unit: `pnpm nx test query-api --testPathPatterns=build-gallery-albums`
