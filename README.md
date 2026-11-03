@@ -1,4 +1,4 @@
-# Open Data Layer
+# Open Infrastructure
 
 **Documentation:** [docs/](docs/README.md) — getting started, architecture, standards, operations, per-app guides.
 
@@ -13,7 +13,7 @@ The [`scripts/setup-vps.sh`](scripts/setup-vps.sh) script installs Docker and th
 **Production** (uses [`docker-compose.production.apps.yml`](docker-compose.production.apps.yml) + [`docker-compose.production.infra.yml`](docker-compose.production.infra.yml); images tagged `:production`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Waiviogit/open-data-layer/master/scripts/setup-vps.sh | \
+curl -fsSL https://raw.githubusercontent.com/Waiviogit/open-infrastructure/master/scripts/setup-vps.sh | \
   DEPLOY_ENV=production bash
 ```
 

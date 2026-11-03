@@ -4,23 +4,23 @@
 #
 # Usage:
 #   # staging
-#   curl -fsSL https://raw.githubusercontent.com/Waiviogit/open-data-layer/master/scripts/setup-vps.sh | \
+#   curl -fsSL https://raw.githubusercontent.com/Waiviogit/open-infrastructure/master/scripts/setup-vps.sh | \
 #     DEPLOY_ENV=staging bash
 #
 #   # production
-#   curl -fsSL https://raw.githubusercontent.com/Waiviogit/open-data-layer/master/scripts/setup-vps.sh | \
+#   curl -fsSL https://raw.githubusercontent.com/Waiviogit/open-infrastructure/master/scripts/setup-vps.sh | \
 #     DEPLOY_ENV=production bash
 #
 # Env overrides:
 #   DEPLOY_ENV       staging | production   (default: staging)
-#   REPO_URL         git repo to clone       (default: github.com/Waiviogit/open-data-layer)
+#   REPO_URL         git repo to clone       (default: github.com/Waiviogit/open-infrastructure)
 #   INSTALL_DIR      where to clone          (default: /opt/open-data-layer)
 #   (no GHCR login needed — images are public)
 # =============================================================================
 set -euo pipefail
 
 DEPLOY_ENV="${DEPLOY_ENV:-staging}"
-REPO_URL="${REPO_URL:-https://github.com/Waiviogit/open-data-layer.git}"
+REPO_URL="${REPO_URL:-https://github.com/Waiviogit/open-infrastructure.git}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/open-data-layer}"
 COMPOSE_INFRA_FILE="docker-compose.${DEPLOY_ENV}.infra.yml"
 COMPOSE_APPS_FILE="docker-compose.${DEPLOY_ENV}.apps.yml"

@@ -18,7 +18,7 @@ Local NestJS app: loads Hive accounts from a registry (`accounts.json` or env), 
 ## Agent first visit
 
 1. Skill: [hive-has-agent-wallet](https://github.com/Waiviogit/skills/blob/master/odl/hive-has-agent-wallet/SKILL.md) (`npx skills add https://github.com/Waiviogit/skills`)
-2. Download `agent-wallet.js` from [GitHub Releases](https://github.com/Waiviogit/open-data-layer/releases) (or `pnpm nx serve agent-wallet` from monorepo checkout)
+2. Download `agent-wallet.js` from [GitHub Releases](https://github.com/Waiviogit/open-infrastructure/releases) (or `pnpm nx serve agent-wallet` from monorepo checkout)
 3. Read bearer token from `~/.odl/agent-wallet.token`
 4. Register agent-wallet as an MCP server — [mcp-client-setup.md](mcp-client-setup.md) (preferred). Raw JSON-RPC is the fallback — [hive-has-agent-wallet skill](https://github.com/Waiviogit/skills/blob/master/odl/hive-has-agent-wallet/SKILL.md).
 
