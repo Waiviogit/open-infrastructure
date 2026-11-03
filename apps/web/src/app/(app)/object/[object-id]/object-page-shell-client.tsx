@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -66,6 +66,7 @@ import {
 } from './object-page-navigation';
 import { fetchTagApprovalStatsAction } from './tag-approval.actions';
 import { ObjectPageShellProvider } from './object-page-shell-context';
+import { useObjectScopedLocation } from './use-object-scoped-location';
 
 function tagSectionsFingerprintFromBlocks(blocks: readonly ObjectLeftRailBlock[]): string {
   for (const block of blocks) {
@@ -101,9 +102,8 @@ export function ObjectPageShellClient({
   mobileSocialSlot,
   children,
 }: ObjectPageShellClientProps) {
-  const pathname = usePathname();
+  const { pathname, searchParams } = useObjectScopedLocation(model.objectId);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { t } = useI18n();
   const effectiveNav = useEffectiveNav();
   const { navigateInstant, isNavigating } = useInstantNavigation();

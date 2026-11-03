@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react';
 import { useMemo, useCallback } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
 
 import { OBJECT_TYPE_REGISTRY } from '@opden-data-layer/core/object-type-registry';
 import type {
@@ -46,6 +45,7 @@ import { revalidateObjectAfterBroadcast } from '@/shared/infrastructure/query/re
 import { useObjectPageShell } from './object-page-shell-context';
 import { resolveCategoryNameForObjectPage, resolveFieldReferenceTypeForObjectPage, resolveReviewsFeedSubFromObjectUrl } from './object-page-search';
 import { buildObjectReviewsSubHref } from './object-page-navigation';
+import { useObjectScopedLocation } from './use-object-scoped-location';
 import { useInstantNavigation } from '@/shared/presentation';
 import {
   isAllowedFieldReferenceObjectType,
@@ -119,8 +119,7 @@ export function ObjectPageTabPane({
     onOpenGalleryPhoto,
     isEditMode,
   } = useObjectPageShell();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { pathname, searchParams } = useObjectScopedLocation(model.objectId);
   const { navigateInstant } = useInstantNavigation();
   const categoryNameFromUrl = useMemo(
     () => resolveCategoryNameForObjectPage(model.objectId, pathname, searchParams),

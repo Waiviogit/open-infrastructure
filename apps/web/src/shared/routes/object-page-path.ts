@@ -14,3 +14,18 @@ export function isFullPageObjectPath(pathname: string | null | undefined): boole
   }
   return pathname === '/object' || pathname.startsWith('/object/');
 }
+
+/**
+ * True when `pathname` belongs to the given object's page (`/object/:id` or any sub-route).
+ * False for intercepted overlays (e.g. post modal at `/@account/permlink`) rendered over the object.
+ */
+export function isPathnameWithinObjectPage(
+  objectId: string,
+  pathname: string | null | undefined,
+): boolean {
+  if (pathname == null || pathname === '') {
+    return false;
+  }
+  const base = objectPagePath(objectId);
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
