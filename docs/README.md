@@ -24,7 +24,7 @@ Entry point for Open Data Layer documentation.
 3. Open `odl/knowledge-api-routing/SKILL.md` or `get_file` that path.
 4. `list_files({ type: "skill" })` — catalog playbooks with `description` one-liners.
 5. `get_context({ topic: "<task>" })` before implementing.
-6. `.agents/skills/` is **not** indexed — ODL playbooks live in [Waiviogit/skills](https://github.com/Waiviogit/skills).
+6. `.claude/skills/` (repo agent tooling) is **not** indexed — ODL playbooks live in [Waiviogit/skills](https://github.com/Waiviogit/skills).
 
 ## Quick links
 

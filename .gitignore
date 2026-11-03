@@ -80,3 +80,4 @@ scripts/.backfill-reblog-timestamps.checkpoint.json
 # GeoLite MMDB (geoipupdate); keep data/geoip/.gitkeep
 /data/geoip/*.mmdb
 /data/geoip/.geoipupdate.lock
+.claude/settings.local.json

@@ -278,6 +278,20 @@ Full agent testing rules: [`docs/standards/testing-rules.md`](docs/standards/tes
 - Prefer latest official docs: NestJS v11 (https://docs.nestjs.com), Zod (https://zod.dev), Kysely (https://kysely.dev/docs), dhive (https://github.com/openhive-network/dhive).
 - Use context7 MCP when available. Do not rely on outdated blog posts.
 
+### Agent skills
+
+Repo skills have one home: **`.claude/skills/<name>/SKILL.md`** (committed, plain files — no symlinks or junctions). Claude Code reads it natively; Cursor loads it through its Claude-compatibility path.
+
+| Skills | Owner | Where | How to update |
+|--------|-------|-------|---------------|
+| Repo skills (`compose-test-cases`, `fix-vulnerabilities`, …) | this repo | `.claude/skills/` | Edit `SKILL.md` directly |
+| Next.js (`next-*`) | `vercel-labs/next-skills` (see `skills-lock.json`) | `.claude/skills/` | `npx skills add vercel-labs/next-skills -a claude-code --copy`; never install into `.agents/skills/` |
+| Nx (`nx-*`, `monitor-ci`, `link-workspace-packages`) | Nx | Claude: plugin `nx@nx-claude-plugins` (`.claude/settings.json`); Cursor: `.cursor/skills/`, `.cursor/commands/monitor-ci.md`, `.cursor/agents/` | `pnpm nx configure-ai-agents --agents claude cursor`; do not edit or move these files by hand |
+
+- Add new repo skills and Cursor-style commands as skills in `.claude/skills/` — not in `.cursor/commands/`, `.cursor/skills/` or `.agents/skills/`.
+- Do not create a second copy of a skill under another agent folder: Cursor reads `.agents/skills/`, `.cursor/skills/` and `.claude/skills/`, so a copy shows up twice.
+- ODL domain playbooks are a separate catalog ([Waiviogit/skills](https://github.com/Waiviogit/skills)); see [`docs/standards/docs-standards.md`](docs/standards/docs-standards.md).
+
 ## Project documentation
 
 Full standards: [`docs/standards/docs-standards.md`](docs/standards/docs-standards.md), [`docs/standards/testing-rules.md`](docs/standards/testing-rules.md).

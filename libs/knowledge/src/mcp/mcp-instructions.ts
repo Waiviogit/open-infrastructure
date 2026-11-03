@@ -35,4 +35,4 @@ Key paths:
 
 Chain payloads: use get_object_create_playbook (before create), get_object_type, and get_update_schema — not search_knowledge.
 
-Not indexed: .agents/skills/ (Cursor runtime only).`;
+Not indexed: .claude/skills/ (repo agent tooling for Claude Code and Cursor).`;

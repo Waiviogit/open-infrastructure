@@ -196,7 +196,7 @@ Reindex after doc changes: `pnpm knowledge:reindex` (local dev). Deployed **know
 
 ## Skill files ([Waiviogit/skills](https://github.com/Waiviogit/skills))
 
-Domain procedural playbooks for agents live in a separate catalog. **Not** the same as `.agents/skills/` — that folder is Cursor runtime tooling (Next.js, Nx).
+Domain procedural playbooks for agents live in a separate catalog. **Not** the same as `.claude/skills/` — that folder is repo agent tooling for Claude Code and Cursor (see "Agent skills" in [`AGENTS.md`](../../AGENTS.md)).
 
 Install:
 
@@ -220,7 +220,7 @@ Do not mix these into one doc — agents search by intent and must land on the r
 ## Agent expectations
 
 - New docs should include frontmatter when metadata is not obvious from the path.
-- New domain procedures belong in [Waiviogit/skills](https://github.com/Waiviogit/skills) (not `.agents/skills/`).
+- New domain procedures belong in [Waiviogit/skills](https://github.com/Waiviogit/skills) (not `.claude/skills/`).
 - If you implement a feature and find no spec -> add a spec in `docs/spec/` or `docs/apps/<app>/spec/`.
 - If a spec exists and code diverges -> update the spec or mark divergence: `> **TODO: spec-code divergence**`.
 - If you regenerate reference docs from registries, treat the **code** as source of truth; generated output is illustrative.

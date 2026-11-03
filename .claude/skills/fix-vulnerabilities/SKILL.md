@@ -1,3 +1,9 @@
+---
+name: fix-vulnerabilities
+description: Remediate dependency vulnerabilities in this Nx + pnpm monorepo using OSV Scanner results (scan, triage direct vs transitive, pnpm add / pnpm.overrides, time-bounded suppressions in osv-scanner.toml, verify with pnpm verify:deps). Use when the user asks to fix vulnerabilities, CVEs, OSV findings or security advisories in dependencies.
+argument-hint: "[e.g. scan only | no suppressions | skip verify:deps]"
+---
+
 # Fix OSV Vulnerabilities
 
 Remediate dependency vulnerabilities in this Nx + pnpm monorepo using OSV Scanner results.
@@ -13,6 +19,8 @@ Remediate dependency vulnerabilities in this Nx + pnpm monorepo using OSV Scanne
 ## User Instructions
 
 $ARGUMENTS
+
+If the line above is empty or shows a literal placeholder, use the instructions the user gave with the request.
 
 **Important:** Respect user instructions over default behaviors below (e.g. "scan only", "no suppressions", "skip verify:deps").
 

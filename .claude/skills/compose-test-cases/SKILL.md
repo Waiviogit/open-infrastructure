@@ -1,3 +1,9 @@
+---
+name: compose-test-cases
+description: Derive a prioritized test case catalog (P0/P1/P2, unit/integration/e2e) from an approved feature plan before implementation and append it as a "## Test cases" section to the plan file. Use when the user asks to compose, design or list test cases for an approved plan. Does not write production code or tests.
+argument-hint: "[plan path or extra instructions]"
+---
+
 # Compose Test Cases
 
 Derive a test case catalog from an **approved feature plan** before implementation. Do not write production code or implement tests — only analyze the plan and compose test cases.
@@ -6,11 +12,13 @@ Derive a test case catalog from an **approved feature plan** before implementati
 
 - **Testing rules:** `docs/standards/testing-rules.md` — read fully before composing.
 - **Repo testing mechanics:** `AGENTS.md` § Testing (Jest, Nx, E2E layout, local Postgres isolation).
-- **Plan files:** `.cursor/plans/` (gitignored) — append the `## Test cases` section to the plan file.
+- **Plan files:** the plan file approved in the current session (Claude Code plan mode or Cursor plan mode), or `.cursor/plans/` (gitignored) — append the `## Test cases` section to that plan file.
 
 ## User Instructions
 
 $ARGUMENTS
+
+If the line above is empty or shows a literal placeholder, use the instructions the user gave with the request.
 
 **Important:** Respect user instructions over default behaviors below (e.g. "chat only", "skip e2e", specific plan path).
 
@@ -26,9 +34,10 @@ $ARGUMENTS
 
 Search in order:
 
-1. Path from `$ARGUMENTS` (if the user provided one).
-2. Plan file from the current session (after CreatePlan / plan mode in this conversation).
-3. If no plan is found → **stop** and ask for a path or the plan content. Do not invent scope.
+1. Path from the user instructions (if the user provided one).
+2. Plan file from the current session (after plan mode in this conversation).
+3. Most recent matching plan in `.cursor/plans/`, confirmed with the user.
+4. If no plan is found → **stop** and ask for a path or the plan content. Do not invent scope.
 
 ### 2. Read rules and related context
 
@@ -109,7 +118,7 @@ Use this structure:
 ```markdown
 ## Test cases
 
-_Composed by `/compose-test-cases`. Rules: [testing-rules.md](../../docs/standards/testing-rules.md)._
+_Composed by `/compose-test-cases`. Rules: `docs/standards/testing-rules.md`._
 
 ### Identified contracts and invariants
 
