@@ -22,12 +22,14 @@ describe('GetObjectUpdatesFeedEndpoint.executeByUpdateId', () => {
     get: jest.fn(),
   };
 
+  const accounts = { findByNames: jest.fn().mockResolvedValue([]) };
   const endpoint = new GetObjectUpdatesFeedEndpoint(
     objectsCore as never,
     updatesFeedRepo as never,
     objectOwnershipRepo as never,
     governanceResolver as never,
     config as never,
+    accounts as never,
   );
 
   const joinRow = {
@@ -102,6 +104,7 @@ describe('GetObjectUpdatesFeedEndpoint.executeByUpdateId', () => {
       creator: 'alice',
       value_text: 'Shop',
       transaction_id: 'tx1',
+      creator_avatar_url: null,
       rank_score: null,
       viewer_rank: null,
     });
@@ -109,6 +112,28 @@ describe('GetObjectUpdatesFeedEndpoint.executeByUpdateId', () => {
       'obj1',
       'u1',
     );
+  });
+
+  it('resolves creator_avatar_url from the creator account metadata', async () => {
+    objectsCore.findByObjectIdForPage.mockResolvedValue({ object_id: 'obj1' });
+    updatesFeedRepo.findJoinRowByObjectAndUpdateId.mockResolvedValue(joinRow);
+    accounts.findByNames.mockResolvedValueOnce([
+      {
+        name: 'alice',
+        posting_json_metadata: JSON.stringify({
+          profile: { profile_image: 'https://cdn.example/alice.png' },
+        }),
+        json_metadata: null,
+        profile_image: null,
+      },
+    ]);
+
+    const result = await endpoint.executeByUpdateId({
+      objectId: 'obj1',
+      updateId: 'u1',
+    });
+
+    expect(result?.creator_avatar_url).toBe('https://cdn.example/alice.png');
   });
 
   it('maps rank_score and viewer_rank from projection', async () => {
@@ -152,12 +177,14 @@ describe('GetObjectUpdatesFeedEndpoint.execute recency', () => {
   const governanceResolver = { resolveMergedForObjectView: jest.fn() };
   const config = { get: jest.fn() };
 
+  const accounts = { findByNames: jest.fn().mockResolvedValue([]) };
   const endpoint = new GetObjectUpdatesFeedEndpoint(
     objectsCore as never,
     updatesFeedRepo as never,
     objectOwnershipRepo as never,
     governanceResolver as never,
     config as never,
+    accounts as never,
   );
 
   const joinRow = {
@@ -233,12 +260,14 @@ describe('GetObjectUpdatesFeedEndpoint.execute approval', () => {
   const governanceResolver = { resolveMergedForObjectView: jest.fn() };
   const config = { get: jest.fn() };
 
+  const accounts = { findByNames: jest.fn().mockResolvedValue([]) };
   const endpoint = new GetObjectUpdatesFeedEndpoint(
     objectsCore as never,
     updatesFeedRepo as never,
     objectOwnershipRepo as never,
     governanceResolver as never,
     config as never,
+    accounts as never,
   );
 
   const joinRow = {

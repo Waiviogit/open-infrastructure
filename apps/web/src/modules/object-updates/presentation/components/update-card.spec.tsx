@@ -94,6 +94,7 @@ function galleryItem(overrides: Partial<ObjectUpdateFeedItemView> = {}): ObjectU
     object_id: 'obj1',
     update_type: UPDATE_TYPES.IMAGE_GALLERY_ITEM,
     creator: 'alice',
+    creator_avatar_url: null,
     creator_wobjects_weight: 10,
     locale: null,
     created_at_unix: 1_700_000_000,

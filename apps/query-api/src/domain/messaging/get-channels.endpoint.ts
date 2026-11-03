@@ -11,7 +11,7 @@ import {
   buildDmPeer,
   memberAccounts,
 } from './channel-projection';
-import { loadAccountAvatarUrls } from './load-account-avatar-urls';
+import { loadAccountAvatarUrls } from '../users/load-account-avatar-urls';
 
 export type ChannelListItemDto = {
   channel_id: string;

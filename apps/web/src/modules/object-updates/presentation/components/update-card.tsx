@@ -45,9 +45,6 @@ import { UpdateRawJsonToggle } from './update-raw-json-toggle';
 import { UpdateVoteControls } from './update-vote-controls';
 import { GalleryRankTriggerButton } from '@/modules/object/presentation/components/gallery-rank-trigger-button';
 
-const hiveAvatarUrl = (creator: string): string =>
-  `https://images.hive.blog/u/${encodeURIComponent(creator)}/avatar`;
-
 export type UpdateCardProps = {
   item: ObjectUpdateFeedItemView;
   showLocaleBadge: boolean;
@@ -173,7 +170,7 @@ export function UpdateCard({
         >
           <UserAvatar
             username={item.creator}
-            avatarUrl={hiveAvatarUrl(item.creator)}
+            avatarUrl={item.creator_avatar_url}
             size={40}
             displayName={item.creator}
           />

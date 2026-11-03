@@ -38,6 +38,8 @@ export type ObjectUpdateFeedItemDto = {
   object_id: string;
   update_type: string;
   creator: string;
+  /** Creator avatar from `avatarUrlFromJoinedAccountRow`; null when the account has none. */
+  creator_avatar_url: string | null;
   creator_wobjects_weight: number;
   locale: string | null;
   created_at_unix: number;

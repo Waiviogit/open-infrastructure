@@ -8,9 +8,15 @@ import {
   computeCuratorSet,
   resolveUpdateValidity,
 } from '@opden-data-layer/objects-domain';
-import { ObjectOwnershipRepository, ObjectsCoreRepository, UpdatesFeedRepository } from '../../repositories';
+import {
+  AccountsCurrentRepository,
+  ObjectOwnershipRepository,
+  ObjectsCoreRepository,
+  UpdatesFeedRepository,
+} from '../../repositories';
 import { GovernanceResolverService } from '../governance';
 import { feedItemImagePreviewUrls } from '../object-projection/image-display-url';
+import { loadAccountAvatarUrls } from '../users/load-account-avatar-urls';
 import {
   decodeUpdatesCursor,
   encodeUpdatesCursor,
@@ -45,6 +51,7 @@ export class GetObjectUpdatesFeedEndpoint {
     private readonly objectOwnershipRepo: ObjectOwnershipRepository,
     private readonly governanceResolver: GovernanceResolverService,
     private readonly config: ConfigService,
+    private readonly accounts: AccountsCurrentRepository,
   ) {}
 
   async execute(input: GetObjectUpdatesFeedInput): Promise<ObjectUpdatesFeedResponseDto | null> {
@@ -210,6 +217,7 @@ export class GetObjectUpdatesFeedEndpoint {
     const pageSlice = hasMore ? slice.slice(0, limit) : slice;
 
     const curatorSet = computeCuratorSet(ownerships, governance);
+    const creatorAvatarUrls = await this.loadCreatorAvatarUrls(pageSlice.map((p) => p.jr));
     const items: ObjectUpdateFeedItemDto[] = pageSlice.map((p) =>
       this.toDto(
         p.jr,
@@ -220,6 +228,7 @@ export class GetObjectUpdatesFeedEndpoint {
         curatorSet,
         voterWaivPowers,
         input.viewerAccount,
+        creatorAvatarUrls,
         rankVoteProjection,
       ),
     );
@@ -246,13 +255,14 @@ export class GetObjectUpdatesFeedEndpoint {
     if (updateIds.length === 0) {
       return [];
     }
-    const [votes, rankVoteProjection] = await Promise.all([
+    const [votes, rankVoteProjection, creatorAvatarUrls] = await Promise.all([
       this.updatesFeedRepo.findValidityVotesForObjectAndUpdates(objectId, updateIds),
       this.updatesFeedRepo.findRankVoteProjectionForUpdates(
         objectId,
         updateIds,
         viewerAccount,
       ),
+      this.loadCreatorAvatarUrls(pageRows),
     ]);
     const voterNames = [...new Set(votes.map((v) => v.voter))];
     const powersMap = await this.updatesFeedRepo.findWaivPowersByAccounts(voterNames);
@@ -269,8 +279,18 @@ export class GetObjectUpdatesFeedEndpoint {
         curatorSet,
         voterWaivPowers,
         viewerAccount,
+        creatorAvatarUrls,
         rankVoteProjection,
       ),
+    );
+  }
+
+  private loadCreatorAvatarUrls(
+    joinRows: ReadonlyArray<{ row: { creator: string } }>,
+  ): Promise<Map<string, string | null>> {
+    return loadAccountAvatarUrls(
+      this.accounts,
+      joinRows.map((jr) => jr.row.creator),
     );
   }
 
@@ -318,6 +338,7 @@ export class GetObjectUpdatesFeedEndpoint {
     curatorSet: Set<string>,
     voterWaivPowers: VoterWaivPowerMap,
     viewerAccount: string | undefined,
+    creatorAvatarUrls: ReadonlyMap<string, string | null>,
     rankVoteProjection: RankVoteProjection = emptyRankVoteProjection(),
   ): ObjectUpdateFeedItemDto {
     const updateVotes = allVotes.filter((v) => v.update_id === jr.row.update_id);
@@ -371,6 +392,7 @@ export class GetObjectUpdatesFeedEndpoint {
       object_id: jr.row.object_id,
       update_type: jr.row.update_type,
       creator: jr.row.creator,
+      creator_avatar_url: creatorAvatarUrls.get(jr.row.creator.trim()) ?? null,
       creator_wobjects_weight: jr.creator_wobjects_weight,
       locale: jr.row.locale,
       created_at_unix: jr.row.created_at_unix,

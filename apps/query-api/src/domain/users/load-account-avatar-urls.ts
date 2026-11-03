@@ -1,5 +1,5 @@
 import type { AccountsCurrentRepository } from '../../repositories/accounts-current.repository';
-import { avatarUrlFromJoinedAccountRow } from '../users/resolve-avatar-url-from-hive-metadata';
+import { avatarUrlFromJoinedAccountRow } from './resolve-avatar-url-from-hive-metadata';
 
 export async function loadAccountAvatarUrls(
   accounts: AccountsCurrentRepository,

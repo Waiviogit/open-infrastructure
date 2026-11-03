@@ -3,7 +3,7 @@ import { Channel, ChannelMember } from '@opden-data-layer/odl-db-types';
 
 import { AccountsCurrentRepository } from '../../repositories/accounts-current.repository';
 import { MessagingRepository } from '../../repositories/messaging.repository';
-import { loadAccountAvatarUrls } from './load-account-avatar-urls';
+import { loadAccountAvatarUrls } from '../users/load-account-avatar-urls';
 import {
   buildDmListTitle,
   buildDmPeer,

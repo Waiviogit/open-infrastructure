@@ -49,9 +49,6 @@ import { useGalleryViewerGestures } from '../hooks/use-gallery-viewer-gestures';
 import { GalleryMediaItem, isGalleryVideoUrl } from './gallery-media-item';
 import { GalleryRankTriggerButton } from './gallery-rank-trigger-button';
 
-const hiveAvatarUrl = (creator: string): string =>
-  `https://images.hive.blog/u/${encodeURIComponent(creator)}/avatar`;
-
 export type ObjectGalleryViewerProps = {
   objectId: string;
   objectName: string;
@@ -457,7 +454,7 @@ export function ObjectGalleryViewer({
             >
               <UserAvatar
                 username={currentStat.creator}
-                avatarUrl={hiveAvatarUrl(currentStat.creator)}
+                avatarUrl={currentStat.creatorAvatarUrl ?? null}
                 size={32}
                 displayName={currentStat.creator}
               />

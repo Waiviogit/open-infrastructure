@@ -19,6 +19,8 @@ export const objectUpdateFeedItemDtoSchema = z.object({
   object_id: z.string(),
   update_type: z.string(),
   creator: z.string(),
+  /** Resolved by query-api from the creator's Hive profile; null → `UserAvatar` Hive CDN fallback. */
+  creator_avatar_url: z.string().nullable().default(null),
   creator_wobjects_weight: num(),
   locale: z.string().nullable(),
   created_at_unix: num().pipe(z.number().int()),

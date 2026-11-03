@@ -14,6 +14,8 @@ export type GalleryApprovalStat = {
   updateId?: string;
   /** Update creator username (present when stat comes from the updates index). */
   creator?: string;
+  /** Creator avatar resolved by query-api (present when stat comes from the updates index). */
+  creatorAvatarUrl?: string | null;
 };
 
 export type GalleryApprovalStatsIndex = {

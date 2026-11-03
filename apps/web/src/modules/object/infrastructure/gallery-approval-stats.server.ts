@@ -97,6 +97,7 @@ async function mergeUpdateTypeIntoIndex(
         decisive_privileged_vote: item.decisive_privileged_vote,
         updateId: item.update_id,
         creator: item.creator,
+        creatorAvatarUrl: item.creator_avatar_url,
       };
       indexGalleryApprovalStat(
         byUpdateId,
