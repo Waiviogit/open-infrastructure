@@ -81,3 +81,6 @@ scripts/.backfill-reblog-timestamps.checkpoint.json
 /data/geoip/*.mmdb
 /data/geoip/.geoipupdate.lock
 .claude/settings.local.json
+
+# Claude Code plan-mode drafts (local only)
+.claude/plans/
