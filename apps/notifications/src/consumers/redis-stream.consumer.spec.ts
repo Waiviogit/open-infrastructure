@@ -160,6 +160,25 @@ describe('RedisStreamNotificationConsumer', () => {
     );
   });
 
+  it('drainOwnPending acks a trimmed pending entry and still routes the rest', async () => {
+    (redis.xReadGroup as jest.Mock)
+      .mockResolvedValueOnce([
+        { id: '8-0', fields: {} },
+        entry('8-1', trxProcessed),
+      ])
+      .mockResolvedValueOnce([]);
+
+    await drainOwnPending(consumer);
+
+    expect(router.routeBatch).toHaveBeenCalledWith([trxProcessed]);
+    expect(redis.xAck).toHaveBeenCalledWith(
+      NOTIFICATION_STREAM_KEY,
+      NOTIFICATION_CONSUMER_GROUP,
+      '8-0',
+      '8-1',
+    );
+  });
+
   it('drainOwnPending acks recovered pending entries', async () => {
     (redis.xReadGroup as jest.Mock)
       .mockResolvedValueOnce([entry('9-0', trxProcessed)])

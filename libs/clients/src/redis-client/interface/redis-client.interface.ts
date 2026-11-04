@@ -12,7 +12,10 @@ export interface RedisPipelineInterface {
   exec(): Promise<void>;
 }
 
-/** One stream entry from XREADGROUP: id + field map */
+/**
+ * One stream entry from XREADGROUP / XAUTOCLAIM / XCLAIM: id + field map.
+ * `fields` is empty for a pending entry already trimmed from the stream; callers should ack it.
+ */
 export interface RedisStreamEntry {
   id: string;
   fields: Record<string, string>;

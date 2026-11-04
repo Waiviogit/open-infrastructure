@@ -9,6 +9,7 @@ import {
 import { parseRedisUri } from './parse-redis-uri';
 import { REDIS_MODULE_OPTIONS } from './redis-client.options';
 import type { RedisModuleOptions } from './redis-client.options';
+import { toStreamEntries } from './stream-entries';
 
 type NativePipeline = ChainableCommander;
 
@@ -257,22 +258,15 @@ class RedisClientWrapper implements RedisClientInterface {
     }
     args.push('STREAMS', ...keys, ...ids);
 
-    const raw = (await this.client.call('XREADGROUP', ...args)) as
-      | null
-      | [string, [string, string[]][]][];
-
-    if (!raw) {
+    const raw: unknown = await this.client.call('XREADGROUP', ...args);
+    if (!Array.isArray(raw)) {
       return [];
     }
 
     const out: RedisStreamEntry[] = [];
-    for (const [, entries] of raw) {
-      for (const [id, fieldList] of entries) {
-        const fields: Record<string, string> = {};
-        for (let i = 0; i < fieldList.length; i += 2) {
-          fields[fieldList[i]] = fieldList[i + 1];
-        }
-        out.push({ id, fields });
+    for (const stream of raw) {
+      if (Array.isArray(stream)) {
+        out.push(...toStreamEntries(stream[1]));
       }
     }
     return out;
@@ -297,25 +291,13 @@ class RedisClientWrapper implements RedisClientInterface {
       args.push('COUNT', count);
     }
 
-    const raw = (await this.client.call('XAUTOCLAIM', ...args)) as
-      | null
-      | [string, [string, string[]][]];
-
-    if (!raw) {
+    const raw: unknown = await this.client.call('XAUTOCLAIM', ...args);
+    if (!Array.isArray(raw)) {
       return { nextStart: start, entries: [] };
     }
 
-    const nextStart = raw[0];
-    const entryList = raw[1] ?? [];
-    const out: RedisStreamEntry[] = [];
-    for (const [id, fieldList] of entryList) {
-      const fields: Record<string, string> = {};
-      for (let i = 0; i < fieldList.length; i += 2) {
-        fields[fieldList[i]] = fieldList[i + 1];
-      }
-      out.push({ id, fields });
-    }
-    return { nextStart, entries: out };
+    const nextStart = typeof raw[0] === 'string' ? raw[0] : start;
+    return { nextStart, entries: toStreamEntries(raw[1]) };
   }
 
   async xPending(
@@ -364,28 +346,15 @@ class RedisClientWrapper implements RedisClientInterface {
       return [];
     }
 
-    const raw = (await this.client.call(
+    const raw: unknown = await this.client.call(
       'XCLAIM',
       stream,
       group,
       consumer,
       minIdleMs,
       ...ids,
-    )) as null | [string, string[]][];
-
-    if (!raw || raw.length === 0) {
-      return [];
-    }
-
-    const out: RedisStreamEntry[] = [];
-    for (const [id, fieldList] of raw) {
-      const fields: Record<string, string> = {};
-      for (let i = 0; i < fieldList.length; i += 2) {
-        fields[fieldList[i]] = fieldList[i + 1];
-      }
-      out.push({ id, fields });
-    }
-    return out;
+    );
+    return toStreamEntries(raw);
   }
 
   async xAck(stream: string, group: string, ...ids: string[]): Promise<number> {

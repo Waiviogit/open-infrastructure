@@ -60,7 +60,7 @@ Constants live in `apps/notifications/src/constants/notification-stream.constant
 
 Entries are acked even when routing fails, so a poison batch cannot stall the stream.
 
-On startup the consumer drains its own pending entries (`XREADGROUP` id `0`) before switching to new messages (`>`). The drain runs in the background so it never blocks application bootstrap.
+On startup the consumer drains its own pending entries (`XREADGROUP` id `0`) before switching to new messages (`>`). The drain runs in the background so it never blocks application bootstrap. A pending entry already trimmed from the stream comes back with no fields (Redis returns `[id, nil]`); it is logged as missing its data field and acked, and the rest of the batch is routed normally.
 
 chain-indexer publisher trims the stream with `XADD MAXLEN ~ 100000` (`NOTIFICATION_STREAM_MAX_LEN`).
 
