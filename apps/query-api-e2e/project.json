@@ -9,9 +9,9 @@
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
       "options": {
         "jestConfig": "apps/query-api-e2e/jest.config.cts",
-        "passWithNoTests": true
+        "passWithNoTests": false
       },
-      "dependsOn": ["query-api:build", "query-api:serve"]
+      "dependsOn": ["query-api:build"]
     }
   }
 }

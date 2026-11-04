@@ -1,4 +1,4 @@
-import { buildRedisKey } from '@opden-data-layer/core';
+import { buildRedisKey } from '@opden-data-layer/common';
 import type { SystemAlert } from '../contract/system-alert';
 
 export type BlockCursorChain = 'hive' | 'hive-engine';

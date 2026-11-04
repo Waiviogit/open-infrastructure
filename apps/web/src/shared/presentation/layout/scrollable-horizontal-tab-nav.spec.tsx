@@ -16,8 +16,12 @@ class MockResizeObserver {
     this.callback([], this as unknown as ResizeObserver);
   }
 
-  unobserve() {}
-  disconnect() {}
+  unobserve(): void {
+    return undefined;
+  }
+  disconnect(): void {
+    return undefined;
+  }
 }
 
 beforeAll(() => {

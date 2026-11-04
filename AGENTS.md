@@ -76,6 +76,7 @@ await this.db.transaction().execute(async (trx) => {
 ### `@opden-data-layer/core` import routing
 
 Full routing table: [`docs/standards/core-imports.md`](docs/standards/core-imports.md). CI: `pnpm check:core-imports`.
+A new core subpath alias goes into **both** `tsconfig.base.json` and `apps/web/tsconfig.json` (CI: `pnpm check:web-tsconfig-paths`).
 
 | Need | Import from |
 |------|-------------|
@@ -91,7 +92,8 @@ Full routing table: [`docs/standards/core-imports.md`](docs/standards/core-impor
 ### Domain Constants
 
 - Domain-specific constants (object types, field names, supposed updates, translations) belong in `@opden-data-layer/domain-constants` when it exists.
-- Keep `@opden-data-layer/common` generic (utilities, non-domain). Keep `@opden-data-layer/clients` free of domain business rules.
+- `@opden-data-layer/common` (`libs/common`, `scope:shared`) holds generic, dependency-free helpers: no internal libs, no dhive, no `node:*`, safe in `apps/web` client code. Today: `isHiveAccountName` / `normalizeHiveAccountInput` (one Hive account grammar for user input and UI) and `buildRedisKey`. Keep it generic (non-domain); do not add a second copy of these helpers elsewhere.
+- Keep `@opden-data-layer/clients` free of domain business rules.
 
 ### Account avatars
 
@@ -200,7 +202,7 @@ Rules:
 
 ```ts
 // apps/<app>/src/constants/redis-keys.ts
-import { buildRedisKey } from '@opden-data-layer/core';
+import { buildRedisKey } from '@opden-data-layer/common';
 
 const APP = 'chain-indexer';
 
@@ -219,6 +221,7 @@ export const redisKey = {
 ### Code Style
 
 - ESLint flat config (`eslint.config.mjs`) with typescript-eslint + Prettier.
+- Several projects still have pre-existing lint errors, so `nx lint` is not a signal for a change. Lint what you touched with **`pnpm lint:changed`** (vs upstream / `origin/development`; `--base <ref>`, `--fix`).
 - Prettier: single quotes, trailing commas (all), auto endOfLine.
 - Use descriptive names.
 
@@ -327,6 +330,7 @@ Full standards: [`docs/standards/docs-standards.md`](docs/standards/docs-standar
   - **Python:** `open(path, encoding='utf-8')`, `Path.read_text(encoding='utf-8')`, `Path.write_text(..., encoding='utf-8')`.
   - **Node:** read as **`Buffer`** and decode with **`TextDecoder('utf-8', { fatal: true })`** (avoid relying on helpers that substitute invalid UTF-8 bytes).
 - Local check: **`pnpm check:web-i18n-utf8`**.
+- Adding keys: put translations for **every** locale in a JSON file and run **`pnpm i18n:add-keys <file>`** (validates locales and `{placeholder}` sets, inserts after an optional anchor key). Do not write one-off catalog scripts.
 
 ## Restrictions
 

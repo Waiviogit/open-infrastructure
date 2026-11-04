@@ -35,7 +35,7 @@ export class ReportCreateHandler implements OdlActionHandler {
     }
 
     let contractId = data.contract_id ?? null;
-    let serviceOrderId = data.service_order_id ?? null;
+    const serviceOrderId = data.service_order_id ?? null;
 
     if (serviceOrderId) {
       const serviceOrder = await this.oblRepository.findServiceOrder(serviceOrderId);

@@ -42,7 +42,7 @@ function parseImporterSpecifiers(lockfileText) {
     if (!inRootImporter) {
       continue;
     }
-    if (/^  [^ ]/.test(line) && line !== '  .:' && !line.startsWith('    ')) {
+    if (/^ {2}[^ ]/.test(line) && line !== '  .:' && !line.startsWith('    ')) {
       break;
     }
     if (line === '    dependencies:') {
@@ -52,17 +52,17 @@ function parseImporterSpecifiers(lockfileText) {
     if (!inDependencies) {
       continue;
     }
-    const depMatch = line.match(/^      '([^']+)':$/);
+    const depMatch = line.match(/^ {6}'([^']+)':$/);
     if (depMatch) {
       currentDep = depMatch[1];
       continue;
     }
-    const depMatchBare = line.match(/^      ([^'":\s][^:]*):$/);
+    const depMatchBare = line.match(/^ {6}([^'":\s][^:]*):$/);
     if (depMatchBare) {
       currentDep = depMatchBare[1];
       continue;
     }
-    const specMatch = line.match(/^        specifier: (.+)$/);
+    const specMatch = line.match(/^ {8}specifier: (.+)$/);
     if (specMatch && currentDep) {
       specifiers.set(currentDep, specMatch[1].trim());
       currentDep = null;

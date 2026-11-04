@@ -1,4 +1,4 @@
-import { isOblHiveAccountName } from '@opden-data-layer/core/utils/obl-on-behalf-memo';
+import { isHiveAccountName } from '@opden-data-layer/common';
 
 import { normalizeHiveAccountInput } from './invoice-issue';
 import type { PairBalanceView } from './ledger.types';
@@ -39,7 +39,7 @@ export function validatePayOnBehalfParties(
   if (parties.debtor === '' || parties.receiver === '') {
     return 'missing_accounts';
   }
-  if (!isOblHiveAccountName(parties.debtor) || !isOblHiveAccountName(parties.receiver)) {
+  if (!isHiveAccountName(parties.debtor) || !isHiveAccountName(parties.receiver)) {
     return 'invalid_account';
   }
   if (parties.debtor === parties.receiver) {

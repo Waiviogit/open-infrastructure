@@ -44,6 +44,7 @@ Search in order:
 1. Read `docs/standards/testing-rules.md`.
 2. Read the approved plan end-to-end.
 3. If the plan references specs under `docs/`, read those for contracts and invariants — do not read production code to derive expectations.
+4. Check the plan's assumptions about **existing** behavior it builds on — not the new behavior. Typical ones: notification recipient routing (`apps/notifications/src/domain/routing/`), how rows are serialized in API responses (serializer vs raw `selectAll`), shared limits and validators (e.g. Hive account name length), test harnesses the plan wants to use (does the E2E project have fixtures and an isolated DB?). Read the relevant existing code or spec only to confirm the assumption. If it contradicts the plan, do not silently adopt either side: list it under **Agent notes → Plan assumptions to confirm** and ask the user.
 
 ### 3. Extract business logic elements
 
@@ -150,6 +151,7 @@ _Composed by `/compose-test-cases`. Rules: `docs/standards/testing-rules.md`._
 - Nx projects to test: ...
 - Commands: `pnpm nx test <project>`, `pnpm nx e2e <project>-e2e` (when applicable)
 - Suggested modules / spec paths from the plan
+- Plan assumptions to confirm: <existing-behavior assumptions that did not match code/spec, or "none">
 ```
 
 If plan mode or permissions block file writes → output the full section in chat and ask the user to confirm append in agent mode.
@@ -165,6 +167,7 @@ Before finishing, confirm:
 - [ ] E2E cases are limited to critical user outcomes.
 - [ ] No case is mock-validation, always-green, or implementation-coupled.
 - [ ] Expectations come from the **plan**, not from reading current production code.
+- [ ] The plan's assumptions about existing behavior (routing, serialization, limits, test harness) were checked; mismatches are listed for the user.
 
 ## Rules
 

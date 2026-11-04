@@ -29,6 +29,9 @@ jobs:
       - name: Verify core import boundaries
         run: pnpm check:core-imports
 
+      - name: Verify web tsconfig aliases match tsconfig.base.json
+        run: pnpm check:web-tsconfig-paths
+
   agent-docs:
     name: Agent docs — frontmatter and routing paths
     runs-on: ubuntu-latest
@@ -159,6 +162,8 @@ jobs:
               - 'apps/agent-wallet-e2e/**'
               - 'libs/hive-auth/**'
               - 'libs/hive-broadcast/**'
+              - 'libs/hive-account/**'
+              - 'libs/common/**'
               - 'scripts/check-standalone-bundle.cjs'
 
       - uses: pnpm/action-setup@v4
@@ -204,6 +209,7 @@ jobs:
               - 'libs/clients/**'
               - 'libs/odl-db-types/**'
               - 'libs/system-alerts/**'
+              - 'libs/common/**'
               - 'tsconfig.base.json'
               - 'package.json'
               - 'pnpm-lock.yaml'
@@ -247,6 +253,26 @@ jobs:
       - name: Typecheck apps/web (tsc --noEmit)
         run: pnpm nx run web:typecheck
 
+  lint:
+    name: ESLint — all projects (errors only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Fails on errors only; existing warnings are tracked separately.
+      - name: Lint all projects
+        run: pnpm nx run-many -t lint
+
   migrations-db:
     name: Migrations — Postgres integration tests
     runs-on: ubuntu-latest
@@ -280,6 +306,58 @@ jobs:
         env:
           POSTGRES_TEST_URL: postgres://test:test@127.0.0.1:55432/test
         run: pnpm test:db
+
+  query-api-e2e:
+    name: Query API — e2e + Postgres integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: paths
+        with:
+          filters: |
+            query_api_e2e:
+              - 'apps/query-api/**'
+              - 'apps/query-api-e2e/**'
+              - 'libs/migrations/**'
+              - 'libs/odl-db-types/**'
+              - 'libs/test-postgres/**'
+              - 'docker-compose.test.yml'
+              - 'scripts/e2e-query-api.cjs'
+
+      - uses: pnpm/action-setup@v4
+        if: steps.paths.outputs.query_api_e2e == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.paths.outputs.query_api_e2e == 'true'
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.paths.outputs.query_api_e2e == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Start test Postgres + Redis
+        if: steps.paths.outputs.query_api_e2e == 'true'
+        run: pnpm test:db:up
+
+      - name: query-api e2e (built server against the test stack)
+        if: steps.paths.outputs.query_api_e2e == 'true'
+        env:
+          POSTGRES_TEST_URL: postgres://test:test@127.0.0.1:55432/test
+        run: pnpm nx e2e query-api-e2e
+
+      - name: query-api unit + Postgres integration tests
+        if: steps.paths.outputs.query_api_e2e == 'true'
+        env:
+          POSTGRES_TEST_URL: postgres://test:test@127.0.0.1:55432/test
+        run: pnpm nx test query-api
+
+      - name: Stop test stack
+        if: always() && steps.paths.outputs.query_api_e2e == 'true'
+        run: pnpm test:db:down
 
   osv-scan-pr:
     name: OSV vulnerability scan (PR — new vulns only)

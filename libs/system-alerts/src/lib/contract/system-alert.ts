@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { buildRedisKey } from '@opden-data-layer/core';
+import { buildRedisKey } from '@opden-data-layer/common';
 
 export type SystemAlertSeverity = 'warn' | 'error' | 'info';
 

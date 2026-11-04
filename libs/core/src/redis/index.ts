@@ -1,1 +1,1 @@
-export * from './build-redis-key';
+export { buildRedisKey, type RedisPurpose } from '@opden-data-layer/common';

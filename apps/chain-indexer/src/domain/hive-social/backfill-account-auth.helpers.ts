@@ -1,3 +1,5 @@
+import { isHiveAccountName } from '@opden-data-layer/common';
+
 export const BACKFILL_ACCOUNT_AUTH_MAX_BATCH = 100;
 export const BACKFILL_ACCOUNT_AUTH_DEFAULT_DELAY_MS = 250;
 
@@ -73,14 +75,7 @@ export function nextUserBatchCursor(
   );
 }
 
-/**
- * Validate standard Hive account name syntax.
- * Length 3-16 chars, lowercase alphanumeric, dashes, dots.
- * Each segment starts with letter, ends with letter or digit.
- */
+/** Hive account name grammar (per-segment rules) — see `isHiveAccountName` in `@opden-data-layer/common`. */
 export function isValidHiveAccountName(name: string): boolean {
-  if (!name || name.length < 3 || name.length > 16) {
-    return false;
-  }
-  return /^[a-z][a-z0-9.-]{1,14}[a-z0-9]$/.test(name);
+  return isHiveAccountName(name);
 }

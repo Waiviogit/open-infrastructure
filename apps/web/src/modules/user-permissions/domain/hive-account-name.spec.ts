@@ -14,4 +14,10 @@ describe('hive-account-name', () => {
     expect(isValidHiveAccountName('ab')).toBe(false);
     expect(isValidHiveAccountName('bad name')).toBe(false);
   });
+
+  it('rejects names with a short or empty segment (per-segment grammar)', () => {
+    expect(isValidHiveAccountName('a.bcd')).toBe(false);
+    expect(isValidHiveAccountName('abc..def')).toBe(false);
+    expect(isValidHiveAccountName('abc.de')).toBe(false);
+  });
 });

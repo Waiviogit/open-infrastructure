@@ -58,5 +58,9 @@ describe('backfill-account-auth.helpers', () => {
     expect(isValidHiveAccountName('toolongaccountnamemorethan16')).toBe(false);
     expect(isValidHiveAccountName('invalid_underscore')).toBe(false);
     expect(isValidHiveAccountName('InvalidCapital')).toBe(false);
+    // Per-segment grammar: the old single regex accepted these.
+    expect(isValidHiveAccountName('a.bcd')).toBe(false);
+    expect(isValidHiveAccountName('abc..de')).toBe(false);
+    expect(isValidHiveAccountName('abc-.def')).toBe(false);
   });
 });

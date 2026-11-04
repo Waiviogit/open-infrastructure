@@ -1,10 +1,25 @@
 import { killPort } from '@nx/node/utils';
-/* eslint-disable */
+
+import { resolveE2ePort } from './e2e-env';
+
+const STOP_GRACE_MS = 5_000;
 
 module.exports = async function () {
-  // Put clean up logic here (e.g. stopping services, docker-compose, etc.).
-  // Hint: `globalThis` is shared between setup and teardown.
-  const port = process.env.PORT ? Number(process.env.PORT) : 3000;
-  await killPort(port);
-  console.log(globalThis.__TEARDOWN_MESSAGE__);
+  const proc = globalThis.__QUERY_API_PROC__;
+  if (proc && proc.exitCode === null) {
+    proc.kill('SIGTERM');
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        if (proc.exitCode === null) {
+          proc.kill('SIGKILL');
+        }
+        resolve();
+      }, STOP_GRACE_MS);
+      proc.once('exit', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+  }
+  await killPort(resolveE2ePort()).catch(() => undefined);
 };

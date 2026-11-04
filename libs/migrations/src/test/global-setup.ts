@@ -1,3 +1,5 @@
+// Jest globalSetup ignores moduleNameMapper, so the package alias cannot be resolved here.
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import {
   assertTestDatabase,
   resolveTestPostgresUrl,

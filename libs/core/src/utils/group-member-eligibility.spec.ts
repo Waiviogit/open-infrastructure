@@ -1,7 +1,7 @@
 import {
   checkGroupMemberEligibility,
   toGovernanceMutedSet,
-} from '@opden-data-layer/core';
+} from './group-member-eligibility';
 
 describe('checkGroupMemberEligibility', () => {
   const emptyGov = toGovernanceMutedSet([]);

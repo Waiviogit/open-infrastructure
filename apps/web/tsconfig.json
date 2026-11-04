@@ -4,6 +4,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@opden-data-layer/core": ["../../libs/core/src/index.ts"],
+      "@opden-data-layer/common": ["../../libs/common/src/index.ts"],
       "@opden-data-layer/core/object-type-registry": [
         "../../libs/core/src/object-type-registry/index.ts"
       ],

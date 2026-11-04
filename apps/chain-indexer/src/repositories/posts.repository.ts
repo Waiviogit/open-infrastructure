@@ -20,7 +20,7 @@ function encodeBeneficiariesForPostgresJsonb(
   beneficiaries: NewPost['beneficiaries'],
 ): string {
   const plain = (beneficiaries ?? []).map((b) => ({
-    account: String(b.account ?? '').replace(/\u0000/g, ''),
+    account: String(b.account ?? '').split('\u0000').join(''),
     weight: Number.isFinite(b.weight) ? Math.trunc(b.weight) : 0,
   }));
   return JSON.stringify(plain);

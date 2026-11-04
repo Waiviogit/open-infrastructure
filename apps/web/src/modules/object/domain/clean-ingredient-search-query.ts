@@ -209,7 +209,7 @@ export function cleanIngredientSearchQuery(ingredient: string): string {
     return '';
   }
 
-  let text = trimmed
+  const text = trimmed
     .replace(EMOJI_PATTERN, ' ')
     .replace(STOP_WORD_PATTERN, ' ')
     .replace(QUANTITIES_AND_PUNCTUATION, ' ')

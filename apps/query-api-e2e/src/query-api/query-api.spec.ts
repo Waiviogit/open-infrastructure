@@ -16,7 +16,8 @@ describe('POST /query/v1/posts/feed', () => {
       body: JSON.stringify({ limit: 5, currency: 'USD' }),
     });
 
-    expect(res.status).toBe(200);
+    // Nest default for POST without @HttpCode.
+    expect(res.status).toBe(201);
     const body = (await res.json()) as {
       items: unknown[];
       cursor: string | null;

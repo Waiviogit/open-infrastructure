@@ -98,7 +98,7 @@ describe('NotificationsWsClientImpl reconnect', () => {
   it('schedules reconnect after an unexpected socket close', async () => {
     const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
     const client = createNotificationsWsClient('ws://localhost:7200/notifications/ws');
-    client.addNotificationListener(() => {});
+    client.addNotificationListener(() => undefined);
 
     await flushMicrotasks();
     expect(instances).toHaveLength(1);
@@ -114,7 +114,7 @@ describe('NotificationsWsClientImpl reconnect', () => {
     const client = createNotificationsWsClient('ws://localhost:7200/notifications/ws');
     const onReconnect = jest.fn();
     client.addReconnectListener(onReconnect);
-    client.addNotificationListener(() => {});
+    client.addNotificationListener(() => undefined);
 
     await flushMicrotasks();
     expect(instances).toHaveLength(1);
@@ -132,8 +132,8 @@ describe('NotificationsWsClientImpl reconnect', () => {
 
   it('shares one socket and one token fetch across overlapping ensureConnected', async () => {
     const client = createNotificationsWsClient('ws://localhost:7200/notifications/ws');
-    client.addNotificationListener(() => {});
-    client.addNotificationListener(() => {});
+    client.addNotificationListener(() => undefined);
+    client.addNotificationListener(() => undefined);
 
     await flushMicrotasks();
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -143,7 +143,7 @@ describe('NotificationsWsClientImpl reconnect', () => {
 
   it('ignores onclose from a replaced socket', async () => {
     const client = createNotificationsWsClient('ws://localhost:7200/notifications/ws');
-    client.addNotificationListener(() => {});
+    client.addNotificationListener(() => undefined);
     await flushMicrotasks();
     const first = instances[0];
     expect(first).toBeDefined();

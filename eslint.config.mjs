@@ -56,6 +56,13 @@ export default [
     rules: {},
   },
   {
+    // Ops/dev scripts, not runtime code: they import app and lib sources directly.
+    files: ['scripts/**'],
+    rules: {
+      '@nx/enforce-module-boundaries': 'off',
+    },
+  },
+  {
     // Nest apps share apps/nest-webpack.shared.js via relative require.
     files: ['**/webpack.config.js', '**/webpack.config.*.js'],
     rules: {

@@ -91,7 +91,7 @@ export function stripUrlTruncation(url: string): string {
 }
 
 function normalizeUrl(url: string): string {
-  let trimmed = stripUrlTruncation(url.trim());
+  const trimmed = stripUrlTruncation(url.trim());
   if (trimmed.startsWith('//')) {
     return `https:${trimmed}`;
   }

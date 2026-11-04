@@ -2,7 +2,7 @@ import { sql } from 'kysely';
 import {
   migrateTo,
   migrateToLatest,
-} from '@opden-data-layer/migrations';
+} from './index';
 import {
   createTestDb,
   resolveTestPostgresUrl,

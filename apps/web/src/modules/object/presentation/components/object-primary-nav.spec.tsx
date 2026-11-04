@@ -22,9 +22,15 @@ jest.mock('@/shared/presentation/layout/scrollable-horizontal-tab-nav', () => ({
 }));
 
 class MockResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe(): void {
+    return undefined;
+  }
+  unobserve(): void {
+    return undefined;
+  }
+  disconnect(): void {
+    return undefined;
+  }
 }
 
 beforeAll(() => {

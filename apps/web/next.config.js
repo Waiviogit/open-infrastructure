@@ -4,6 +4,10 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Agent rules live in apps/web/AGENTS.md (repo-managed); stop `next dev` from appending its own block.
+  agentRules: false,
+  // Dev-only: allow /_next dev resources (HMR, chunks) when the app is opened via 127.0.0.1 (local verification).
+  allowedDevOrigins: ['127.0.0.1'],
   // Image paste/upload Server Actions (FormData); default Next limit is 1mb.
   experimental: {
     serverActions: {

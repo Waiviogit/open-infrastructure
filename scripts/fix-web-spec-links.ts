@@ -63,7 +63,7 @@ function walk(dir: string): string[] {
 
 let changed = 0;
 for (const file of walk(ROOT)) {
-  let text = fs.readFileSync(file, 'utf8');
+  const text = fs.readFileSync(file, 'utf8');
   let next = text;
   for (const [from, to] of REPLACEMENTS) {
     next = guardedReplace(next, from, to);

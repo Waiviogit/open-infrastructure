@@ -33,6 +33,9 @@
       "@opden-data-layer/core/hive-account-history": [
         "./libs/core/src/hive-account-history/index.ts"
       ],
+      "@opden-data-layer/core/hive-datetime": [
+        "./libs/core/src/hive-thread/hive-datetime.util.ts"
+      ],
       "@opden-data-layer/core/hive-engine-history": [
         "./libs/core/src/hive-engine-history/index.ts"
       ],
@@ -50,6 +53,12 @@
       ],
       "@opden-data-layer/core/utils/obl-on-behalf-memo": [
         "./libs/core/src/utils/obl-on-behalf-memo.ts"
+      ],
+      "@opden-data-layer/core/utils/obl-usd-amount": [
+        "./libs/core/src/utils/obl-usd-amount.ts"
+      ],
+      "@opden-data-layer/core/utils/service-order-schema": [
+        "./libs/core/src/utils/service-order-schema.ts"
       ],
       "@opden-data-layer/core/utils/osl-messaging": [
         "./libs/core/src/utils/osl-messaging.ts"
@@ -95,7 +104,8 @@
         "./libs/hive-memo-crypto/src/index.ts"
       ],
       "@opden-data-layer/test-postgres": ["./libs/test-postgres/src/index.ts"],
-      "@opden-data-layer/hive-account": ["./libs/hive-account/src/index.ts"]
+      "@opden-data-layer/hive-account": ["./libs/hive-account/src/index.ts"],
+      "@opden-data-layer/common": ["./libs/common/src/index.ts"]
     },
     "strict": false,
     "noUncheckedSideEffectImports": false,

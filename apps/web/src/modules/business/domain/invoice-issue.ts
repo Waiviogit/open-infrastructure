@@ -1,3 +1,4 @@
+import { normalizeHiveAccountInput } from '@opden-data-layer/common';
 import { isOblUsdAmount, parseOblUsdAmount } from '@opden-data-layer/core/utils/obl-usd-amount';
 
 export type InvoiceIssueMode = 'simple' | 'split';
@@ -28,9 +29,7 @@ export type InvoiceIssueSubmitPayload =
       details?: Record<string, unknown>;
     };
 
-export function normalizeHiveAccountInput(raw: string): string {
-  return raw.trim().replace(/^@+/, '').toLowerCase();
-}
+export { normalizeHiveAccountInput };
 
 export function isAttestorIssue(
   issuer: string,

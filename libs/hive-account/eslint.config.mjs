@@ -9,7 +9,7 @@ export default [
         'error',
         {
           ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}'],
-          ignoredDependencies: ['@hiveio/dhive'],
+          ignoredDependencies: ['@hiveio/dhive', '@opden-data-layer/common'],
         },
       ],
     },

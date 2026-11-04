@@ -13,7 +13,7 @@ export function normalizeHiveJsonMetadataForStorage(raw: unknown): string {
     return '{}';
   }
   if (typeof raw === 'string') {
-    const t = raw.trim().replace(/\u0000/g, '');
+    const t = raw.trim().split('\u0000').join('');
     if (t === '') {
       return '{}';
     }
@@ -33,7 +33,7 @@ export function normalizeHiveJsonMetadataForStorage(raw: unknown): string {
 
 function safeJsonStringifyForPostgres(value: unknown): string {
   try {
-    return JSON.stringify(value).replace(/\u0000/g, '');
+    return JSON.stringify(value).split('\u0000').join('');
   } catch {
     return '{}';
   }
@@ -52,7 +52,7 @@ export function normalizeHiveBeneficiariesForStorage(raw: unknown): HiveBenefici
     items = raw;
   } else if (typeof raw === 'string') {
     try {
-      const parsed = JSON.parse(raw.replace(/\u0000/g, '')) as unknown;
+      const parsed = JSON.parse(raw.split('\u0000').join('')) as unknown;
       items = Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -66,7 +66,7 @@ export function normalizeHiveBeneficiariesForStorage(raw: unknown): HiveBenefici
     let weight = 0;
 
     if (Array.isArray(item) && item.length >= 2) {
-      account = String(item[0] ?? '').replace(/\u0000/g, '');
+      account = String(item[0] ?? '').split('\u0000').join('');
       const w = item[1];
       if (typeof w === 'number' && Number.isFinite(w)) {
         weight = Math.trunc(w);
@@ -78,7 +78,7 @@ export function normalizeHiveBeneficiariesForStorage(raw: unknown): HiveBenefici
       }
     } else if (item && typeof item === 'object' && !Array.isArray(item)) {
       const rec = item as Record<string, unknown>;
-      account = String(rec.account ?? '').replace(/\u0000/g, '');
+      account = String(rec.account ?? '').split('\u0000').join('');
       const w = rec.weight;
       if (typeof w === 'number' && Number.isFinite(w)) {
         weight = Math.trunc(w);
