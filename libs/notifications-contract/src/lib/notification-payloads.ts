@@ -386,6 +386,8 @@ export interface NotificationPayloadMap {
     receiver: string;
     amountUsd: string;
     state: string;
+    /** Account that paid on behalf of `payer` (debtor). */
+    paidBy?: string;
   };
   obl_payment_confirm: {
     paymentId: string;
@@ -393,6 +395,8 @@ export interface NotificationPayloadMap {
     receiver: string;
     amountUsd: string;
     state: string;
+    /** Account that paid on behalf of `payer` (debtor). */
+    paidBy?: string;
   };
   obl_dispute_open: {
     disputeId: string;

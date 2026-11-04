@@ -290,6 +290,8 @@ const oblPaymentPayload = z.object({
   receiver: z.string(),
   amountUsd: z.string(),
   state: z.string(),
+  /** Account that paid on behalf of `payer` (debtor). */
+  paidBy: z.string().optional(),
 });
 
 const oblDisputeOpenPayload = z.object({

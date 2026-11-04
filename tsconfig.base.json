@@ -48,6 +48,9 @@
       "@opden-data-layer/core/utils/numeric-string": [
         "./libs/core/src/utils/numeric-string.ts"
       ],
+      "@opden-data-layer/core/utils/obl-on-behalf-memo": [
+        "./libs/core/src/utils/obl-on-behalf-memo.ts"
+      ],
       "@opden-data-layer/core/utils/osl-messaging": [
         "./libs/core/src/utils/osl-messaging.ts"
       ],

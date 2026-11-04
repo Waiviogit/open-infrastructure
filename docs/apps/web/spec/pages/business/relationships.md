@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, business, relationships]
-updated_at: 2026-07-24
+updated_at: 2026-11-04
 related:
   - docs/apps/web/spec/pages/business/overview.md
   - docs/spec/obl/mutual-ledger.md
@@ -36,6 +36,9 @@ Each row shows the **confirmed** balance summary (`DirectionalUsd`). When confir
   - **Create service order** — `BusinessCreateServiceOrderModal`: contract dropdown (signed pair contracts whose **offer is `active`**; retired offers omitted), optional `details` via **Object Builder** (prefill from contract `service_order_schema` when present); `service_order_create`.
   - **Create report** — `BusinessCreateReportModal`: optional contract and/or service order id (at least one required on chain), optional `details` via **Object Builder**; `report_create`. Client blocks submit when the typed `service_order_id` matches a loaded cancelled SO.
   - **Record payment** — `BusinessDeclarePaymentModal` (unchanged).
+  - **Copy payment link** — copies `/business/pay?for=<viewer>&to=<counterparty>` so another account can pay on the viewer's behalf.
+- **Pay on behalf** page `/business/pay?for=&to=` (`BusinessPayOnBehalfClient`): editable debtor/receiver prefilled from the query, USD amount, **Pay with WAIV** (Hive Engine transfer with memo `obl:on-behalf:<debtor>`, USD→WAIV via `/api/business/convert-usd-to-waiv`) and **Declare off-chain payment** (`payment_declare` with `payer = debtor`, signed by viewer). Client mirrors indexer rules (`validatePayOnBehalfParties`) and warns, without blocking, when the debtor has no confirmed debt. See [payment on behalf](../../../../spec/obl/payment-on-behalf.md).
+- Payments rows show **Paid by @account** when `paid_by` is set.
 - **Confirm payment**, **Payments tab**, **Dispute invoice** — unchanged (see prior spec text in git history if needed).
 - **Contracts tab** — cards with offer name, description (truncated to 300 chars), `contract_id`, `created_at`; link to contract detail.
 - **Service orders tab** — cards link to `/business/service-orders/:id`; contract label when known; **Cancel** button (not nested in the link) when the SO is `active` and the viewer is provider or client.

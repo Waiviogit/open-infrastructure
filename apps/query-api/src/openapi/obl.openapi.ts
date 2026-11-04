@@ -65,6 +65,10 @@ const oblPaymentSchema = registry.register(
     payment_id: z.string(),
     payer: z.string(),
     receiver: z.string(),
+    paid_by: z
+      .string()
+      .nullable()
+      .describe('Account that paid on behalf of `payer` (debtor); null when the debtor paid.'),
     amount_usd: z.string(),
     declared_amount_usd: z.string().nullable(),
     state: z.enum(['confirmed', 'pending']),

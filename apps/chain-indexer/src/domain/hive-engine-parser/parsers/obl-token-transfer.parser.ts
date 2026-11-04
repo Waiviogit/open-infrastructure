@@ -13,6 +13,7 @@ const TRANSFER_ACTION = 'transfer';
 
 /**
  * Indexes WAIV token transfers as OBL payments when a Mutual Ledger exists for the pair.
+ * A memo `obl:on-behalf:<debtor>` attributes the transfer to the debtor↔receiver ledger.
  *
  * @see docs/spec/obl/payments.md
  */
@@ -50,9 +51,11 @@ export class OblTokenTransferParser implements HiveEngineSubParser {
     }
 
     let payloadTo = '';
+    let memo: string | undefined;
     try {
       const payload = JSON.parse(tx.payload) as Record<string, unknown>;
       payloadTo = String(payload.to ?? '').trim();
+      memo = typeof payload.memo === 'string' ? payload.memo : undefined;
     } catch {
       return;
     }
@@ -87,6 +90,7 @@ export class OblTokenTransferParser implements HiveEngineSubParser {
         refHiveBlockNumber,
         trxIndex,
         logIndex,
+        memo,
         createdAt: hiveBlockTimestampToDate(blockTimestamp),
       });
     }

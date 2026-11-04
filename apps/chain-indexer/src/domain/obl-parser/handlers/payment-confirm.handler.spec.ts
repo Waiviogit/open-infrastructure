@@ -16,6 +16,7 @@ const pendingPayment: OblPayment = {
   rate_usd: null,
   state: 'pending',
   ref: null,
+  paid_by: null,
   pair_low: 'alice',
   pair_high: 'bob',
   created_event_seq: BigInt(50),
@@ -185,6 +186,38 @@ describe('PaymentConfirmHandler', () => {
           amountUsd: '25.00000000',
           state: 'confirmed',
         }),
+      }),
+    );
+  });
+
+  it('confirms a third-party declare and keeps the actual payer in the notification', async () => {
+    const findPayment = jest.fn().mockResolvedValue({ ...pendingPayment, paid_by: 'carol' });
+    const updatePayment = jest.fn().mockResolvedValue(undefined);
+    const oblNotifications = mockOblNotifications();
+    const handler = new PaymentConfirmHandler(
+      { findPayment, updatePayment, insertPayment: jest.fn() } as unknown as OblRepository,
+      oblNotifications.service,
+    );
+
+    await handler.handle(
+      {
+        payment_id: 'pay-confirm',
+        receiver: 'alice',
+        amount_usd: '40',
+        declare_payment_id: 'pay-declare',
+      },
+      ctx(),
+    );
+
+    expect(updatePayment).toHaveBeenCalledWith('pay-declare', {
+      state: 'confirmed',
+      amount_usd: '40.00000000',
+    });
+    expect(oblNotifications.emit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: 'obl_payment_confirm',
+        payload: expect.objectContaining({ payer: 'bob', receiver: 'alice', paidBy: 'carol' }),
       }),
     );
   });

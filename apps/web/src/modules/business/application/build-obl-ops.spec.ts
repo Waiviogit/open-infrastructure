@@ -4,6 +4,8 @@ import {
   buildCancelServiceOrderOp,
   buildIssueInvoiceOp,
   buildIssueSplitInvoiceOp,
+  buildDeclarePaymentOnBehalfOp,
+  buildPayOnBehalfWaivTransferOp,
 } from './build-obl-ops';
 
 describe('buildIssueSplitInvoiceOp', () => {
@@ -115,5 +117,50 @@ describe('buildIssueInvoiceOp', () => {
     };
     expect(payload.service_order_id).toBe('so-1');
     expect(payload.report_id).toBe('r-1');
+  });
+});
+
+describe('pay on behalf ops', () => {
+  it('declares an off-chain payment for the debtor signed by the actual payer', () => {
+    const op = buildDeclarePaymentOnBehalfOp({
+      oblCustomJsonId: 'obl-mainnet',
+      paymentId: 'pay-1',
+      payer: 'alice',
+      receiver: 'bob',
+      paidBy: 'carol',
+      amountUsd: '40',
+    });
+    const payload = JSON.parse(op.json).events[0].payload as Record<string, unknown>;
+
+    expect(payload).toMatchObject({ payer: 'alice', receiver: 'bob', amount_usd: '40.00000000' });
+    expect(op.required_posting_auths).toEqual(['carol']);
+  });
+
+  it('transfers WAIV to the receiver with the on-behalf memo naming the debtor', () => {
+    const op = buildPayOnBehalfWaivTransferOp({
+      paidBy: 'carol',
+      debtor: 'alice',
+      receiver: 'bob',
+      amountWaiv: 12.5,
+    });
+    const json = JSON.parse(op.json) as {
+      contractAction: string;
+      contractPayload: Record<string, string>;
+    };
+
+    expect(op.required_auths).toEqual(['carol']);
+    expect(json.contractAction).toBe('transfer');
+    expect(json.contractPayload).toEqual({
+      to: 'bob',
+      symbol: 'WAIV',
+      quantity: '12.50000000',
+      memo: 'obl:on-behalf:alice',
+    });
+  });
+
+  it('rejects a non-positive WAIV amount', () => {
+    expect(() =>
+      buildPayOnBehalfWaivTransferOp({ paidBy: 'carol', debtor: 'alice', receiver: 'bob', amountWaiv: 0 }),
+    ).toThrow('invalid WAIV amount');
   });
 });

@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { encodeEventSeq, WAIV_TOKEN } from '@opden-data-layer/core';
+import { encodeEventSeq, parseOblOnBehalfMemo, WAIV_TOKEN } from '@opden-data-layer/core';
 import { OblRepository } from '../../repositories/obl.repository';
 import { normalizePair, asJsonValue } from './obl.utils';
 import { OblUsdRatesService } from './obl-usd-rates.service';
+import { OblOnBehalfPayerResolver } from './obl-on-behalf-payer.resolver';
 
 const TRACKED_TRANSFER_SYMBOLS = new Set<string>([WAIV_TOKEN.SYMBOL]);
 
@@ -13,6 +14,7 @@ export class OblPaymentAttributionService {
   constructor(
     private readonly oblRepository: OblRepository,
     private readonly usdRates: OblUsdRatesService,
+    private readonly onBehalfPayer: OblOnBehalfPayerResolver,
   ) {}
 
   isTrackedTransferSymbol(symbol: string): boolean {
@@ -20,6 +22,7 @@ export class OblPaymentAttributionService {
   }
 
   async recordTokenTransfer(input: {
+    /** Transfer sender. */
     payer: string;
     receiver: string;
     symbol: string;
@@ -28,11 +31,13 @@ export class OblPaymentAttributionService {
     refHiveBlockNumber: number;
     trxIndex: number;
     logIndex: number;
+    /** Transfer memo; `obl:on-behalf:<debtor>` pays the debtor's debt to `receiver`. */
+    memo?: string;
     createdAt?: Date;
   }): Promise<void> {
-    const payer = input.payer.trim();
+    const sender = input.payer.trim();
     const receiver = input.receiver.trim();
-    if (payer === '' || receiver === '' || payer === receiver) {
+    if (sender === '' || receiver === '' || sender === receiver) {
       return;
     }
 
@@ -41,15 +46,21 @@ export class OblPaymentAttributionService {
       return;
     }
 
-    const { pairLow, pairHigh } = normalizePair(payer, receiver);
-    const startedSeq = await this.oblRepository.findLedgerStartedSeq(pairLow, pairHigh);
     const eventSeq = encodeEventSeq({
       blockNum: input.refHiveBlockNumber,
       trxIndex: input.trxIndex,
       opIndex: 0,
       odlEventIndex: input.logIndex,
     });
-    if (startedSeq === null || eventSeq < startedSeq) {
+
+    const attribution = await this.resolveTransferAttribution(
+      sender,
+      receiver,
+      input.memo,
+      eventSeq,
+      input.transactionId,
+    );
+    if (!attribution) {
       return;
     }
 
@@ -66,8 +77,9 @@ export class OblPaymentAttributionService {
 
     await this.oblRepository.insertPayment({
       payment_id: paymentId,
-      payer,
+      payer: attribution.payer,
       receiver,
+      paid_by: attribution.paidBy,
       amount_usd: quote.amountUsd,
       declared_amount_usd: quote.amountUsd,
       method: 'token_transfer',
@@ -75,11 +87,51 @@ export class OblPaymentAttributionService {
       token_amount: String(input.quantity),
       rate_usd: quote.rateUsd,
       state: 'confirmed',
-      ref: asJsonValue({ he_tx: input.transactionId }),
+      ref: asJsonValue(
+        attribution.onBehalfOf
+          ? { he_tx: input.transactionId, on_behalf_of: attribution.onBehalfOf }
+          : { he_tx: input.transactionId },
+      ),
       created_event_seq: eventSeq,
       transaction_id: input.transactionId,
       created_at: input.createdAt ?? new Date(),
     });
+  }
+
+  /**
+   * An on-behalf memo is an explicit intent: when it does not resolve, the transfer is skipped
+   * instead of falling back to the sender↔receiver pair.
+   */
+  private async resolveTransferAttribution(
+    sender: string,
+    receiver: string,
+    memo: string | undefined,
+    eventSeq: bigint,
+    transactionId: string,
+  ): Promise<{ payer: string; paidBy: string | null; onBehalfOf: string | null } | null> {
+    const debtor = parseOblOnBehalfMemo(memo);
+    if (debtor) {
+      const resolved = await this.onBehalfPayer.resolve({
+        actor: sender,
+        onBehalfOf: debtor,
+        receiver,
+        eventSeq,
+      });
+      if (!resolved) {
+        this.logger.warn(
+          `WAIV transfer ${transactionId}: on-behalf payment for ${debtor} to ${receiver} has no active ledger`,
+        );
+        return null;
+      }
+      return { ...resolved, onBehalfOf: debtor };
+    }
+
+    const { pairLow, pairHigh } = normalizePair(sender, receiver);
+    const startedSeq = await this.oblRepository.findLedgerStartedSeq(pairLow, pairHigh);
+    if (startedSeq === null || eventSeq < startedSeq) {
+      return null;
+    }
+    return { payer: sender, paidBy: null, onBehalfOf: null };
   }
 
   async recordUpvoteReward(input: {

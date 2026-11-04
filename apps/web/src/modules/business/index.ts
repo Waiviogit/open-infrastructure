@@ -10,6 +10,7 @@ export { BusinessInvoiceClient } from './presentation/components/business-invoic
 export { BusinessDisputeClient } from './presentation/components/business-dispute-client';
 export { BusinessServiceOrderClient } from './presentation/components/business-service-order-client';
 export { BusinessReportClient } from './presentation/components/business-report-client';
+export { BusinessPayOnBehalfClient } from './presentation/components/business-pay-on-behalf-client';
 export { BusinessOfferDetailClient } from './presentation/components/business-offer-detail-client';
 export { PublicOffersListClient } from './presentation/components/public-offers-list-client';
 export { PublicOfferPageClient } from './presentation/components/public-offer-page-client';

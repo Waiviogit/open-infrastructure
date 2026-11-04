@@ -144,7 +144,28 @@ export function buildOblMessage(
     case 'obl_payment_declare':
     case 'obl_payment_confirm': {
       const p = event.payload;
-      const actor = event.actor ?? p.payer;
+      const actor = event.actor ?? p.paidBy ?? p.payer;
+      if (p.paidBy) {
+        return withParamHrefs(
+          {
+            key:
+              event.type === 'obl_payment_declare'
+                ? 'notification_obl_payment_declare_on_behalf'
+                : 'notification_obl_payment_confirm_on_behalf',
+            params: {
+              payer: p.payer,
+              receiver: p.receiver,
+              paidBy: p.paidBy,
+              amountUsd: p.amountUsd,
+              paymentId: p.paymentId,
+            },
+            href: oblRelationshipPath(p.receiver),
+            icon: 'generic',
+            actor,
+          },
+          accountHrefs({ payer: p.payer, receiver: p.receiver, paidBy: p.paidBy }),
+        );
+      }
       const counterparty =
         actor.trim().toLowerCase() === p.payer.trim().toLowerCase()
           ? p.receiver

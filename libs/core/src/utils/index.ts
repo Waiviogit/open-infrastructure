@@ -2,6 +2,7 @@ export * from './event-seq';
 export * from './json-helper';
 export * from './numeric-string';
 export * from './obl-usd-amount';
+export * from './obl-on-behalf-memo';
 export * from './service-order-schema';
 export * from './post-language';
 export * from './osl-messaging';

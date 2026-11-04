@@ -63,6 +63,7 @@ export class PaymentConfirmHandler implements OdlActionHandler {
           receiver: data.receiver,
           amountUsd: confirmUsd,
           state: 'confirmed',
+          ...(pending.paid_by ? { paidBy: pending.paid_by } : {}),
         },
       });
       return;

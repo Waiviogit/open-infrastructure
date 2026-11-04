@@ -51,7 +51,7 @@ Multi-line invoices in **list** views may aggregate amounts in arbitration/legac
 | GET | `/query/v1/obl/relationships?account=` | `limit`/`offset` → `{ items, hasMore }`; batch balance (no N× full ledger) |
 | GET | `/query/v1/obl/arbitration?account=` | `status` `open` \| `resolved` (default `open`); cursor page of dispute + invoice + contract + offer name |
 | GET | `/query/v1/obl/ledger?accountA=&accountB=` | Full ledger (legacy); contracts respect `started_event_seq` cutoff |
-| GET | `/query/v1/obl/ledger/payments\|invoices\|contracts\|disputes\|service-orders\|reports` | Cursor pages: `limit`, `cursor?` — invoices/disputes scoped via `obl_obligation_lines` pair |
+| GET | `/query/v1/obl/ledger/payments\|invoices\|contracts\|disputes\|service-orders\|reports` | Cursor pages: `limit`, `cursor?` — invoices/disputes scoped via `obl_obligation_lines` pair; payment rows include `paid_by` ([on behalf](../../../spec/obl/payment-on-behalf.md)) |
 | GET | `/query/v1/obl/balance?accountA=&accountB=` |
 | GET | `/query/v1/obl/contracts/:contractId` |
 | GET | `/query/v1/obl/invoices/:invoiceId` | Header + `lines[]`, `kind`; may include linked service order / report |

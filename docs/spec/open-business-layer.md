@@ -52,6 +52,7 @@ Catalog ODL objects remain on `odl-mainnet` / `odl-testnet`.
 | [mutual-ledger.md](obl/mutual-ledger.md) | Per-pair USD balance, states, cutoff |
 | [contracts.md](obl/contracts.md) | Offers, contracts, invoices |
 | [payments.md](obl/payments.md) | On-chain WAIV, upvote rewards, off-chain |
+| [payment-on-behalf.md](obl/payment-on-behalf.md) | Third account pays a debtor's debt (`paid_by`) |
 | [disputes.md](obl/disputes.md) | Dispute open/resolve rules |
 | [service-orders.md](obl/service-orders.md) | Immutable service orders |
 | [reports.md](obl/reports.md) | Immutable reports |

@@ -30,7 +30,7 @@ Hive Engine WAIV transfers and upvote rewards that attribute to a Mutual Ledger 
 | `obl_service_order_cancel` | `provider`, `client` |
 | `obl_report_create` | `provider`, `client` |
 | `obl_invoice_issue` | `issuer`, `debtor`, all `beneficiaries` |
-| `obl_payment_declare` / `obl_payment_confirm` | `payer`, `receiver` |
+| `obl_payment_declare` / `obl_payment_confirm` | `payer`, `receiver`, `paidBy?` ([on behalf](payment-on-behalf.md)) |
 | `obl_dispute_open` | `disputant`, `debtor`, beneficiaries, `resolver` (from governing contract `dispute_rule` / `arbiter`) |
 | `obl_dispute_resolve` | `resolver`, `disputant`, `debtor`, beneficiaries |
 

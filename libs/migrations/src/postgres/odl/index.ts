@@ -68,6 +68,7 @@ import * as m00067 from './00067_obl_service_order_cancel';
 import * as m00068 from './00068_post_reblog_pending';
 import * as m00069 from './00069_affiliate_code_drop_domain_scope';
 import * as m00070 from './00070_affiliate_button_image_json';
+import * as m00071 from './00071_obl_payments_paid_by';
 import type { Migration } from 'kysely';
 
 /** Ordered migrations for OdlMigrationProvider. Schema matches @opden-data-layer/odl-db-types OdlDatabase and docs/spec/data-model/schema.sql */
@@ -151,4 +152,5 @@ export const MIGRATIONS: Record<string, Migration> = {
   '00068_post_reblog_pending': { up: m00068.up, down: m00068.down },
   '00069_affiliate_code_drop_domain_scope': { up: m00069.up, down: m00069.down },
   '00070_affiliate_button_image_json': { up: m00070.up, down: m00070.down },
+  '00071_obl_payments_paid_by': { up: m00071.up, down: m00071.down },
 };

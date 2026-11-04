@@ -279,6 +279,29 @@ describe('OblRecipientStrategy', () => {
     expect(recipients).toEqual(['bob', 'alice']);
   });
 
+  it.each([
+    ['obl_payment_declare', 'carol'],
+    ['obl_payment_confirm', 'alice'],
+  ] as const)('notifies receiver, debtor and actual payer on %s on behalf', async (type, actor) => {
+    const recipients = await strategy.resolveRecipients({
+      type,
+      occurredAt: '2026-01-01T00:00:00.000Z',
+      blockNum: 1,
+      trxId: null,
+      objectId: null,
+      actor,
+      payload: {
+        paymentId: 'pay-1',
+        payer: 'bob',
+        receiver: 'alice',
+        amountUsd: '10.00000000',
+        state: 'pending',
+        paidBy: 'carol',
+      },
+    } as AnyNotificationEvent);
+    expect([...recipients].sort()).toEqual(['alice', 'bob', 'carol']);
+  });
+
   it('drops null resolver on dispute open', async () => {
     const recipients = await strategy.resolveRecipients({
       type: 'obl_dispute_open',

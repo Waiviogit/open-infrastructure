@@ -18,6 +18,7 @@ CI enforces boundaries via `pnpm check:core-imports` (see [`.github/workflows/ve
 | `UPDATE_REGISTRY`, `UPDATE_TYPES`, `OBJECT_TYPE_REGISTRY` | `@opden-data-layer/core/update-registry`, `/update-types`, `/object-type-registry` |
 | `localeFromHeaders`, `DEFAULT_LOCALE` | `@opden-data-layer/core` (barrel → `http/locale-from-headers`) |
 | `buildObjectChannelId`, `buildOslMessageId` | `@opden-data-layer/core/utils/osl-messaging` or core barrel |
+| `buildOblOnBehalfMemo`, `parseOblOnBehalfMemo` | `@opden-data-layer/core/utils/obl-on-behalf-memo` or core barrel |
 | `computeDmPairHash` | `@opden-data-layer/core/utils/osl-messaging-crypto` (Node `crypto` — server/indexer only) |
 | `detectPostingSigner` | `@opden-data-layer/core/utils/hive-tx-signer` subpath only (dhive — not in barrel) |
 | `Post`, `OdlDatabase`, `JsonValue`, `ChannelMember`, … | `@opden-data-layer/odl-db-types` |

@@ -18,6 +18,7 @@ import { ServiceOrderCancelHandler } from './handlers/service-order-cancel.handl
 import { ReportCreateHandler } from './handlers/report-create.handler';
 import { OblUsdRatesService } from './obl-usd-rates.service';
 import { OblPaymentAttributionService } from './obl-payment-attribution.service';
+import { OblOnBehalfPayerResolver } from './obl-on-behalf-payer.resolver';
 
 @Module({
   imports: [RepositoriesModule, GovernanceModule, NotificationAdapterModule],
@@ -25,6 +26,7 @@ import { OblPaymentAttributionService } from './obl-payment-attribution.service'
     OblCustomJsonParser,
     OblUsdRatesService,
     OblPaymentAttributionService,
+    OblOnBehalfPayerResolver,
     OblNotificationService,
     OfferPublishHandler,
     OfferUpdateHandler,

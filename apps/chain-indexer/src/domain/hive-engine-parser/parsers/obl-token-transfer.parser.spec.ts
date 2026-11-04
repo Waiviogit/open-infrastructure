@@ -77,4 +77,42 @@ describe('OblTokenTransferParser', () => {
 
     expect(recordTokenTransfer).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['passes the transfer memo', { memo: 'obl:on-behalf:carol' }, 'obl:on-behalf:carol'],
+    ['passes no memo when the payload has none', {}, undefined],
+  ])('%s to attribution', async (_name, memoField, expectedMemo) => {
+    const recordTokenTransfer = jest.fn().mockResolvedValue(undefined);
+    const parser = new OblTokenTransferParser({
+      isTrackedTransferSymbol: (s: string) => s === 'WAIV',
+      recordTokenTransfer,
+    } as never);
+
+    await parser.parseBlock({
+      refHiveBlockNumber: 500,
+      timestamp: '2024-01-01T00:00:00',
+      transactions: [
+        {
+          contract: 'tokens',
+          action: 'transfer',
+          sender: 'alice',
+          transactionId: 'he-3',
+          payload: JSON.stringify({ to: 'bob', symbol: 'WAIV', quantity: '1', ...memoField }),
+          logs: JSON.stringify({
+            events: [
+              {
+                contract: 'tokens',
+                event: 'transfer',
+                data: { symbol: 'WAIV', quantity: '1.00000000' },
+              },
+            ],
+          }),
+        },
+      ],
+      virtualTransactions: [],
+    } as never);
+
+    expect(recordTokenTransfer).toHaveBeenCalledTimes(1);
+    expect(recordTokenTransfer.mock.calls[0][0].memo).toBe(expectedMemo);
+  });
 });

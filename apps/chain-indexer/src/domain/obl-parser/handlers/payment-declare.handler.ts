@@ -4,7 +4,8 @@ import { OblRepository } from '../../../repositories/obl.repository';
 import type { OdlActionHandler, OdlEventContext } from '../../odl-shared';
 import { paymentDeclarePayloadSchema } from '../obl-envelope.schema';
 import { OblNotificationService } from '../obl-notification.service';
-import { normalizePair, toUsdString, asJsonValue } from '../obl.utils';
+import { toUsdString, asJsonValue } from '../obl.utils';
+import { OblOnBehalfPayerResolver } from '../obl-on-behalf-payer.resolver';
 
 @Injectable()
 export class PaymentDeclareHandler implements OdlActionHandler {
@@ -14,6 +15,7 @@ export class PaymentDeclareHandler implements OdlActionHandler {
   constructor(
     private readonly oblRepository: OblRepository,
     private readonly oblNotifications: OblNotificationService,
+    private readonly onBehalfPayer: OblOnBehalfPayerResolver,
   ) {}
 
   async handle(payload: Record<string, unknown>, ctx: OdlEventContext): Promise<void> {
@@ -23,10 +25,6 @@ export class PaymentDeclareHandler implements OdlActionHandler {
       return;
     }
     const data = parsed.data;
-    if (ctx.creator !== data.payer) {
-      this.logger.warn('payment_declare: payer mismatch');
-      return;
-    }
 
     const existing = await this.oblRepository.findPayment(data.payment_id);
     if (existing) {
@@ -34,10 +32,14 @@ export class PaymentDeclareHandler implements OdlActionHandler {
       return;
     }
 
-    const { pairLow, pairHigh } = normalizePair(data.payer, data.receiver);
-    const startedSeq = await this.oblRepository.findLedgerStartedSeq(pairLow, pairHigh);
-    if (startedSeq === null || ctx.eventSeq < startedSeq) {
-      this.logger.warn('payment_declare: no active ledger or before cutoff');
+    const attribution = await this.onBehalfPayer.resolve({
+      actor: ctx.creator,
+      onBehalfOf: data.payer,
+      receiver: data.receiver,
+      eventSeq: ctx.eventSeq,
+    });
+    if (!attribution) {
+      this.logger.warn('payment_declare: rejected payer/receiver or no active ledger');
       return;
     }
 
@@ -51,8 +53,9 @@ export class PaymentDeclareHandler implements OdlActionHandler {
 
     await this.oblRepository.insertPayment({
       payment_id: data.payment_id,
-      payer: data.payer,
+      payer: attribution.payer,
       receiver: data.receiver,
+      paid_by: attribution.paidBy,
       amount_usd: amountUsd,
       declared_amount_usd: amountUsd,
       method: 'offchain',
@@ -69,13 +72,14 @@ export class PaymentDeclareHandler implements OdlActionHandler {
     this.oblNotifications.emit(ctx, {
       type: 'obl_payment_declare',
       objectId: null,
-      actor: data.payer,
+      actor: attribution.paidBy ?? attribution.payer,
       payload: {
         paymentId: data.payment_id,
-        payer: data.payer,
+        payer: attribution.payer,
         receiver: data.receiver,
         amountUsd,
         state: 'pending',
+        ...(attribution.paidBy ? { paidBy: attribution.paidBy } : {}),
       },
     });
   }

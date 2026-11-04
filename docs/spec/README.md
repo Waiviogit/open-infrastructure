@@ -130,6 +130,7 @@ Details: [architecture overview](../architecture/overview.md).
 | [obl/mutual-ledger.md](obl/mutual-ledger.md) | Per-pair USD balance, states, cutoff |
 | [obl/contracts.md](obl/contracts.md) | Offers, contracts, invoices, drafts |
 | [obl/payments.md](obl/payments.md) | WAIV transfer, upvote, off-chain |
+| [obl/payment-on-behalf.md](obl/payment-on-behalf.md) | Third account pays a debtor's debt (`paid_by`) |
 | [obl/disputes.md](obl/disputes.md) | Dispute rules and resolution |
 | [obl/service-orders.md](obl/service-orders.md) | Immutable service orders per contract |
 | [obl/reports.md](obl/reports.md) | Immutable reports (contract / service order) |

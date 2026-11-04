@@ -12,8 +12,11 @@ import {
   buildOblReportCreateOp,
   buildOblServiceOrderCancelOp,
   buildOblServiceOrderCreateOp,
+  buildHiveEngineTokensOp,
 } from '@opden-data-layer/hive-broadcast';
 
+import { WAIV_TOKEN } from '@opden-data-layer/core/constants';
+import { buildOblOnBehalfMemo } from '@opden-data-layer/core/utils/obl-on-behalf-memo';
 import { parseOblUsdAmount } from '@opden-data-layer/core/utils/obl-usd-amount';
 
 import type { BeneficiaryLineDraft } from '../domain/invoice-issue';
@@ -191,6 +194,49 @@ export function buildDeclarePaymentOp(input: {
     amountUsd: requirePositiveUsdAmount(input.amountUsd),
     ref: input.ref,
     required_posting_auths: [input.payer],
+  });
+}
+
+/** Off-chain payment declared by `paidBy` for the `payer`↔`receiver` ledger. */
+export function buildDeclarePaymentOnBehalfOp(input: {
+  oblCustomJsonId: string;
+  paymentId: string;
+  payer: string;
+  receiver: string;
+  paidBy: string;
+  amountUsd: string;
+}) {
+  return buildOblPaymentDeclareOp({
+    id: input.oblCustomJsonId,
+    paymentId: input.paymentId,
+    payer: input.payer,
+    receiver: input.receiver,
+    amountUsd: requirePositiveUsdAmount(input.amountUsd),
+    required_posting_auths: [input.paidBy],
+  });
+}
+
+const WAIV_TRANSFER_DECIMALS = 8;
+
+/** WAIV transfer from `paidBy` to `receiver` that the indexer counts on the `debtor`↔`receiver` ledger. */
+export function buildPayOnBehalfWaivTransferOp(input: {
+  paidBy: string;
+  debtor: string;
+  receiver: string;
+  amountWaiv: number;
+}) {
+  if (!Number.isFinite(input.amountWaiv) || input.amountWaiv <= 0) {
+    throw new Error('invalid WAIV amount');
+  }
+  return buildHiveEngineTokensOp({
+    account: input.paidBy,
+    contractAction: 'transfer',
+    payload: {
+      to: input.receiver,
+      symbol: WAIV_TOKEN.SYMBOL,
+      quantity: input.amountWaiv.toFixed(WAIV_TRANSFER_DECIMALS),
+      memo: buildOblOnBehalfMemo(input.debtor),
+    },
   });
 }
 

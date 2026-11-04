@@ -48,6 +48,7 @@ function payment(id: string, seq: bigint): OblPayment {
     rate_usd: null,
     state: 'confirmed',
     ref: null,
+    paid_by: null,
     pair_low: 'alice',
     pair_high: 'bob',
     created_event_seq: seq,
@@ -113,6 +114,23 @@ describe('OblLedgerService', () => {
 
     expect(result.contracts).toHaveLength(1);
     expect(result.contracts[0].contract_id).toBe('post');
+  });
+
+  it('reduces the debtor debt by a payment made on its behalf by a third party', async () => {
+    const obl = {
+      findLedgerStartedSeq: jest.fn().mockResolvedValue(BigInt(1)),
+      listContractsForPairWithOffer: jest.fn().mockResolvedValue([]),
+      listInvoicesForPair: jest.fn().mockResolvedValue([invoiceLine('inv', BigInt(10))]),
+      listPaymentsForPair: jest.fn().mockResolvedValue([
+        { ...payment('pay-carol', BigInt(20)), amount_usd: '40.00000000', paid_by: 'carol' },
+      ]),
+      listDisputesForInvoices: jest.fn().mockResolvedValue([]),
+    } as unknown as OblRepository;
+
+    const result = await new OblLedgerService(obl).getLedger('bob', 'alice');
+
+    expect(result.balance.confirmed.owesAtoB).toBe('60.00000000');
+    expect(result.payments[0].paid_by).toBe('carol');
   });
 
   it('rejects identical accounts', async () => {

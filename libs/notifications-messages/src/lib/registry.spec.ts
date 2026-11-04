@@ -79,6 +79,34 @@ describe('buildNotificationMessage', () => {
     expect(msg.params['signer']).toBe('bob');
   });
 
+  it.each([
+    ['obl_payment_declare', 'notification_obl_payment_declare_on_behalf', 'carol'],
+    ['obl_payment_confirm', 'notification_obl_payment_confirm_on_behalf', 'alice'],
+  ] as const)('builds %s message naming payer, receiver and debtor', (type, key, actor) => {
+    const msg = buildNotificationMessage({
+      ...baseEnvelope,
+      type,
+      actor,
+      payload: {
+        paymentId: 'pay-1',
+        payer: 'bob',
+        receiver: 'alice',
+        paidBy: 'carol',
+        amountUsd: '50',
+        state: 'pending',
+      },
+    });
+    expect(msg.key).toBe(key);
+    expect(msg.params).toMatchObject({
+      payer: 'bob',
+      receiver: 'alice',
+      paidBy: 'carol',
+      amountUsd: '50',
+    });
+    expect(msg.paramHrefs?.['paidBy']).toBe('/@carol');
+    expect(msg.href).toBe('/business/relationships/alice');
+  });
+
   it('builds obl_service_order_cancel message', () => {
     const msg = buildNotificationMessage({
       ...baseEnvelope,

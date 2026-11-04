@@ -139,6 +139,12 @@ export function RelationshipPaymentRow({
               </span>
             ) : null}
           </div>
+          {payment.paid_by ? (
+            <p className="text-caption text-fg-secondary">
+              {t('business_payment_paid_by')}{' '}
+              <ProfileLink name={payment.paid_by}>@{payment.paid_by}</ProfileLink>
+            </p>
+          ) : null}
           {refNote ? (
             <p className="text-caption text-fg-secondary">{refNote}</p>
           ) : null}

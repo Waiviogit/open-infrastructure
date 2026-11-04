@@ -1412,6 +1412,8 @@ export interface OblPaymentsTable {
   rate_usd: ColumnType<string | null, number | string | null, number | string | null>;
   state: OblPaymentState;
   ref: ColumnType<JsonValue | null, JsonValue | null | undefined, JsonValue | null>;
+  /** Account that actually paid on behalf of `payer` (debtor); null when the debtor paid. */
+  paid_by: ColumnType<string | null, string | null | undefined, string | null>;
   pair_low: Generated<string>;
   pair_high: Generated<string>;
   created_event_seq: bigint;

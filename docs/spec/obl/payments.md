@@ -6,17 +6,20 @@ type: spec
 status: active
 scope: platform
 tags: [obl, payments]
-updated_at: 2026-07-16
+updated_at: 2026-11-04
 related:
   - docs/spec/open-business-layer.md
   - docs/spec/obl/mutual-ledger.md
+  - docs/spec/obl/payment-on-behalf.md
 ---
 
 # Payments
 
 All netting in **USD**. On-chain rows store `token_symbol`, `token_amount`, `rate_usd` for audit.
 
-Payments are **not** linked to a contract (`obl_payments` has no `contract_id`). Contract context lives on invoices only.
+Payments are **not** linked to a contract or an invoice (`obl_payments` has no `contract_id`). Contract context lives on invoices only. Netting is always per `payer`↔`receiver` pair.
+
+A third account may pay on behalf of the debtor; the row stays on the debtor↔receiver pair and records the actual payer in `paid_by` — see [payment on behalf](payment-on-behalf.md).
 
 Each payment row has `created_at` (Hive block timestamp at index time, stored as UTC `timestamptz`).
 
@@ -31,13 +34,13 @@ Block timestamps from Hive omit a `Z` suffix; the indexer normalizes them to UTC
 
 USD rate: WAIV → `hive_engine_rates`; other symbols → `hive_engine_swap_pool_usd`.
 
-Pair-match ledger required; cutoff after ledger start.
+Pair-match ledger required; cutoff after ledger start. A WAIV transfer with memo `obl:on-behalf:<debtor>` is matched to the debtor↔receiver ledger instead ([payment on behalf](payment-on-behalf.md)).
 
 ## Off-chain
 
 | Action | Signer | State |
 |--------|--------|-------|
-| `payment_declare` | payer | `pending` |
+| `payment_declare` | payer, or a third account [on behalf](payment-on-behalf.md) of the payer | `pending` |
 | `payment_confirm` | receiver | `confirmed` |
 
 Receiver-only confirm (no prior declare) allowed.
@@ -69,6 +72,7 @@ Optional metadata on `obl_payments.ref`:
 | `payment_declare` | user JSON (`note`, `memo`, `report`, …) | Off-chain payment context (bank transfer note, tx id, etc.) |
 | `payment_confirm` (receiver-only) | `{ receiver_only_confirm: true }` | Confirm without a prior declare |
 | `upvote_reward` indexer | `{ authorperm: "@author/permlink" }` | Link curation reward to the post that earned it |
+| `token_transfer` indexer | `{ he_tx }` or `{ he_tx, on_behalf_of }` | Hive Engine tx; debtor named in an on-behalf memo |
 
 Web relationship UI shows user `note`/`memo`/`report` and renders `upvote_reward` `authorperm` as a post link; system confirm tags are hidden.
 

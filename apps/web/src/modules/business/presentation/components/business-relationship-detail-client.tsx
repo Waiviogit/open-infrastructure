@@ -47,6 +47,7 @@ import {
   newOblReportId,
   newOblServiceOrderId,
 } from '../../domain/obl-ids';
+import { buildPayOnBehalfHref } from '../../domain/pay-on-behalf';
 import { businessRoutes } from '../../domain/routes';
 import { canCreateServiceOrderOnContract } from '../../domain/service-order-create';
 import {
@@ -182,6 +183,7 @@ export function BusinessRelationshipDetailClient({
   const [serviceOrderModalOpen, setServiceOrderModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [declareModalOpen, setDeclareModalOpen] = useState(false);
+  const [payLinkCopied, setPayLinkCopied] = useState(false);
   const [confirmPaymentRow, setConfirmPaymentRow] = useState<LedgerPaymentRow | null>(null);
   const [disputeInvoice, setDisputeInvoice] = useState<LedgerInvoiceRow | null>(null);
   const [resolveDisputeRow, setResolveDisputeRow] = useState<LedgerDisputeRow | null>(null);
@@ -357,6 +359,12 @@ export function BusinessRelationshipDetailClient({
     );
   }
 
+  async function copyPayOnBehalfLink() {
+    const href = buildPayOnBehalfHref({ debtor: username, receiver: counterparty });
+    await navigator.clipboard.writeText(new URL(href, window.location.origin).toString());
+    setPayLinkCopied(true);
+  }
+
   async function recordPayment(
     amountUsd: string,
     parties: { payer: string; receiver: string },
@@ -472,6 +480,15 @@ export function BusinessRelationshipDetailClient({
               className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
             >
               {t('business_record_payment')}
+            </button>
+            <button
+              type="button"
+              onClick={() => void copyPayOnBehalfLink()}
+              className="rounded-btn border border-border px-3 py-1 text-body-sm"
+            >
+              {payLinkCopied
+                ? t('business_pay_on_behalf_link_copied')
+                : t('business_pay_on_behalf_copy_link')}
             </button>
           </div>
         }

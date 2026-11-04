@@ -66,6 +66,8 @@ export type LedgerPaymentRow = {
   payment_id: string;
   payer: string;
   receiver: string;
+  /** Account that paid on behalf of `payer` (debtor). */
+  paid_by?: string | null;
   amount_usd: string;
   declared_amount_usd?: string | null;
   state: 'pending' | 'confirmed';

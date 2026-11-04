@@ -390,6 +390,7 @@ export class OblRecipientStrategy implements RecipientStrategy {
           event.actor,
           event.payload.payer,
           event.payload.receiver,
+          event.payload.paidBy,
         );
       case 'obl_dispute_open':
       case 'obl_dispute_resolve':

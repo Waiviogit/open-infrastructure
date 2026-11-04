@@ -79,6 +79,10 @@ export const EN_NOTIFICATION_DICTIONARY: Readonly<Record<string, string>> = {
     '{payer} declared payment {amountUsd} USD to {receiver}',
   notification_obl_payment_confirm:
     '{receiver} confirmed payment {amountUsd} USD from {payer}',
+  notification_obl_payment_declare_on_behalf:
+    '{paidBy} declared payment {amountUsd} USD to {receiver} on behalf of {payer}',
+  notification_obl_payment_confirm_on_behalf:
+    '{receiver} confirmed payment {amountUsd} USD from {paidBy} on behalf of {payer}',
   notification_obl_dispute_open:
     '{disputant} opened dispute {disputeId} on invoice {invoiceId}',
   notification_obl_dispute_resolve:

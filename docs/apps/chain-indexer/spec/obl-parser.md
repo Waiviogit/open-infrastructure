@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: chain-indexer
 tags: [obl, indexer]
-updated_at: 2026-07-14
+updated_at: 2026-11-04
 related:
   - docs/spec/open-business-layer.md
   - docs/apps/chain-indexer/spec/overview.md
@@ -28,13 +28,15 @@ Registered ids: `obl-mainnet`, `obl-testnet` (see `hive.oblCustomJsonId`). Dispa
 
 After a successful persist, handlers emit `obl_*` notifications via `OblNotificationService` — see [OBL lifecycle notifications](../../../spec/obl/notifications.md).
 
+`payment_declare` may be signed by a third account on behalf of `payer`; `OblOnBehalfPayerResolver` checks the debtor↔receiver ledger and sets `paid_by` (see [payment on behalf](../../../spec/obl/payment-on-behalf.md)).
+
 Repository: `OblRepository` (`obl_*` tables).
 
 ## Non–custom_json ingestion
 
 | Parser | Path |
 |--------|------|
-| WAIV transfer | `hive-engine-parser/parsers/obl-token-transfer.parser.ts` |
+| WAIV transfer | `hive-engine-parser/parsers/obl-token-transfer.parser.ts` (passes `memo`; `obl:on-behalf:<debtor>` → debtor↔receiver ledger) |
 | Upvote reward | `waiv-post-reward.service.ts` → `OblPaymentAttributionService` |
 
 ## Verification
