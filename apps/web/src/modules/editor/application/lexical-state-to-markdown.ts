@@ -1,9 +1,14 @@
 import { POST_IMAGE_NODE_TYPE } from '../domain/nodes/image-node';
+import { POST_VIDEO_NODE_TYPE } from '../domain/nodes/video-node';
 
 const FORMAT_BOLD = 1;
 const FORMAT_ITALIC = 2;
 const FORMAT_STRIKETHROUGH = 4;
+const FORMAT_UNDERLINE = 8;
 const FORMAT_CODE = 16;
+
+const MARKDOWN_FENCE = '```';
+const TABLE_HEADER_ROW_STATE = 1;
 
 type LexicalJsonNode = {
   type?: string;
@@ -15,6 +20,8 @@ type LexicalJsonNode = {
   altText?: string;
   cid?: string;
   listType?: string;
+  language?: string | null;
+  headerState?: number;
   children?: LexicalJsonNode[];
 };
 
@@ -36,6 +43,9 @@ function formatInlineText(text: string, format: number): string {
   }
   if (format & FORMAT_STRIKETHROUGH) {
     out = `~~${out}~~`;
+  }
+  if (format & FORMAT_UNDERLINE) {
+    out = `<u>${out}</u>`;
   }
   if (format & FORMAT_BOLD) {
     out = `**${out}**`;
@@ -78,6 +88,65 @@ function serializeNode(node: LexicalJsonNode, options: LexicalToMarkdownOptions)
   }
 }
 
+/** Raw text of a code block (no markdown escaping). */
+function codeText(nodes: LexicalJsonNode[] | undefined): string {
+  if (!nodes?.length) {
+    return '';
+  }
+  return nodes
+    .map((n) => {
+      if (n.type === 'linebreak') {
+        return '\n';
+      }
+      if (n.type === 'tab') {
+        return '\t';
+      }
+      return n.text ?? codeText(n.children);
+    })
+    .join('');
+}
+
+function codeBlockMarkdown(node: LexicalJsonNode): string {
+  const text = codeText(node.children);
+  let fence = MARKDOWN_FENCE;
+  while (text.includes(fence)) {
+    fence += '`';
+  }
+  const language = (node.language ?? '').trim();
+  return `${fence}${language}\n${text}\n${fence}\n\n`;
+}
+
+/** GFM cell: block children joined with `<br>`, pipes escaped, single line. */
+function tableCellMarkdown(cell: LexicalJsonNode, options: LexicalToMarkdownOptions): string {
+  const lines = (cell.children ?? [])
+    .map((block) => serializeChildren(block.children, options).trim())
+    .filter((line) => line.length > 0)
+    .map((line) => line.replace(/\n/g, '<br>'));
+  return lines.join('<br>').replace(/\|/g, '\\|');
+}
+
+function tableMarkdown(node: LexicalJsonNode, options: LexicalToMarkdownOptions): string {
+  const rows = (node.children ?? []).map((row) =>
+    (row.children ?? []).map((cell) => tableCellMarkdown(cell, options)),
+  );
+  if (rows.length === 0) {
+    return '';
+  }
+  const width = Math.max(...rows.map((r) => r.length));
+  const pad = (cells: string[]): string[] => [
+    ...cells,
+    ...Array<string>(width - cells.length).fill(''),
+  ];
+  const firstRowIsHeader = (node.children?.[0]?.children ?? []).some(
+    (cell) => ((cell.headerState ?? 0) & TABLE_HEADER_ROW_STATE) !== 0,
+  );
+  const header = firstRowIsHeader ? pad(rows[0]) : Array<string>(width).fill('');
+  const body = firstRowIsHeader ? rows.slice(1) : rows;
+  const line = (cells: string[]) => `| ${cells.join(' | ')} |`;
+  const lines = [line(header), line(Array<string>(width).fill('---')), ...body.map((r) => line(pad(r)))];
+  return `${lines.join('\n')}\n\n`;
+}
+
 function blockMarkdown(
   node: LexicalJsonNode,
   options: LexicalToMarkdownOptions,
@@ -87,7 +156,8 @@ function blockMarkdown(
 
   switch (type) {
     case 'heading': {
-      const level = node.tag === 'h1' ? 1 : node.tag === 'h3' ? 3 : 2;
+      const parsedLevel = Number((node.tag ?? '').replace(/^h/, ''));
+      const level = parsedLevel >= 1 && parsedLevel <= 6 ? parsedLevel : 2;
       const prefix = '#'.repeat(level);
       return childMd ? `${prefix} ${childMd}\n\n` : '';
     }
@@ -123,12 +193,38 @@ function blockMarkdown(
     }
     case 'listitem':
       return serializeChildren(node.children, options);
+    case POST_VIDEO_NODE_TYPE: {
+      const url = (node.url ?? '').trim();
+      return url ? `${url}
+
+` : '';
+    }
+    case 'horizontalrule':
+      return '---\n\n';
+    case 'code':
+      return codeBlockMarkdown(node);
+    case 'table':
+      return tableMarkdown(node, options);
     case 'paragraph':
       return childMd ? `${childMd}\n\n` : '\n';
     default:
       return childMd ? `${childMd}\n\n` : '';
   }
 }
+
+const BLOCK_NODE_TYPES: ReadonlySet<string> = new Set([
+  'paragraph',
+  'heading',
+  'quote',
+  'spoiler',
+  'list',
+  POST_IMAGE_NODE_TYPE,
+  'image',
+  POST_VIDEO_NODE_TYPE,
+  'horizontalrule',
+  'code',
+  'table',
+]);
 
 function walkRootBlocks(
   nodes: LexicalJsonNode[] | undefined,
@@ -140,7 +236,7 @@ function walkRootBlocks(
   const parts: string[] = [];
   for (const node of nodes) {
     const type = node.type ?? '';
-    if (type === 'paragraph' || type === 'heading' || type === 'quote' || type === 'spoiler' || type === 'list' || type === POST_IMAGE_NODE_TYPE || type === 'image') {
+    if (BLOCK_NODE_TYPES.has(type)) {
       parts.push(blockMarkdown(node, options));
     } else {
       const inline = serializeChildren(node.children, options);

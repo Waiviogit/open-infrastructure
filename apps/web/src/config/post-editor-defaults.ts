@@ -47,3 +47,12 @@ export function getPostEditorDefaultBeneficiary(): PostEditorDefaultBeneficiary 
     weight: percent * 100,
   };
 }
+
+/**
+ * Google Maps places in the editor `#` search (runtime, server-only). Off unless
+ * `POST_EDITOR_GOOGLE_PLACES_ENABLED=true`: without it `#` searches our objects only
+ * and the `/api/places/*` BFF answers 404 (no Google budget is spent).
+ */
+export function isPostEditorGooglePlacesEnabled(): boolean {
+  return trimOrEmpty(process.env.POST_EDITOR_GOOGLE_PLACES_ENABLED).toLowerCase() === 'true';
+}

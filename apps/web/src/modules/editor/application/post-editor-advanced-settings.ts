@@ -7,7 +7,9 @@ import type { CommentOptionsOp } from '@opden-data-layer/hive-broadcast';
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
 
 import {
+  DEFAULT_POST_EDITOR_SELF_UPVOTE,
   EDITOR_REWARD_MODE_METADATA_KEY,
+  EDITOR_SELF_UPVOTE_METADATA_KEY,
   HIVE_BENEFICIARY_WEIGHT_MIN,
   HIVE_BENEFICIARY_WEIGHT_TOTAL,
   HIVE_MAX_ACCEPTED_PAYOUT_DECLINED,
@@ -107,11 +109,32 @@ export function mergeRewardModeIntoJsonMetadata(
   return { ...withTags, [EDITOR_REWARD_MODE_METADATA_KEY]: rewardMode };
 }
 
+export function parseSelfUpvoteFromJsonMetadata(meta: unknown): boolean {
+  if (!meta || typeof meta !== 'object') {
+    return DEFAULT_POST_EDITOR_SELF_UPVOTE;
+  }
+  const raw = (meta as Record<string, unknown>)[EDITOR_SELF_UPVOTE_METADATA_KEY];
+  return typeof raw === 'boolean' ? raw : DEFAULT_POST_EDITOR_SELF_UPVOTE;
+}
+
+export function mergeSelfUpvoteIntoJsonMetadata(
+  meta: unknown,
+  selfUpvote: boolean,
+): Record<string, unknown> {
+  const base =
+    meta && typeof meta === 'object' && !Array.isArray(meta)
+      ? { ...(meta as Record<string, unknown>) }
+      : {};
+  return { ...base, [EDITOR_SELF_UPVOTE_METADATA_KEY]: selfUpvote };
+}
+
 /** Removes editor-only keys before publishing to Hive. */
 export function stripEditorOnlyJsonMetadataFields(
   meta: Record<string, unknown>,
 ): Record<string, unknown> {
-  const { [EDITOR_REWARD_MODE_METADATA_KEY]: _removed, ...rest } = meta;
+  const rest = { ...meta };
+  delete rest[EDITOR_REWARD_MODE_METADATA_KEY];
+  delete rest[EDITOR_SELF_UPVOTE_METADATA_KEY];
   return rest;
 }
 

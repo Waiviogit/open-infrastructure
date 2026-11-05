@@ -17,13 +17,16 @@ import {
 import { useI18n } from '@/i18n/providers/i18n-provider';
 
 import { hasLexicalDraftBodyContent } from '../../application/editor-body-serialization';
+import { hasDraftWorthSaving } from '../../application/editor-draft-autosave';
 import {
   addPostEditorTagForHashtagObject,
   initialPostEditorTags,
   mergeRewardModeIntoJsonMetadata,
+  mergeSelfUpvoteIntoJsonMetadata,
   mergeTagsIntoJsonMetadata,
   parseBeneficiariesFromDraft,
   parseRewardModeFromJsonMetadata,
+  parseSelfUpvoteFromJsonMetadata,
   serializeBeneficiariesForPersist,
   validateBeneficiaries,
 } from '../../application/post-editor-advanced-settings';
@@ -39,6 +42,7 @@ import type { PostEditorBeneficiary } from '../../domain/post-editor-advanced-se
 import type { PostEditorRewardMode } from '../../domain/post-editor-advanced-settings';
 import { useEditorPostPublish } from '../../application/use-editor-post-publish';
 import type { PostEditorLinkedObject } from '../../domain/post-editor-linked-object';
+import type { PostEditTarget } from '../../domain/post-edit-target';
 import {
   EDITOR_ATTACH_OBJECT_QUERY,
 } from '../../domain/post-editor-object-create-return';
@@ -77,6 +81,10 @@ export type EditorScreenProps = {
   defaultBeneficiary?: PostEditorBeneficiary | null;
   initialBeneficiaries?: unknown;
   sidebarDrafts: LastDraftSidebarItem[];
+  /** Editing a published post (same permlink; payout settings locked). */
+  editTarget?: PostEditTarget | null;
+  /** From server env (`isPostEditorGooglePlacesEnabled`): Google Maps places in `#` search. */
+  googlePlacesEnabled?: boolean;
 };
 
 export function EditorScreen({
@@ -88,6 +96,8 @@ export function EditorScreen({
   defaultBeneficiary = null,
   initialBeneficiaries = null,
   sidebarDrafts,
+  editTarget = null,
+  googlePlacesEnabled = false,
 }: EditorScreenProps) {
   const { t } = useI18n();
   const router = useRouter();
@@ -110,6 +120,9 @@ export function EditorScreen({
   const [rewardMode, setRewardMode] = useState<PostEditorRewardMode>(() =>
     parseRewardModeFromJsonMetadata(initialJsonMetadata),
   );
+  const [selfUpvote, setSelfUpvote] = useState<boolean>(() =>
+    parseSelfUpvoteFromJsonMetadata(initialJsonMetadata),
+  );
   const [tags, setTags] = useState<string[]>(() =>
     initialPostEditorTags(initialJsonMetadata, initialDraftId === null),
   );
@@ -129,6 +142,7 @@ export function EditorScreen({
       initialPostEditorTags(initialJsonMetadata, initialDraftId === null),
     ),
     rewardMode: parseRewardModeFromJsonMetadata(initialJsonMetadata),
+    selfUpvote: parseSelfUpvoteFromJsonMetadata(initialJsonMetadata),
     beneficiariesJson: serializeBeneficiariesForPersist(
       parseBeneficiariesFromDraft(initialBeneficiaries, defaultBeneficiary),
     ),
@@ -141,6 +155,7 @@ export function EditorScreen({
     linkedObjects,
     tags,
     rewardMode,
+    selfUpvote,
     beneficiaries,
   });
   useEffect(() => {
@@ -152,6 +167,7 @@ export function EditorScreen({
       linkedObjects,
       tags,
       rewardMode,
+      selfUpvote,
       beneficiaries,
     };
   }, [
@@ -162,6 +178,7 @@ export function EditorScreen({
     linkedObjects,
     tags,
     rewardMode,
+    selfUpvote,
     beneficiaries,
   ]);
 
@@ -219,6 +236,7 @@ export function EditorScreen({
       linkedObjects: linked0,
       tags: tags0,
       rewardMode: reward0,
+      selfUpvote: upvote0,
       beneficiaries: ben0,
     } = stateRef.current;
     const linkedJson = serializeLinkedObjectsForPersist(linked0);
@@ -232,6 +250,7 @@ export function EditorScreen({
       linkedJson === last.linkedObjectsJson &&
       tagsJson === last.tagsJson &&
       reward0 === last.rewardMode &&
+      upvote0 === last.selfUpvote &&
       beneficiariesJson === last.beneficiariesJson &&
       id0 !== null
     ) {
@@ -243,19 +262,13 @@ export function EditorScreen({
     ) {
       return;
     }
-    const jsonMetadataPayload = buildJsonMetadataPayload(
-      meta0,
-      linked0,
-      tags0,
-      reward0,
+    const jsonMetadataPayload = mergeSelfUpvoteIntoJsonMetadata(
+      buildJsonMetadataPayload(meta0, linked0, tags0, reward0),
+      upvote0,
     );
     if (
       !id0 &&
-      !t0.trim() &&
-      !b0.trim() &&
-      linked0.length === 0 &&
-      tags0.length === 0 &&
-      ben0.length === 0
+      !hasDraftWorthSaving({ title: t0, body: b0, linkedObjectCount: linked0.length })
     ) {
       return;
     }
@@ -265,6 +278,9 @@ export function EditorScreen({
         body: b0,
         jsonMetadata: jsonMetadataPayload,
         beneficiaries: ben0,
+        ...(editTarget
+          ? { permlink: editTarget.permlink, parentPermlink: editTarget.parentPermlink }
+          : {}),
       });
       if (r.ok) {
         const newId = r.value.draftId;
@@ -277,6 +293,7 @@ export function EditorScreen({
           linkedObjectsJson: linkedJson,
           tagsJson,
           rewardMode: reward0,
+          selfUpvote: upvote0,
           beneficiariesJson,
         };
         stateRef.current = {
@@ -284,7 +301,7 @@ export function EditorScreen({
           draftId: newId,
           jsonMetadata: r.value.jsonMetadata,
         };
-        if (syncDraftUrl) {
+        if (syncDraftUrl && !editTarget) {
           router.replace(`/editor?draftId=${encodeURIComponent(newId)}`);
           router.refresh();
         }
@@ -310,11 +327,12 @@ export function EditorScreen({
         linkedObjectsJson: linkedJson,
         tagsJson,
         rewardMode: reward0,
+        selfUpvote: upvote0,
         beneficiariesJson,
       };
       router.refresh();
     }
-  }, [username, router, buildJsonMetadataPayload]);
+  }, [username, router, buildJsonMetadataPayload, editTarget]);
 
   const runSaveRef = useRef(runSave);
   useEffect(() => {
@@ -374,6 +392,14 @@ export function EditorScreen({
     [buildJsonMetadataPayload, linkedObjects, tags, scheduleSave],
   );
 
+  const handleSelfUpvoteChange = useCallback(
+    (next: boolean) => {
+      setSelfUpvote(next);
+      scheduleSave();
+    },
+    [scheduleSave],
+  );
+
   const handleBeneficiariesChange = useCallback(
     (next: PostEditorBeneficiary[]) => {
       if (!validateBeneficiaries(next, username).ok) {
@@ -393,42 +419,34 @@ export function EditorScreen({
     [handleLinkedObjectsChange, scheduleSave],
   );
 
+  /**
+   * Reads and advances `stateRef` synchronously so several objects linked in a
+   * row (paste with many object links, `#` + async lookups) all stick.
+   */
   const handleObjectLinkedFromEditor = useCallback(
     (result: SearchObjectResult) => {
       cacheSearchResult(result);
+      const snap = stateRef.current;
       const { objects, added: linkedAdded } = appendLinkedObjectIfAbsent(
-        linkedObjects,
+        snap.linkedObjects,
         result,
       );
-      const nextTags = addPostEditorTagForHashtagObject(tags, result);
-      const tagsChanged = nextTags.length !== tags.length;
+      const nextTags = addPostEditorTagForHashtagObject(snap.tags, result);
+      const tagsChanged = nextTags.length !== snap.tags.length;
       if (!linkedAdded && !tagsChanged) {
         return;
       }
-      if (linkedAdded) {
-        setLinkedObjects(objects);
-      }
-      if (tagsChanged) {
-        setTags(nextTags);
-      }
+      const nextLinked = linkedAdded ? objects : snap.linkedObjects;
+      const tagsNext = tagsChanged ? nextTags : snap.tags;
+      stateRef.current = { ...snap, linkedObjects: nextLinked, tags: tagsNext };
+      setLinkedObjects(nextLinked);
+      setTags(tagsNext);
       setJsonMetadata((prev: unknown) =>
-        buildJsonMetadataPayload(
-          prev,
-          linkedAdded ? objects : linkedObjects,
-          tagsChanged ? nextTags : tags,
-          rewardMode,
-        ),
+        buildJsonMetadataPayload(prev, nextLinked, tagsNext, snap.rewardMode),
       );
       scheduleSave();
     },
-    [
-      cacheSearchResult,
-      linkedObjects,
-      tags,
-      rewardMode,
-      buildJsonMetadataPayload,
-      scheduleSave,
-    ],
+    [cacheSearchResult, buildJsonMetadataPayload, scheduleSave],
   );
 
   const attachReturnedObject = useCallback(
@@ -562,6 +580,8 @@ export function EditorScreen({
     draftId,
     legalAccepted,
     flushSave,
+    selfUpvote,
+    editTarget,
   });
 
   return (
@@ -603,6 +623,7 @@ export function EditorScreen({
               scheduleSave();
             }}
             onObjectLinkedFromEditor={handleObjectLinkedFromEditor}
+            hashObjectSearch={{ username, googlePlaces: googlePlacesEnabled }}
           />
 
           <EditorAdvancedSettingsPanel
@@ -613,6 +634,9 @@ export function EditorScreen({
             onBeneficiariesChange={handleBeneficiariesChange}
             tags={tags}
             onTagsChange={handleTagsChange}
+            selfUpvote={selfUpvote}
+            onSelfUpvoteChange={handleSelfUpvoteChange}
+            payoutLocked={Boolean(editTarget)}
           />
 
           <EditorAttachedObjectsPanel

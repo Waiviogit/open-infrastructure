@@ -1,0 +1,29 @@
+/* emoji-picker-react: map the picker's own CSS variables to theme tokens (third-party embed). */
+.editor-emoji-picker .EmojiPickerReact {
+  --epr-bg-color: var(--color-surface);
+  --epr-category-label-bg-color: var(--color-surface);
+  --epr-text-color: var(--color-fg);
+  --epr-picker-border-color: var(--color-border);
+  --epr-picker-border-radius: var(--radius-card);
+  --epr-search-input-bg-color: var(--color-surface-control);
+  --epr-search-input-bg-color-active: var(--color-surface-control);
+  --epr-search-input-text-color: var(--color-fg);
+  --epr-search-input-placeholder-color: var(--color-fg-tertiary);
+  --epr-search-border-color: var(--color-focus);
+  --epr-hover-bg-color: var(--color-ghost-surface);
+  --epr-focus-bg-color: var(--color-ghost-surface);
+  --epr-highlight-color: var(--color-accent);
+  --epr-category-icon-active-color: var(--color-accent);
+  --epr-category-label-text-color: var(--color-muted);
+  --epr-dark-bg-color: var(--color-surface);
+  --epr-dark-category-label-bg-color: var(--color-surface);
+  --epr-dark-text-color: var(--color-fg);
+  --epr-dark-picker-border-color: var(--color-border);
+  --epr-dark-search-input-bg-color: var(--color-surface-control);
+  --epr-dark-search-input-bg-color-active: var(--color-surface-control);
+  --epr-dark-hover-bg-color: var(--color-ghost-surface);
+  --epr-dark-focus-bg-color: var(--color-ghost-surface);
+  --epr-dark-highlight-color: var(--color-accent);
+  --epr-dark-category-icon-active-color: var(--color-accent);
+  font-family: var(--font-body);
+}

@@ -23,6 +23,12 @@ export const HIVE_MAX_ACCEPTED_PAYOUT_DECLINED = '0.000 HBD';
 /** Persisted in draft `jsonMetadata` only; stripped before chain publish. */
 export const EDITOR_REWARD_MODE_METADATA_KEY = '_editorRewardMode';
 
+/** Persisted in draft `jsonMetadata` only ("Like this post"); stripped before chain publish. */
+export const EDITOR_SELF_UPVOTE_METADATA_KEY = '_editorSelfUpvote';
+
+/** Legacy default: the author does not upvote their own post unless asked. */
+export const DEFAULT_POST_EDITOR_SELF_UPVOTE = false;
+
 export type PostEditorRewardMode = 'fifty_fifty' | 'hive_power' | 'declined';
 
 export type PostEditorBeneficiary = {

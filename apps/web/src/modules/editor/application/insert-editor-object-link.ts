@@ -1,4 +1,4 @@
-import { $createLinkNode } from '@lexical/link';
+import { $createLinkNode, type LinkNode } from '@lexical/link';
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
 import { objectPagePath } from '@/shared/routes/object-page-path';
 import {
@@ -21,17 +21,20 @@ export function objectLinkDisplayLabel(result: SearchObjectResult): string {
   return result.name?.trim() || result.object_id;
 }
 
+/** Object link node (visible name, href on current host). Call inside `editor.update`. */
+export function $createObjectLinkNode(result: SearchObjectResult): LinkNode {
+  const linkNode = $createLinkNode(buildObjectLinkHref(result.object_id));
+  linkNode.append($createTextNode(objectLinkDisplayLabel(result)));
+  return linkNode;
+}
+
 /** Inserts a styled object link at the current selection (visible name, href on current host). */
 export function insertObjectLinkAtSelection(
   editor: LexicalEditor,
   result: SearchObjectResult,
 ): void {
-  const href = buildObjectLinkHref(result.object_id);
-  const label = objectLinkDisplayLabel(result);
-
   editor.update(() => {
-    const linkNode = $createLinkNode(href);
-    linkNode.append($createTextNode(label));
+    const linkNode = $createObjectLinkNode(result);
 
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {

@@ -1,6 +1,7 @@
 import { $getRoot, $isElementNode, type LexicalEditor, type LexicalNode } from 'lexical';
 
 import { $isImageNode, POST_IMAGE_NODE_TYPE } from '../domain/nodes/image-node';
+import { POST_VIDEO_NODE_TYPE } from '../domain/nodes/video-node';
 
 function $forEachDescendant(node: LexicalNode, visit: (n: LexicalNode) => void): void {
   visit(node);
@@ -114,6 +115,14 @@ export function hasLexicalDraftBodyContent(body: string): boolean {
         }
         const n = entry as Record<string, unknown>;
         const nodeType = n.type;
+        if (
+          nodeType === POST_VIDEO_NODE_TYPE &&
+          typeof n.url === 'string' &&
+          n.url.trim()
+        ) {
+          hasContent = true;
+          return;
+        }
         if (
           (nodeType === POST_IMAGE_NODE_TYPE || nodeType === 'image') &&
           ((typeof n.cid === 'string' && n.cid.trim()) ||

@@ -35,6 +35,9 @@ Next.js **Route Handlers** under `apps/web/src/app/api/` proxy to backend servic
 | `/api/search` | GET | `{QUERY_API_URL}/query/v1/search` | Header predictive search |
 | `/api/search/counts` | GET | query-api search counts | Search UI tallies |
 | `/api/search/objects-by-ids` | GET | query-api batch object lookup | Discover / object pickers |
+| `/api/places/search` | GET | `{QUERY_API_URL}/query/v1/places/search` (+ `X-Forwarded-For`) | Editor `#` Google places; **401** when signed out, **404** unless `POST_EDITOR_GOOGLE_PLACES_ENABLED=true` |
+| `/api/places/:placeId` | GET | query-api place details | Place create confirmation; **401** when signed out |
+| `/api/places/:placeId/object` | GET | query-api place → object | Dedup check before create; **401** when signed out |
 | `/api/discover/objects` | GET | query-api discover objects | [Discover page](pages/discover/page.md) |
 | `/api/discover/users` | GET | query-api discover users | Discover page |
 | `/api/discover/tag-categories` | GET | query-api tag categories | Discover filters |

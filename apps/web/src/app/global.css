@@ -17,9 +17,16 @@
     @apply text-accent;
   }
 
-  /** Lexical post editor: selected block image (see editor-image-keyboard-plugin). */
-  [data-post-image][data-image-selected] {
+  /** Lexical post editor: selected image / video / line block (see editor-image-keyboard-plugin). */
+  [data-post-image][data-image-selected],
+  [data-post-video][data-image-selected],
+  hr[data-image-selected] {
     @apply ring-2 ring-accent ring-offset-2 ring-offset-bg;
+  }
+
+  /** No stale text caret while a whole block is selected. */
+  [data-block-selected] {
+    caret-color: transparent;
   }
 
   /** Native select highlight: accent at 10% (`--color-accent-soft`), not OS blue. */
@@ -596,6 +603,28 @@
   .video-embed-widget--linkedin iframe,
   .blog-post-linkedin-embed iframe {
     height: 960px;
+  }
+
+  /**
+   * Post body tables (editor Insert → Table, GFM) — legacy look, same as the editor:
+   * equal fixed columns, long text wraps and grows the row, rows striped white / grey
+   * (the header row counts as row 1). `nth-of-type`: the editor DOM has a leading
+   * `<colgroup>`, which would shift `nth-child`.
+   */
+  .blog-post-body table {
+    @apply mb-4 w-full table-fixed border-collapse;
+  }
+
+  .blog-post-body th,
+  .blog-post-body td {
+    @apply border border-border px-2 py-1 align-top text-start whitespace-normal break-words font-weight-body;
+  }
+
+  .blog-post-body thead + tbody tr:nth-of-type(odd),
+  .blog-post-body table > tbody:first-child tr:nth-of-type(even),
+  .blog-post-body table > tr:nth-of-type(even),
+  .editor-table tr:nth-of-type(even) {
+    @apply bg-surface-alt;
   }
 
   /**

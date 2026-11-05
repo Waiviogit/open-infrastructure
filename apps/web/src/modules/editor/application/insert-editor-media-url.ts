@@ -1,50 +1,45 @@
-import { $createLinkNode } from '@lexical/link';
 import {
   $createParagraphNode,
-  $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   type LexicalEditor,
 } from 'lexical';
 
-import {
-  canonicalizeMediaUrl,
-  parseMediaEmbedUrl,
-} from '@/shared/infrastructure/media-embed';
+import { $createVideoNodeForUrl } from '../domain/nodes/video-node';
 
 /**
- * Inserts a media URL as its own linked paragraph.
- * Stored markdown is the public URL; render-time pipeline turns it into an iframe.
+ * Inserts a supported video URL as an embedded player block (legacy parity) and
+ * puts the caret in a paragraph after it. Call inside `editor.update`.
+ * Returns `false` (nothing inserted) for URLs that are not video links.
  */
-export function insertMediaUrlAtSelection(
-  editor: LexicalEditor,
-  url: string,
-): boolean {
-  if (!parseMediaEmbedUrl(url)) {
+export function $insertVideoAtSelection(url: string): boolean {
+  const video = $createVideoNodeForUrl(url);
+  if (!video) {
     return false;
   }
-  const href = canonicalizeMediaUrl(url);
-
-  editor.update(() => {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    selection.insertNodes([video]);
+  } else {
+    $getRoot().append(video);
+  }
+  const next = video.getNextSibling();
+  if (next) {
+    next.selectStart();
+  } else {
     const paragraph = $createParagraphNode();
-    const linkNode = $createLinkNode(href);
-    linkNode.append($createTextNode(href));
-    paragraph.append(linkNode);
-
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      selection.insertNodes([paragraph]);
-    } else {
-      $getRoot().append(paragraph);
-    }
-
-    if (!paragraph.getNextSibling()) {
-      const next = $createParagraphNode();
-      paragraph.insertAfter(next);
-      next.selectStart();
-    }
-  });
-
+    video.insertAfter(paragraph);
+    paragraph.selectStart();
+  }
   return true;
+}
+
+/** Stored markdown is the public URL; the post renderer turns it into an iframe. */
+export function insertMediaUrlAtSelection(editor: LexicalEditor, url: string): boolean {
+  let inserted = false;
+  editor.update(() => {
+    inserted = $insertVideoAtSelection(url);
+  });
+  return inserted;
 }

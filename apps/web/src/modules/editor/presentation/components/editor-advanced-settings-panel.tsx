@@ -42,6 +42,11 @@ export type EditorAdvancedSettingsPanelProps = {
   onBeneficiariesChange: (next: PostEditorBeneficiary[]) => void;
   tags: readonly string[];
   onTagsChange: (next: string[]) => void;
+  /** "Like this post": upvote the new post from the author account. */
+  selfUpvote: boolean;
+  onSelfUpvoteChange: (next: boolean) => void;
+  /** Editing a published post: payout options, beneficiaries and self-upvote are fixed. */
+  payoutLocked?: boolean;
 };
 
 export function EditorAdvancedSettingsPanel({
@@ -52,6 +57,9 @@ export function EditorAdvancedSettingsPanel({
   onBeneficiariesChange,
   tags,
   onTagsChange,
+  selfUpvote,
+  onSelfUpvoteChange,
+  payoutLocked = false,
 }: EditorAdvancedSettingsPanelProps) {
   const { t } = useI18n();
   const headingId = useId();
@@ -107,6 +115,10 @@ export function EditorAdvancedSettingsPanel({
       </summary>
 
       <div className="flex flex-col gap-4 border-t border-border px-card-padding pb-card-padding pt-3">
+        {payoutLocked ? (
+          <p className="text-body-sm text-muted">{t('editor_edit_payout_locked')}</p>
+        ) : (
+          <>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <label
             htmlFor="editor-reward-mode"
@@ -129,6 +141,16 @@ export function EditorAdvancedSettingsPanel({
             ))}
           </select>
         </div>
+
+        <label className="flex cursor-pointer items-center gap-2 text-body-sm text-fg">
+          <input
+            type="checkbox"
+            className="size-4 shrink-0 rounded border-border accent-accent"
+            checked={selfUpvote}
+            onChange={(e) => onSelfUpvoteChange(e.target.checked)}
+          />
+          {t('editor_like_this_post')}
+        </label>
 
         <div className="flex flex-col gap-2">
           <p className="font-label text-body-sm font-weight-label text-heading">
@@ -177,6 +199,8 @@ export function EditorAdvancedSettingsPanel({
             </p>
           ) : null}
         </div>
+          </>
+        )}
 
         <div className="flex flex-col gap-2">
           <label

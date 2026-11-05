@@ -8,7 +8,13 @@ import {
   EditorScreen,
   type LastDraftSidebarItem,
 } from '@/modules/editor';
-import { getPostEditorDefaultBeneficiary } from '@/config/post-editor-defaults';
+import {
+  getPostEditorDefaultBeneficiary,
+  isPostEditorGooglePlacesEnabled,
+} from '@/config/post-editor-defaults';
+import { editorJsonMetadataFromPublishedPost } from '@/modules/editor/application/post-publish-operations';
+import type { PostEditTarget } from '@/modules/editor/domain/post-edit-target';
+import { fetchPublishedPostForEdit } from '@/modules/editor/infrastructure/fetch-published-post-for-edit.server';
 import { fetchUserPostDraftForEditor } from '@/modules/editor/infrastructure/fetch-user-post-draft.server';
 import { fetchUserDraftListServer } from '@/modules/editor/infrastructure/query-api-drafts.server';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
@@ -62,6 +68,18 @@ export default async function EditorPage({
     });
   }
 
+  /** `?author=<me>&permlink=<p>` without a saved edit draft → start from the published post. */
+  const publishedPost =
+    !initialDraft && permlink ? await fetchPublishedPostForEdit(user.username, permlink) : null;
+
+  const editTarget: PostEditTarget | null = initialDraft?.permlink
+    ? initialDraft.parentPermlink
+      ? { permlink: initialDraft.permlink, parentPermlink: initialDraft.parentPermlink }
+      : null
+    : publishedPost
+      ? { permlink: publishedPost.permlink, parentPermlink: publishedPost.parentPermlink }
+      : null;
+
   let sidebarDrafts: LastDraftSidebarItem[] = [];
   const listRes = await fetchUserDraftListServer(user.username, { limit: 5 });
   if (listRes.ok) {
@@ -80,10 +98,15 @@ export default async function EditorPage({
       <EditorScreen
         key={screenKey}
         username={user.username}
-        initialTitle={initialDraft?.title ?? ''}
-        initialBody={initialDraft?.body ?? ''}
+        initialTitle={initialDraft?.title ?? publishedPost?.title ?? ''}
+        initialBody={initialDraft?.body ?? publishedPost?.body ?? ''}
         initialDraftId={initialDraft?.draftId ?? null}
-        initialJsonMetadata={initialDraft?.jsonMetadata ?? null}
+        initialJsonMetadata={
+          initialDraft?.jsonMetadata ??
+          (publishedPost ? editorJsonMetadataFromPublishedPost(publishedPost.jsonMetadata) : null)
+        }
+        editTarget={editTarget}
+        googlePlacesEnabled={isPostEditorGooglePlacesEnabled()}
         defaultBeneficiary={getPostEditorDefaultBeneficiary()}
         initialBeneficiaries={initialDraft?.beneficiaries ?? null}
         sidebarDrafts={sidebarDrafts}

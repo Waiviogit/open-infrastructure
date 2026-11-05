@@ -6,11 +6,14 @@ import { useCallback, useState } from 'react';
 import { imageContentUrlForCid } from '@/config/ipfs-content-url';
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
 import { getHiveJsonMetadataDefaults } from '@/config/hive-json-metadata-public';
-import { buildCommentOp, getWalletFacade, useHydrateWalletProvider } from '@/modules/auth';
+import { getWalletFacade, useHydrateWalletProvider } from '@/modules/auth';
 import { awaitTrxConfirmation } from '@/modules/notifications';
 import { buildHiveJsonMetadata, createUniqueRootPostPermlink } from '@/shared';
 import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-after-broadcast';
-import { revalidateHomeFeedAfterBroadcast, revalidateUserFeedAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
+import {
+  revalidateHomeFeedAfterBroadcast,
+  revalidateUserFeedAfterBroadcast,
+} from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 
 import type { PostEditorLinkedObject } from '../domain/post-editor-linked-object';
 import {
@@ -19,14 +22,15 @@ import {
 } from './editor-body-serialization';
 import { buildHivePostImageMetadata } from './build-hive-post-image-metadata';
 import { lexicalStateToMarkdown } from './lexical-state-to-markdown';
+import { buildPostPublishOperations, mergeEditedPostJsonMetadata } from './post-publish-operations';
 import {
-  buildPublishCommentOptions,
   buildPublishTags,
   stripEditorOnlyJsonMetadataFields,
   validateBeneficiaries,
 } from './post-editor-advanced-settings';
 import type { PostEditorBeneficiary } from '../domain/post-editor-advanced-settings';
 import type { PostEditorRewardMode } from '../domain/post-editor-advanced-settings';
+import type { PostEditTarget } from '../domain/post-edit-target';
 import {
   mergeJsonMetadataWithObjects,
   validateLinkedObjectPercents,
@@ -48,6 +52,10 @@ export type UseEditorPostPublishInput = {
   draftId: string | null;
   legalAccepted: boolean;
   flushSave: () => Promise<void>;
+  /** "Like this post": author upvotes the new post in the same transaction. */
+  selfUpvote: boolean;
+  /** Set when editing a published post: same permlink, `comment` only. */
+  editTarget: PostEditTarget | null;
 };
 
 export function useEditorPostPublish({
@@ -62,6 +70,8 @@ export function useEditorPostPublish({
   draftId,
   legalAccepted,
   flushSave,
+  selfUpvote,
+  editTarget,
 }: UseEditorPostPublishInput) {
   useHydrateWalletProvider();
   const router = useRouter();
@@ -96,10 +106,12 @@ export function useEditorPostPublish({
         throw new Error('empty_post');
       }
 
-      const permlink = await createUniqueRootPostPermlink(
-        { title, author: username },
-        { exists: checkPostExistsAction },
-      );
+      const permlink =
+        editTarget?.permlink ??
+        (await createUniqueRootPostPermlink(
+          { title, author: username },
+          { exists: checkPostExistsAction },
+        ));
 
       const defaults = getHiveJsonMetadataDefaults();
       const host =
@@ -123,33 +135,40 @@ export function useEditorPostPublish({
           unknown
         >,
       );
-      const json_metadata = JSON.stringify({
+      const editorOwned = {
         ...baseMeta,
-        ...merged,
         tags: publishTags,
         ...(imageUrls.length > 0 ? { image: imageUrls } : {}),
-      });
+      };
+      const json_metadata = JSON.stringify(
+        editTarget
+          ? mergeEditedPostJsonMetadata(merged, editorOwned)
+          : { ...baseMeta, ...merged, ...editorOwned },
+      );
 
-      const commentOp = buildCommentOp({
-        parent_author: '',
-        parent_permlink: defaults.community,
+      const content = {
         author: username,
         permlink,
         title: title.trim(),
         body: markdown,
-        json_metadata,
-      });
+        jsonMetadata: json_metadata,
+      };
+      const operations = editTarget
+        ? buildPostPublishOperations({
+            ...content,
+            mode: 'edit',
+            parentPermlink: editTarget.parentPermlink,
+          })
+        : buildPostPublishOperations({
+            ...content,
+            mode: 'create',
+            parentPermlink: defaults.community,
+            rewardMode,
+            beneficiaries,
+            selfUpvote,
+          });
 
-      const optionsOp = buildPublishCommentOptions({
-        author: username,
-        permlink,
-        rewardMode,
-        beneficiaries,
-      });
-
-      const { transactionId } = await getWalletFacade().broadcast({
-        operations: [commentOp, optionsOp],
-      });
+      const { transactionId } = await getWalletFacade().broadcast({ operations });
 
       setPhase('confirming');
       await awaitTrxConfirmation(transactionId);
@@ -163,7 +182,11 @@ export function useEditorPostPublish({
         await revalidateHomeFeedAfterBroadcast(username);
       });
 
-      router.push(`/@${encodeURIComponent(username)}`);
+      router.push(
+        editTarget
+          ? `/@${encodeURIComponent(username)}/${encodeURIComponent(permlink)}`
+          : `/@${encodeURIComponent(username)}`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'publish_failed');
       setPhase('idle');
@@ -177,9 +200,11 @@ export function useEditorPostPublish({
     jsonMetadata,
     linkedObjects,
     beneficiaries,
+    editTarget,
     phase,
     rewardMode,
     router,
+    selfUpvote,
     tags,
     title,
     username,

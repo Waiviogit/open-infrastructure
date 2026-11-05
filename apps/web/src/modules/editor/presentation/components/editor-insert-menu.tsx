@@ -1,8 +1,10 @@
 'use client';
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { INSERT_TABLE_COMMAND } from '@lexical/table';
 import {
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   $setSelection,
   type BaseSelection,
@@ -28,7 +30,6 @@ import {
   LayoutGridIcon,
   MinusIcon,
   PlusIcon,
-  SearchIcon,
   TableIcon,
   VideoIcon,
 } from '@/icons';
@@ -36,12 +37,30 @@ import type { IconProps } from '@/icons';
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 
+import {
+  $convertCaretBlockToCode,
+  $insertHorizontalRuleAtCaret,
+} from '../../application/insert-editor-blocks';
+import { INSERT_TABLE_DEFAULT_SIZE } from '../../application/table-actions';
 import { insertObjectLinkAtSelection } from '../../application/insert-editor-object-link';
 import { EditorInlineObjectSearch } from './editor-inline-object-search';
+import { EditorInsertEmojiPanel } from './editor-insert-emoji-panel';
 import { EditorInsertPhotoPanel } from './editor-insert-photo-panel';
-import { EditorInsertVideoPanel } from './editor-insert-video-panel';
+import { EditorInlineVideoInput } from './editor-inline-video-input';
 
 const INSERT_BTN_SIZE_PX = 40;
+/** Panel is centered on (+); keep it this far from the viewport edges. */
+const INSERT_PANEL_VIEWPORT_MARGIN_PX = 8;
+/** Fallback half-width before the panel is measured (`w-[min(100vw-2rem,20rem)]`). */
+const INSERT_PANEL_FALLBACK_HALF_WIDTH_PX = 160;
+
+/** Horizontal center for the panel so the whole panel stays inside the viewport. */
+function clampInsertPanelCenterX(centerX: number, panelWidth: number | undefined): number {
+  const half = panelWidth ? panelWidth / 2 : INSERT_PANEL_FALLBACK_HALF_WIDTH_PX;
+  const min = half + INSERT_PANEL_VIEWPORT_MARGIN_PX;
+  const max = window.innerWidth - half - INSERT_PANEL_VIEWPORT_MARGIN_PX;
+  return max < min ? window.innerWidth / 2 : Math.min(max, Math.max(min, centerX));
+}
 const INSERT_BTN_RADIUS = INSERT_BTN_SIZE_PX / 2;
 
 type InsertLabelKey =
@@ -52,8 +71,7 @@ type InsertLabelKey =
   | 'editor_insert_line'
   | 'editor_insert_code'
   | 'editor_insert_table'
-  | 'editor_insert_emoji'
-  | 'editor_insert_nearby';
+  | 'editor_insert_emoji';
 
 const INSERT_ITEMS: {
   labelKey: InsertLabelKey;
@@ -67,7 +85,6 @@ const INSERT_ITEMS: {
   { labelKey: 'editor_insert_code', Icon: CodeIcon },
   { labelKey: 'editor_insert_table', Icon: TableIcon },
   { labelKey: 'editor_insert_emoji', Icon: EmojiIcon },
-  { labelKey: 'editor_insert_nearby', Icon: SearchIcon },
 ];
 
 function getRangeForCaret(editorRoot: HTMLElement): Range | null {
@@ -185,12 +202,7 @@ function getCaretLineViewportRect(
     block = block.parentElement;
   }
   if (block && editorRoot.contains(block)) {
-    const lh =
-      Number.parseFloat(getComputedStyle(block).lineHeight) ||
-      Number.parseFloat(getComputedStyle(block).fontSize) * 1.25 ||
-      22;
-    const blockRect = block.getBoundingClientRect();
-    return { top: blockRect.top, height: lh };
+    return blockFirstLineRect(block);
   }
 
   const lh = Number.parseFloat(getComputedStyle(editorRoot).lineHeight) || 22;
@@ -199,6 +211,40 @@ function getCaretLineViewportRect(
     return { top: br.top, height: lh };
   }
   return null;
+}
+
+/** First text line of a block: its top plus padding (empty code blocks are padded). */
+function blockFirstLineRect(block: HTMLElement): { top: number; height: number } {
+  const style = getComputedStyle(block);
+  const lh =
+    Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.25 || 22;
+  const paddingTop = Number.parseFloat(style.paddingTop) || 0;
+  return { top: block.getBoundingClientRect().top + paddingTop, height: lh };
+}
+
+/**
+ * The line the (+) should follow, from Lexical's selection: a node-selected
+ * block (image, video, line) → that block; otherwise the DOM caret. The DOM
+ * selection is stale while a block is node-selected, so it cannot be used then.
+ */
+function getActiveLineViewportRect(
+  editor: LexicalEditor,
+  root: HTMLElement,
+): { top: number; height: number } | null {
+  const selectedBlock = editor.getEditorState().read(() => {
+    const selection = $getSelection();
+    if (!$isNodeSelection(selection)) {
+      return null;
+    }
+    const node = selection.getNodes()[0];
+    return node ? editor.getElementByKey(node.getKey()) : null;
+  });
+  if (selectedBlock) {
+    const rect = selectedBlock.getBoundingClientRect();
+    return { top: rect.top, height: rect.height };
+  }
+  const range = getRangeForCaret(root);
+  return range ? getCaretLineViewportRect(range, root) : null;
 }
 
 function scheduleMeasure(fn: () => void) {
@@ -216,12 +262,7 @@ function computeInsertOverlayTop(
     return null;
   }
 
-  const range = getRangeForCaret(root);
-  if (!range) {
-    return null;
-  }
-
-  const line = getCaretLineViewportRect(range, root);
+  const line = getActiveLineViewportRect(editor, root);
   if (!line) {
     return null;
   }
@@ -250,6 +291,8 @@ export type EditorInsertCaretOverlayProps = {
   renderOriginalDatePicker?: (props: { onSelect: (unix: number) => void }) => ReactNode;
   /** Fired when user picks an original publish date+time (unix seconds). */
   onOriginalCreatedAtSelected?: (unix: number) => void;
+  /** Line / Code / Table (needs the horizontal-rule, code and table nodes + plugins). */
+  enableBlockInserts?: boolean;
 };
 
 /**
@@ -265,13 +308,16 @@ export function EditorInsertCaretOverlay({
   insertPanelPreferBelow = false,
   renderOriginalDatePicker,
   onOriginalCreatedAtSelected,
+  enableBlockInserts = false,
 }: EditorInsertCaretOverlayProps = {}) {
   const [editor] = useLexicalComposerContext();
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [objectSearchOpen, setObjectSearchOpen] = useState(false);
+  /** Inline field at the caret line instead of the (+) panel: object search or video link. */
+  const [inlineMode, setInlineMode] = useState<'object' | 'video' | null>(null);
+  const inlineInputOpen = inlineMode !== null;
   const [insertView, setInsertView] = useState<
-    'grid' | 'photo' | 'date' | 'video'
+    'grid' | 'photo' | 'date' | 'emoji'
   >('grid');
   const [buttonTop, setButtonTop] = useState(12);
   const [insertPanelCoords, setInsertPanelCoords] = useState<{
@@ -282,7 +328,7 @@ export function EditorInsertCaretOverlay({
   const [portalReady, setPortalReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
-  const objectSearchRef = useRef<HTMLDivElement>(null);
+  const inlineInputRef = useRef<HTMLDivElement>(null);
   const insertButtonRef = useRef<HTMLButtonElement>(null);
   const insertPanelRef = useRef<HTMLDivElement>(null);
   const insertTitleId = useId();
@@ -301,21 +347,72 @@ export function EditorInsertCaretOverlay({
       insertObjectLinkAtSelection(editor, result);
       onObjectLinkedFromEditor?.(result);
       savedSelectionRef.current = null;
-      setObjectSearchOpen(false);
+      setInlineMode(null);
     },
     [editor, onObjectLinkedFromEditor],
   );
 
-  const openVideoPanel = useCallback(() => {
-    editor.getEditorState().read(() => {
-      const sel = $getSelection();
-      savedSelectionRef.current =
-        $isRangeSelection(sel) ? sel.clone() : null;
-    });
-    setInsertView('video');
+  const closeInsertPanel = useCallback(() => {
+    setOpen(false);
+    setInsertView('grid');
+  }, []);
+
+  const restoreSavedSelection = useCallback(() => {
+    const saved = savedSelectionRef.current;
+    if (saved) {
+      editor.update(() => {
+        $setSelection(saved.clone());
+      });
+    }
   }, [editor]);
 
-  const openObjectSearch = useCallback(() => {
+  const insertHorizontalRule = useCallback(() => {
+    closeInsertPanel();
+    editor.focus();
+    editor.update($insertHorizontalRuleAtCaret);
+  }, [closeInsertPanel, editor]);
+
+  const insertCodeBlock = useCallback(() => {
+    closeInsertPanel();
+    editor.focus();
+    editor.update($convertCaretBlockToCode);
+  }, [closeInsertPanel, editor]);
+
+  const insertTable = useCallback(() => {
+    closeInsertPanel();
+    editor.focus();
+    editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+      rows: INSERT_TABLE_DEFAULT_SIZE,
+      columns: INSERT_TABLE_DEFAULT_SIZE,
+      includeHeaders: { rows: true, columns: false },
+    });
+  }, [closeInsertPanel, editor]);
+
+  const openEmojiPanel = useCallback(() => {
+    editor.getEditorState().read(() => {
+      const sel = $getSelection();
+      savedSelectionRef.current = $isRangeSelection(sel) ? sel.clone() : null;
+    });
+    setInsertView('emoji');
+  }, [editor]);
+
+  const insertEmoji = useCallback(
+    (emoji: string) => {
+      closeInsertPanel();
+      editor.focus();
+      restoreSavedSelection();
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(emoji);
+        }
+      });
+      savedSelectionRef.current = null;
+    },
+    [closeInsertPanel, editor, restoreSavedSelection],
+  );
+
+  const openInlineInput = useCallback((mode: 'object' | 'video') => {
     editor.getEditorState().read(() => {
       const sel = $getSelection();
       savedSelectionRef.current =
@@ -330,11 +427,11 @@ export function EditorInsertCaretOverlay({
     }
     setOpen(false);
     setInsertView('grid');
-    setObjectSearchOpen(true);
+    setInlineMode(mode);
   }, [editor, pinInsertCenterVertical]);
 
   const measurePosition = useCallback(() => {
-    if (pinInsertCenterVertical || objectSearchOpen) {
+    if (pinInsertCenterVertical || inlineInputOpen) {
       return;
     }
     const container = containerRef.current;
@@ -343,7 +440,7 @@ export function EditorInsertCaretOverlay({
     }
     const top = computeInsertOverlayTop(editor, container);
     setButtonTop(top ?? 12);
-  }, [editor, objectSearchOpen, pinInsertCenterVertical]);
+  }, [editor, inlineInputOpen, pinInsertCenterVertical]);
 
   useLayoutEffect(() => {
     if (pinInsertCenterVertical) {
@@ -390,6 +487,10 @@ export function EditorInsertCaretOverlay({
     }
     const r = btn.getBoundingClientRect();
     const panelHeight = insertPanelRef.current?.offsetHeight ?? 240;
+    const left = clampInsertPanelCenterX(
+      r.left + r.width / 2,
+      insertPanelRef.current?.offsetWidth,
+    );
     const gap = 8;
 
     if (insertPanelPreferBelow) {
@@ -399,7 +500,7 @@ export function EditorInsertCaretOverlay({
       );
       setInsertPanelCoords({
         top,
-        left: r.left + r.width / 2,
+        left,
         placement: 'below',
       });
       return;
@@ -414,7 +515,7 @@ export function EditorInsertCaretOverlay({
 
     setInsertPanelCoords({
       top: openAbove ? r.top - gap : r.bottom + gap,
-      left: r.left + r.width / 2,
+      left,
       placement: openAbove ? 'above' : 'below',
     });
   }, [insertPanelPreferBelow, pinInsertCenterVertical]);
@@ -441,7 +542,7 @@ export function EditorInsertCaretOverlay({
   }, [insertView, open, updateInsertPanelCoords]);
 
   useEffect(() => {
-    if (!objectSearchOpen) {
+    if (!inlineInputOpen) {
       return;
     }
     function onDocMouseDown(e: MouseEvent) {
@@ -451,7 +552,7 @@ export function EditorInsertCaretOverlay({
       }
       if (
         shellRef.current?.contains(target) ||
-        objectSearchRef.current?.contains(target)
+        inlineInputRef.current?.contains(target)
       ) {
         return;
       }
@@ -459,12 +560,12 @@ export function EditorInsertCaretOverlay({
         return;
       }
       savedSelectionRef.current = null;
-      setObjectSearchOpen(false);
+      setInlineMode(null);
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         savedSelectionRef.current = null;
-        setObjectSearchOpen(false);
+        setInlineMode(null);
       }
     }
     document.addEventListener('mousedown', onDocMouseDown);
@@ -473,7 +574,7 @@ export function EditorInsertCaretOverlay({
       document.removeEventListener('mousedown', onDocMouseDown);
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [objectSearchOpen]);
+  }, [inlineInputOpen]);
 
   useEffect(() => {
     if (!open) {
@@ -488,9 +589,9 @@ export function EditorInsertCaretOverlay({
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        if (objectSearchOpen) {
+        if (inlineInputOpen) {
           savedSelectionRef.current = null;
-          setObjectSearchOpen(false);
+          setInlineMode(null);
         } else {
           setOpen(false);
         }
@@ -502,7 +603,7 @@ export function EditorInsertCaretOverlay({
       document.removeEventListener('mousedown', onDocMouseDown);
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [open, objectSearchOpen]);
+  }, [open, inlineInputOpen]);
 
   return (
     <>
@@ -515,12 +616,13 @@ export function EditorInsertCaretOverlay({
             ? 'left-1/2 -translate-x-1/2'
             : insetInsertButton
               ? 'start-2'
-              : 'start-0 -translate-x-1/2',
+              : // Phones: the 16px page gutter is narrower than half the (+); keep it on screen.
+                'start-0 -translate-x-[40%] sm:-translate-x-1/2',
           pinInsertCenterVertical ? 'top-1/2 -translate-y-1/2' : '',
         ].join(' ')}
         style={pinInsertCenterVertical ? undefined : { top: buttonTop }}
       >
-        {objectSearchOpen ? (
+        {inlineInputOpen ? (
           <button
             ref={insertButtonRef}
             type="button"
@@ -528,7 +630,7 @@ export function EditorInsertCaretOverlay({
             title={t('close')}
             onClick={() => {
               savedSelectionRef.current = null;
-              setObjectSearchOpen(false);
+              setInlineMode(null);
             }}
             className={[
               'flex h-10 w-10 shrink-0 items-center justify-center rounded-circle border border-border',
@@ -567,9 +669,9 @@ export function EditorInsertCaretOverlay({
           </button>
         )}
       </div>
-      {objectSearchOpen ? (
+      {inlineInputOpen ? (
         <div
-          ref={objectSearchRef}
+          ref={inlineInputRef}
           className="pointer-events-auto absolute z-[70] flex items-center pe-3"
           style={{
             top: buttonTop,
@@ -578,7 +680,17 @@ export function EditorInsertCaretOverlay({
             height: INSERT_BTN_SIZE_PX,
           }}
         >
-          <EditorInlineObjectSearch onSelect={handleObjectSelect} />
+          {inlineMode === 'video' ? (
+            <EditorInlineVideoInput
+              restoreSelection={restoreSavedSelection}
+              onInserted={() => {
+                savedSelectionRef.current = null;
+                setInlineMode(null);
+              }}
+            />
+          ) : (
+            <EditorInlineObjectSearch onSelect={handleObjectSelect} />
+          )}
         </div>
       ) : null}
     </div>
@@ -604,7 +716,7 @@ export function EditorInsertCaretOverlay({
             aria-labelledby={insertTitleId}
           >
             <div className="mb-3 flex items-center gap-2">
-              {insertView === 'photo' || insertView === 'date' || insertView === 'video' ? (
+              {insertView !== 'grid' ? (
                 <button
                   type="button"
                   className="text-body-sm text-accent hover:underline"
@@ -618,31 +730,17 @@ export function EditorInsertCaretOverlay({
                   ? t('editor_insert_photo')
                   : insertView === 'date'
                     ? t('editor_insert_date')
-                    : insertView === 'video'
-                      ? t('editor_insert_video')
-                      : t('editor_insert_title')}
+                    : insertView === 'emoji'
+                        ? t('editor_insert_emoji')
+                        : t('editor_insert_title')}
               </h2>
             </div>
 
-            {insertView === 'photo' ? (
+            {insertView === 'emoji' ? (
+              <EditorInsertEmojiPanel onSelect={insertEmoji} />
+            ) : insertView === 'photo' ? (
               <EditorInsertPhotoPanel
                 onInserted={() => {
-                  setOpen(false);
-                  setInsertView('grid');
-                }}
-              />
-            ) : insertView === 'video' ? (
-              <EditorInsertVideoPanel
-                restoreSelection={() => {
-                  const saved = savedSelectionRef.current;
-                  if (saved) {
-                    editor.update(() => {
-                      $setSelection(saved);
-                    });
-                  }
-                }}
-                onInserted={() => {
-                  savedSelectionRef.current = null;
                   setOpen(false);
                   setInsertView('grid');
                 }}
@@ -663,7 +761,24 @@ export function EditorInsertCaretOverlay({
                   if (isDate && !enableOriginalCreatedAt) {
                     return null;
                   }
-                  const enabled = isPhoto || isVideo || isObject || isDate;
+                  const blockAction =
+                    !enableBlockInserts
+                      ? undefined
+                      : labelKey === 'editor_insert_line'
+                        ? insertHorizontalRule
+                        : labelKey === 'editor_insert_code'
+                          ? insertCodeBlock
+                          : labelKey === 'editor_insert_table'
+                            ? insertTable
+                            : undefined;
+                  const isEmoji = labelKey === 'editor_insert_emoji';
+                  const enabled =
+                    isPhoto ||
+                    isVideo ||
+                    isObject ||
+                    isDate ||
+                    isEmoji ||
+                    Boolean(blockAction);
                   return (
                     <button
                       key={labelKey}
@@ -680,12 +795,14 @@ export function EditorInsertCaretOverlay({
                         isPhoto
                           ? () => setInsertView('photo')
                           : isVideo
-                            ? () => openVideoPanel()
+                            ? () => openInlineInput('video')
                             : isObject
-                              ? () => openObjectSearch()
+                              ? () => openInlineInput('object')
                               : isDate
                                 ? () => setInsertView('date')
-                                : undefined
+                                : isEmoji
+                                    ? () => openEmojiPanel()
+                                    : blockAction
                       }
                     >
                       <Icon className="text-fg-secondary" size={22} />

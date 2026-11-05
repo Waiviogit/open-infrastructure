@@ -5,6 +5,7 @@ import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
+import { TablePlugin } from '@lexical/react/LexicalTablePlugin';
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -28,12 +29,18 @@ import {
   normalizeImageNodeSrcFromCid,
   serializeEditorState,
 } from '../../application/editor-body-serialization';
+import { $importPostMarkdown } from '../../application/post-markdown-import';
 import { POST_EDITOR_NODES } from '../../domain/editor-lexical-nodes';
 import { EditorFormatToolbar } from './editor-format-toolbar';
+import { EditorHashObjectSearchPlugin } from './editor-hash-object-search-plugin';
 import { EditorImageDropOverlay } from './editor-image-drop-overlay';
 import { EditorInsertCaretOverlay } from './editor-insert-menu';
 import { EditorImageKeyboardPlugin } from './editor-image-keyboard-plugin';
 import { EditorPasteImagePlugin } from './editor-paste-image-plugin';
+import { EditorPasteObjectLinksPlugin } from './editor-paste-object-links-plugin';
+import { EditorPasteVideoUrlPlugin } from './editor-paste-video-url-plugin';
+import { EditorBlockToolbarPlugin } from './editor-block-toolbar-plugin';
+import { EditorBlockGapsPlugin } from './editor-block-gaps-plugin';
 import { EditorRegisterImagePlugin } from './editor-register-image-plugin';
 
 const URL_REG_EXP =
@@ -64,7 +71,19 @@ const lexicalTheme = {
     },
   },
   link: 'text-link underline underline-offset-2 hover:text-accent-alt',
+  code: 'mb-2 block overflow-x-auto whitespace-pre rounded-card bg-code-bg p-card-padding font-mono text-body-sm text-code-fg',
+  hr: 'my-4 border-0 border-t border-border',
+  /**
+   * Legacy parity: equal fixed columns, long text wraps and grows the row, rows
+   * striped white / grey (`.editor-table` in global.css). The GFM header row looks
+   * like any other row.
+   */
+  table: 'editor-table mb-2 w-full table-fixed border-collapse text-body',
+  tableCell: 'border border-border px-2 py-1 align-top text-start text-fg whitespace-normal break-words',
+  tableCellHeader: 'font-weight-body',
+  tableSelection: 'bg-accent-soft',
   image: 'my-2 block w-full overflow-hidden rounded-card',
+  video: 'my-2 block w-full',
   text: {
     bold: 'font-weight-strong',
     italic: 'italic',
@@ -116,7 +135,14 @@ function seedPlainTextBody(editor: import('lexical').LexicalEditor, text: string
   });
 }
 
-function InitialBodyPlugin({ body }: { body?: string }) {
+function InitialBodyPlugin({
+  body,
+  importMarkdown,
+}: {
+  body?: string;
+  /** Post editor: a non-Lexical body is a published Hive markdown post (edit mode, legacy drafts). */
+  importMarkdown?: boolean;
+}) {
   const [editor] = useLexicalComposerContext();
   const contentBaseUrl = useIpfsContentBaseUrl();
   const applied = useRef(false);
@@ -146,8 +172,14 @@ function InitialBodyPlugin({ body }: { body?: string }) {
       return;
     }
 
+    if (importMarkdown) {
+      editor.update(() => {
+        $importPostMarkdown(trimmed);
+      });
+      return;
+    }
     seedPlainTextBody(editor, trimmed);
-  }, [body, contentBaseUrl, editor]);
+  }, [body, contentBaseUrl, editor, importMarkdown]);
 
   return null;
 }
@@ -202,6 +234,7 @@ function EditorInner({
   enableImages,
   composeField,
   onObjectLinkedFromEditor,
+  hashObjectSearch,
 }: {
   bodyPlaceholder: string;
   initialBody?: string;
@@ -214,6 +247,7 @@ function EditorInner({
   enableImages?: boolean;
   composeField?: boolean;
   onObjectLinkedFromEditor?: (result: SearchObjectResult) => void;
+  hashObjectSearch?: HashObjectSearchConfig;
 }) {
   const pillChrome = Boolean((compact || messagingCompact) && compactBottomInset);
 
@@ -235,7 +269,12 @@ function EditorInner({
 
   return (
     <>
-      {initialBody ? <InitialBodyPlugin body={initialBody} /> : null}
+      {initialBody ? (
+        <InitialBodyPlugin
+          body={initialBody}
+          importMarkdown={showFormatToolbar}
+        />
+      ) : null}
       <EditorBodyOnChangePlugin
         onBodyChange={onBodyChange}
         plainTextOnly={compact && !messagingCompact}
@@ -267,7 +306,25 @@ function EditorInner({
       <ListPlugin />
       <LinkPlugin />
       <LexicalAutoLinkConfigured />
-      {showFormatToolbar ? <EditorFormatToolbar /> : null}
+      {showFormatToolbar ? (
+        <>
+          <EditorFormatToolbar />
+          <TablePlugin hasCellMerge={false} hasCellBackgroundColor={false} />
+          <EditorBlockToolbarPlugin />
+          <EditorBlockGapsPlugin />
+          <EditorPasteVideoUrlPlugin />
+          {onObjectLinkedFromEditor ? (
+            <EditorPasteObjectLinksPlugin onObjectLinkedFromEditor={onObjectLinkedFromEditor} />
+          ) : null}
+        </>
+      ) : null}
+      {hashObjectSearch ? (
+        <EditorHashObjectSearchPlugin
+          username={hashObjectSearch.username}
+          googlePlaces={hashObjectSearch.googlePlaces}
+          onObjectLinkedFromEditor={onObjectLinkedFromEditor}
+        />
+      ) : null}
       {enableImages ? (
         <>
           <EditorRegisterImagePlugin />
@@ -279,6 +336,13 @@ function EditorInner({
   );
 }
 
+/** `#` object + Google Maps place search (post editor only). */
+export type HashObjectSearchConfig = {
+  username: string;
+  /** Also search Google Maps places (off: our objects only). */
+  googlePlaces: boolean;
+};
+
 export type LexicalEditorProps = {
   bodyPlaceholder: string;
   /** Lexical JSON or legacy plain-text seed (e.g. draft body). */
@@ -287,6 +351,8 @@ export type LexicalEditorProps = {
   onBodyChange?: (body: string) => void;
   /** Insert → Object: add to linked metadata when not already attached. */
   onObjectLinkedFromEditor?: (result: SearchObjectResult) => void;
+  /** Enables `#` search (objects, then Google Maps places) for this author. */
+  hashObjectSearch?: HashObjectSearchConfig;
   /** @deprecated Use `initialBody`. */
   initialPlainText?: string;
   /** @deprecated Use `onBodyChange`. */
@@ -319,6 +385,7 @@ export function LexicalPostEditor({
   initialBody,
   onBodyChange,
   onObjectLinkedFromEditor,
+  hashObjectSearch,
   initialPlainText,
   onPlainTextChange,
   compact,
@@ -383,6 +450,7 @@ export function LexicalPostEditor({
       showFormatToolbar={enableImages && !resolvedMessagingCompact}
       enableImages={enableImages}
       onObjectLinkedFromEditor={onObjectLinkedFromEditor}
+      hashObjectSearch={hashObjectSearch}
     />
   );
 
@@ -399,6 +467,7 @@ export function LexicalPostEditor({
         <EditorInsertCaretOverlay
           pinInsertCenterVertical={pinInsertCenterVertical}
           onObjectLinkedFromEditor={onObjectLinkedFromEditor}
+          enableBlockInserts={enableImages && !resolvedMessagingCompact}
           enableOriginalCreatedAt={enableOriginalCreatedAt}
           insertPanelPreferBelow={insertPanelPreferBelow}
           renderOriginalDatePicker={renderOriginalDatePicker}

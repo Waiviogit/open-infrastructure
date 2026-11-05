@@ -12,6 +12,8 @@ export type EditorDraftLoadResult = {
   jsonMetadata: unknown;
   beneficiaries: unknown;
   permlink: string | null;
+  /** Set for drafts that edit a published post. */
+  parentPermlink: string;
   lastUpdated: number;
 };
 
@@ -48,6 +50,7 @@ export async function fetchUserPostDraftForEditor(
       jsonMetadata?: unknown;
       beneficiaries?: unknown;
       permlink?: unknown;
+      parentPermlink?: unknown;
       lastUpdated?: unknown;
     };
     const draftId = typeof data.draftId === 'string' ? data.draftId : '';
@@ -62,6 +65,8 @@ export async function fetchUserPostDraftForEditor(
         : typeof data.permlink === 'string'
           ? data.permlink
           : null;
+    const parentPermlink =
+      typeof data.parentPermlink === 'string' ? data.parentPermlink : '';
     const lastUpdated =
       typeof data.lastUpdated === 'number' ? data.lastUpdated : 0;
     const jsonMetadata =
@@ -75,6 +80,7 @@ export async function fetchUserPostDraftForEditor(
       jsonMetadata,
       beneficiaries,
       permlink,
+      parentPermlink,
       lastUpdated,
     };
   } catch {

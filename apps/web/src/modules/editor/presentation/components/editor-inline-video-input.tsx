@@ -1,75 +1,96 @@
 'use client';
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { parseMediaEmbedUrl } from '@/shared/infrastructure/media-embed';
 
 import { insertMediaUrlAtSelection } from '../../application/insert-editor-media-url';
 
-export type EditorInsertVideoPanelProps = {
+export type EditorInlineVideoInputProps = {
+  /** Restores the caret saved when the input opened (focus moved to this field). */
+  restoreSelection: () => void;
   onInserted: () => void;
-  restoreSelection?: () => void;
 };
 
-export function EditorInsertVideoPanel({
-  onInserted,
-  restoreSelection,
-}: EditorInsertVideoPanelProps) {
+/**
+ * Legacy-style video insert at the caret line: "Paste video link and press Enter".
+ * A supported link becomes an embedded player block; anything else shows an error.
+ */
+export function EditorInlineVideoInput({ restoreSelection, onInserted }: EditorInlineVideoInputProps) {
   const [editor] = useLexicalComposerContext();
   const { t } = useI18n();
+  const inputId = useId();
+  const errorId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState('');
   const [invalid, setInvalid] = useState(false);
-  const inputId = useId();
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   function submit(): void {
-    const trimmed = url.trim();
-    if (!parseMediaEmbedUrl(trimmed)) {
+    restoreSelection();
+    if (!insertMediaUrlAtSelection(editor, url.trim())) {
       setInvalid(true);
+      inputRef.current?.focus();
       return;
     }
-    restoreSelection?.();
-    insertMediaUrlAtSelection(editor, trimmed);
+    editor.focus();
     onInserted();
   }
 
   return (
     <form
-      className="flex flex-col gap-2"
+      className="relative min-w-0 flex-1"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
       }}
     >
       <label htmlFor={inputId} className="sr-only">
-        {t('editor_insert_video_placeholder')}
+        {t('editor_video_link_placeholder')}
       </label>
-      <input
-        id={inputId}
-        type="text"
-        inputMode="url"
-        autoComplete="off"
-        autoFocus
-        value={url}
-        onChange={(e) => {
-          setUrl(e.target.value);
-          setInvalid(false);
-        }}
-        placeholder={t('editor_insert_video_placeholder')}
-        className="h-10 w-full rounded-btn border border-border bg-bg px-3 text-body text-fg outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
+      {/* One bordered control: the frame belongs to the wrapper, input and button sit flush inside. */}
+      <div
+        className={[
+          'flex h-10 items-stretch overflow-hidden rounded-btn border bg-bg',
+          invalid ? 'border-error' : 'border-accent',
+        ].join(' ')}
+      >
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="text"
+          inputMode="url"
+          autoComplete="off"
+          value={url}
+          aria-invalid={invalid}
+          aria-describedby={invalid ? errorId : undefined}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setInvalid(false);
+          }}
+          placeholder={t('editor_video_link_placeholder')}
+          className="min-w-0 flex-1 border-0 bg-transparent px-3 text-body text-fg shadow-none outline-none ring-0 placeholder:text-fg-tertiary focus:outline-none focus:ring-0 focus-visible:outline-none"
+        />
+        <button
+          type="submit"
+          className="shrink-0 bg-accent px-4 text-body-sm font-weight-label text-accent-fg hover:bg-accent-hover focus-visible:bg-accent-hover focus-visible:outline-none"
+        >
+          {t('editor_video_link_submit')}
+        </button>
+      </div>
       {invalid ? (
-        <p className="text-caption text-error" role="alert">
+        <p
+          id={errorId}
+          role="alert"
+          className="absolute start-0 top-full mt-1 rounded-btn bg-surface px-2 py-1 text-caption text-error shadow-card"
+        >
           {t('editor_insert_video_invalid')}
         </p>
       ) : null}
-      <button
-        type="submit"
-        className="h-10 rounded-btn bg-accent px-3 text-body-sm font-weight-label text-accent-fg hover:opacity-90"
-      >
-        {t('add')}
-      </button>
     </form>
   );
 }

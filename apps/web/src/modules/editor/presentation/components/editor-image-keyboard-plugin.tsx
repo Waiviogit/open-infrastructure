@@ -15,12 +15,15 @@ import {
 import { useEffect } from 'react';
 
 import {
-  $getImageAfterRange,
-  $getImageBeforeRange,
-  $getSelectedImageNodes,
-  $selectImageNode,
+  $getMediaBlockAfterRange,
+  $getMediaBlockBeforeRange,
+  $getSelectedMediaBlockNodes,
+  $removeMediaBlocksAndPlaceCaret,
+  $selectMediaBlockNode,
 } from '../../application/image-selection';
-import { $isImageNode } from '../../domain/nodes/image-node';
+import { $isMediaBlockNode } from '../../domain/nodes/media-block';
+
+const MEDIA_BLOCK_SELECTOR = '[data-post-image], [data-post-video], hr';
 
 function setImageDomSelected(el: Element, selected: boolean): void {
   if (selected) {
@@ -38,95 +41,79 @@ function syncImageDomSelection(editor: ReturnType<typeof useLexicalComposerConte
     return;
   }
 
-  for (const el of root.querySelectorAll('[data-post-image]')) {
+  for (const el of root.querySelectorAll(MEDIA_BLOCK_SELECTOR)) {
     setImageDomSelected(el, false);
   }
 
+  let blockSelected = false;
   editor.getEditorState().read(() => {
     const selection = $getSelection();
     if (!$isNodeSelection(selection)) {
       return;
     }
-    for (const node of $getSelectedImageNodes(selection)) {
+    for (const node of $getSelectedMediaBlockNodes(selection)) {
       const dom = editor.getElementByKey(node.getKey());
       if (dom) {
         setImageDomSelected(dom, true);
+        blockSelected = true;
       }
     }
   });
+  // The browser keeps a stale caret while a block is node-selected; hide it.
+  if (blockSelected) {
+    root.setAttribute('data-block-selected', '');
+  } else {
+    root.removeAttribute('data-block-selected');
+  }
 }
 
 export function EditorImageKeyboardPlugin() {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
+    /**
+     * Runs inside the command's own update (no nested `editor.update`: Lexical
+     * would defer it, the command would fall through to the default delete and
+     * the caret would jump). Returns whether the key was consumed.
+     */
+    const $handleDeleteKey = (
+      event: KeyboardEvent | null,
+      direction: 'backward' | 'forward',
+    ): boolean => {
+      const selection = $getSelection();
+      let handled = false;
+      if ($isNodeSelection(selection)) {
+        const blocks = $getSelectedMediaBlockNodes(selection);
+        if (blocks.length > 0) {
+          $removeMediaBlocksAndPlaceCaret(blocks);
+          handled = true;
+        }
+      } else if ($isRangeSelection(selection) && selection.isCollapsed()) {
+        const block =
+          direction === 'backward'
+            ? $getMediaBlockBeforeRange(selection)
+            : $getMediaBlockAfterRange(selection);
+        if (block) {
+          $selectMediaBlockNode(block);
+          handled = true;
+        }
+      }
+      if (handled) {
+        // Stop the browser's beforeinput delete: it would remove the block just selected.
+        event?.preventDefault();
+      }
+      return handled;
+    };
+
     const removeBackspace = editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
-      () => {
-        let handled = false;
-        editor.update(() => {
-          const selection = $getSelection();
-          if (!selection) {
-            return;
-          }
-
-          if ($isNodeSelection(selection)) {
-            const images = $getSelectedImageNodes(selection);
-            if (images.length > 0) {
-              selection.deleteNodes();
-              handled = true;
-            }
-            return;
-          }
-
-          if ($isRangeSelection(selection) && selection.isCollapsed()) {
-            const image = $getImageBeforeRange(selection);
-            if (image) {
-              $selectImageNode(image);
-              handled = true;
-            }
-          }
-        });
-        if (handled) {
-          syncImageDomSelection(editor);
-        }
-        return handled;
-      },
+      (event: KeyboardEvent | null) => $handleDeleteKey(event, 'backward'),
       COMMAND_PRIORITY_HIGH,
     );
 
     const removeDelete = editor.registerCommand(
       KEY_DELETE_COMMAND,
-      () => {
-        let handled = false;
-        editor.update(() => {
-          const selection = $getSelection();
-          if (!selection) {
-            return;
-          }
-
-          if ($isNodeSelection(selection)) {
-            const images = $getSelectedImageNodes(selection);
-            if (images.length > 0) {
-              selection.deleteNodes();
-              handled = true;
-            }
-            return;
-          }
-
-          if ($isRangeSelection(selection) && selection.isCollapsed()) {
-            const image = $getImageAfterRange(selection);
-            if (image) {
-              $selectImageNode(image);
-              handled = true;
-            }
-          }
-        });
-        if (handled) {
-          syncImageDomSelection(editor);
-        }
-        return handled;
-      },
+      (event: KeyboardEvent | null) => $handleDeleteKey(event, 'forward'),
       COMMAND_PRIORITY_HIGH,
     );
 
@@ -162,14 +149,14 @@ export function EditorImageKeyboardPlugin() {
       if (!(target instanceof HTMLElement)) {
         return;
       }
-      const wrapper = target.closest('[data-post-image]');
+      const wrapper = target.closest(MEDIA_BLOCK_SELECTOR);
       if (!wrapper || !root.contains(wrapper)) {
         return;
       }
       editor.update(() => {
         const node = $getNearestNodeFromDOMNode(wrapper);
-        if ($isImageNode(node)) {
-          $selectImageNode(node);
+        if ($isMediaBlockNode(node)) {
+          $selectMediaBlockNode(node);
         }
       });
       event.preventDefault();
