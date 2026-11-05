@@ -25,6 +25,7 @@ export { AggregatedObjectRepository } from './aggregated-object.repository';
 export type { LoadAggregatedObjectsOptions } from './aggregated-object.repository';
 export { UpdatesFeedRepository } from './updates-feed.repository';
 export { SearchRepository } from './search.repository';
+export { ObjectIdentifiersRepository } from './object-identifiers.repository';
 export type { SearchObjectCandidateRow, SearchUserRow } from './search.repository';
 export { DiscoverRepository } from './discover.repository';
 export { ObjectRefListRepository } from './object-ref-list.repository';

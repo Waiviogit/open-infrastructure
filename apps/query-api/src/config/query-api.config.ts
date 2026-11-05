@@ -89,6 +89,11 @@ export default () => {
       host: env.INSTACART_HOST,
       requestTimeoutMs: externalTimeoutMs,
     },
+    googlePlaces: {
+      apiKey: env.GOOGLE_PLACES_API_KEY,
+      baseUrl: env.GOOGLE_PLACES_BASE_URL,
+      requestTimeoutMs: externalTimeoutMs,
+    },
     openai: {
       apiKey: env.OPENAI_API_KEY,
       model: env.OPENAI_MODEL,

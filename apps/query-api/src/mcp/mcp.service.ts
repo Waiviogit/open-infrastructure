@@ -42,6 +42,11 @@ import {
   GetObjectOptionsEndpoint,
 } from '../domain/objects';
 import { GetInstacartRecipeLinkEndpoint } from '../domain/instacart';
+import {
+  GetObjectByIdentifierEndpoint,
+  GetPlaceDetailsEndpoint,
+  GetPlacesSearchEndpoint,
+} from '../domain/places';
 import { GetSearchCountsEndpoint } from '../domain/search/get-search-counts.endpoint';
 import { GetSearchEndpoint } from '../domain/search/get-search.endpoint';
 import {
@@ -128,6 +133,9 @@ export class McpService {
     private readonly getObjectFieldReferencesByType: GetObjectFieldReferencesByTypeEndpoint,
     private readonly getObjectOptions: GetObjectOptionsEndpoint,
     private readonly getInstacartRecipeLink: GetInstacartRecipeLinkEndpoint,
+    private readonly placesSearch: GetPlacesSearchEndpoint,
+    private readonly placeDetails: GetPlaceDetailsEndpoint,
+    private readonly objectByIdentifier: GetObjectByIdentifierEndpoint,
     private readonly getObjectRelatedAlbumPreview: GetObjectRelatedAlbumPreviewEndpoint,
     private readonly getObjectRelatedAlbum: GetObjectRelatedAlbumEndpoint,
     private readonly getObjectFollowers: GetObjectFollowersEndpoint,
@@ -218,6 +226,9 @@ export class McpService {
       getObjectFieldReferencesByType: this.getObjectFieldReferencesByType,
       getObjectOptions: this.getObjectOptions,
       getInstacartRecipeLink: this.getInstacartRecipeLink,
+      placesSearch: this.placesSearch,
+      placeDetails: this.placeDetails,
+      objectByIdentifier: this.objectByIdentifier,
       getObjectRelatedAlbumPreview: this.getObjectRelatedAlbumPreview,
       getObjectRelatedAlbum: this.getObjectRelatedAlbum,
       getObjectFollowers: this.getObjectFollowers,

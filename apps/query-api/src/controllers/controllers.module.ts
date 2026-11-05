@@ -34,6 +34,8 @@ import { WaivWalletGeneratedReportController } from './waiv-wallet-generated-rep
 import { OblOfferDraftsController } from './obl-offer-drafts.controller';
 import { OblController } from './obl.controller';
 import { ChannelsController } from './channels.controller';
+import { PlacesController } from './places.controller';
+import { PlacesModule } from '../domain/places';
 
 @Module({
   imports: [
@@ -55,6 +57,7 @@ import { ChannelsController } from './channels.controller';
     WalletModule,
     OblModule,
     MessagingModule,
+    PlacesModule,
   ],
   controllers: [
     ObjectsController,
@@ -74,6 +77,7 @@ import { ChannelsController } from './channels.controller';
     OblOfferDraftsController,
     OblController,
     ChannelsController,
+    PlacesController,
   ],
 })
 export class ControllersModule {}

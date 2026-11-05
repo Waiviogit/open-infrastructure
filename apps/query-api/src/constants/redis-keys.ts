@@ -47,6 +47,14 @@ export const redisKey = {
     ),
   instacartRecipeLink: (objectId: string) =>
     buildRedisKey(APP, 'cache', 'instacart-recipe', objectId),
+  /** `queryHash` is a sha256 of the normalized query (raw text never becomes a key segment). */
+  placesSearch: (queryHash: string, languageCode: string, biasSegment: string) =>
+    buildRedisKey(APP, 'cache', 'places', 'search', languageCode, biasSegment, queryHash),
+  placeDetails: (placeId: string, languageCode: string) =>
+    buildRedisKey(APP, 'cache', 'places', 'details', languageCode, placeId),
+  /** Fixed-window counter per client per minute; `clientHash` is a sha256 of the IP (IPv6 has colons). */
+  placesRateLimit: (clientHash: string, minuteBucket: number) =>
+    buildRedisKey(APP, 'cache', 'places', 'rate', clientHash, minuteBucket),
   affiliatePersonalCodes: (
     account: string,
     governanceObjectId: string,

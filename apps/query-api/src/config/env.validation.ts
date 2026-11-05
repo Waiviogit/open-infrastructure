@@ -99,6 +99,14 @@ export const queryApiConfigSchema = z.object({
     .optional()
     .transform((s) => (s?.trim() ? s.trim() : undefined))
     .pipe(z.string().optional().default('connect.dev.instacart.tools')),
+  GOOGLE_PLACES_API_KEY: z
+    .string()
+    .optional()
+    .transform((s) => (s?.trim() ? s.trim() : undefined)),
+  GOOGLE_PLACES_BASE_URL: z
+    .url()
+    .optional()
+    .default('https://places.googleapis.com/v1'),
   OPENAI_API_KEY: z
     .string()
     .optional()

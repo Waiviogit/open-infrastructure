@@ -18,6 +18,27 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/search.md',
   },
   {
+    name: 'search_places',
+    description:
+      'Google Maps places for a text query, biased to the caller IP location. Each place has existing_object_id when an ODL object already links it (identifier type googleMaps). Rate limited; enabled=false when Google is not configured.',
+    httpEquivalent: 'GET /query/v1/places/search',
+    specPath: 'docs/apps/query-api/spec/places.md',
+  },
+  {
+    name: 'get_place_details',
+    description:
+      'Full Google Maps place data (address parts, phone, website, opening hours, photo URL) plus existing_object_id. Use before creating an object from a place.',
+    httpEquivalent: 'GET /query/v1/places/{place_id}',
+    specPath: 'docs/apps/query-api/spec/places.md',
+  },
+  {
+    name: 'get_place_object',
+    description:
+      'ODL object already linked to a Google Maps place id (identifier type googleMaps), or not found. Use to avoid creating duplicates.',
+    httpEquivalent: 'GET /query/v1/places/{place_id}/object',
+    specPath: 'docs/apps/query-api/spec/places.md',
+  },
+  {
     name: 'search_counts',
     description:
       'Tab counts for search (objects by type + users). Pair with search when UI needs totals.',

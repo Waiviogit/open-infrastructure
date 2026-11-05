@@ -20,6 +20,7 @@ import { UserSubscriptionsRepository } from './user-subscriptions.repository';
 import { UserObjectFollowsRepository } from './user-object-follows.repository';
 import { UpdatesFeedRepository } from './updates-feed.repository';
 import { SearchRepository } from './search.repository';
+import { ObjectIdentifiersRepository } from './object-identifiers.repository';
 import { DiscoverRepository } from './discover.repository';
 import { ObjectRefListRepository } from './object-ref-list.repository';
 import { ObjectFieldReferencesRepository } from './object-field-references.repository';
@@ -64,6 +65,7 @@ import { AffiliateObjectsRepository } from './affiliate-objects.repository';
     UserObjectFollowsRepository,
     UpdatesFeedRepository,
     SearchRepository,
+    ObjectIdentifiersRepository,
     DiscoverRepository,
     ObjectRefListRepository,
     ObjectFieldReferencesRepository,
@@ -108,6 +110,7 @@ import { AffiliateObjectsRepository } from './affiliate-objects.repository';
     UserObjectFollowsRepository,
     UpdatesFeedRepository,
     SearchRepository,
+    ObjectIdentifiersRepository,
     DiscoverRepository,
     ObjectRefListRepository,
     ObjectFieldReferencesRepository,

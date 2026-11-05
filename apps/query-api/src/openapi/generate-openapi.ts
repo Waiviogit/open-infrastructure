@@ -19,6 +19,7 @@ import './user-post-drafts.openapi';
 import './categories.openapi';
 import './currency.openapi';
 import './search.openapi';
+import './places.openapi';
 import './discover.openapi';
 import './shop.openapi';
 import './obl.openapi';

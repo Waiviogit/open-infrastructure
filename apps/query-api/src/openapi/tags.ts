@@ -11,6 +11,7 @@ export const queryApiOpenApiTags = {
   userPostDrafts: 'User post drafts',
   posts: 'Posts',
   search: 'Search',
+  places: 'Places',
   discover: 'Discover',
   currency: 'Currency',
   obl: 'OBL',
@@ -57,6 +58,10 @@ export const queryApiOpenApiTagDefinitions = [
   {
     name: queryApiOpenApiTags.posts,
     description: 'Single post, voters, and discussion reads.',
+  },
+  {
+    name: queryApiOpenApiTags.places,
+    description: 'Google Maps places near the caller (IP-biased) and their links to ODL objects.',
   },
   {
     name: queryApiOpenApiTags.search,

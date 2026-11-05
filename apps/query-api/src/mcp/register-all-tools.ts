@@ -9,6 +9,7 @@ import { registerPostTools } from './tools/posts.tools';
 import { registerSearchTools } from './tools/search.tools';
 import { registerUserTools } from './tools/users.tools';
 import { registerOblTools } from './tools/obl.tools';
+import { registerPlacesTools } from './tools/places.tools';
 
 export function registerAllMcpTools(
   server: McpServer,
@@ -26,4 +27,5 @@ export function registerAllMcpTools(
   registerPostTools(server, deps);
   registerCurrencyTools(server, deps);
   registerOblTools(server, deps);
+  registerPlacesTools(server, deps);
 }

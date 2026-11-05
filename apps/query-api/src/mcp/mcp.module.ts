@@ -5,6 +5,7 @@ import { GeoipModule } from '../domain/geoip';
 import { FeedModule } from '../domain/feed';
 import { ObjectUpdatesModule } from '../domain/object-updates';
 import { InstacartModule } from '../domain/instacart';
+import { PlacesModule } from '../domain/places';
 import { ObjectsModule } from '../domain/objects';
 import { SearchModule } from '../domain/search';
 import { ShopModule } from '../domain/shop/shop.module';
@@ -36,6 +37,7 @@ import { McpService } from './mcp.service';
     WalletModule,
     OblModule,
     MessagingModule,
+    PlacesModule,
   ],
   controllers: [McpController],
   providers: [McpService],
