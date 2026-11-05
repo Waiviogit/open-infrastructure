@@ -21,6 +21,12 @@ const singlePostViewSchema = registry.register(
     title: z.string(),
     excerpt: z.string(),
     body: z.string(),
+    jsonMetadata: z.string().openapi({
+      description: 'Raw Hive `json_metadata` (string). Editors merge into it to keep foreign keys.',
+    }),
+    parentPermlink: z.string().openapi({
+      description: 'Hive `parent_permlink`; for root posts the category. Needed to broadcast an edit.',
+    }),
     createdAt: z.string().datetime({ offset: true }),
     feedAt: z.string().datetime({ offset: true }),
     rebloggedBy: z.string().nullable(),

@@ -79,6 +79,8 @@ export function mapHiveContentToSinglePostView(
     title: content.title ?? '',
     excerpt,
     body,
+    jsonMetadata,
+    parentPermlink: content.parent_permlink ?? '',
     createdAt,
     feedAt: createdAt,
     rebloggedBy: rebloggedByFromHive(content),

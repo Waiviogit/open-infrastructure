@@ -38,7 +38,7 @@ Unlike `POST /query/v1/users/{name}/blog`, this endpoint does **not** cap tagged
 
 | Code | When |
 |------|------|
-| 200 | JSON `SinglePostView`: feed-shaped fields plus `body`; `feedAt` equals `createdAt`; `rebloggedBy` is always `null` (no feed-branch context). |
+| 200 | JSON `SinglePostView`: feed-shaped fields plus `body`, raw `jsonMetadata` (string) and `parentPermlink` (used by the editor to re-broadcast an edit); `feedAt` equals `createdAt`; `rebloggedBy` is always `null` (no feed-branch context). |
 | 404 | No row in `posts` for `{author, permlink}`. |
 
 ## URL collision (web)

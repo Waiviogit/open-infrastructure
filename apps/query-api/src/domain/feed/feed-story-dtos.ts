@@ -117,6 +117,10 @@ export interface UserBlogFeedResponse {
 /** Single post by author/permlink; includes full body and all tagged objects (same resolution as feed). */
 export interface SinglePostViewDto extends FeedStoryItemDto {
   body: string;
+  /** Raw Hive `json_metadata` string (editing must preserve keys the editor does not own). */
+  jsonMetadata: string;
+  /** Hive `parent_permlink` (root posts: the category); required to re-broadcast an edit. */
+  parentPermlink: string;
 }
 
 /** Discussion comment row: feed card fields plus full Hive `body`. */

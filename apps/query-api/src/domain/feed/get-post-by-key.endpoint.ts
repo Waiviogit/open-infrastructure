@@ -95,7 +95,12 @@ export class GetPostByKeyEndpoint {
         [input],
         currency,
       );
-      return { ...enriched, body: view.body };
+      return {
+        ...enriched,
+        body: view.body,
+        jsonMetadata: view.jsonMetadata,
+        parentPermlink: view.parentPermlink,
+      };
     }
 
     const view = await this.mapPostToSingleView(
@@ -114,7 +119,12 @@ export class GetPostByKeyEndpoint {
       [input],
       currency,
     );
-    return { ...enriched, body: view.body };
+    return {
+      ...enriched,
+      body: view.body,
+      jsonMetadata: view.jsonMetadata,
+      parentPermlink: view.parentPermlink,
+    };
   }
 
   private async resolveAuthorProfileForHiveFallback(
@@ -221,6 +231,8 @@ export class GetPostByKeyEndpoint {
       title: post.title ?? '',
       excerpt,
       body: post.body ?? '',
+      jsonMetadata: post.json_metadata ?? '',
+      parentPermlink: post.parent_permlink ?? '',
       createdAt,
       feedAt: createdAt,
       rebloggedBy: null,
