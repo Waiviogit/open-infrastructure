@@ -81,3 +81,4 @@ A deliberate Block keeps `instant = false` with a reason comment (root layout).
 | `pnpm nx test web --testPathPatterns=clients/query-api` | Cache routing, tags, lifetimes, IP in key |
 | `pnpm nx run web:verify-production-build` | Build passes with `cacheComponents` |
 | `node .claude/skills/verify/scripts/nav-instant-trace.cjs feed/threads 'main a[href="/@alice"]' --skeleton '[aria-label="Loading profile"]'` | Profile skeleton before the round trip |
+| `pnpm test:db:up && pnpm nx run web-e2e:e2e-instant` | Production `instant()` suite: shells under the navigation lock ([rig](../../../../apps/web-e2e/instant-nav.rig.md)) |

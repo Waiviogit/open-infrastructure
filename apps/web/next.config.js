@@ -12,8 +12,13 @@ const nextConfig = {
   // 'use cache' (query-api reads: modules/user-profile/infrastructure/clients/query-api.client.ts).
   // Routes not adopted yet keep `export const instant = false` (see docs/apps/web/spec/caching.md).
   cacheComponents: true,
+  // Explicit until the Partial Prefetching step of the migration (Next warns when unset).
+  partialPrefetching: false,
   // Image paste/upload Server Actions (FormData); default Next limit is 1mb.
   experimental: {
+    // Instant Navigation testing API for the `instant()` e2e suite (apps/web-e2e/instant-nav.rig.md).
+    // Only a dedicated test build sets EXPOSE_TESTING_API=1; real builds never expose it.
+    exposeTestingApiInProductionBuild: process.env.EXPOSE_TESTING_API === '1',
     serverActions: {
       bodySizeLimit: '50mb',
     },

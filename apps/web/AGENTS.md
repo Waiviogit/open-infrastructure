@@ -261,7 +261,7 @@ Wrap remote UGC URLs at **display time** only — never in query-api payloads or
 | A route not adopted yet keeps `export const instant = false` under the `@next-codemod-ignore Cache Components adoption` marker; a deliberate Block replaces the marker with a reason | `export const dynamic`, `revalidate`, `fetchCache` (build error), or a bare `instant = false` without a reason |
 | Existence checks inside `<Suspense>` call `notFound()` (streams not-found UI with `noindex`, HTTP 200); malformed URLs get a real 404 in `proxy.ts` (see `isProfileAccountSegment`) | Move an existence check back to the layout top just to get a 404 status |
 
-Measure navigations with the `verify` skill: `nav-instant-trace.cjs` (click → skeleton under an emulated round trip, production build).
+Measure navigations with the `verify` skill: `nav-instant-trace.cjs` (click → skeleton under an emulated round trip, production build). Guard them with the production `instant()` suite: `pnpm test:db:up && pnpm nx run web-e2e:e2e-instant` (rig: [`apps/web-e2e/instant-nav.rig.md`](../web-e2e/instant-nav.rig.md)); an adopted route removes its `test.fail()`.
 
 ## API routes (`app/api/`)
 

@@ -4,13 +4,30 @@
   "projectType": "application",
   "sourceRoot": "apps/web-e2e/src",
   "tags": [],
-  "implicitDependencies": ["web"],
+  "implicitDependencies": [
+    "web"
+  ],
   "// targets": "to see all targets run: nx show project web-e2e --web",
   "targets": {
     "e2e-editor": {
       "executor": "nx:run-commands",
       "options": {
         "command": "playwright test -c apps/web-e2e/playwright.editor.config.ts",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "e2e-instant": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": [
+            "query-api"
+          ]
+        }
+      ],
+      "options": {
+        "command": "playwright test -c apps/web-e2e/playwright.instant.config.ts",
         "cwd": "{workspaceRoot}"
       }
     }
