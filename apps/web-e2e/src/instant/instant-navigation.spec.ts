@@ -44,18 +44,17 @@ test.describe('instant navigation', () => {
   });
 
   test('feed tab Threads → Updates paints the feed skeleton', async ({ page }) => {
-    test.fail(true, '(hub)/(home) feed pages not adopted yet — plan PR 3.1');
     await page.goto('/feed/threads');
     const trigger = page.locator('aside nav[aria-label="Feed sections"] a[href="/feed/updates"]');
     await expect(trigger).toBeVisible();
 
-    const updateLinks = page.locator('main li > a[href^="/object/"]');
+    const updatesFeed = page.getByTestId('home-updates-feed');
     await instant(page, async () => {
       await trigger.click();
       await expect(page.locator('[aria-label="Loading posts"]')).toBeVisible();
-      await expect(updateLinks).toHaveCount(0);
+      await expect(updatesFeed).toHaveCount(0);
     });
-    await expect(updateLinks.first()).toBeVisible();
+    await expect(updatesFeed).toBeVisible();
   });
 
   test('object tab Details → Updates paints the content skeleton', async ({ page }) => {

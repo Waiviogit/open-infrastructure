@@ -57,7 +57,7 @@ export function HomeUpdatesFeedList({ initialPage, currentUsername }: HomeUpdate
 
   return (
     <FeedColumn>
-      <ul className="flex flex-col gap-card-padding">
+      <ul className="flex flex-col gap-card-padding" data-testid="home-updates-feed">
         {items.map((item) => (
           <li key={item.update_id} className="list-none">
             <UpdateObjectHeader item={item} />

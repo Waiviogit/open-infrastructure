@@ -31,6 +31,7 @@ export function HomeFeedMenu({ orientation }: HomeFeedMenuProps) {
       <OptimisticNavLink
         key={tab.key}
         href={tab.href}
+        prefetchShell
         className={
           vertical
             ? profileSectionVerticalLinkClass(active)

@@ -45,12 +45,22 @@ that matters.
 
 A client navigation re-renders only below the layout both routes share. Next prefetches each
 segment's **static shell** (production only) and paints it on click; whatever reads request data
-streams in behind `<Suspense>`. A layout that awaits `params`, cookies or data at its top has no
-shell, so the click waits for the server.
+streams in behind `<Suspense>`. Two conditions, both required:
 
-| Entry | Shell painted on click | Where |
-|-------|------------------------|-------|
-| `/@name` (profile) | profile skeleton | `user-profile/[name]/layout.tsx` — existence check (`ValidatedProfile`) inside `<Suspense fallback={<UserProfileNameLoading/>}>` |
+1. **The route has a shell.** A layout or page that awaits `params`, cookies or data at its top has
+   none, so the click waits for the server. The boundary must sit inside the segment that changes:
+   a `loading.tsx` of a segment shared by both routes (e.g. `feed/loading.tsx` for feed tabs) does
+   not trigger.
+2. **The link prefetches it.** `prefetch={false}` (our `OptimisticNavLink` default) or
+   hover-only prefetch (`ObjectPageLink`) means the shell is fetched on click — one round trip.
+   `OptimisticNavLink prefetchShell` prefetches the shell while the link is visible; use it for
+   small fixed menus.
+
+| Entry | Shell painted on click | Where | Link |
+|-------|------------------------|-------|------|
+| `/@name` (profile) | profile skeleton | `user-profile/[name]/layout.tsx` — existence check (`ValidatedProfile`) inside `<Suspense fallback={<UserProfileNameLoading/>}>` | Story author `<Link>` (default prefetch) |
+| `/`, `/feed/{threads,activity,updates}` | `<main>` + feed skeleton | each page renders `<Suspense fallback={<FeedPostsLoadingSkeleton/>}>` around the user/data read | `HomeFeedMenu` → `OptimisticNavLink prefetchShell` |
+| `/object/:id` | object skeleton | `object/loading.tsx` sits above the blocking `[object-id]` layout | `ObjectPageLink` prefetches on hover/touch/focus only — Partial Prefetching step |
 
 The root layout stays blocking on purpose (`<html>` lang/dir/theme/shell-mode from cookies): it is
 shared by every client navigation, so it only affects full page loads.

@@ -13,6 +13,12 @@ type OptimisticNavLinkProps = Omit<ComponentProps<typeof Link>, 'prefetch' | 'on
   children: ReactNode;
   /** Use `replace` for same-route query changes (default `push`). */
   method?: 'push' | 'replace';
+  /**
+   * Prefetch the destination's static shell (Cache Components) when the link is visible, so the
+   * click paints the route skeleton without a round trip. Off by default: enable it for small,
+   * fixed menus, not for long lists of links.
+   */
+  prefetchShell?: boolean;
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
@@ -24,6 +30,7 @@ export function OptimisticNavLink({
   href,
   children,
   method = 'push',
+  prefetchShell = false,
   suppressHydrationWarning = true,
   onClick,
   scroll = false,
@@ -58,7 +65,7 @@ export function OptimisticNavLink({
   return (
     <Link
       href={href}
-      prefetch={false}
+      prefetch={prefetchShell ? null : false}
       suppressHydrationWarning={suppressHydrationWarning}
       onClick={handleClick}
       scroll={scroll}
