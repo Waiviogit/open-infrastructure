@@ -648,6 +648,7 @@ export function ObjectPageShellClient({
               <div
                 className="absolute inset-0 z-30 bg-bg/60 pt-2"
                 aria-busy="true"
+                aria-label="Loading object content"
                 aria-live="polite"
               >
                 <ObjectPageCenterSkeleton />

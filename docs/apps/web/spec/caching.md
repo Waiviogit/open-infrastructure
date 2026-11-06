@@ -52,7 +52,8 @@ streams in behind `<Suspense>`. Two conditions, both required:
    a `loading.tsx` of a segment shared by both routes (e.g. `feed/loading.tsx` for feed tabs) does
    not trigger.
 2. **The link prefetches it.** `prefetch={false}` (our `OptimisticNavLink` default) or
-   hover-only prefetch (`ObjectPageLink`) means the shell is fetched on click — one round trip.
+   hover-only prefetch means the shell is fetched on click — one round trip (two requests do not
+   finish between hover and click at real latency).
    `OptimisticNavLink prefetchShell` prefetches the shell while the link is visible; use it for
    small fixed menus.
 
@@ -60,7 +61,8 @@ streams in behind `<Suspense>`. Two conditions, both required:
 |-------|------------------------|-------|------|
 | `/@name` (profile) | profile skeleton | `user-profile/[name]/layout.tsx` — existence check (`ValidatedProfile`) inside `<Suspense fallback={<UserProfileNameLoading/>}>` | Story author `<Link>` (default prefetch) |
 | `/`, `/feed/{threads,activity,updates}` | `<main>` + feed skeleton | each page renders `<Suspense fallback={<FeedPostsLoadingSkeleton/>}>` around the user/data read | `HomeFeedMenu` → `OptimisticNavLink prefetchShell` |
-| `/object/:id` | object skeleton | `object/loading.tsx` sits above the blocking `[object-id]` layout | `ObjectPageLink` prefetches on hover/touch/focus only — Partial Prefetching step |
+| `/object/:id` | object skeleton | `object/loading.tsx` sits above the blocking `[object-id]` layout | `ObjectPageLink` (default prefetch; 2 small requests per visible distinct object until Partial Prefetching) |
+| `/object/:id/<tab>` (tab buttons) | center skeleton overlay, then the tab chrome | `ObjectPageShellClient` overlays `ObjectPageCenterSkeleton` while `navigateInstant` is pending; `page.tsx` renders its body inside `<Suspense fallback={<ObjectDetailLoading/>}>` so the tab chrome streams before its data | buttons, no prefetch needed (the overlay is client-side) |
 
 The root layout stays blocking on purpose (`<html>` lang/dir/theme/shell-mode from cookies): it is
 shared by every client navigation, so it only affects full page loads.

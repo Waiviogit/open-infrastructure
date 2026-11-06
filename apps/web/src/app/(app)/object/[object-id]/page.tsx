@@ -77,11 +77,7 @@ import {
 } from './object-page-search';
 import { ObjectPageTabPane } from './object-page-tab-pane';
 import { ObjectPageInvalidPathFix } from './object-page-invalid-path-fix';
-
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import ObjectDetailLoading from './loading';
 
 const CATEGORY_PRIMARY_SEGMENT = 'category';
 const FIELD_REFERENCES_PRIMARY_SEGMENT = OBJECT_PAGE_FIELD_REFERENCES_PATH_SEGMENT;
@@ -339,13 +335,24 @@ export async function generateMetadata({
   });
 }
 
-export default async function ObjectDetailPage({
-  params,
-  searchParams,
-}: {
+type ObjectDetailPageProps = {
   params: Promise<{ 'object-id': string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+};
+
+/**
+ * Tab content behind the center skeleton: a tab switch (`?tab=` via proxy rewrite) re-renders
+ * only this segment, so its shell is the skeleton and the tab data streams in.
+ */
+export default function ObjectDetailPage(props: ObjectDetailPageProps) {
+  return (
+    <Suspense fallback={<ObjectDetailLoading />}>
+      <ObjectDetailPageContent {...props} />
+    </Suspense>
+  );
+}
+
+async function ObjectDetailPageContent({ params, searchParams }: ObjectDetailPageProps) {
   const { 'object-id': rawId } = await params;
   const objectId = decodeURIComponent(rawId);
   const locale = await getRequestLocale();

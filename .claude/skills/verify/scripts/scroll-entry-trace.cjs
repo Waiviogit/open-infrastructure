@@ -67,8 +67,9 @@ async function main() {
           t: Math.round(performance.now() - t0),
           y: Math.round(window.scrollY),
           path: window.location.pathname,
-          skeleton: Boolean(document.querySelector('.animate-pulse, [aria-busy="true"]')),
-          h1: document.querySelector('h1')?.textContent?.trim().slice(0, 24) ?? '',
+          // Visible nodes only: Next 16 keeps the previous route in the DOM (hidden) for Back.
+          skeleton: [...document.querySelectorAll('.animate-pulse, [aria-busy="true"]')].some((el) => el.checkVisibility()),
+          h1: [...document.querySelectorAll('h1')].find((el) => el.checkVisibility())?.textContent?.trim().slice(0, 24) ?? '',
         });
         if (performance.now() - t0 < traceMs) requestAnimationFrame(tick);
       };

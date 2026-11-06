@@ -57,8 +57,9 @@ test.describe('instant navigation', () => {
     await expect(updatesFeed).toBeVisible();
   });
 
+  // Object tabs are buttons (navigateInstant): the shell client overlays the center skeleton while
+  // the transition is pending; the tab page then streams its chrome and its cards.
   test('object tab Details → Updates paints the content skeleton', async ({ page }) => {
-    test.fail(true, 'object/[object-id] tabs not adopted yet — plan PR 3.2');
     await page.goto('/object/cafe-1');
     const trigger = page.locator('nav[aria-label="Object sections"] button', { hasText: 'Updates' });
     await expect(trigger).toBeVisible();

@@ -30,12 +30,12 @@ jest.mock('next/link', () => {
 import { ObjectPageLink } from './object-page-link';
 
 describe('ObjectPageLink', () => {
-  it('disables Next.js prefetch', () => {
+  it('keeps Next.js default prefetch so a visible link warms the object skeleton', () => {
     const { container } = render(
       <ObjectPageLink href="/object/photography">photo</ObjectPageLink>,
     );
     expect(container.querySelector('a')?.getAttribute('data-prefetch')).toBe(
-      'false',
+      'undefined',
     );
   });
 });

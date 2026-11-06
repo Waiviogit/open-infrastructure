@@ -99,8 +99,9 @@ async function main() {
         window.__navTrace.push({
           t: Math.round(performance.now() - t0),
           path: window.location.pathname,
-          skeleton: Boolean(document.querySelector(skeletonSelector)),
-          h1: document.querySelector(contentSelector)?.textContent?.trim().slice(0, 24) ?? '',
+          // Visible nodes only: Next 16 keeps the previous route in the DOM (hidden) for Back.
+          skeleton: [...document.querySelectorAll(skeletonSelector)].some((el) => el.checkVisibility()),
+          h1: [...document.querySelectorAll(contentSelector)].find((el) => el.checkVisibility())?.textContent?.trim().slice(0, 24) ?? '',
         });
         if (performance.now() - t0 < traceMs) requestAnimationFrame(tick);
       };
