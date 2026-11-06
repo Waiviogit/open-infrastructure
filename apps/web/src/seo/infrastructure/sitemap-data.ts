@@ -24,7 +24,12 @@ const discoverUsersResponseSchema = z.object({
   hasMore: z.boolean(),
 });
 
-const PAGE_SIZE = 100;
+/**
+ * Page size for sitemap discover reads. query-api caps `limit` at 50 for `discover/objects` and
+ * `discover/users` (`DISCOVER_*_MAX_LIMIT` in apps/query-api/src/constants/discover.constants.ts)
+ * and answers 400 above it.
+ */
+export const SITEMAP_DISCOVER_PAGE_SIZE = 50;
 
 async function paginateDiscover<T>(
   path: string,
@@ -38,7 +43,7 @@ async function paginateDiscover<T>(
   while (results.length < maxItems) {
     const search = new URLSearchParams({
       ...params,
-      limit: String(Math.min(PAGE_SIZE, maxItems - results.length)),
+      limit: String(Math.min(SITEMAP_DISCOVER_PAGE_SIZE, maxItems - results.length)),
       ...(cursor ? { cursor } : {}),
     });
     const raw = await queryApiFetch<unknown>(`${path}?${search.toString()}`, {

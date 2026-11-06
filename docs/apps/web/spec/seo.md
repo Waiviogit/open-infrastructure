@@ -68,8 +68,8 @@ Resolve relative API URLs with `buildPublicUrl()` / `seoPublicOrigin()`. Fallbac
 
 | File | Behavior |
 |------|----------|
-| `app/sitemap.ts` | `revalidate: 3600`; home + discover objects/users (limit 5000 each) via `fetchDiscoverObjectsForSitemap` / `fetchDiscoverUsersForSitemap` |
-| `app/robots.ts` | Allow `/`; disallow `/sign-in`, `/api/`, `/editor`, `/drafts`, `/settings`, `/notifications`; `sitemap` + `host` from `seoPublicOrigin()` |
+| `app/sitemap.ts` | Request-time (`connection()`: the public origin is deploy env); home + discover objects/users (limit 5000 each, pages of 50 = query-api max) via `fetchDiscoverObjectsForSitemap` / `fetchDiscoverUsersForSitemap`, query-api reads cached 1 h |
+| `app/robots.ts` | Allow `/`; disallow `/sign-in`, `/api/`, `/editor`, `/drafts`, `/settings`, `/notifications`; `sitemap` + `host` from `seoPublicOrigin()`; request-time (`connection()`), so the runtime origin is used |
 
 ## Edge cases
 

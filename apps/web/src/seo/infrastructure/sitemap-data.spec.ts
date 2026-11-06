@@ -40,6 +40,18 @@ describe('sitemap-data', () => {
     expect(queryApiFetch).toHaveBeenCalledTimes(2);
   });
 
+  it('never asks query-api for more than its 50-row discover limit', async () => {
+    queryApiFetch.mockResolvedValue({ items: [], cursor: null, hasMore: false });
+
+    await fetchDiscoverObjectsForSitemap({ limit: 5000 });
+    await fetchDiscoverUsersForSitemap({ limit: 5000 });
+
+    for (const [path] of queryApiFetch.mock.calls) {
+      const limit = Number(new URL(String(path), 'http://query-api').searchParams.get('limit'));
+      expect(limit).toBe(50);
+    }
+  });
+
   it('returns empty array on fetch failure', async () => {
     queryApiFetch.mockResolvedValue(null);
     await expect(fetchDiscoverUsersForSitemap({ limit: 10 })).resolves.toEqual([]);
