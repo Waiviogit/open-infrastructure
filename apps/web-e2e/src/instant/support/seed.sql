@@ -3,7 +3,7 @@
 BEGIN;
 
 TRUNCATE accounts_current, objects_core, user_object_follows, object_updates, threads,
-  channels, messages, user_account_mutes CASCADE;
+  channels, messages, user_account_mutes, posts CASCADE;
 
 INSERT INTO accounts_current (name, wobjects_weight) VALUES
   ('carol', 10), ('alice', 50), ('bob', 20), ('dave', 1);
@@ -41,4 +41,7 @@ INSERT INTO channels (channel_id, kind, object_id, creator, access, title, creat
 INSERT INTO messages (message_id, channel_id, author, body, created_at_unix, event_seq, transaction_id, dup_group_id) VALUES
   ('m-cafe-1', 'ch-cafe', 'alice', 'New seasonal menu is live', 1762406000, 3001, 'tx-m1', 'm-cafe-1');
 
+INSERT INTO posts (author, permlink, title, body, json_metadata, depth, category, parent_permlink, root_author, root_permlink, created, created_unix) VALUES
+  ('alice', 'espresso-review', 'Espresso review at Blue Cafe', 'The espresso at Blue Cafe is rich and balanced. Worth the visit.',
+   '{"tags":["coffee"]}', 0, 'coffee', 'coffee', 'alice', 'espresso-review', '2025-11-06T04:00:00', 1762401600);
 COMMIT;

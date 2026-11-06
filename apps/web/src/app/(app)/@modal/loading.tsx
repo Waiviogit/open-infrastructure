@@ -6,7 +6,11 @@
  */
 export default function ModalLoadingSkeleton() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-[110] overflow-hidden">
+    <div
+      className="pointer-events-none fixed inset-0 z-[110] overflow-hidden"
+      aria-busy="true"
+      aria-label="Loading post"
+    >
       <div className="post-modal-scrim fixed inset-0" aria-hidden />
       <div className="flex h-full items-start justify-center overflow-hidden p-4 py-8 sm:px-6">
         <div className="flex w-full max-w-container-post items-start gap-3">

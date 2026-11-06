@@ -1,27 +1,16 @@
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { BlogPostScreen, getSinglePostQuery, PostInterceptModalShell } from '@/modules/feed';
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 import { FeedColumn } from '@/shared/presentation/layout';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import ModalLoadingSkeleton from '../../../../loading';
 
-/**
- * Intercepts soft navigation to `/user-profile/[name]/post/[permlink]`.
- * Posts live under a static `post` segment so profile tabs (`threads`, etc.) are not mistaken
- * for permalinks by this parallel route (which would load getSinglePostQuery and 404).
- *
- * Public URLs stay `/@account/permlink`; {@link proxy} rewrites them to `.../post/permlink`.
- */
-export default async function PostModalInterceptPage({
-  params,
-}: {
-  params: Promise<{ name: string; permlink: string }>;
-}) {
+type PostModalParams = Promise<{ name: string; permlink: string }>;
+
+async function PostModalContent({ params }: { params: PostModalParams }) {
   const auth = createCookieAuthContextProvider();
   const [{ name, permlink }, locale, currentUser] = await Promise.all([
     params,
@@ -51,5 +40,21 @@ export default async function PostModalInterceptPage({
         />
       </FeedColumn>
     </PostInterceptModalShell>
+  );
+}
+
+/**
+ * Intercepts soft navigation to `/user-profile/[name]/post/[permlink]`.
+ * Posts live under a static `post` segment so profile tabs (`threads`, etc.) are not mistaken
+ * for permalinks by this parallel route (which would load getSinglePostQuery and 404).
+ * The post (viewer, locale, query) streams behind the modal skeleton, so the click paints it at once.
+ *
+ * Public URLs stay `/@account/permlink`; {@link proxy} rewrites them to `.../post/permlink`.
+ */
+export default function PostModalInterceptPage({ params }: { params: PostModalParams }) {
+  return (
+    <Suspense fallback={<ModalLoadingSkeleton />}>
+      <PostModalContent params={params} />
+    </Suspense>
   );
 }

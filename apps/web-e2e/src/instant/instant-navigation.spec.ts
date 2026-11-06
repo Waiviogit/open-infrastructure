@@ -88,4 +88,20 @@ test.describe('instant navigation', () => {
     });
     await expect(aliceThread).toBeVisible();
   });
+
+  // Soft navigation to a post is intercepted by `@modal`; its page renders the post behind
+  // `<Suspense fallback={<ModalLoadingSkeleton/>}>`, so the modal skeleton is the route shell.
+  test('profile blog → post opens the post modal skeleton', async ({ page }) => {
+    await page.goto('/@alice');
+    const trigger = page.locator('main a[href="/@alice/espresso-review"]').first();
+    await expect(trigger).toBeVisible();
+
+    const postDialog = page.getByRole('dialog');
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('[aria-label="Loading post"]')).toBeVisible();
+      await expect(postDialog).toHaveCount(0);
+    });
+    await expect(postDialog.getByText('rich and balanced')).toBeVisible();
+  });
 });

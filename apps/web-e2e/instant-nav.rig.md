@@ -8,13 +8,14 @@ Production `instant()` suite for the Cache Components / Partial Prefetching migr
 - EXPOSE: `apps/web/next.config.js` → `experimental.exposeTestingApiInProductionBuild: process.env.EXPOSE_TESTING_API === '1'`; only the rig's build sets it.
 - RUN: `pnpm test:db:up && pnpm nx run web-e2e:e2e-instant` (base URL fixed: `http://localhost:3993`). CI: `web-instant-e2e` job in `.github/workflows/verify.yml`.
 - TEST USER: `carol`, session = `odl_access` JWT minted by `src/instant/support/rig.ts` (`signIn`, cookie only, no page navigation) with the rig secret; state: `src/instant/support/seed.sql` — carol follows `cafe-1` and `park-2`; 30+ threads/updates; locale default (en-US).
-- DRIFT: seed is minimal — no posts (Posts tab empty), only one channel message; empty-state screens differ from production data. None known for the asserted skeletons.
+- DRIFT: seed is minimal — one post (`alice/espresso-review`), only one channel message; empty-state screens differ from production data. None known for the asserted skeletons.
 - CONTRACTS (one test each, `instant-navigation.spec.ts`):
   - `/feed/threads` author link → `/@alice`: profile skeleton `[aria-label="Loading profile"]`, `h1 alice` gated — passing.
   - `/feed/updates` card header → `/object/cafe-1`: object skeleton `[aria-label="Loading object"]`, `h1 Blue Cafe` gated — passing (route shell exists; a real click still needs the link to prefetch — see `nav-instant-trace.cjs`).
   - `/feed/threads` rail → `/feed/updates`: `[aria-label="Loading posts"]`, `home-updates-feed` gated — passing.
   - `/object/cafe-1` tab Details → Updates: `[aria-label="Loading object content"]`, update cards gated — passing.
   - `/@alice` tab Posts → Threads: `[aria-label="Loading profile content"]`, alice's thread gated — passing.
+  - `/@alice` blog → `/@alice/espresso-review`: `@modal` intercept, `[aria-label="Loading post"]`, dialog gated — passing.
 - LOOP: local — `pnpm test:db:up`, `pnpm nx run web-e2e:e2e-instant` (rebuilds web each run, ~1.5 min + build), edit, repeat; `pnpm test:db:down` at the end. Agent limits: none (no secrets, no deploy).
 - LIVENESS: n/a; local build and start.
 - WALLS:
@@ -22,3 +23,4 @@ Production `instant()` suite for the Cache Components / Partial Prefetching migr
   - Playwright starts `webServer` before `globalSetup`, so migrate + seed live in the query-api launcher, before the server starts.
   - `next start` warns about `output: 'standalone'`; it still serves the build (Docker uses `node .next/standalone/server.js`).
   - The rig's `next build` replaces `apps/web/.next`; do not run it next to a developer `next start` of the same app.
+  - After a rig run, a developer `next dev` that reuses its old `apps/web/.next/dev` can loop on Fast Refresh (every page reloads several times a second). Stop dev, `rm -rf apps/web/.next/dev`, start it again.
