@@ -108,6 +108,12 @@ const envSchema = z.object({
 const parsed = envSchema.parse(process.env);
 const odlNetwork = parseOdlNetwork(parsed.ODL_NETWORK);
 
+if (!parsed.AUTH_JWT_SECRET) {
+  console.warn(
+    '[env] AUTH_JWT_SECRET is not set: session cookies are ignored and every user is treated as logged out. Set it to the auth-api JWT_SECRET value.',
+  );
+}
+
 const authAppDisplayOrigin = process.env.AUTH_APP_DISPLAY_ORIGIN?.trim();
 const publicOrigin =
   parsed.WEB_PUBLIC_ORIGIN ??
