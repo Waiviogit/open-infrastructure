@@ -4,6 +4,11 @@ export { GetPostDiscussionEndpoint } from './get-post-discussion.endpoint';
 export { GetPostVotersEndpoint } from './get-post-voters.endpoint';
 export { GetObjectPostsFeedEndpoint } from './get-object-posts-feed.endpoint';
 export { GetObjectThreadsFeedEndpoint } from './get-object-threads-feed.endpoint';
+export { GetFollowedObjectsThreadsFeedEndpoint } from './get-followed-objects-threads-feed.endpoint';
+export {
+  followedObjectsThreadsFeedBodySchema,
+  type FollowedObjectsThreadsFeedBody,
+} from './schemas/followed-objects-threads-feed.schema';
 export { GetUserBlogFeedEndpoint } from './get-user-blog-feed.endpoint';
 export { GetUserBlogObjectFiltersEndpoint } from './get-user-blog-object-filters.endpoint';
 export { GetUserThreadsFeedEndpoint } from './get-user-threads-feed.endpoint';

@@ -1,6 +1,7 @@
 import { DEFAULT_GOVERNANCE_SNAPSHOT } from '@opden-data-layer/objects-domain';
 
 import { GetObjectUpdatesFeedEndpoint } from './get-object-updates-feed.endpoint';
+import { ObjectUpdateFeedItemsBuilder } from './object-update-feed-items.builder';
 
 describe('GetObjectUpdatesFeedEndpoint.executeByUpdateId', () => {
   const objectsCore = {
@@ -28,8 +29,11 @@ describe('GetObjectUpdatesFeedEndpoint.executeByUpdateId', () => {
     updatesFeedRepo as never,
     objectOwnershipRepo as never,
     governanceResolver as never,
-    config as never,
-    accounts as never,
+    new ObjectUpdateFeedItemsBuilder(
+      updatesFeedRepo as never,
+      config as never,
+      accounts as never,
+    ),
   );
 
   const joinRow = {
@@ -183,8 +187,11 @@ describe('GetObjectUpdatesFeedEndpoint.execute recency', () => {
     updatesFeedRepo as never,
     objectOwnershipRepo as never,
     governanceResolver as never,
-    config as never,
-    accounts as never,
+    new ObjectUpdateFeedItemsBuilder(
+      updatesFeedRepo as never,
+      config as never,
+      accounts as never,
+    ),
   );
 
   const joinRow = {
@@ -266,8 +273,11 @@ describe('GetObjectUpdatesFeedEndpoint.execute approval', () => {
     updatesFeedRepo as never,
     objectOwnershipRepo as never,
     governanceResolver as never,
-    config as never,
-    accounts as never,
+    new ObjectUpdateFeedItemsBuilder(
+      updatesFeedRepo as never,
+      config as never,
+      accounts as never,
+    ),
   );
 
   const joinRow = {

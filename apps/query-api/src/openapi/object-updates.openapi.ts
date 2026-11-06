@@ -3,13 +3,14 @@ import { objectUpdatesFeedQuerySchema } from '../domain/object-updates/schemas/o
 import { registry } from './registry';
 import { queryApiOpenApiTags } from './tags';
 
-const objectUpdateFeedItemSchema = registry.register(
+export const objectUpdateFeedItemSchema = registry.register(
   'ObjectUpdateFeedItem',
   z.object({
     update_id: z.string(),
     object_id: z.string(),
     update_type: z.string(),
     creator: z.string(),
+    creator_avatar_url: z.string().nullable(),
     creator_wobjects_weight: z.number(),
     locale: z.string().nullable(),
     created_at_unix: z.number().int(),

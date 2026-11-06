@@ -17,6 +17,7 @@ import { GetUserBlogObjectFiltersEndpoint } from './get-user-blog-object-filters
 import { GetUserCommentsFeedEndpoint } from './get-user-comments-feed.endpoint';
 import { GetUserMentionsFeedEndpoint } from './get-user-mentions-feed.endpoint';
 import { GetUserThreadsFeedEndpoint } from './get-user-threads-feed.endpoint';
+import { GetFollowedObjectsThreadsFeedEndpoint } from './get-followed-objects-threads-feed.endpoint';
 import { GetUserActivityEndpoint } from './get-user-activity.endpoint';
 import { GetHomeFeedEndpoint } from './get-home-feed.endpoint';
 import { HiveAccountHistoryPagerService } from './hive-account-history-pager.service';
@@ -34,6 +35,7 @@ import { MarkProfileFeedReadEndpoint } from './mark-profile-feed-read.endpoint';
   providers: [
     GetObjectPostsFeedEndpoint,
     GetObjectThreadsFeedEndpoint,
+    GetFollowedObjectsThreadsFeedEndpoint,
     GetUserBlogFeedEndpoint,
     GetUserBlogObjectFiltersEndpoint,
     GetUserThreadsFeedEndpoint,
@@ -54,6 +56,7 @@ import { MarkProfileFeedReadEndpoint } from './mark-profile-feed-read.endpoint';
   exports: [
     GetObjectPostsFeedEndpoint,
     GetObjectThreadsFeedEndpoint,
+    GetFollowedObjectsThreadsFeedEndpoint,
     GetUserBlogFeedEndpoint,
     GetUserBlogObjectFiltersEndpoint,
     GetUserThreadsFeedEndpoint,

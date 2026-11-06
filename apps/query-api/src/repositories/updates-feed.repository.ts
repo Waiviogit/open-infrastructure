@@ -87,6 +87,63 @@ export class UpdatesFeedRepository {
   }
 
   /**
+   * Hub "Updates" tab: updates of every active object `account` follows,
+   * keyset page newest first by (created_at_unix DESC, update_id DESC).
+   */
+  async findFollowedObjectsRecencyPage(params: {
+    account: string;
+    limit: number;
+    cursorCreatedAt?: number;
+    cursorUpdateId?: string;
+  }): Promise<UpdatesFeedJoinRow[]> {
+    try {
+      let q = this.db
+        .selectFrom('object_updates as ou')
+        .innerJoin('user_object_follows as uof', (join) =>
+          join.onRef('uof.object_id', '=', 'ou.object_id').on('uof.account', '=', params.account),
+        )
+        .innerJoin('objects_core as oc', (join) =>
+          join.onRef('oc.object_id', '=', 'ou.object_id').on('oc.status', '=', 'active'),
+        )
+        .leftJoin('accounts_current as ac', (join) => join.onRef('ou.creator', '=', 'ac.name'))
+        .selectAll('ou')
+        .select([
+          sql<number>`coalesce(ac.wobjects_weight, 0)::double precision`.as('creator_wobjects_weight'),
+          sql<number | null>`case when ou.value_geo is null then null else ST_Y(ou.value_geo::geometry) end`.as(
+            'geo_lat',
+          ),
+          sql<number | null>`case when ou.value_geo is null then null else ST_X(ou.value_geo::geometry) end`.as(
+            'geo_lon',
+          ),
+        ])
+        .orderBy('ou.created_at_unix', 'desc')
+        .orderBy('ou.update_id', 'desc');
+
+      const cursorT = params.cursorCreatedAt;
+      const cursorId = params.cursorUpdateId;
+      if (
+        cursorT !== undefined &&
+        Number.isFinite(cursorT) &&
+        cursorId !== undefined &&
+        cursorId.length > 0
+      ) {
+        q = q.where((eb) =>
+          eb.or([
+            eb('ou.created_at_unix', '<', cursorT),
+            eb.and([eb('ou.created_at_unix', '=', cursorT), eb('ou.update_id', '<', cursorId)]),
+          ]),
+        );
+      }
+
+      const rows = await q.limit(params.limit).execute();
+      return rows.map((r) => this.toJoinRow(r));
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      return [];
+    }
+  }
+
+  /**
    * All matching rows up to {@link APPROVAL_SORT_MAX_ROWS} for in-memory approval sort.
    */
   async findAllForApprovalSort(params: {

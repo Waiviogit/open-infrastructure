@@ -13,6 +13,8 @@ import { userFavoritesQuerySchema } from '../../domain/favorites/favorites.schem
 import { userExpertiseObjectsQuerySchema } from '../../domain/expertise/expertise.schema';
 import { objectActivityMessageHistoryBodySchema } from '../../domain/messaging/schemas/messaging.schema';
 import { userActivityBodyFieldsSchema } from '../../domain/feed/schemas/user-activity.schema';
+import { followedObjectsThreadsFeedBodyFieldsSchema } from '../../domain/feed/schemas/followed-objects-threads-feed.schema';
+import { followedObjectsUpdatesFeedBodyFieldsSchema } from '../../domain/object-updates/schemas/followed-objects-updates-feed.schema';
 import {
   hiveAdvancedReportBodySchema,
   hiveWalletExemptionBodySchema,
@@ -687,6 +689,56 @@ export function registerUserTools(server: McpServer, deps: McpToolDeps): void {
           authors_only,
           authors_governance_object_id,
         },
+        ctx.governanceObjectIdFromHeader,
+        ctx.viewerAccount,
+      );
+      if (!result) {
+        return toolError(`User not found: ${account}`);
+      }
+      return jsonToolResult(result);
+    },
+  );
+
+  server.registerTool(
+    'get_followed_objects_threads',
+    {
+      description: catalogDescription('get_followed_objects_threads'),
+      inputSchema: withMcpLocaleContext(
+        followedObjectsThreadsFeedBodyFieldsSchema.extend(accountField),
+      ),
+    },
+    async (args) => {
+      const ctx = pickMcpContext(args);
+      const { account, limit, cursor } = args;
+      const result = await deps.getFollowedObjectsThreads.execute(
+        account,
+        { limit, cursor },
+        ctx.locale,
+        ctx.governanceObjectIdFromHeader,
+        ctx.viewerAccount,
+      );
+      if (!result) {
+        return toolError(`User not found: ${account}`);
+      }
+      return jsonToolResult(result);
+    },
+  );
+
+  server.registerTool(
+    'get_followed_objects_updates',
+    {
+      description: catalogDescription('get_followed_objects_updates'),
+      inputSchema: withMcpLocaleContext(
+        followedObjectsUpdatesFeedBodyFieldsSchema.extend(accountField),
+      ),
+    },
+    async (args) => {
+      const ctx = pickMcpContext(args);
+      const { account, limit, cursor } = args;
+      const result = await deps.getFollowedObjectsUpdates.execute(
+        account,
+        { limit, cursor },
+        ctx.locale,
         ctx.governanceObjectIdFromHeader,
         ctx.viewerAccount,
       );

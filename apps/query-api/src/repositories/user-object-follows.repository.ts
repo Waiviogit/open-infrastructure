@@ -102,6 +102,34 @@ export class UserObjectFollowsRepository {
   }
 
   /**
+   * Subset of `candidateObjectIds` that `account` follows and that are active.
+   */
+  async findFollowedActiveObjectIdsAmong(
+    account: string,
+    candidateObjectIds: readonly string[],
+  ): Promise<string[]> {
+    const candidates = [...new Set(candidateObjectIds)];
+    if (candidates.length === 0) {
+      return [];
+    }
+    try {
+      const rows = await this.db
+        .selectFrom('user_object_follows as uof')
+        .innerJoin('objects_core as oc', (join) =>
+          join.onRef('uof.object_id', '=', 'oc.object_id').on('oc.status', '=', 'active'),
+        )
+        .where('uof.account', '=', account)
+        .where('uof.object_id', 'in', candidates)
+        .select('uof.object_id')
+        .execute();
+      return rows.map((row) => row.object_id);
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      return [];
+    }
+  }
+
+  /**
    * Accounts following `object_id` (joined to `accounts_current`), with subscription-style sort + pagination.
    */
   async findFollowersByObjectId(

@@ -61,6 +61,7 @@ CREATE INDEX idx_object_updates_name_title_value_norm_trgm ON object_updates USI
 CREATE INDEX idx_object_updates_identifier_value_lower ON object_updates (lower(value_json->>'value') text_pattern_ops) WHERE update_type = 'identifier' AND value_json->>'value' IS NOT NULL;
 CREATE INDEX idx_object_updates_address_locality_lower ON object_updates (lower(value_json->>'locality') text_pattern_ops) WHERE update_type = 'address' AND value_json->>'locality' IS NOT NULL;
 CREATE INDEX idx_object_updates_object_rank_score ON object_updates (object_id, rank_score);
+CREATE INDEX idx_object_updates_object_created ON object_updates (object_id, created_at_unix DESC, update_id DESC);
 
 -- Trigger: keep search_vector in sync with value_text
 CREATE OR REPLACE FUNCTION object_updates_search_vector_trigger()
@@ -630,6 +631,7 @@ CREATE TABLE threads (
 );
 
 CREATE INDEX idx_threads_created_unix ON threads (created_unix DESC);
+CREATE INDEX idx_threads_hashtags_gin ON threads USING GIN (hashtags);
 
 CREATE TABLE thread_active_votes (
   author       TEXT NOT NULL,

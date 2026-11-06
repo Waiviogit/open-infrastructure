@@ -23,9 +23,11 @@ import {
   GetHomeFeedEndpoint,
   GetObjectPostsFeedEndpoint,
   GetObjectThreadsFeedEndpoint,
+  GetFollowedObjectsThreadsFeedEndpoint,
 } from '../domain/feed';
 import { GetObjectUpdatesFeedEndpoint } from '../domain/object-updates/get-object-updates-feed.endpoint';
 import { GetUpdateVotersEndpoint } from '../domain/object-updates/get-update-voters.endpoint';
+import { GetFollowedObjectsUpdatesFeedEndpoint } from '../domain/object-updates/get-followed-objects-updates-feed.endpoint';
 import {
   CheckObjectExistsEndpoint,
   GetNestedObjectsEndpoint,
@@ -204,6 +206,8 @@ export class McpService {
     private readonly getObjectChannel: GetObjectChannelEndpoint,
     private readonly getObjectChannelMessages: GetObjectChannelMessagesEndpoint,
     private readonly getFollowedObjectsMessages: GetFollowedObjectsMessagesEndpoint,
+    private readonly getFollowedObjectsThreads: GetFollowedObjectsThreadsFeedEndpoint,
+    private readonly getFollowedObjectsUpdates: GetFollowedObjectsUpdatesFeedEndpoint,
     private readonly checkObjectActivityDuplicate: CheckActivityDuplicateEndpoint,
     private readonly getMemoPublicKey: GetMemoPublicKeyEndpoint,
     private readonly countryResolver: CountryResolverService,
@@ -297,6 +301,8 @@ export class McpService {
       getObjectChannel: this.getObjectChannel,
       getObjectChannelMessages: this.getObjectChannelMessages,
       getFollowedObjectsMessages: this.getFollowedObjectsMessages,
+      getFollowedObjectsThreads: this.getFollowedObjectsThreads,
+      getFollowedObjectsUpdates: this.getFollowedObjectsUpdates,
       checkObjectActivityDuplicate: this.checkObjectActivityDuplicate,
       getMemoPublicKey: this.getMemoPublicKey,
     };

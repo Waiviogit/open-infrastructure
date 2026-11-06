@@ -11,7 +11,7 @@ related:
 type: spec
 status: active
 scope: web
-updated_at: 2026-08-06
+updated_at: 2026-11-06
 ---
 
 # Home page (`/`)
@@ -20,15 +20,15 @@ updated_at: 2026-08-06
 
 ## Purpose
 
-App root landing under `(app)/(hub)`. Shows hub section nav and a paginated post feed (global for guests, personalized when logged in). Metadata via `@/seo`.
+App root landing under `(app)/(hub)/(home)`. Shows hub section nav, the feed tab menu (Posts / Threads / Activity / Updates — see [feed-tabs.md](feed-tabs.md)) and the Posts feed (global for guests, personalized when logged in). Metadata via `@/seo`.
 
 ## Route
 
 | Item | Detail |
 |------|--------|
-| Path | `/` — `apps/web/src/app/(app)/(hub)/page.tsx` |
-| Shell | `(app)/layout.tsx` (AppHeader) + `(hub)/layout.tsx` (FEED / DISCOVER / MARKET nav) |
-| Loading | `(hub)/loading.tsx` — `FeedPostsLoadingSkeleton` |
+| Path | `/` — `apps/web/src/app/(app)/(hub)/(home)/page.tsx` |
+| Shell | `(app)/layout.tsx` (AppHeader) + `(hub)/layout.tsx` (FEED / DISCOVER / MARKET nav) + `(home)/layout.tsx` (feed tab rail) |
+| Loading | `(home)/loading.tsx` — `FeedPostsLoadingSkeleton` (content slot only) |
 | Content | `HomeFeedPostsList` with infinite scroll |
 
 ## Feed behavior
@@ -52,7 +52,7 @@ Shared by `/`, `/discover`, `/business*`. Tools routes keep hub layout but are n
 
 | Tab | Route | Active |
 |-----|-------|--------|
-| FEED | `/` | exact `/` |
+| FEED | `/` | `/` and `/feed/*` (`isHomeFeedPath`) |
 | DISCOVER | `/discover` | `/discover` prefix |
 | MARKET | `/business` | `/business` prefix |
 
@@ -73,8 +73,8 @@ Included in `app/sitemap.ts` with `priority: 1`, `changeFrequency: daily`.
 
 | Path | Role |
 |------|------|
-| `apps/web/src/app/(app)/(hub)/page.tsx` | Home RSC + initial feed fetch |
-| `apps/web/src/app/(app)/(hub)/home-feed.actions.ts` | Load-more server action |
+| `apps/web/src/app/(app)/(hub)/(home)/page.tsx` | Home RSC + initial feed fetch |
+| `apps/web/src/app/(app)/(hub)/(home)/home-feed.actions.ts` | Load-more server actions (all feed tabs) |
 | `apps/web/src/modules/home/presentation/components/home-feed-posts-list.tsx` | Client list + infinite scroll |
 | `apps/web/src/modules/home/infrastructure/clients/home-feed.client.ts` | query-api client |
 | `apps/web/src/seo/application/build-home-metadata.ts` | Title/description |

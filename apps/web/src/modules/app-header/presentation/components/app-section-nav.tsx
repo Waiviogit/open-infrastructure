@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { isHomeFeedPath } from '@/modules/home/domain/home-feed-tabs';
 import {
   OptimisticNavLink,
   profileSectionTabClass,
@@ -28,7 +29,7 @@ const TABS: SectionTab[] = [
     key: 'home',
     href: '/',
     labelKey: 'app_section_nav_home',
-    isActive: (pathname) => pathname === '/',
+    isActive: isHomeFeedPath,
   },
   {
     key: 'data',

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { userBlogFeedResponseSchema } from './feed.openapi';
+import { objectUpdateFeedItemSchema } from './object-updates.openapi';
 import { projectedObjectOpenApiSchema } from './projected-object.schema';
 import { registry } from './registry';
 import { queryApiOpenApiTags } from './tags';
@@ -251,6 +253,100 @@ registry.registerPath({
       description: 'Keyset page. Empty follow set is an empty page, not 404.',
       content: {
         'application/json': { schema: followedObjectsMessagesResponseSchema },
+      },
+    },
+    404: {
+      description: 'Profile not in `accounts_current`.',
+      content: { 'application/json': { schema: notFoundSchema } },
+    },
+  },
+});
+
+const followedObjectsFeedBodySchema = registry.register(
+  'FollowedObjectsFeedBody',
+  z.object({
+    limit: z.number().int().min(1).max(50).optional().openapi({
+      description: 'Page size. Default 20.',
+    }),
+    cursor: z.string().optional().openapi({
+      description: 'Opaque cursor from the previous page.',
+    }),
+  }),
+);
+
+const followedObjectsFeedHeaders = z.object({
+  'accept-language': z.string().optional(),
+  'x-locale': z.string().optional(),
+  'x-governance-object-id': z.string().optional(),
+  'x-viewer': z.string().optional().openapi({
+    description:
+      'Optional viewer account; applies viewer mutes and fills viewer vote state. Does not change whose follows are read.',
+    example: 'alice',
+  }),
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/query/v1/users/{name}/following-objects/threads',
+  tags: [queryApiOpenApiTags.users],
+  summary: 'Threads feed across objects the profile follows',
+  description:
+    'Threads whose `hashtags` overlap the active `user_object_follows` of `{name}`, ordered by `(created_unix, author, permlink) DESC`. Each item `objects` lists the followed objects the thread is tagged with (max 4). Cursor matches blog/user-threads feed encoding.',
+  request: {
+    params: z.object({ name: accountNameParam }),
+    body: {
+      content: { 'application/json': { schema: followedObjectsFeedBodySchema } },
+      required: false,
+    },
+    headers: followedObjectsFeedHeaders,
+  },
+  responses: {
+    200: {
+      description: 'Keyset page. Empty follow set is an empty page, not 404.',
+      content: { 'application/json': { schema: userBlogFeedResponseSchema } },
+    },
+    404: {
+      description: 'Profile not in `accounts_current`.',
+      content: { 'application/json': { schema: notFoundSchema } },
+    },
+  },
+});
+
+const followedObjectUpdateFeedItemSchema = registry.register(
+  'FollowedObjectUpdateFeedItem',
+  objectUpdateFeedItemSchema.extend({
+    object: projectedObjectOpenApiSchema.nullable().openapi({
+      description: 'Light projection (name, avatar, parent) of the updated object.',
+    }),
+  }),
+);
+
+registry.registerPath({
+  method: 'post',
+  path: '/query/v1/users/{name}/following-objects/updates',
+  tags: [queryApiOpenApiTags.users],
+  summary: 'Updates feed across objects the profile follows',
+  description:
+    'All `object_updates` of the active `user_object_follows` of `{name}`, ordered by `(created_at_unix, update_id) DESC`. Each item carries the same approval and vote fields as `GET /objects/{objectId}/updates` plus the updated `object`.',
+  request: {
+    params: z.object({ name: accountNameParam }),
+    body: {
+      content: { 'application/json': { schema: followedObjectsFeedBodySchema } },
+      required: false,
+    },
+    headers: followedObjectsFeedHeaders,
+  },
+  responses: {
+    200: {
+      description: 'Keyset page. Empty follow set is an empty page, not 404.',
+      content: {
+        'application/json': {
+          schema: z.object({
+            items: z.array(followedObjectUpdateFeedItemSchema),
+            cursor: z.string().nullable(),
+            hasMore: z.boolean(),
+          }),
+        },
       },
     },
     404: {

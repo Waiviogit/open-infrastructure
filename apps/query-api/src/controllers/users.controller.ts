@@ -8,6 +8,9 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  GetFollowedObjectsThreadsFeedEndpoint,
+  followedObjectsThreadsFeedBodySchema,
+  type FollowedObjectsThreadsFeedBody,
   GetUserBlogFeedEndpoint,
   GetUserBlogObjectFiltersEndpoint,
   GetUserFeedUnreadCountsEndpoint,
@@ -105,6 +108,12 @@ import {
   objectActivityMessageHistoryBodySchema,
   type ObjectActivityMessageHistoryBody,
 } from '../domain/messaging/schemas/messaging.schema';
+import {
+  GetFollowedObjectsUpdatesFeedEndpoint,
+  followedObjectsUpdatesFeedBodySchema,
+  type FollowedObjectsUpdatesFeedBody,
+  type FollowedObjectsUpdatesFeedResponseDto,
+} from '../domain/object-updates';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersController {
@@ -133,6 +142,8 @@ export class UsersController {
     private readonly getUserNotificationSettings: GetUserNotificationSettingsEndpoint,
     private readonly getMemoPublicKey: GetMemoPublicKeyEndpoint,
     private readonly getFollowedObjectsMessages: GetFollowedObjectsMessagesEndpoint,
+    private readonly getFollowedObjectsThreads: GetFollowedObjectsThreadsFeedEndpoint,
+    private readonly getFollowedObjectsUpdates: GetFollowedObjectsUpdatesFeedEndpoint,
     private readonly countryResolver: CountryResolverService,
   ) {}
 
@@ -248,6 +259,50 @@ export class UsersController {
     const result = await this.getFollowedObjectsMessages.execute(
       name,
       body,
+      governanceObjectIdFromHeader,
+      viewer,
+    );
+    if (!result) {
+      throw new NotFoundException(`User not found: ${name}`);
+    }
+    return result;
+  }
+
+  @Post(':name/following-objects/threads')
+  async getFollowedObjectThreads(
+    @Param('name') name: string,
+    @Body(new ZodBodyPipe(followedObjectsThreadsFeedBodySchema))
+    body: FollowedObjectsThreadsFeedBody,
+    @ReqLocale() locale: string,
+    @ReqGovernanceObjectId() governanceObjectIdFromHeader: string | undefined,
+    @ReqViewer() viewer: string | undefined,
+  ): Promise<UserBlogFeedResponse> {
+    const result = await this.getFollowedObjectsThreads.execute(
+      name,
+      body,
+      locale,
+      governanceObjectIdFromHeader,
+      viewer,
+    );
+    if (!result) {
+      throw new NotFoundException(`User not found: ${name}`);
+    }
+    return result;
+  }
+
+  @Post(':name/following-objects/updates')
+  async getFollowedObjectUpdates(
+    @Param('name') name: string,
+    @Body(new ZodBodyPipe(followedObjectsUpdatesFeedBodySchema))
+    body: FollowedObjectsUpdatesFeedBody,
+    @ReqLocale() locale: string,
+    @ReqGovernanceObjectId() governanceObjectIdFromHeader: string | undefined,
+    @ReqViewer() viewer: string | undefined,
+  ): Promise<FollowedObjectsUpdatesFeedResponseDto> {
+    const result = await this.getFollowedObjectsUpdates.execute(
+      name,
+      body,
+      locale,
       governanceObjectIdFromHeader,
       viewer,
     );

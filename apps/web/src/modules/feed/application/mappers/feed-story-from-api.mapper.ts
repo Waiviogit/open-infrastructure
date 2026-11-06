@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { FeedStoryView } from '../dto/feed-story.dto';
 import { postRewardSchema } from '../dto/post-reward.dto';
 
-const projectedObjectApiSchema = z.object({
+export const projectedObjectApiSchema = z.object({
   object_id: z.string(),
   object_type: z.string(),
   semantic_type: z.string().nullable(),

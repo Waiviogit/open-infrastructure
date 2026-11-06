@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import { Thread } from '@opden-data-layer/odl-db-types';
@@ -33,6 +33,8 @@ const PREVIEW_VOTER_LIMIT = 3;
 
 @Injectable()
 export class ThreadsRepository {
+  private readonly logger = new Logger(ThreadsRepository.name);
+
   constructor(@Inject(KYSELY) private readonly db: Kysely<Database>) {}
 
   /**
@@ -140,6 +142,54 @@ export class ThreadsRepository {
     }
 
     return qb.limit(limitPlusOne).execute();
+  }
+
+  /**
+   * Hub "Threads" tab: threads whose `hashtags` overlap the active objects `account` follows,
+   * newest first by `(created_unix, author, permlink)`.
+   */
+  async findFollowedObjectsThreadsFeed(
+    account: string,
+    mutedAuthors: string[],
+    cursor: { feedAt: number; author: string; permlink: string } | null,
+    limitPlusOne: number,
+  ): Promise<Thread[]> {
+    let qb = this.db
+      .selectFrom('threads')
+      .selectAll()
+      .where('deleted', '=', false)
+      .where(
+        sql<boolean>`threads.hashtags && ARRAY(
+          SELECT uof.object_id
+          FROM user_object_follows AS uof
+          INNER JOIN objects_core AS oc
+            ON oc.object_id = uof.object_id
+           AND oc.status = 'active'
+          WHERE uof.account = ${account}
+        )` as never,
+      );
+
+    if (mutedAuthors.length > 0) {
+      qb = qb.where('author', 'not in', mutedAuthors);
+    }
+
+    if (cursor) {
+      qb = qb.where(
+        sql`(threads.created_unix, threads.author, threads.permlink) < (${cursor.feedAt}, ${cursor.author}, ${cursor.permlink})` as never,
+      );
+    }
+
+    try {
+      return await qb
+        .orderBy('threads.created_unix', 'desc')
+        .orderBy('threads.author', 'desc')
+        .orderBy('threads.permlink', 'desc')
+        .limit(limitPlusOne)
+        .execute();
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      return [];
+    }
   }
 
   /**

@@ -22,6 +22,7 @@ Every App Router `page.tsx` under `apps/web/src/app/` maps to a **route area** f
 | Public route | Area folder | Hub spec | Module(s) |
 |--------------|-------------|----------|-----------|
 | `/` | `home/` | [page.md](home/page.md) | `@/modules/home` (home feed) + hub nav |
+| `/feed/{activity,threads,updates}` | `home/` | [feed-tabs.md](home/feed-tabs.md) | `@/modules/home` followed-objects tabs |
 | `/discover` | `discover/` | [page.md](discover/page.md) | `@/modules/discover` (hub DISCOVER) |
 | `/editor` | `editor/` | [page.md](editor/page.md) | `@/modules/editor` |
 | `/drafts` | `drafts/` | [page.md](drafts/page.md) | `@/modules/editor` — tools hub sidebar |

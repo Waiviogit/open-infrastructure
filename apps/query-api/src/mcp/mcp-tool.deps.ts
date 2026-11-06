@@ -83,6 +83,8 @@ import type {
   GetObjectChannelMessagesEndpoint,
 } from '../domain/messaging/get-object-channel.endpoint';
 import type { GetFollowedObjectsMessagesEndpoint } from '../domain/messaging/get-followed-objects-messages.endpoint';
+import type { GetFollowedObjectsThreadsFeedEndpoint } from '../domain/feed/get-followed-objects-threads-feed.endpoint';
+import type { GetFollowedObjectsUpdatesFeedEndpoint } from '../domain/object-updates/get-followed-objects-updates-feed.endpoint';
 import type { GetUserProfileEndpoint, GetUserAccountSidebarEndpoint, GetUserNotificationSettingsEndpoint } from '../domain/users';
 import type {
   GetUserEngineTokenDelegationsEndpoint,
@@ -195,6 +197,8 @@ export interface McpToolDeps {
   getObjectChannel: GetObjectChannelEndpoint;
   getObjectChannelMessages: GetObjectChannelMessagesEndpoint;
   getFollowedObjectsMessages: GetFollowedObjectsMessagesEndpoint;
+  getFollowedObjectsThreads: GetFollowedObjectsThreadsFeedEndpoint;
+  getFollowedObjectsUpdates: GetFollowedObjectsUpdatesFeedEndpoint;
   checkObjectActivityDuplicate: CheckActivityDuplicateEndpoint;
   getMemoPublicKey: GetMemoPublicKeyEndpoint;
 }

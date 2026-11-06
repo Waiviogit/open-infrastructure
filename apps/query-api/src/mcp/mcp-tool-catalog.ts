@@ -612,6 +612,20 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/osl-messaging.md',
   },
   {
+    name: 'get_followed_objects_threads',
+    description:
+      'Threads tagged (hashtags) with any active object the account follows, newest first. Each item lists the followed objects it is tagged with in `objects`. Optional viewer applies mutes and vote state.',
+    httpEquivalent: 'POST /query/v1/users/:name/following-objects/threads',
+    specPath: 'docs/apps/query-api/spec/followed-objects-feeds.md',
+  },
+  {
+    name: 'get_followed_objects_updates',
+    description:
+      'Object updates across every active object the account follows, newest first, with approval percent, vote counts and a light `object` projection (name, avatar). Optional viewer populates viewer_vote.',
+    httpEquivalent: 'POST /query/v1/users/:name/following-objects/updates',
+    specPath: 'docs/apps/query-api/spec/followed-objects-feeds.md',
+  },
+  {
     name: 'check_object_activity_duplicate',
     description:
       'Preflight duplicate check for archival object activity before broadcasting message_create.',

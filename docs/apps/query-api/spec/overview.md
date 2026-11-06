@@ -55,6 +55,7 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [WAIV generated report](user-waiv-generated-report-endpoint.md) | `POST/GET /query/v1/wallet/waiv/generated-reports`, rows, stop |
 | [Single post endpoint](single-post-endpoint.md) | `GET /query/v1/posts/:author/:permlink` |
 | [Home feed](home-feed.md) | `POST /query/v1/posts/feed` |
+| [Followed objects feeds](followed-objects-feeds.md) | `POST /query/v1/users/:name/following-objects/{threads,updates}` (hub Threads / Updates tabs) |
 | [Post discussion endpoint](post-discussion-endpoint.md) | `GET /query/v1/posts/:author/:permlink/discussion` |
 | [Post voters endpoint](post-voters-endpoint.md) | `GET /query/v1/posts/:author/:permlink/voters` |
 | [Post reward](post-reward.md) | `reward` + `waivRewardEligible` on post payloads |

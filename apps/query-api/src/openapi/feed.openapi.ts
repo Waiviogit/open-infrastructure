@@ -112,7 +112,7 @@ export const feedStoryItemSchema = registry.register(
   }),
 );
 
-const userBlogFeedResponseSchema = registry.register(
+export const userBlogFeedResponseSchema = registry.register(
   'UserBlogFeedResponse',
   z.object({
     items: z.array(feedStoryItemSchema),
