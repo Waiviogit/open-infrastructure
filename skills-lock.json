@@ -1,20 +1,40 @@
 {
   "version": 1,
   "skills": {
-    "next-best-practices": {
-      "source": "vercel-labs/next-skills",
+    "next-cache-components-adoption": {
+      "source": "vercel/next.js",
       "sourceType": "github",
-      "computedHash": "515ba75178bd44875812d9a560bdf14651f86709f89cf1d4f209638e879807f3"
+      "skillPath": "skills/next-cache-components-adoption/SKILL.md",
+      "computedHash": "38eb3cb9e625b46b54493459a106ac410bc0fe59b124903d55f5090c959d292f",
+      "installMode": "copy"
     },
-    "next-cache-components": {
-      "source": "vercel-labs/next-skills",
+    "next-cache-components-optimizer": {
+      "source": "vercel/next.js",
       "sourceType": "github",
-      "computedHash": "a94b83ddcd2ff1c30722577f693b1bfe32f2e1a83abdd6c08c2d6cc6753b53c8"
+      "skillPath": "skills/next-cache-components-optimizer/SKILL.md",
+      "computedHash": "4e0f4d73209a4c89e503eb374d63631a9146681304f15d64929e47196e7f6a45",
+      "installMode": "copy"
     },
-    "next-upgrade": {
-      "source": "vercel-labs/next-skills",
+    "next-dev-loop": {
+      "source": "vercel/next.js",
       "sourceType": "github",
-      "computedHash": "be6bbf6ab1dc2cc6f2505cea52d497920c04f5b532c0846ee201f6029b803fb0"
+      "skillPath": "skills/next-dev-loop/SKILL.md",
+      "computedHash": "68e70a9270eb02cc9c63cb19ce5106772ce4c140242199f4d90c77f6acb56355",
+      "installMode": "copy"
+    },
+    "next-partial-prefetching-adoption": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-partial-prefetching-adoption/SKILL.md",
+      "computedHash": "6fb1757aee3491689ec704b397f4b7ff9e276f500a66403867e77a16b2038594",
+      "installMode": "copy"
+    },
+    "next-partial-prefetching-optimizer": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-partial-prefetching-optimizer/SKILL.md",
+      "computedHash": "2fc7448f5eec4e5c4f6e51359e2cd3d9c992566ca90652c8466d64015932b255",
+      "installMode": "copy"
     }
   }
 }

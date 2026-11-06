@@ -57,7 +57,7 @@ curl -s "http://127.0.0.1:7991/query/v1/obl/balance?accountA=alice&accountB=bob"
 ## 4. web as a signed-in user
 
 ```bash
-(cd apps/web && AUTH_JWT_SECRET=verify-only-secret-1234 QUERY_API_URL=http://127.0.0.1:7991 npx next dev --webpack -p 3991) &
+(cd apps/web && AUTH_JWT_SECRET=verify-only-secret-1234 QUERY_API_URL=http://127.0.0.1:7991 npx next dev -p 3991) &
 ```
 
 Then a Node script using `scripts/web-session.cjs`: `openAs(browser, 'carol', '/business/pay?for=alice&to=bob', { hydrate: 'button' })`
@@ -74,6 +74,15 @@ long enough to scroll (30+ rows). Rules: `apps/web/AGENTS.md` → "Scroll positi
 ```bash
 node .claude/skills/verify/scripts/scroll-entry-trace.cjs feed/updates 'main li > a[href^="/object/"]' 2500
 node .claude/skills/verify/scripts/scroll-entry-trace.cjs feed/threads 'main a[href="/@alice"]' 2500
+```
+
+**Instant navigation** (what Next waits for after a click): `scripts/nav-instant-trace.cjs <listPath> <linkSelector> [--rtt 150] [--hover 200]`
+emulates a network round trip and prints click→URL / click→skeleton / click→content plus the RSC
+and chunk requests. Production build only (prefetch does not run in `next dev`).
+
+```bash
+node .claude/skills/verify/scripts/nav-instant-trace.cjs feed/updates 'main li > a[href^="/object/"]' --rtt 150
+node .claude/skills/verify/scripts/nav-instant-trace.cjs feed/threads 'main a[href="/@alice"]' --rtt 150 --hover 200
 ```
 
 ## 5. Teardown

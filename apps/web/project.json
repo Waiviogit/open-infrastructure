@@ -16,7 +16,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/web",
-        "command": "next dev --webpack"
+        "command": "next dev"
       }
     },
     "dev-webpack": {

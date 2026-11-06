@@ -5,10 +5,10 @@ import { UPDATE_REGISTRY } from '@opden-data-layer/core/update-registry';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useLoginModal } from '@/modules/auth';
 import { objectFields } from '@/modules/feed/application/dto/object-fields';
+import { ObjectPageLink } from '@/modules/feed/presentation';
 import { UpdateCard } from '@/modules/object-updates/presentation/components/update-card';
 import { ObjectThumbnail } from '@/shared/presentation';
 import { FeedColumn } from '@/shared/presentation/layout';
-import { OptimisticNavLink } from '@/shared/presentation/navigation';
 import { objectPagePath } from '@/shared/routes/object-page-path';
 
 import { loadMoreHomeUpdatesFeedAction } from '@/app/(app)/(hub)/(home)/home-feed.actions';
@@ -33,13 +33,13 @@ function UpdateObjectHeader({ item }: { item: HomeUpdateFeedItemView }) {
   const image = item.object ? objectFields.image(item.object) : undefined;
 
   return (
-    <OptimisticNavLink
+    <ObjectPageLink
       href={objectPagePath(item.object_id)}
       className="mb-2 flex min-w-0 items-center gap-2 text-body-sm font-weight-strong text-fg hover:text-link"
     >
       <ObjectThumbnail src={image} size={OBJECT_AVATAR_SIZE} className="shrink-0 rounded-btn" />
       <span className="truncate">{name}</span>
-    </OptimisticNavLink>
+    </ObjectPageLink>
   );
 }
 
