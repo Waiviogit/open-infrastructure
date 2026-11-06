@@ -1,6 +1,7 @@
 import {
   $applyNodeReplacement,
   ElementNode,
+  type DOMConversionMap,
   type EditorConfig,
   type LexicalNode,
   type SerializedElementNode,
@@ -39,6 +40,13 @@ export class LineNode extends ElementNode {
 
   updateDOM(): boolean {
     return false;
+  }
+
+  /** Pasted rich HTML: `<hr>` becomes a line block. */
+  static importDOM(): DOMConversionMap | null {
+    return {
+      hr: () => ({ conversion: () => ({ node: $createLineNode() }), priority: 0 }),
+    };
   }
 
   /** Accepts both this node's JSON and Lexical HorizontalRuleNode JSON (no element fields). */

@@ -1,6 +1,8 @@
 import {
   $parseSerializedNode,
   ElementNode,
+  type DOMConversionMap,
+  type DOMConversionOutput,
   type EditorConfig,
   type LexicalNode,
   type SerializedElementNode,
@@ -8,6 +10,8 @@ import {
   createCommand,
   type LexicalCommand,
 } from 'lexical';
+
+import { pastedImagePayload } from '../pasted-media';
 
 export const POST_IMAGE_NODE_TYPE = 'post-image';
 
@@ -94,6 +98,13 @@ export class ImageNode extends ElementNode {
     return false;
   }
 
+  /** Pasted rich HTML: `<img>` becomes an image block with the original URL. */
+  static importDOM(): DOMConversionMap | null {
+    return {
+      img: () => ({ conversion: convertImageElement, priority: 0 }),
+    };
+  }
+
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
     const Klass = this as typeof ImageNode;
     return new Klass(
@@ -142,6 +153,11 @@ export class ImageNode extends ElementNode {
   canInsertTextAfter(): boolean {
     return false;
   }
+}
+
+function convertImageElement(domNode: HTMLElement): DOMConversionOutput {
+  const payload = pastedImagePayload(domNode as HTMLImageElement);
+  return { node: payload ? $createImageNode(payload) : null };
 }
 
 /** Creates an image node via the active editor's registered node class. */

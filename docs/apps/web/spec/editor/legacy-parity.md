@@ -30,6 +30,7 @@ The legacy editor (Slate, markdown storage, Redux) is replaced by one Lexical co
 | Line, Code, Table, Emoji | Insert → Line / Code / Table / Emoji |
 | Table toolbar: +Row, +Column, Remove table (2×2 default) | `EditorBlockToolbarPlugin` (also ↑ / ↓ Line for every non-text block, for touch) |
 | Paste HTML with `/object/` links → attach objects | `EditorPasteObjectLinksPlugin` |
+| Paste rich HTML (copied post / page) with its formatting | [Rich paste](rich-paste.md) |
 | Linked objects + influence percents, hashtag objects → tags | Linked objects panel |
 | Create object from the editor | `EditorCreateObjectModal` |
 | Drafts: autosave, last drafts, list | Drafts (query-api) |

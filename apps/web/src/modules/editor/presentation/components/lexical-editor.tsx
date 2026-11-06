@@ -38,6 +38,7 @@ import { EditorInsertCaretOverlay } from './editor-insert-menu';
 import { EditorImageKeyboardPlugin } from './editor-image-keyboard-plugin';
 import { EditorPasteImagePlugin } from './editor-paste-image-plugin';
 import { EditorPasteObjectLinksPlugin } from './editor-paste-object-links-plugin';
+import { EditorPasteRichHtmlPlugin } from './editor-paste-rich-html-plugin';
 import { EditorPasteVideoUrlPlugin } from './editor-paste-video-url-plugin';
 import { EditorBlockToolbarPlugin } from './editor-block-toolbar-plugin';
 import { EditorBlockGapsPlugin } from './editor-block-gaps-plugin';
@@ -313,6 +314,7 @@ function EditorInner({
           <EditorBlockToolbarPlugin />
           <EditorBlockGapsPlugin />
           <EditorPasteVideoUrlPlugin />
+          <EditorPasteRichHtmlPlugin />
           {onObjectLinkedFromEditor ? (
             <EditorPasteObjectLinksPlugin onObjectLinkedFromEditor={onObjectLinkedFromEditor} />
           ) : null}

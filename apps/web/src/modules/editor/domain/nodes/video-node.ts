@@ -1,11 +1,15 @@
 import {
   $applyNodeReplacement,
   ElementNode,
+  type DOMConversionMap,
+  type DOMConversionOutput,
   type EditorConfig,
   type LexicalNode,
   type SerializedElementNode,
   type Spread,
 } from 'lexical';
+
+import { pastedVideoUrl } from '../pasted-media';
 
 import {
   canonicalizeMediaUrl,
@@ -65,6 +69,16 @@ export class VideoNode extends ElementNode {
     return prevNode.__url !== this.__url;
   }
 
+  /** Pasted rich HTML: a known provider player iframe becomes a video block. */
+  static importDOM(): DOMConversionMap | null {
+    return {
+      iframe: (domNode: HTMLElement) =>
+        pastedVideoUrl(domNode as HTMLIFrameElement)
+          ? { conversion: convertIframeElement, priority: 1 }
+          : null,
+    };
+  }
+
   static importJSON(serializedNode: SerializedVideoNode): VideoNode {
     return $createVideoNode(serializedNode.url).updateFromJSON(serializedNode);
   }
@@ -102,6 +116,11 @@ export class VideoNode extends ElementNode {
   canInsertTextAfter(): boolean {
     return false;
   }
+}
+
+function convertIframeElement(domNode: HTMLElement): DOMConversionOutput {
+  const url = pastedVideoUrl(domNode as HTMLIFrameElement);
+  return { node: url ? $createVideoNodeForUrl(url) : null };
 }
 
 /** `null` when the URL is not a supported video link. */

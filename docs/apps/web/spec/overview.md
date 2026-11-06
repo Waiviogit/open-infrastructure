@@ -68,6 +68,7 @@ Do **not** duplicate page-route detail in this file — link the site map or the
 | [editor/hash-object-search.md](editor/hash-object-search.md) | Post editor `#` search: objects, then Google Maps places; create from place |
 | [editor/legacy-parity.md](editor/legacy-parity.md) | Legacy editor features → new Lexical editor |
 | [editor/publish-metadata.md](editor/publish-metadata.md) | Hive `json_metadata` written on publish |
+| [editor/rich-paste.md](editor/rich-paste.md) | Paste a copied post / web page with its blocks and formatting |
 | [feed.md](feed.md) | Feed story list, Lexical comment under story when logged in |
 | [messaging.md](messaging.md) | Profile inbox + object channel chat (OSL messaging UI) |
 | [pages/user-profile/routes/activity.md](pages/user-profile/routes/activity.md) | Profile activity tab — Hive account history cards |

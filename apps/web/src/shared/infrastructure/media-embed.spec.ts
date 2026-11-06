@@ -2,6 +2,7 @@ import {
   canonicalizeMediaUrl,
   isProviderEmbedSrc,
   mediaEmbedIframeHtml,
+  mediaUrlFromEmbedSrc,
   parseMediaEmbedUrl,
 } from './media-embed';
 
@@ -203,5 +204,51 @@ describe('mediaEmbedIframeHtml', () => {
       'src="https://www.instagram.com/p/DcncWF8DaIb/embed"',
     );
     expect(html).toContain('scrolling="no"');
+  });
+});
+
+describe('mediaUrlFromEmbedSrc', () => {
+  it.each([
+    ['https://www.youtube.com/embed/vJgM9oF7siA', 'https://www.youtube.com/watch?v=vJgM9oF7siA'],
+    ['https://www.youtube-nocookie.com/embed/vJgM9oF7siA?autoplay=1', 'https://www.youtube.com/watch?v=vJgM9oF7siA'],
+    ['https://www.instagram.com/reel/DcncWF8DaIb/embed', 'https://www.instagram.com/reel/DcncWF8DaIb/'],
+    ['https://platform.twitter.com/embed/Tweet.html?id=1790000000000000000', 'https://x.com/i/status/1790000000000000000'],
+    [
+      'https://www.linkedin.com/embed/feed/update/urn:li:activity:7200000000000000000',
+      'https://www.linkedin.com/feed/update/urn:li:activity:7200000000000000000',
+    ],
+    [
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F123456789&show_text=false',
+      'https://www.facebook.com/reel/123456789',
+    ],
+    ['https://play.3speak.tv/watch?v=alice/abc&mode=iframe&layout=desktop', 'https://3speak.tv/watch?v=alice/abc'],
+    ['https://player.vimeo.com/video/76979871?h=8272103f6e', 'https://vimeo.com/76979871/8272103f6e'],
+  ])('maps the player %s back to its page', (src, page) => {
+    expect(mediaUrlFromEmbedSrc(src)).toBe(page);
+  });
+
+  it('maps a portrait YouTube player to its Shorts page', () => {
+    expect(mediaUrlFromEmbedSrc('https://www.youtube.com/embed/vJgM9oF7siA', { portrait: true })).toBe(
+      'https://www.youtube.com/shorts/vJgM9oF7siA',
+    );
+  });
+
+  it('round-trips through the post embed for every provider the editor embeds', () => {
+    for (const page of [
+      'https://www.youtube.com/watch?v=vJgM9oF7siA',
+      'https://www.instagram.com/p/DcncWF8DaIb/',
+      'https://x.com/elonmusk/status/1790000000000000000',
+      'https://www.tiktok.com/@someone/video/7300000000000000000',
+    ]) {
+      const embedSrc = parseMediaEmbedUrl(page)?.embedSrc ?? '';
+      const back = mediaUrlFromEmbedSrc(embedSrc) ?? '';
+      expect(embedSrc).not.toBe('');
+      expect(parseMediaEmbedUrl(back)?.embedSrc).toBe(embedSrc);
+    }
+  });
+
+  it('returns null for anything that is not a known player', () => {
+    expect(mediaUrlFromEmbedSrc('https://maps.example/embed?q=1')).toBeNull();
+    expect(mediaUrlFromEmbedSrc('')).toBeNull();
   });
 });

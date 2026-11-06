@@ -6,16 +6,8 @@ import { useEffect } from 'react';
 
 import { parseMediaEmbedUrl } from '@/shared/infrastructure/media-embed';
 
+import { singlePastedUrl } from '../../application/clipboard-paste';
 import { $insertVideoAtSelection } from '../../application/insert-editor-media-url';
-
-/** Single-URL clipboard text, or `null` when the paste is anything else. */
-function singlePastedUrl(event: ClipboardEvent | KeyboardEvent | InputEvent): string | null {
-  if (!(event instanceof ClipboardEvent)) {
-    return null;
-  }
-  const text = event.clipboardData?.getData('text/plain').trim() ?? '';
-  return text && !/\s/.test(text) ? text : null;
-}
 
 /** Legacy parity: pasting a lone video link inserts the embedded player. */
 export function EditorPasteVideoUrlPlugin() {
@@ -26,7 +18,8 @@ export function EditorPasteVideoUrlPlugin() {
       editor.registerCommand(
         PASTE_COMMAND,
         (event) => {
-          const url = singlePastedUrl(event);
+          const url =
+            event instanceof ClipboardEvent ? singlePastedUrl(event.clipboardData) : null;
           if (!url || !parseMediaEmbedUrl(url)) {
             return false;
           }

@@ -13,6 +13,10 @@ import {
   parseImageUrlFromPaste,
 } from '@/modules/object-updates/application/image-cid-or-url-paste';
 
+import {
+  clipboardHtmlHasText,
+  singlePastedUrl,
+} from '../../application/clipboard-paste';
 import { insertImageAtSelection } from '../../application/insert-editor-image';
 
 function isFocusInEditorRoot(root: HTMLElement | null): boolean {
@@ -42,16 +46,17 @@ export function EditorPasteImagePlugin() {
           return false;
         }
 
-        const file = imageFileFromClipboard(event.clipboardData);
+        const data = event.clipboardData;
+        // A copied page fragment wins over the picture Word / Docs put next to it.
+        const file = clipboardHtmlHasText(data) ? null : imageFileFromClipboard(data);
         if (file) {
           event.preventDefault();
           uploadFile(file);
           return true;
         }
 
-        const pastedUrl = parseImageUrlFromPaste(
-          event.clipboardData?.getData('text/plain') ?? '',
-        );
+        // Only a lone image link; a URL inside copied text stays part of that text.
+        const pastedUrl = parseImageUrlFromPaste(singlePastedUrl(data) ?? '');
         if (pastedUrl) {
           event.preventDefault();
           importFromUrl(pastedUrl);

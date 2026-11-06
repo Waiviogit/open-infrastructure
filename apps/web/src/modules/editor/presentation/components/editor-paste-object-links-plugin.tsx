@@ -1,7 +1,7 @@
 'use client';
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { COMMAND_PRIORITY_LOW, PASTE_COMMAND } from 'lexical';
+import { COMMAND_PRIORITY_NORMAL, PASTE_COMMAND } from 'lexical';
 import { useEffect } from 'react';
 
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
@@ -16,6 +16,7 @@ export type EditorPasteObjectLinksPluginProps = {
 /**
  * Pasted links to `/object/<id>` attach those objects to the post (legacy parity).
  * Observes paste only — Lexical still inserts the content (links stay in the body).
+ * Runs before the rich HTML paste plugin (LOW), which handles the event.
  */
 export function EditorPasteObjectLinksPlugin({
   onObjectLinkedFromEditor,
@@ -42,7 +43,7 @@ export function EditorPasteObjectLinksPlugin({
           }
           return false;
         },
-        COMMAND_PRIORITY_LOW,
+        COMMAND_PRIORITY_NORMAL,
       ),
     [editor, onObjectLinkedFromEditor],
   );
