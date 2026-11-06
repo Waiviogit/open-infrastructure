@@ -43,3 +43,25 @@ describe('proxy requireAuth gate', () => {
     expect(response.headers.get('location')).toBe('https://waiviodev.com/sign-in');
   });
 });
+
+describe('proxy profile account segment', () => {
+  beforeEach(() => {
+    mockEnv.requireAuth = false;
+  });
+
+  it('answers 404 for a malformed account before the profile route renders', async () => {
+    const response = await proxy(new NextRequest('https://waiviodev.com/@bad!name'));
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBe('https://waiviodev.com/_not-found');
+  });
+
+  it('rewrites a well-formed account to the profile route', async () => {
+    const response = await proxy(new NextRequest('https://waiviodev.com/@alice/threads'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'https://waiviodev.com/user-profile/alice/threads',
+    );
+  });
+});

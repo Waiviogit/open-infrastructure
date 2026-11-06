@@ -249,6 +249,20 @@ Wrap remote UGC URLs at **display time** only — never in query-api payloads or
 - Add **`'use client'`** only when hooks, events, or browser APIs require it.
 - Pass server-fetched data as **props**; avoid **`useEffect`** solely to load initial data.
 
+## Caching (Cache Components)
+
+`cacheComponents: true` is on. Spec: [`docs/apps/web/spec/caching.md`](../../docs/apps/web/spec/caching.md).
+
+| Do | Don't |
+|----|--------|
+| Read query-api through **`queryApiFetch`** / **`queryApiFetchOutcome`** — they cache with `'use cache'` (60 s, keyed by URL, method, headers, body), `cacheTags` → `cacheTag`. Live reads: **`QUERY_API_LIVE_INIT`** / **`queryApiFetchLive`**. | Raw `fetch` with `next: { revalidate, tags }` (ignored under Cache Components), `unstable_cache`, `unstable_noStore` |
+| Viewer / locale / IP go **into the request** (headers, body) so they are part of the cache key; read `cookies()` / `headers()` **outside** any `'use cache'` function | Read `cookies()` / `headers()` inside a `'use cache'` function, or cache per-viewer data without the viewer in its arguments |
+| Request-time reads (`cookies`, `headers`, `await params`, `searchParams`) **inside a `<Suspense>` child** whose fallback is the route's skeleton — that skeleton is the prefetched shell a click paints instantly | `await params` / user / data at the top of a layout or page — the segment then has no shell and navigations wait for the server |
+| A route not adopted yet keeps `export const instant = false` under the `@next-codemod-ignore Cache Components adoption` marker; a deliberate Block replaces the marker with a reason | `export const dynamic`, `revalidate`, `fetchCache` (build error), or a bare `instant = false` without a reason |
+| Existence checks inside `<Suspense>` call `notFound()` (streams not-found UI with `noindex`, HTTP 200); malformed URLs get a real 404 in `proxy.ts` (see `isProfileAccountSegment`) | Move an existence check back to the layout top just to get a 404 status |
+
+Measure navigations with the `verify` skill: `nav-instant-trace.cjs` (click → skeleton under an emulated round trip, production build).
+
 ## API routes (`app/api/`)
 
 - BFF / auth plumbing only — **delegate** to `src/shared/infrastructure/auth/` (and related helpers). No business rules in route handlers.
@@ -372,7 +386,7 @@ Personal wallet **summary** numbers (WAIV / HIVE / ENGINE liquid, power, est. US
 | Layer | Rule |
 |-------|------|
 | **RSC summary fetch** | `fetchWaivWalletSummary` / `fetchHiveWalletSummary` / `fetchEngineWalletSummary` use **`QUERY_API_LIVE_INIT`** (`cache: 'no-store'`) plus `cacheTags` for post-mutation invalidation. **Never** default `revalidate: 60` on user financial balances. |
-| **Transfers route** | `(main)/transfers/page.tsx` exports **`dynamic = 'force-dynamic'`**. |
+| **Transfers route** | Request-time by construction (live reads, no cache); no segment config — `dynamic` exports are a build error under Cache Components. |
 | **History feeds** | Client `POST` with `cache: 'no-store'`; refetch when **`walletEpoch`** bumps in `WalletBalancesContext` (not on `router.refresh()` alone). |
 | **After any wallet broadcast** | `awaitTrxConfirmation` → **`refreshWalletAfterBroadcast`** → **`revalidateUserWalletAfterBroadcast(account)`** (all wallet summary + delegation + sidebar tags) → **`router.refresh()`** → **`bumpWalletEpoch()`** for history feeds. |
 | **Hive Engine lag** | Engine token hooks also schedule one deferred **`router.refresh()`** after **`ENGINE_WALLET_SETTLEMENT_REFRESH_MS`** (~1.5s) — L1 confirmation can arrive before sidechain balances update. |

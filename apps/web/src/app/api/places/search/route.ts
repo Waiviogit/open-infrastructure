@@ -2,8 +2,6 @@ import type { NextRequest } from 'next/server';
 
 import { proxyPlacesRequest } from '@/modules/editor/infrastructure/places-proxy.server';
 
-export const dynamic = 'force-dynamic';
-
 /** BFF: Google Maps places near the caller (signed-in users only). */
 export async function GET(request: NextRequest) {
   const params = new URLSearchParams();

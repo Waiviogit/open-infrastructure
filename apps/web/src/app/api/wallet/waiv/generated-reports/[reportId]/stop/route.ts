@@ -7,8 +7,6 @@ import {
   requireGeneratedReportSession,
 } from '../../require-generated-report-session';
 
-export const dynamic = 'force-dynamic';
-
 type RouteContext = { params: Promise<{ reportId: string }> };
 
 export async function POST(_request: Request, context: RouteContext) {

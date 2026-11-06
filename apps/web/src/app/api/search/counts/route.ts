@@ -2,8 +2,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { env } from '@/config/env';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * BFF: global search tab counts — proxies to query-api `GET /query/v1/search/counts`.
  */

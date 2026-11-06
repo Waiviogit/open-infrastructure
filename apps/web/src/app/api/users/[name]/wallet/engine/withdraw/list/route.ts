@@ -2,8 +2,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { getEngineWithdrawListQuery } from '@/modules/user-wallet/application/queries/engine-swap.queries';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ name: string }> },

@@ -3,8 +3,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { postHiveChangellyWithdrawEstimateQuery } from '@/modules/user-wallet/application/queries/hive-changelly-withdraw.queries';
 import { normalizeHiveChangellyOutputCoin } from '@/modules/user-wallet/domain/hive-changelly-withdraw.constants';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ name: string }> },

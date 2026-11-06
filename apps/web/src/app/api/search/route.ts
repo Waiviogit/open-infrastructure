@@ -4,8 +4,6 @@ import { env } from '@/config/env';
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * BFF: predictive search — proxies to query-api with session viewer and request locale.
  */

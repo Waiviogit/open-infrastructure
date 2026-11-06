@@ -78,6 +78,7 @@ Do **not** duplicate page-route detail in this file — link the site map or the
 | [object-update-detail.md](object-update-detail.md) | Deep link `/object/:id/updates/:updateId` from notifications |
 | [user-follow.md](user-follow.md) | Hive follow/unfollow + ODL bell; social list actions |
 | [scroll-restoration.md](scroll-restoration.md) | History-entry scroll memory and pre-paint scroll-to-top on detail routes |
+| [caching.md](caching.md) | Cache Components: query-api read cache, instant navigation shells, route adoption status |
 
 ### Components
 

@@ -5,8 +5,6 @@ import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 import { getClientIpForwardHeaders } from '@/shared/infrastructure/http/client-ip-forward-headers';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   const base = env.QUERY_API_URL.replace(/\/$/, '');
   const url = new URL(`${base}/query/v1/discover/objects`);

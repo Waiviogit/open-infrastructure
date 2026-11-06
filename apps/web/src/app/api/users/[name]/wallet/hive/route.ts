@@ -2,8 +2,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { getHiveWalletSummaryQuery } from '@/modules/user-wallet/application/queries/get-hive-wallet-summary.query';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ name: string }> },

@@ -4,8 +4,6 @@ import { postHiveChangellyWithdrawCreateQuery } from '@/modules/user-wallet/appl
 import { normalizeHiveChangellyOutputCoin } from '@/modules/user-wallet/domain/hive-changelly-withdraw.constants';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ name: string }> },

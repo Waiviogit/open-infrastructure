@@ -4,8 +4,6 @@ import { hiveWalletExemptionRequestSchema } from '@/modules/user-wallet/applicat
 import { postHiveWalletExemption } from '@/modules/user-wallet/infrastructure/clients/hive-advanced-report.client';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   const user = await createCookieAuthContextProvider().getUser();
   if (!user?.username) {

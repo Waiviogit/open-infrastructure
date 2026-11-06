@@ -8,6 +8,10 @@ const nextConfig = {
   agentRules: false,
   // Dev-only: allow /_next dev resources (HMR, chunks) when the app is opened via 127.0.0.1 (local verification).
   allowedDevOrigins: ['127.0.0.1'],
+  // Cache Components: request-time data streams behind <Suspense>; caching is explicit via
+  // 'use cache' (query-api reads: modules/user-profile/infrastructure/clients/query-api.client.ts).
+  // Routes not adopted yet keep `export const instant = false` (see docs/apps/web/spec/caching.md).
+  cacheComponents: true,
   // Image paste/upload Server Actions (FormData); default Next limit is 1mb.
   experimental: {
     serverActions: {

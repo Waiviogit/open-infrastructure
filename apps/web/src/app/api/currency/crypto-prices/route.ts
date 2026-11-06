@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 
 const COINGECKO_IDS = ['bitcoin', 'ethereum', 'litecoin'] as const;
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
     const response = await fetch(

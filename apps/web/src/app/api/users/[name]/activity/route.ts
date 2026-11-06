@@ -6,8 +6,6 @@ import {
 } from '@opden-data-layer/core/hive-account-history';
 import { getUserActivityPageQuery } from '@/modules/user-activity/application/queries/get-user-activity-page.query';
 
-export const dynamic = 'force-dynamic';
-
 type ActivityRequestBody = {
   limit?: number;
   cursor?: string;

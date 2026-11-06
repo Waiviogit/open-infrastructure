@@ -4,8 +4,6 @@ import { hiveAdvancedReportRequestSchema } from '@/modules/user-wallet/applicati
 import { getHiveAdvancedReportQuery } from '@/modules/user-wallet/application/queries/get-hive-advanced-report.query';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   const user = await createCookieAuthContextProvider().getUser();
   if (!user?.username) {

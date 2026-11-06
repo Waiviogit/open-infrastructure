@@ -61,7 +61,7 @@ Tooltip strings are passed from `TopNav` via the `messages` prop (not `useI18n` 
 | `GET /api/search/counts?q=` | query-api search counts | Tab badge counts in dropdown |
 | `POST /api/search/objects-by-ids` | query-api resolve by ids | Hydrate editor/object refs by id |
 
-All routes: `dynamic = 'force-dynamic'`; pass `Accept-Language`, `X-Locale`, optional `X-Viewer` from session.
+All routes are request-time (uncached `fetch`; Cache Components renders them per request); pass `Accept-Language`, `X-Locale`, optional `X-Viewer` from session.
 
 ## Client module
 

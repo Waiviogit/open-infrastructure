@@ -4,8 +4,6 @@ import { env } from '@/config/env';
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * BFF: batch object card display — proxies to query-api `POST /query/v1/search/objects-by-ids`.
  */

@@ -78,6 +78,11 @@ import {
 import { ObjectPageTabPane } from './object-page-tab-pane';
 import { ObjectPageInvalidPathFix } from './object-page-invalid-path-fix';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const CATEGORY_PRIMARY_SEGMENT = 'category';
 const FIELD_REFERENCES_PRIMARY_SEGMENT = OBJECT_PAGE_FIELD_REFERENCES_PATH_SEGMENT;
 

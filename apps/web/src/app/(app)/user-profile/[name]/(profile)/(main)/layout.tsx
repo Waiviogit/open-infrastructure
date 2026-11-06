@@ -14,6 +14,11 @@ import {
 } from '@/modules/user-profile';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 /**
  * Profile `(main)` shell — parity with {@link ObjectViewShell}.
  * @see apps/web/src/modules/object/presentation/components/object-view-shell.tsx

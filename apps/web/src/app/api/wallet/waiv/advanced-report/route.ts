@@ -4,8 +4,6 @@ import { waivAdvancedReportRequestSchema } from '@/modules/user-wallet/applicati
 import { getWaivAdvancedReportQuery } from '@/modules/user-wallet/application/queries/get-waiv-advanced-report.query';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   const user = await createCookieAuthContextProvider().getUser();
   if (!user?.username) {

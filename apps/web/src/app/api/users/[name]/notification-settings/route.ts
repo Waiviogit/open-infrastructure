@@ -3,8 +3,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { fetchNotificationSettings } from '@/modules/notifications/infrastructure/notification-settings-api.server';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ name: string }> },

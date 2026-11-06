@@ -3,8 +3,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { postEngineWithdrawQuoteQuery } from '@/modules/user-wallet/application/queries/engine-swap.queries';
 import { isDisabledEngineWithdrawPair } from '@/modules/user-wallet/domain/filter-engine-withdraw-list';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ name: string }> },

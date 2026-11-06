@@ -3,8 +3,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { ACTIVITY_DISPLAY_PAGE_SIZE } from '@opden-data-layer/core/hive-account-history';
 import { getWaivWalletHistoryPageQuery } from '@/modules/user-wallet/application/queries/get-waiv-wallet-history-page.query';
 
-export const dynamic = 'force-dynamic';
-
 type WaivHistoryRequestBody = {
   limit?: number;
   cursor?: string;

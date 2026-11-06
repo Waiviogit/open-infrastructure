@@ -2,8 +2,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { env } from '@/config/env';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ name: string }> },

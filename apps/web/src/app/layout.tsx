@@ -21,6 +21,11 @@ import { getServerShellModeResolution } from '@/shell-mode/server';
 import { getServerThemeResolution } from '@/theme/get-server-theme-resolution';
 import { ThemeProvider } from '@/theme/theme-provider';
 
+// instant = false: kept on purpose — <html> lang/dir/data-theme/data-shell-mode come from request
+// cookies and headers. Client navigations re-render only below the shared layout, so they are
+// unaffected; only a full page load waits for this layout.
+export const instant = false;
+
 const SITE_NAME = 'Waivio';
 const SITE_DESCRIPTION =
   'Discover, organize, and earn rewards on the Hive blockchain.';

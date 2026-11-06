@@ -3,8 +3,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { env } from '@/config/env';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-export const dynamic = 'force-dynamic';
-
 type ValidateMembersBody = {
   accounts?: string[];
 };

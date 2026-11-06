@@ -18,6 +18,7 @@ import {
   OBJECT_PAGE_SOCIAL_SUB_PARAM,
   SOCIAL_FEED_PATH_SEGMENTS,
 } from '@/modules/object/domain/object-page-url.constants';
+import { isProfileAccountSegment } from '@/modules/user-profile/domain/profile-account-segment';
 import { isUserProfileReservedFirstSegment } from '@/modules/user-profile/presentation/components/profile-path';
 import {
   applyProxySessionRefreshToResponse,
@@ -192,6 +193,12 @@ export async function proxy(request: NextRequest) {
   }
 
   const account = segments[0];
+  if (!isProfileAccountSegment(account)) {
+    // A malformed account never reaches the profile layout: that layout checks existence inside
+    // <Suspense> (instant skeleton), where a 404 status can no longer be sent.
+    url.pathname = '/_not-found';
+    return finish(NextResponse.rewrite(url, { status: 404 }));
+  }
   if (segments.length === 1) {
     url.pathname = `/user-profile/${account}`;
     return finish(NextResponse.rewrite(url));

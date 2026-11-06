@@ -8,8 +8,6 @@ import {
 
 import type { HiveAccountCreatedDatesResponseApi } from '@/modules/user-wallet/application/dto/hive-account-created-dates-api.schema';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {

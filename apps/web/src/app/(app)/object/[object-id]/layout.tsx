@@ -13,6 +13,11 @@ import { ObjectPageShellClient } from './object-page-shell-client';
 import { ObjectPageRightRailSection } from './object-page-right-rail-section.server';
 import { ObjectPageMobileSocialSection } from './object-page-mobile-social-section.server';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function ObjectDetailLayout({
   children,
   params,

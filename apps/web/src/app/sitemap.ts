@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { connection } from 'next/server';
 
 import {
   fetchDiscoverObjectsForSitemap,
@@ -8,9 +9,10 @@ import {
   type SitemapUserEntry,
 } from '@/seo';
 
-export const revalidate = 3600;
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // The public origin is deploy-time env, not build-time: render per request. The query-api
+  // reads behind it stay cached for an hour (`next.revalidate: 3600` in sitemap-data).
+  await connection();
   const origin = seoPublicOrigin();
   if (!origin) {
     return [];
