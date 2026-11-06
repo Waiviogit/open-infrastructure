@@ -66,6 +66,16 @@ typing or clicking: in dev, `networkidle` fires before hydration and input chang
 Select inputs by label (`page.getByLabel(...)`), not by index — the header search box is the first input.
 First compile of a page takes 1–2 min.
 
+**Scroll on navigation** (list → entity page, tab switches): `scripts/scroll-entry-trace.cjs <listPath> <linkSelector> [scrollY]` (path without the leading slash — Git Bash rewrites `/…` args)
+records `scrollY` every frame after the click and checks Back. Run it against a production build
+(`npx next build --webpack && npx next start -p 3991` in `apps/web`) — dev adds compile latency. Seed lists
+long enough to scroll (30+ rows). Rules: `apps/web/AGENTS.md` → "Scroll position on navigation".
+
+```bash
+node .claude/skills/verify/scripts/scroll-entry-trace.cjs feed/updates 'main li > a[href^="/object/"]' 2500
+node .claude/skills/verify/scripts/scroll-entry-trace.cjs feed/threads 'main a[href="/@alice"]' 2500
+```
+
 ## 5. Teardown
 
 ```bash

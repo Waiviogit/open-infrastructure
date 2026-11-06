@@ -25,7 +25,7 @@ describe('ScrollToTopOnEnter', () => {
 
     render(<ScrollToTopOnEnter routeKey="spicy-tofu" />);
 
-    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
   });
 
   it('stays put while a history restore is pending', () => {

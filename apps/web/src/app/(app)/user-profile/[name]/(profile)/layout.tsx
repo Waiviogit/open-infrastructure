@@ -16,6 +16,7 @@ import { UserProfileFeedUnreadProvider } from '@/modules/user-profile/presentati
 import { fetchExpertiseCountsForProfile } from '@/modules/user-profile/presentation/components/profile-expertise-main-content';
 import { getUserFollowingObjectsPageQuery } from '@/modules/user-social';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
+import { ScrollToTopOnEnter } from '@/shared/presentation';
 import { ShellFullBleedBand, ShellInset } from '@/shared/presentation/layout';
 
 import { getMockProfileShellUser } from '../mock-profile';
@@ -53,6 +54,7 @@ export default async function ProfileGroupLayout({
 
   return (
     <UserProfileFeedUnreadProvider value={feedUnreadCounts}>
+    <ScrollToTopOnEnter routeKey={decoded.toLowerCase()} />
     <UserProfileSocialCountsProvider
       value={{
         followerCount: profile.followerCount,

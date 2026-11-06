@@ -3,6 +3,7 @@ export {
   HomeFeedGuestPrompt,
   HomeFeedMenu,
   HomeFeedPostsList,
+  HomeFeedScrollReset,
   HomeThreadsFeedList,
   HomeUpdatesFeedList,
 } from './presentation';

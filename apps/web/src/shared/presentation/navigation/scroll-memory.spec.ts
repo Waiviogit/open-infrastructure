@@ -49,27 +49,20 @@ describe('scroll-memory', () => {
     });
   });
 
-  it('scrollToTopNow disables smooth behavior for the jump', () => {
+  it('scrollToTopNow jumps instantly regardless of CSS scroll-behavior', () => {
     const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
     document.documentElement.style.scrollBehavior = 'smooth';
 
-    const frames: FrameRequestCallback[] = [];
-    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-      frames.push(callback);
-      return 1;
-    });
-
     scrollToTopNow();
 
-    expect(scrollTo).toHaveBeenCalledWith(0, 0);
-    expect(document.documentElement.style.scrollBehavior).toBe('auto');
-    frames[0]?.(0);
-    expect(document.documentElement.style.scrollBehavior).toBe('');
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.style.scrollBehavior = '';
   });
 
   it('waits until the document is tall enough, then restores', () => {
-    const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation((_x, y) => {
-      Object.defineProperty(window, 'scrollY', { configurable: true, value: y ?? 0 });
+    const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation((options) => {
+      const top = typeof options === 'object' ? options.top : undefined;
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: top ?? 0 });
     });
     let frame = 0;
     jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
@@ -95,7 +88,7 @@ describe('scroll-memory', () => {
     beginScrollRestore(1800);
 
     expect(isScrollRestorePending()).toBe(false);
-    expect(scrollTo).toHaveBeenCalledWith(0, 1800);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 1800, left: 0, behavior: 'instant' });
   });
 
   it('aborts when the user scrolls before content is tall enough', () => {

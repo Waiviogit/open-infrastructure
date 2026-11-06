@@ -43,16 +43,12 @@ export function rememberScrollForCurrentEntry(): void {
 }
 
 /**
- * Instant jump. Restoring `scroll-behavior` in the same turn lets Chrome animate
- * the scroll against the stylesheet's `smooth` value.
+ * Instant jump. `behavior: 'instant'` ignores the stylesheet's `scroll-behavior: smooth`
+ * and Next's own navigation toggling of it (`data-scroll-behavior` on `<html>`); toggling
+ * the inline style still let Chrome animate the scroll during a route commit.
  */
 function scrollWindowTo(y: number): void {
-  const root = document.documentElement;
-  root.style.scrollBehavior = 'auto';
-  window.scrollTo(0, y);
-  requestAnimationFrame(() => {
-    root.style.scrollBehavior = '';
-  });
+  window.scrollTo({ top: y, left: 0, behavior: 'instant' });
 }
 
 export function scrollToTopNow(): void {

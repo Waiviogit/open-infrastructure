@@ -31,7 +31,7 @@ updated_at: 2026-11-06
 | Activity | `/feed/activity` | `POST /users/:viewer/following-objects/messages` | `HomeFeedGuestPrompt` |
 | Updates | `/feed/updates` | `POST /users/:viewer/following-objects/updates` | `HomeFeedGuestPrompt` |
 
-Tabs are real routes (`OptimisticNavLink`); `(hub)/layout.tsx` renders `OptimisticNavSync` so Back/Forward clear the optimistic tab and the rail and hub section nav follow the URL; `(home)/loading.tsx` and `(home)/feed/loading.tsx` skeleton the content slot while the rail stays. Tab definitions: `HOME_FEED_TABS` in `modules/home/domain/home-feed-tabs.ts`.
+Tabs are real routes (`OptimisticNavLink`); `(hub)/layout.tsx` renders `OptimisticNavSync` so Back/Forward clear the optimistic tab and the rail and hub section nav follow the URL; `HomeFeedScrollReset` (`ScrollToTopOnEnter` keyed by pathname) starts every tab switch at the top, while Back/Forward restore the saved offset; `(home)/loading.tsx` and `(home)/feed/loading.tsx` skeleton the content slot while the rail stays. Tab definitions: `HOME_FEED_TABS` in `modules/home/domain/home-feed-tabs.ts`.
 
 ## Rendering
 

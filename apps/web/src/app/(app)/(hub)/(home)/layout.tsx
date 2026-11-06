@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { HomeFeedMenu } from '@/modules/home';
+import { HomeFeedMenu, HomeFeedScrollReset } from '@/modules/home';
 
 /**
  * Hub feed shell, same three-column grid as the profile: left tab rail
@@ -18,6 +18,7 @@ export default function HomeFeedLayout({ children }: { children: ReactNode }) {
         'lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)_minmax(0,var(--shell-right-width))]',
       ].join(' ')}
     >
+      <HomeFeedScrollReset />
       <aside className="hidden min-w-0 lg:block">
         <div
           className={[
