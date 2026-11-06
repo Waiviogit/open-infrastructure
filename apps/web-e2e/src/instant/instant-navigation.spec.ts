@@ -72,4 +72,20 @@ test.describe('instant navigation', () => {
     });
     await expect(updateCards.first()).toBeVisible();
   });
+
+  // Profile tabs are OptimisticNavLinks: the center overlay paints while the transition is pending;
+  // the tab's own segment (loading.tsx, left-rail slot) streams behind it.
+  test('profile tab Posts → Threads paints the content skeleton', async ({ page }) => {
+    await page.goto('/@alice');
+    const trigger = page.locator('main a[href="/@alice/threads"]:visible').first();
+    await expect(trigger).toBeVisible();
+
+    const aliceThread = page.getByText('Great espresso at');
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('[aria-label="Loading profile content"]')).toBeVisible();
+      await expect(aliceThread).toHaveCount(0);
+    });
+    await expect(aliceThread).toBeVisible();
+  });
 });

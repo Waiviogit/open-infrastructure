@@ -6,11 +6,6 @@ import {
 import { WaivAdvancedReportGeneratedTab } from '@/modules/user-wallet/presentation/components/waiv/advanced-report/waiv-advanced-report-generated-tab';
 import { WaivAdvancedReportTabs } from '@/modules/user-wallet/presentation/components/waiv/advanced-report/waiv-advanced-report-tabs';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
 type UserProfileWaivTablePageProps = {
   params: Promise<{ name: string }>;
   searchParams: Promise<{ tab?: string; reportId?: string }>;

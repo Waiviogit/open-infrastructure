@@ -14,16 +14,33 @@ import {
 } from '@/modules/user-profile';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+type AccountParams = { params: Promise<{ name: string }> };
+
+async function readAccountName(params: AccountParams['params']): Promise<string> {
+  const { name } = await params;
+  return decodeURIComponent(name);
+}
+
+async function ProfileMainRail({ params }: AccountParams) {
+  return <UserMenuVerticalRail accountName={await readAccountName(params)} />;
+}
+
+async function ProfileMainSubmenu({ params }: AccountParams) {
+  return <UserProfileSubmenu accountName={await readAccountName(params)} />;
+}
+
+async function ProfileMainRightSidebar({ params }: AccountParams) {
+  const accountName = await readAccountName(params);
+  const user = await createCookieAuthContextProvider().getUser();
+  return <RightSidebar accountName={accountName} viewerUsername={user?.username ?? null} />;
+}
 
 /**
- * Profile `(main)` shell — parity with {@link ObjectViewShell}.
+ * Profile `(main)` shell — parity with {@link ObjectViewShell}. The grid is static; the parts that
+ * need the account name or the viewer stream into it, so the segment has a shell of its own.
  * @see apps/web/src/modules/object/presentation/components/object-view-shell.tsx
  */
-export default async function UserProfileMainShellLayout({
+export default function UserProfileMainShellLayout({
   children,
   leftSidebar,
   params,
@@ -32,11 +49,6 @@ export default async function UserProfileMainShellLayout({
   leftSidebar: ReactNode;
   params: Promise<{ name: string }>;
 }) {
-  const { name } = await params;
-  const accountName = decodeURIComponent(name);
-  const auth = createCookieAuthContextProvider();
-  const user = await auth.getUser();
-
   return (
     <ProfileMainWalletModalShell>
     <div
@@ -50,7 +62,9 @@ export default async function UserProfileMainShellLayout({
           <div className="shell-hide-twitter lg:contents">{leftSidebar}</div>
           <div className="shell-show-twitter">
             <FixedRegion>
-              <UserMenuVerticalRail accountName={accountName} />
+              <Suspense fallback={null}>
+                <ProfileMainRail params={params} />
+              </Suspense>
             </FixedRegion>
           </div>
         </div>
@@ -59,7 +73,7 @@ export default async function UserProfileMainShellLayout({
       <main className="min-h-[12rem] min-w-0">
         <FeedColumn>
           <Suspense fallback={null}>
-            <UserProfileSubmenu accountName={accountName} />
+            <ProfileMainSubmenu params={params} />
           </Suspense>
           <UserProfileMainContentPendingShell>
             {children}
@@ -69,10 +83,9 @@ export default async function UserProfileMainShellLayout({
 
       <div className="hidden min-w-0 lg:block">
         <div className="shell-hide-instagram lg:contents">
-          <RightSidebar
-            accountName={accountName}
-            viewerUsername={user?.username ?? null}
-          />
+          <Suspense fallback={null}>
+            <ProfileMainRightSidebar params={params} />
+          </Suspense>
         </div>
       </div>
     </div>

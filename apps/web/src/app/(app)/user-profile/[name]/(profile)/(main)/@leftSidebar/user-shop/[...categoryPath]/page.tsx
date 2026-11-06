@@ -1,15 +1,16 @@
-import { CategoryNav, decodeCategoryPathSegment } from '@/modules/user-profile';
+import { Suspense } from 'react';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import {
+  CategoryNav,
+  decodeCategoryPathSegment,
+  ProfileCategoryNavSkeleton,
+} from '@/modules/user-profile';
 
 type PageProps = {
   params: Promise<{ name: string; categoryPath: string[] }>;
 };
 
-export default async function UserShopCategoryLeftSidebarPage({ params }: PageProps) {
+async function UserShopCategoryLeftSidebarPageContent({ params }: PageProps) {
   const { name, categoryPath } = await params;
   const accountName = decodeURIComponent(name);
   const lineageSegments = categoryPath.map(decodeCategoryPathSegment);
@@ -23,5 +24,13 @@ export default async function UserShopCategoryLeftSidebarPage({ params }: PagePr
       sectionKey="user-shop"
       lineageSegments={lineageSegments}
     />
+  );
+}
+
+export default function UserShopCategoryLeftSidebarPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<ProfileCategoryNavSkeleton />}>
+      <UserShopCategoryLeftSidebarPageContent params={params} />
+    </Suspense>
   );
 }

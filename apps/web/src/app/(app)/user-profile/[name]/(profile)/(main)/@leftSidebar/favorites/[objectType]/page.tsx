@@ -1,15 +1,16 @@
-import { getFavoritesTypesQuery, FavoritesTypeNav } from '@/modules/user-profile';
+import { Suspense } from 'react';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import {
+  FavoritesTypeNav,
+  getFavoritesTypesQuery,
+  ProfileFavoritesTypeNavSkeleton,
+} from '@/modules/user-profile';
 
 type PageProps = {
   params: Promise<{ name: string; objectType: string }>;
 };
 
-export default async function UserFavoritesByTypeLeftSidebarPage({ params }: PageProps) {
+async function FavoritesByTypeLeftSidebarContent({ params }: PageProps) {
   const { name, objectType } = await params;
   const accountName = decodeURIComponent(name);
   const decodedType = decodeURIComponent(objectType);
@@ -21,5 +22,13 @@ export default async function UserFavoritesByTypeLeftSidebarPage({ params }: Pag
       types={types}
       activeType={decodedType}
     />
+  );
+}
+
+export default function UserFavoritesByTypeLeftSidebarPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<ProfileFavoritesTypeNavSkeleton />}>
+      <FavoritesByTypeLeftSidebarContent params={params} />
+    </Suspense>
   );
 }

@@ -12,8 +12,9 @@ Production `instant()` suite for the Cache Components / Partial Prefetching migr
 - CONTRACTS (one test each, `instant-navigation.spec.ts`):
   - `/feed/threads` author link → `/@alice`: profile skeleton `[aria-label="Loading profile"]`, `h1 alice` gated — passing.
   - `/feed/updates` card header → `/object/cafe-1`: object skeleton `[aria-label="Loading object"]`, `h1 Blue Cafe` gated — passing (route shell exists; a real click still needs the link to prefetch — see `nav-instant-trace.cjs`).
-  - `/feed/threads` rail → `/feed/updates`: `[aria-label="Loading posts"]` — `test.fail()` until the feed pages are adopted.
-  - `/object/cafe-1` tab Details → Updates: `[aria-label="Loading object content"]` — `test.fail()` until object tabs are adopted.
+  - `/feed/threads` rail → `/feed/updates`: `[aria-label="Loading posts"]`, `home-updates-feed` gated — passing.
+  - `/object/cafe-1` tab Details → Updates: `[aria-label="Loading object content"]`, update cards gated — passing.
+  - `/@alice` tab Posts → Threads: `[aria-label="Loading profile content"]`, alice's thread gated — passing.
 - LOOP: local — `pnpm test:db:up`, `pnpm nx run web-e2e:e2e-instant` (rebuilds web each run, ~1.5 min + build), edit, repeat; `pnpm test:db:down` at the end. Agent limits: none (no secrets, no deploy).
 - LIVENESS: n/a; local build and start.
 - WALLS:

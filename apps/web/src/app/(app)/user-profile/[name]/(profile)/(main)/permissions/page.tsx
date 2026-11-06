@@ -13,11 +13,6 @@ import {
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 import { revalidateUserPermissionsAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
 export default async function UserProfilePermissionsPage({
   params,
   searchParams,

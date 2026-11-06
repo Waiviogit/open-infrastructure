@@ -19,20 +19,27 @@ import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/co
 import { ScrollToTopOnEnter } from '@/shared/presentation';
 import { ShellFullBleedBand, ShellInset } from '@/shared/presentation/layout';
 
+import UserProfileNameLoading from '../loading';
 import { getMockProfileShellUser } from '../mock-profile';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
-export default async function ProfileGroupLayout({
-  children,
-  params,
-}: {
+type ProfileGroupLayoutProps = {
   children: React.ReactNode;
   params: Promise<{ name: string }>;
-}) {
+};
+
+/**
+ * Hero, providers and counters need the viewer and five queries: they stream behind the profile
+ * skeleton, so entering the group from a post page (shared `[name]`) paints at once.
+ */
+export default function ProfileGroupLayout({ children, params }: ProfileGroupLayoutProps) {
+  return (
+    <Suspense fallback={<UserProfileNameLoading />}>
+      <ProfileGroupContent params={params}>{children}</ProfileGroupContent>
+    </Suspense>
+  );
+}
+
+async function ProfileGroupContent({ children, params }: ProfileGroupLayoutProps) {
   const { name } = await params;
   const decoded = decodeURIComponent(name);
   const auth = createCookieAuthContextProvider();

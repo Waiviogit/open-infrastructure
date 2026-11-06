@@ -1,22 +1,18 @@
-import {
-  RightSidebar,
-} from '@/modules/user-profile';
+import { Suspense } from 'react';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import { RightSidebar } from '@/modules/user-profile';
 
-export default async function UserProfileAboutShellLayout({
-  children,
-  params,
-}: {
+type AboutLayoutProps = {
   children: React.ReactNode;
   params: Promise<{ name: string }>;
-}) {
-  const { name } = await params;
-  const accountName = decodeURIComponent(name);
+};
 
+async function AboutRightSidebar({ params }: Pick<AboutLayoutProps, 'params'>) {
+  const { name } = await params;
+  return <RightSidebar accountName={decodeURIComponent(name)} />;
+}
+
+export default function UserProfileAboutShellLayout({ children, params }: AboutLayoutProps) {
   return (
     <div
       className={[
@@ -26,7 +22,9 @@ export default async function UserProfileAboutShellLayout({
     >
       <main className="min-h-[12rem] min-w-0">{children}</main>
       <div className="hidden min-w-0 lg:block">
-        <RightSidebar accountName={accountName} />
+        <Suspense fallback={null}>
+          <AboutRightSidebar params={params} />
+        </Suspense>
       </div>
     </div>
   );

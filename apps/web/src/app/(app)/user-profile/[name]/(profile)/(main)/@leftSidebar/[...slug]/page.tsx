@@ -1,20 +1,14 @@
-import { renderProfileMessagesLeftSidebar } from '@/modules/messaging/presentation/render-profile-messages-left-sidebar';
-import { renderProfileAccountSidebar } from '@/modules/user-profile';
+import { Suspense } from 'react';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import { renderProfileMessagesLeftSidebar } from '@/modules/messaging/presentation/render-profile-messages-left-sidebar';
+import { ProfileLeftRailSkeleton, renderProfileAccountSidebar } from '@/modules/user-profile';
 
 type PageProps = {
   params: Promise<{ name: string; slug?: string[] }>;
   searchParams: Promise<{ channel?: string; peer?: string }>;
 };
 
-export default async function LeftSidebarCatchAllPage({
-  params,
-  searchParams,
-}: PageProps) {
+async function LeftSidebarCatchAllContent({ params, searchParams }: PageProps) {
   const { name, slug = [] } = await params;
   const accountName = decodeURIComponent(name);
   const first = slug[0] ?? '';
@@ -24,4 +18,12 @@ export default async function LeftSidebarCatchAllPage({
   }
 
   return renderProfileAccountSidebar(accountName);
+}
+
+export default function LeftSidebarCatchAllPage(props: PageProps) {
+  return (
+    <Suspense fallback={<ProfileLeftRailSkeleton />}>
+      <LeftSidebarCatchAllContent {...props} />
+    </Suspense>
+  );
 }

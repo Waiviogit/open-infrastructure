@@ -48,7 +48,8 @@ segment's **static shell** (production only) and paints it on click; whatever re
 streams in behind `<Suspense>`. Two conditions, both required:
 
 1. **The route has a shell.** A layout or page that awaits `params`, cookies or data at its top has
-   none, so the click waits for the server. The boundary must sit inside the segment that changes:
+   none, so the click waits for the server. `await params` counts: without `generateStaticParams`
+   it suspends, so forward the promise into a `<Suspense>` child (parallel-route slot pages too). The boundary must sit inside the segment that changes:
    a `loading.tsx` of a segment shared by both routes (e.g. `feed/loading.tsx` for feed tabs) does
    not trigger.
 2. **The link prefetches it.** `prefetch={false}` (our `OptimisticNavLink` default) or
@@ -62,6 +63,7 @@ streams in behind `<Suspense>`. Two conditions, both required:
 | `/@name` (profile) | profile skeleton | `user-profile/[name]/layout.tsx` — existence check (`ValidatedProfile`) inside `<Suspense fallback={<UserProfileNameLoading/>}>` | Story author `<Link>` (default prefetch) |
 | `/`, `/feed/{threads,activity,updates}` | `<main>` + feed skeleton | each page renders `<Suspense fallback={<FeedPostsLoadingSkeleton/>}>` around the user/data read | `HomeFeedMenu` → `OptimisticNavLink prefetchShell` |
 | `/object/:id` | object skeleton | `object/loading.tsx` sits above the blocking `[object-id]` layout | `ObjectPageLink` (default prefetch; 2 small requests per visible distinct object until Partial Prefetching) |
+| `/@name/<tab>` (profile tabs) | center skeleton overlay, then the tab's `loading.tsx` | `UserProfileMainContentPendingShell` overlays `ProfileMainPendingSkeleton` while the link is pending; `(profile)` and `(main)` layouts stream their viewer/account reads behind `<Suspense>`; `@leftSidebar` slot pages await `params` inside `<Suspense>` (rail skeleton fallback) | `UserProfileNavLink`, no prefetch needed (the overlay is client-side) |
 | `/object/:id/<tab>` (tab buttons) | center skeleton overlay, then the tab chrome | `ObjectPageShellClient` overlays `ObjectPageCenterSkeleton` while `navigateInstant` is pending; `page.tsx` renders its body inside `<Suspense fallback={<ObjectDetailLoading/>}>` so the tab chrome streams before its data | buttons, no prefetch needed (the overlay is client-side) |
 
 The root layout stays blocking on purpose (`<html>` lang/dir/theme/shell-mode from cookies): it is

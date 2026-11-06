@@ -30,6 +30,7 @@ export function UserProfileMainContentPendingShell({
         <div
           className="absolute inset-0 z-30 bg-bg px-card-padding pt-2"
           aria-busy="true"
+          aria-label="Loading profile content"
           aria-live="polite"
         >
           <Suspense fallback={null}>
