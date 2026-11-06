@@ -7,6 +7,7 @@ import { useLoginModal } from '@/modules/auth';
 import { objectFields } from '@/modules/feed/application/dto/object-fields';
 import { UpdateCard } from '@/modules/object-updates/presentation/components/update-card';
 import { ObjectThumbnail } from '@/shared/presentation';
+import { FeedColumn } from '@/shared/presentation/layout';
 import { OptimisticNavLink } from '@/shared/presentation/navigation';
 import { objectPagePath } from '@/shared/routes/object-page-path';
 
@@ -55,8 +56,8 @@ export function HomeUpdatesFeedList({ initialPage, currentUsername }: HomeUpdate
   }
 
   return (
-    <section className="rounded-card border border-border bg-surface/80 p-card-padding">
-      <ul className="flex flex-col gap-4">
+    <FeedColumn>
+      <ul className="flex flex-col gap-card-padding">
         {items.map((item) => (
           <li key={item.update_id} className="list-none">
             <UpdateObjectHeader item={item} />
@@ -77,6 +78,6 @@ export function HomeUpdatesFeedList({ initialPage, currentUsername }: HomeUpdate
           onLoadMore={onLoadMore}
         />
       ) : null}
-    </section>
+    </FeedColumn>
   );
 }

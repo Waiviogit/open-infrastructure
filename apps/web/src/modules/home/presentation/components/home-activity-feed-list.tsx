@@ -27,13 +27,11 @@ export function HomeActivityFeedList({ initialPage, currentUsername }: HomeActiv
   }
 
   return (
-    <section className="rounded-card border border-border bg-surface/80 p-card-padding">
-      <ObjectActivityFeedList
-        messages={items}
-        viewerUsername={currentUsername}
-        loadingMore={pending}
-        sentinelRef={sentinelRef}
-      />
-    </section>
+    <ObjectActivityFeedList
+      messages={items}
+      viewerUsername={currentUsername}
+      loadingMore={pending}
+      sentinelRef={sentinelRef}
+    />
   );
 }

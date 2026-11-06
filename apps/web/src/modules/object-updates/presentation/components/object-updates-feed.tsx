@@ -135,8 +135,8 @@ export function ObjectUpdatesFeed({
   const canAddUpdate = supportedUpdateTypes.length > 0;
 
   return (
-    <section className="rounded-card border border-border bg-surface/80 p-card-padding">
-      <div className="mb-4">
+    <section className="flex min-w-0 flex-col gap-card-padding">
+      <div>
         <ObjectUpdatesFilterBar
           {...filterBarExtra}
           typeOptions={typeOptions}
@@ -175,7 +175,7 @@ export function ObjectUpdatesFeed({
         <p className="text-body-sm text-muted">{t('object_updates_empty')}</p>
       ) : (
         <>
-          <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-card-padding">
             {items.map((item) => (
               <li key={item.update_id} className="list-none">
                 <UpdateCard
@@ -188,7 +188,7 @@ export function ObjectUpdatesFeed({
             ))}
           </ul>
           {hasMore ? (
-            <div className="mt-4 flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-2">
               <div ref={sentinelRef} aria-hidden className="h-px w-full" />
               <button
                 type="button"
