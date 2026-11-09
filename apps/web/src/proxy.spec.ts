@@ -90,3 +90,35 @@ describe('proxy bare /discover', () => {
     expect(response.headers.get('location')).toBeNull();
   });
 });
+
+describe('proxy signed-in routes', () => {
+  beforeEach(() => {
+    mockEnv.requireAuth = false;
+  });
+
+  it('redirects an anonymous request before the page renders', async () => {
+    const response = await proxy(
+      new NextRequest('https://waiviodev.com/business/manage/offers/drafts'),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('https://waiviodev.com/sign-in');
+  });
+
+  it('keeps the page-specific target for tools routes', async () => {
+    const response = await proxy(new NextRequest('https://waiviodev.com/drafts'));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('https://waiviodev.com/');
+  });
+
+  it('lets a request with a session cookie through', async () => {
+    const request = new NextRequest('https://waiviodev.com/business/manage/offers/drafts', {
+      headers: { cookie: 'odl_access=token' },
+    });
+    const response = await proxy(request);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+  });
+});

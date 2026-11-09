@@ -68,10 +68,18 @@ streams in behind `<Suspense>`. Two conditions, both required:
 | `/object/:id/<tab>` (tab buttons) | center skeleton overlay, then the tab chrome | `ObjectPageShellClient` overlays `ObjectPageCenterSkeleton` while `navigateInstant` is pending; `page.tsx` renders its body inside `<Suspense fallback={<ObjectDetailLoading/>}>` so the tab chrome streams before its data | buttons, no prefetch needed (the overlay is client-side) |
 | `/discover`, `/business/offers` (header section tabs) | discover / business skeleton | `discover/loading.tsx`, `business/loading.tsx` (the section segment changes); bare `/discover` → `?type=` is a 307 in `proxy.ts` | `AppSectionNav` → `OptimisticNavLink prefetchShell` |
 | `/business/offers` ↔ `/business/requests` | business skeleton | each page renders its body inside `<Suspense fallback={<BusinessContentSkeleton/>}>` (`business/loading.tsx` is shared by both) | switcher `<Link>` (default prefetch) |
+| `/business/*` signed-in pages (manage tabs, relationships, arbitration, details, drafts) | business list / content skeleton | a `loading.tsx` in each page's own segment (`manage/offers/{drafts,published,retired}/`, `contracts/[contractId]/`, …) — the shared `manage/{offers,requests}` segment does not change on tab switches | business nav, tab and row `<Link>`s (default prefetch) |
+| `/drafts`, `/notifications/settings` (tools) | tools / settings skeleton | `drafts/loading.tsx`, `notifications/settings/loading.tsx` | `ToolsLayoutNav` links |
+| `/settings` (tools) | the page itself | no request reads in the body (title via `useI18n`); `RequestTimeMetadataMarker` marks the locale-dependent `generateMetadata` | `ToolsLayoutNav` links |
 
 Redirects decided by the URL or a cookie run before rendering — `proxy.ts` or `next.config.js`
 `redirects()` ([routing-proxy](routing-proxy.md#redirects-before-rendering)) — because `redirect()`
-inside `<Suspense>` streams after the shell (HTTP 200 + client redirect).
+inside `<Suspense>` streams after the shell (HTTP 200 + client redirect). Signed-in routes are gated
+there by the session cookie; pages keep their own user check as the fallback.
+
+A static page whose `generateMetadata` reads the locale cookie renders
+`<RequestTimeMetadataMarker/>` (`shared/presentation/components/`): without it Cache Components
+reports "runtime data in `generateMetadata()`" for an otherwise prerenderable page.
 
 The root layout stays blocking on purpose (`<html>` lang/dir/theme/shell-mode from cookies): it is
 shared by every client navigation, so it only affects full page loads.
@@ -79,7 +87,8 @@ shared by every client navigation, so it only affects full page loads.
 ### Not found
 
 An existence check inside `<Suspense>` runs after the shell is sent: `notFound()` streams the
-not-found UI with `noindex` and HTTP 200. Malformed URLs get a real 404 earlier, in `proxy.ts`
+not-found UI with `noindex` and HTTP 200 (profile, business detail pages such as
+`/business/contracts/:id`). Malformed URLs get a real 404 earlier, in `proxy.ts`
 (`isProfileAccountSegment` → rewrite to `/_not-found` with status 404).
 
 ## Adoption status

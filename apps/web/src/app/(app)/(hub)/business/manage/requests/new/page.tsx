@@ -4,9 +4,8 @@ import { businessRoutes } from '@/modules/business/domain/routes';
 import { createOblDraftAction } from '@/modules/business/infrastructure/actions/obl-drafts.actions';
 import { requireBusinessUser } from '@/modules/business/infrastructure/require-business-user.server';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+// Deliberate Block: creates a draft on request and answers with a 307 to its editor — there is no UI
+// to stream, and a redirect inside <Suspense> would arrive as a client redirect after a 200.
 export const instant = false;
 
 export default async function BusinessRequestsNewPage() {

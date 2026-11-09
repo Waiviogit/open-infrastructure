@@ -2,13 +2,10 @@ import type { Metadata } from 'next';
 
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { loadMessages } from '@/i18n/runtime/load-messages';
+import { RequestTimeMetadataMarker } from '@/shared/presentation/components/request-time-metadata-marker';
 
 import { HomeI18nToolbar } from '../../../home-i18n-toolbar';
-
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import { SettingsHeading } from './settings-heading';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
@@ -18,16 +15,12 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function SettingsPage() {
-  const locale = await getRequestLocale();
-  const messages = await loadMessages(locale);
-
+export default function SettingsPage() {
   return (
     <div>
-      <h1 className="mb-6 font-display text-section text-heading leading-display">
-        {messages.settings}
-      </h1>
+      <SettingsHeading />
       <HomeI18nToolbar />
+      <RequestTimeMetadataMarker />
     </div>
   );
 }

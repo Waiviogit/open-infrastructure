@@ -27,6 +27,7 @@ import {
   refreshSessionCookiesIfNeeded,
 } from '@/shared/infrastructure/auth/refresh-session';
 import { AUTH_ACCESS_COOKIE } from '@/shared/infrastructure/auth/session-cookie';
+import { resolveSignedInRouteRedirect } from '@/shared/infrastructure/auth/signed-in-routes';
 import { buildPublicUrl } from '@/shared/infrastructure/http/get-public-origin';
 
 const REQUIRE_AUTH_EXCLUDED_PREFIXES = [
@@ -54,22 +55,33 @@ export async function proxy(request: NextRequest) {
   const finish = (response: NextResponse) =>
     applyProxySessionRefreshToResponse(response, sessionRefresh);
 
-  if (env.requireAuth) {
+  const hasSession =
+    sessionRefresh.kind === 'refreshed' ||
+    (sessionRefresh.kind === 'unchanged' &&
+      request.cookies.has(AUTH_ACCESS_COOKIE));
+
+  if (env.requireAuth && !hasSession) {
     const isExcluded = REQUIRE_AUTH_EXCLUDED_PREFIXES.some((prefix) =>
       pathname.startsWith(prefix),
     );
     if (!isExcluded) {
-      const hasSession =
-        sessionRefresh.kind === 'refreshed' ||
-        (sessionRefresh.kind === 'unchanged' &&
-          request.cookies.has(AUTH_ACCESS_COOKIE));
-      if (!hasSession) {
-        return finish(
-          NextResponse.redirect(
-            buildPublicUrl(request, '/sign-in', env.publicOrigin),
-          ),
-        );
-      }
+      return finish(
+        NextResponse.redirect(
+          buildPublicUrl(request, '/sign-in', env.publicOrigin),
+        ),
+      );
+    }
+  }
+
+  // Signed-in routes: a real 307 before rendering (pages read the user behind <Suspense>).
+  if (!hasSession) {
+    const signedInRedirect = resolveSignedInRouteRedirect(pathname);
+    if (signedInRedirect) {
+      return finish(
+        NextResponse.redirect(
+          buildPublicUrl(request, signedInRedirect, env.publicOrigin),
+        ),
+      );
     }
   }
 

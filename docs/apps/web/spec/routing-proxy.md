@@ -40,6 +40,12 @@ Before route handling, `refreshSessionCookiesIfNeeded`:
 |----------|----------|-------|
 | `/discover` without `type` / `users=1` | 307 → `/discover?type=<cookie discover_object_type or product>`, other filters kept | `proxy.ts` (`resolveBareDiscoverRedirectHref`) |
 | `/business`, `/offers`, `/requests`, `/tools`, legacy `/business/{offers,requests}/*` | 307 (static aliases) | `next.config.js` `redirects()` |
+| Signed-in route without a session (no `odl_access` after the silent refresh) | 307 → `/sign-in` (business private routes, `/object-create`) or `/` (`/editor`, `/drafts`, `/notifications*`) | `proxy.ts` (`resolveSignedInRouteRedirect`, `shared/infrastructure/auth/signed-in-routes.ts`) |
+
+The signed-in gate checks only that the cookie is present; pages still verify the token
+(`requireBusinessUser`, `getUser()`) and redirect to the same target — for a present but invalid
+token that redirect arrives as a client redirect. Public business routes (`/business/offers`,
+`/business/requests`, `/offers/:id/versions/:v`) are not gated.
 
 Pages under Cache Components stream behind `<Suspense>`, where `redirect()` can no longer send a
 307 — so redirects decided by the URL or a cookie live here ([caching](caching.md)).

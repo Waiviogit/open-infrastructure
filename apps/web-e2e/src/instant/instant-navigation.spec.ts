@@ -91,6 +91,48 @@ test.describe('instant navigation', () => {
     await expect(businessNav).toBeVisible();
   });
 
+  // Signed-in routes: proxy.ts sends the anonymous 307, so pages read the user behind their tab
+  // segment's own loading.tsx (the shared `manage/offers` segment does not change on tab switches).
+  test('business manage Drafts → Published paints the list skeleton', async ({ page }) => {
+    await page.goto('/business/manage/offers/drafts');
+    const trigger = page.locator('a[href="/business/manage/offers/published"]');
+    await expect(trigger).toBeVisible();
+
+    const businessNav = page.locator('nav[aria-label="Business navigation"]:visible');
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('[aria-label="Loading offers"]')).toBeVisible();
+      await expect(businessNav).toHaveCount(0);
+    });
+    await expect(businessNav).toBeVisible();
+  });
+
+  test('tools Notification settings → Drafts paints the drafts skeleton', async ({ page }) => {
+    await page.goto('/notifications/settings');
+    const trigger = page.locator('a[href="/drafts"]');
+    await expect(trigger).toBeVisible();
+
+    const draftsHeading = page.locator('h1:visible', { hasText: /^Drafts$/ });
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('[aria-label="Loading drafts"]')).toBeVisible();
+      await expect(draftsHeading).toHaveCount(0);
+    });
+    await expect(draftsHeading).toBeVisible();
+  });
+
+  // Settings reads nothing per request (title via useI18n), so the page itself is the static shell.
+  test('tools → Settings paints the page from the static shell', async ({ page }) => {
+    await page.goto('/notifications/settings');
+    const trigger = page.locator('a[href="/settings"]');
+    await expect(trigger).toBeVisible();
+
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('h1:visible', { hasText: /^Settings$/ })).toBeVisible();
+    });
+  });
+
   // Object tabs are buttons (navigateInstant): the shell client overlays the center skeleton while
   // the transition is pending; the tab page then streams its chrome and its cards.
   test('object tab Details → Updates paints the content skeleton', async ({ page }) => {

@@ -6,11 +6,6 @@ import { parseRelationshipTab } from '@/modules/business/domain/relationship-tab
 import { loadRelationshipDetailInitial } from '@/modules/business/infrastructure/actions/load-more-obl.server';
 import { requireBusinessUser } from '@/modules/business/infrastructure/require-business-user.server';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
 export default async function BusinessRelationshipDetailPage({
   params,
   searchParams,
