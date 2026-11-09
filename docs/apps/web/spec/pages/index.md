@@ -26,7 +26,7 @@ Every App Router `page.tsx` under `apps/web/src/app/` maps to a **route area** f
 | `/discover` | `discover/` | [page.md](discover/page.md) | `@/modules/discover` (hub DISCOVER) |
 | `/editor` | `editor/` | [page.md](editor/page.md) | `@/modules/editor` |
 | `/drafts` | `drafts/` | [page.md](drafts/page.md) | `@/modules/editor` — tools hub sidebar |
-| `/tools` | `tools/` | [page.md](tools/page.md) | redirect → `/notifications/settings` |
+| `/tools` | `tools/` | [page.md](tools/page.md) | redirect → `/notifications/settings` (`next.config.js` `redirects`) |
 | `/settings` | `settings/` | [page.md](settings/page.md) | `@/i18n`, `@/theme`, `@/shell-mode` |
 | `/notifications` | `notifications/` | [page.md](notifications/page.md) | `@/modules/notifications` |
 | `/object-create` | `object-create/` | [page.md](object-create/page.md) | `@/modules/object-create` |
@@ -34,7 +34,6 @@ Every App Router `page.tsx` under `apps/web/src/app/` maps to a **route area** f
 | `/offers`, `/requests` | `business/` | [overview.md](business/overview.md) | `@/modules/business` (public discovery) |
 | `/sign-in` | `sign-in/` | [page.md](sign-in/page.md) | `@/modules/auth` |
 | `/instacart/:id` | `instacart/` | [page.md](instacart/page.md) | `@/modules/object` wait page → Instacart |
-| `/dev/showcase` | `dev/showcase/` | [page.md](dev/showcase/page.md) | layout demo (internal, `status: draft`) |
 
 ## Object detail (`/object/:id`)
 

@@ -13,9 +13,8 @@ import { ObjectPageShellClient } from './object-page-shell-client';
 import { ObjectPageRightRailSection } from './object-page-right-rail-section.server';
 import { ObjectPageMobileSocialSection } from './object-page-mobile-social-section.server';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+// Deliberate Block: object existence is checked here so `notFound()` sends a real 404. Entry stays
+// instant without a shell of its own: `object/loading.tsx` (parent segment) is the prefetched skeleton.
 export const instant = false;
 
 export default async function ObjectDetailLayout({

@@ -43,26 +43,9 @@ test.describe('Shell mode viewport scope', () => {
   });
 
   test('data-shell-mode cookie is applied on html', async ({ page }) => {
-    await page.goto('/dev/showcase');
+    // Public route: the root layout sets the attribute without any backend call.
+    await page.goto('/sign-in');
     await expect(page.locator('html')).toHaveAttribute('data-shell-mode', 'twitter');
-  });
-
-  test('showcase desktop-only slot is hidden on mobile viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/dev/showcase');
-
-    await expect(
-      page.getByText('Visible from lg up', { exact: true }),
-    ).toBeHidden();
-  });
-
-  test('showcase desktop-only slot is visible on desktop viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/dev/showcase');
-
-    await expect(
-      page.getByText('Visible from lg up', { exact: true }),
-    ).toBeVisible();
   });
 
   test('twitter mode: profile hero nav visible on mobile', async ({ page }) => {

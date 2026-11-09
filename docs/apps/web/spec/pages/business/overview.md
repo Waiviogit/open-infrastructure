@@ -67,7 +67,8 @@ Discover stays on the section nav (Feed / Discover / Market). Logged-in account 
 | `/offers/:id/versions/:v`, `/requests/:id/versions/:v` | Public sign + disclosures |
 | `/business/offers/*`, `/business/requests/*` (legacy manage paths) | Redirect → `/business/manage/...` |
 
-Path builders: `modules/business/domain/routes.ts`.
+Path builders: `modules/business/domain/routes.ts`. The redirects above are `redirects()` in
+`apps/web/next.config.js` (307 before rendering).
 
 ## Data paths
 

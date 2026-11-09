@@ -32,7 +32,6 @@ This spec describes **structural** layout only (zones, breakpoints, scroll/stick
 | ---- | ---- |
 | `apps/web/src/shared/presentation/layout/` | Barrel exports: shells, regions, arrangements, `LayoutProvider`, `BREAKPOINTS` |
 | `apps/web/src/shell-mode/` | Shell mode types, cookie, resolution, `ShellModeProvider` (see [shell-mode.md](shell-mode.md)) |
-| `apps/web/src/app/(app)/dev/showcase/page.tsx` | Dev **showcase** — layout primitives, switchers, token sampler (`/dev/showcase`) |
 | `apps/web/src/app/(app)/layout.tsx` | `LayoutProvider` + `AppShell` + [`AppHeader`](app-header.md) / `BottomNav` |
 | `apps/web/src/app/(public)/layout.tsx` | `PublicShell` — centered narrow column |
 | `apps/web/src/app/(immersive)/layout.tsx` | `ImmersiveShell` — fullscreen, no chrome |
@@ -94,10 +93,6 @@ Structural presets (`default`, `twitter`, `instagram`, `compact`) set `data-shel
 ## Layout presets (documentation)
 
 `PROFILE_LAYOUT_PRESETS` in `modules/user-profile/presentation/layout-presets.ts` documents **valid combinations** of arrangement + sidebar flags for profile-style pages. It is **not** wired into the layout runtime — use as a reference for agents and implementers.
-
-## Showcase page
-
-Visit **`/dev/showcase`** for live examples: shells, regions, arrangements, `ThemeSwitcher`, `ShellModeSwitcher`, `LocaleSwitcher`, and a token sampler.
 
 ## Layout context
 

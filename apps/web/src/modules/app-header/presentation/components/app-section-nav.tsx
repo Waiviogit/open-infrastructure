@@ -40,7 +40,8 @@ const TABS: SectionTab[] = [
   },
   {
     key: 'business',
-    href: '/business',
+    // Discover offers directly: `/business` is a config redirect (one extra round trip).
+    href: '/business/offers',
     labelKey: 'app_section_nav_business',
     isActive: (pathname) =>
       pathname === '/business' || pathname.startsWith('/business/'),

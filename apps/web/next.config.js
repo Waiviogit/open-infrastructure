@@ -27,6 +27,26 @@ const nextConfig = {
   /**
    * `/@account/…` → `/user-profile/account/…` is handled in `src/proxy.ts` (Next.js 16 proxy).
    */
+  // Static route aliases: a 307 before rendering, so no page segment has to block on `redirect()`.
+  async redirects() {
+    return [
+      { source: '/business', destination: '/business/offers', permanent: false },
+      { source: '/offers', destination: '/business/offers', permanent: false },
+      { source: '/requests', destination: '/business/requests', permanent: false },
+      { source: '/tools', destination: '/notifications/settings', permanent: false },
+      // Legacy manage paths: `/business/{offers,requests}/<rest>` → `/business/manage/…/<rest>`.
+      {
+        source: '/business/offers/:rest+',
+        destination: '/business/manage/offers/:rest+',
+        permanent: false,
+      },
+      {
+        source: '/business/requests/:rest+',
+        destination: '/business/manage/requests/:rest+',
+        permanent: false,
+      },
+    ];
+  },
   // Request Client Hints so SSR can resolve `system` theme via `Sec-CH-Prefers-Color-Scheme`
   // (see get-server-theme-resolution.ts). Without this, the server often defaults to light.
   async headers() {
