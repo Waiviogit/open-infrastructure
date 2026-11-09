@@ -1,13 +1,11 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { loadMessages } from '@/i18n/runtime/load-messages';
 import { InstacartWaitView } from '@/modules/object/presentation/components/instacart-wait-view';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+type Params = Promise<{ 'object-id': string }>;
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
@@ -18,12 +16,16 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function InstacartWaitPage({
-  params,
-}: {
-  params: Promise<{ 'object-id': string }>;
-}) {
+/** Opened by a full page load from the Instacart button; the view streams in the same response. */
+export default function InstacartWaitPage({ params }: { params: Params }) {
+  return (
+    <Suspense fallback={null}>
+      <InstacartWaitBody params={params} />
+    </Suspense>
+  );
+}
+
+async function InstacartWaitBody({ params }: { params: Params }) {
   const { 'object-id': rawId } = await params;
-  const objectId = decodeURIComponent(rawId);
-  return <InstacartWaitView objectId={objectId} />;
+  return <InstacartWaitView objectId={decodeURIComponent(rawId)} />;
 }

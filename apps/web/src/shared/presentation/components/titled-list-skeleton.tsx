@@ -1,7 +1,7 @@
 const ROW_PLACEHOLDER_COUNT = 4;
 
-/** Tools page content (title + rows) while the page reads the session; route `loading.tsx` only. */
-export function ToolsPageSkeleton({ label }: { label: string }) {
+/** Page title + list rows; route `loading.tsx` for list pages that read the session first. */
+export function TitledListSkeleton({ label }: { label: string }) {
   return (
     <div aria-busy="true" aria-label={label}>
       <div className="mb-8 h-10 w-64 animate-pulse rounded bg-surface-control" />

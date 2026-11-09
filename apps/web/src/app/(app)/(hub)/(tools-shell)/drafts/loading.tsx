@@ -1,5 +1,5 @@
-import { ToolsPageSkeleton } from '@/modules/tools';
+import { TitledListSkeleton } from '@/shared/presentation';
 
 export default function DraftsLoading() {
-  return <ToolsPageSkeleton label="Loading drafts" />;
+  return <TitledListSkeleton label="Loading drafts" />;
 }

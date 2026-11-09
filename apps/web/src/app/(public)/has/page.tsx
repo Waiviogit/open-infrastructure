@@ -3,11 +3,7 @@ import type { Metadata } from 'next';
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { loadMessages } from '@/i18n/runtime/load-messages';
 import { HasRedirectPanel } from '@/modules/auth/presentation/components/has-redirect-panel';
-
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import { RequestTimeMetadataMarker } from '@/shared/presentation/components/request-time-metadata-marker';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
@@ -24,6 +20,7 @@ export default function HasRedirectPage() {
       <div className="w-full max-w-container-narrow rounded-card-lg border border-border bg-surface p-card-padding shadow-card-float">
         <HasRedirectPanel />
       </div>
+      <RequestTimeMetadataMarker />
     </div>
   );
 }

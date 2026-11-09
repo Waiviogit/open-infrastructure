@@ -71,6 +71,11 @@ streams in behind `<Suspense>`. Two conditions, both required:
 | `/business/*` signed-in pages (manage tabs, relationships, arbitration, details, drafts) | business list / content skeleton | a `loading.tsx` in each page's own segment (`manage/offers/{drafts,published,retired}/`, `contracts/[contractId]/`, …) — the shared `manage/{offers,requests}` segment does not change on tab switches | business nav, tab and row `<Link>`s (default prefetch) |
 | `/drafts`, `/notifications/settings` (tools) | tools / settings skeleton | `drafts/loading.tsx`, `notifications/settings/loading.tsx` | `ToolsLayoutNav` links |
 | `/settings` (tools) | the page itself | no request reads in the body (title via `useI18n`); `RequestTimeMetadataMarker` marks the locale-dependent `generateMetadata` | `ToolsLayoutNav` links |
+| `/editor`, `/object-create` | centered loader | `editor/loading.tsx`, `object-create/loading.tsx` (client-heavy screens) | header Write post `<Link>` |
+| `/notifications` | title + rows skeleton (`TitledListSkeleton`) | `notifications/loading.tsx` | — |
+| `/offers/:id/versions/:v`, `/requests/:id/versions/:v` | business content skeleton | `loading.tsx` in the `[version]` segment | offer links |
+| `/sign-in`, `/has` | the page itself | static card; sign-in sends a signed-in visitor home from behind `<Suspense>` (client redirect — a cookie gate in proxy would lock out an invalid token); `has` uses `RequestTimeMetadataMarker` | — |
+| `/instacart/:id` | — (full page load from the Instacart button) | view inside `<Suspense>` after `await params` | — |
 
 Redirects decided by the URL or a cookie run before rendering — `proxy.ts` or `next.config.js`
 `redirects()` ([routing-proxy](routing-proxy.md#redirects-before-rendering)) — because `redirect()`
@@ -93,16 +98,23 @@ not-found UI with `noindex` and HTTP 200 (profile, business detail pages such as
 
 ## Adoption status
 
-`npx @next/codemod cache-components-instant-false` put `export const instant = false` on every
-page/layout/default. Each one not yet adopted carries the marker:
+Every route is adopted (9 Nov 2026): no `@next-codemod-ignore Cache Components adoption` marker is
+left, and a new page must not add one —
 
 ```bash
-rg -l "@next-codemod-ignore Cache Components adoption" apps/web/src/app
+rg -l "@next-codemod-ignore Cache Components adoption" apps/web/src/app   # expected: empty
 ```
 
-A route is adopted when its marker is gone, `next build` passes, the dev overlay is clean and
+Deliberate Blocks keep `export const instant = false` with a reason comment:
+
+| Segment | Reason |
+|---------|--------|
+| `app/layout.tsx` (root) | `<html>` lang/dir/theme/shell-mode from cookies; affects full page loads only |
+| `object/[object-id]/layout.tsx` | existence check sends a real 404; entry shell is `object/loading.tsx` above it |
+| `business/manage/{offers,requests}/new` | creates a draft on GET and answers with a 307 to its editor |
+
+A route counts as adopted when `next build` passes, the dev overlay is clean and
 `nav-instant-trace.cjs` (verify skill) shows the skeleton in the first frames after the click.
-A deliberate Block keeps `instant = false` with a reason comment (root layout).
 
 ## Verification
 

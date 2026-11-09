@@ -6,7 +6,7 @@ import { signIn } from './support/rig';
 /**
  * Navigation contracts: under `instant()` (request-time data paused) the destination skeleton
  * must paint, and its data must not be there yet; after release the data streams in.
- * Routes not adopted yet are marked `test.fail()` with the plan step that adopts them — when one
+ * A contract that cannot pass yet is marked `test.fail()` with the step that fixes it — when it
  * starts passing, Playwright reports it and the annotation must be removed.
  */
 test.describe('instant navigation', () => {
@@ -131,6 +131,22 @@ test.describe('instant navigation', () => {
       await trigger.click();
       await expect(page.locator('h1:visible', { hasText: /^Settings$/ })).toBeVisible();
     });
+  });
+
+  // The editor screen is client-heavy: `editor/loading.tsx` paints a centered loader while the page
+  // reads the session and the draft list.
+  test('header Write post → editor paints the editor loader', async ({ page }) => {
+    await page.goto('/feed/threads');
+    const trigger = page.locator('header a[href="/editor"]');
+    await expect(trigger).toBeVisible();
+
+    const editorBody = page.locator('[contenteditable="true"]');
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('[aria-label="Loading editor"]')).toBeVisible();
+      await expect(editorBody).toHaveCount(0);
+    });
+    await expect(editorBody.first()).toBeVisible();
   });
 
   // Object tabs are buttons (navigateInstant): the shell client overlays the center skeleton while
