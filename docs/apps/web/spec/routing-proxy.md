@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, routing, cross-cutting]
-updated_at: 2026-06-10
+updated_at: 2026-11-09
 related:
   - docs/apps/web/spec/overview.md
   - docs/apps/web/spec/layout-system.md
@@ -33,6 +33,16 @@ Before route handling, `refreshSessionCookiesIfNeeded`:
 - If `odl_access` missing/expired but `odl_refresh` valid → `POST` auth-api refresh, set new httpOnly cookies.
 - Skips `/api/auth/*` to avoid refresh loops.
 - `env.requireAuth`: unauthenticated requests redirect to `/sign-in` except excluded prefixes (`/sign-in`, `/has`, `/api/auth/`, `/images/`).
+
+## Redirects before rendering
+
+| Incoming | Response | Where |
+|----------|----------|-------|
+| `/discover` without `type` / `users=1` | 307 → `/discover?type=<cookie discover_object_type or product>`, other filters kept | `proxy.ts` (`resolveBareDiscoverRedirectHref`) |
+| `/business`, `/offers`, `/requests`, `/tools`, legacy `/business/{offers,requests}/*` | 307 (static aliases) | `next.config.js` `redirects()` |
+
+Pages under Cache Components stream behind `<Suspense>`, where `redirect()` can no longer send a
+307 — so redirects decided by the URL or a cookie live here ([caching](caching.md)).
 
 ## Object page rewrites
 

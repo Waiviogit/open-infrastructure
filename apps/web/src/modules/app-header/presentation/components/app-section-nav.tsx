@@ -69,6 +69,9 @@ export function AppSectionNav() {
                 <OptimisticNavLink
                   key={tab.key}
                   href={tab.href}
+                  // Three fixed links on every hub page: prefetch each section's shell (skeleton)
+                  // so a click paints it before the server answers.
+                  prefetchShell
                   className={`${profileSectionTabClass(active, 'primary')} uppercase`}
                   aria-current={active ? 'page' : undefined}
                 >

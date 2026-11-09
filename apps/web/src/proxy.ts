@@ -2,6 +2,8 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { env } from '@/config/env';
+import { DISCOVER_TYPE_COOKIE } from '@/modules/discover/domain/discover-type-cookie';
+import { resolveBareDiscoverRedirectHref } from '@/modules/discover/domain/resolve-initial-discover-type';
 import {
   FIELD_REFERENCE_PATH_SEGMENTS,
   resolveFieldReferenceTypeFromPathSegment,
@@ -33,6 +35,8 @@ const REQUIRE_AUTH_EXCLUDED_PREFIXES = [
   '/api/auth/',
   '/images/',
 ] as const;
+
+const DISCOVER_PATH = '/discover';
 
 /**
  * Public `/@account/...` → App Router paths under `/user-profile/...`.
@@ -66,6 +70,20 @@ export async function proxy(request: NextRequest) {
           ),
         );
       }
+    }
+  }
+
+  // Bare `/discover` → remembered (cookie) or default type. Here, not in the page, so the 307 is
+  // sent before rendering and the page itself has no redirect to block on.
+  if (pathname === DISCOVER_PATH) {
+    const href = resolveBareDiscoverRedirectHref(
+      request.nextUrl.searchParams,
+      request.cookies.get(DISCOVER_TYPE_COOKIE)?.value.trim() || null,
+    );
+    if (href) {
+      return finish(
+        NextResponse.redirect(buildPublicUrl(request, href, env.publicOrigin)),
+      );
     }
   }
 

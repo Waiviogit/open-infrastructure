@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, caching, cache-components, prefetch, navigation]
-updated_at: 2026-11-06
+updated_at: 2026-11-09
 related:
   - apps/web/AGENTS.md
   - docs/apps/web/spec/scroll-restoration.md
@@ -66,6 +66,12 @@ streams in behind `<Suspense>`. Two conditions, both required:
 | `/@name/<tab>` (profile tabs) | center skeleton overlay, then the tab's `loading.tsx` | `UserProfileMainContentPendingShell` overlays `ProfileMainPendingSkeleton` while the link is pending; `(profile)` and `(main)` layouts stream their viewer/account reads behind `<Suspense>`; `@leftSidebar` slot pages await `params` inside `<Suspense>` (rail skeleton fallback) | `UserProfileNavLink`, no prefetch needed (the overlay is client-side) |
 | `/@name/<permlink>` (soft nav → `@modal` intercept) | post modal skeleton | `@modal/(...)user-profile/[name]/post/[permlink]/page.tsx` renders the post inside `<Suspense fallback={<ModalLoadingSkeleton/>}>` (`@modal/loading.tsx` sits in the slot shared with `default`, so it does not trigger) | post links (default prefetch) |
 | `/object/:id/<tab>` (tab buttons) | center skeleton overlay, then the tab chrome | `ObjectPageShellClient` overlays `ObjectPageCenterSkeleton` while `navigateInstant` is pending; `page.tsx` renders its body inside `<Suspense fallback={<ObjectDetailLoading/>}>` so the tab chrome streams before its data | buttons, no prefetch needed (the overlay is client-side) |
+| `/discover`, `/business/offers` (header section tabs) | discover / business skeleton | `discover/loading.tsx`, `business/loading.tsx` (the section segment changes); bare `/discover` → `?type=` is a 307 in `proxy.ts` | `AppSectionNav` → `OptimisticNavLink prefetchShell` |
+| `/business/offers` ↔ `/business/requests` | business skeleton | each page renders its body inside `<Suspense fallback={<BusinessContentSkeleton/>}>` (`business/loading.tsx` is shared by both) | switcher `<Link>` (default prefetch) |
+
+Redirects decided by the URL or a cookie run before rendering — `proxy.ts` or `next.config.js`
+`redirects()` ([routing-proxy](routing-proxy.md#redirects-before-rendering)) — because `redirect()`
+inside `<Suspense>` streams after the shell (HTTP 200 + client redirect).
 
 The root layout stays blocking on purpose (`<html>` lang/dir/theme/shell-mode from cookies): it is
 shared by every client navigation, so it only affects full page loads.

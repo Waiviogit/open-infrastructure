@@ -1,4 +1,7 @@
-import { resolveInitialDiscoverType } from './resolve-initial-discover-type';
+import {
+  resolveBareDiscoverRedirectHref,
+  resolveInitialDiscoverType,
+} from './resolve-initial-discover-type';
 
 describe('resolveInitialDiscoverType', () => {
   it('navigates to remembered type when URL has no type', () => {
@@ -49,5 +52,31 @@ describe('resolveInitialDiscoverType', () => {
         remembered: null,
       }),
     ).toEqual({ action: 'navigate', type: 'product' });
+  });
+});
+
+describe('resolveBareDiscoverRedirectHref', () => {
+  it('adds the remembered type and keeps the other filters', () => {
+    expect(
+      resolveBareDiscoverRedirectHref(
+        new URLSearchParams('q=pizza&sort=newest'),
+        'restaurant',
+      ),
+    ).toBe('/discover?type=restaurant&q=pizza&sort=newest');
+  });
+
+  it('falls back to the default type', () => {
+    expect(resolveBareDiscoverRedirectHref(new URLSearchParams(), null)).toBe(
+      '/discover?type=product',
+    );
+  });
+
+  it('returns null when the URL selects a type or users mode', () => {
+    expect(
+      resolveBareDiscoverRedirectHref(new URLSearchParams('type=book'), 'restaurant'),
+    ).toBeNull();
+    expect(
+      resolveBareDiscoverRedirectHref(new URLSearchParams('users=1'), 'restaurant'),
+    ).toBeNull();
   });
 });

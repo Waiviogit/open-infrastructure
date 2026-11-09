@@ -65,3 +65,28 @@ describe('proxy profile account segment', () => {
     );
   });
 });
+
+describe('proxy bare /discover', () => {
+  beforeEach(() => {
+    mockEnv.requireAuth = false;
+  });
+
+  it('redirects to the remembered type before rendering, keeping filters', async () => {
+    const request = new NextRequest('https://waiviodev.com/discover?q=pizza', {
+      headers: { cookie: 'discover_object_type=restaurant' },
+    });
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://waiviodev.com/discover?type=restaurant&q=pizza',
+    );
+  });
+
+  it('passes through when the URL already selects a type', async () => {
+    const response = await proxy(new NextRequest('https://waiviodev.com/discover?type=book'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+  });
+});

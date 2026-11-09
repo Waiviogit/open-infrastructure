@@ -57,6 +57,40 @@ test.describe('instant navigation', () => {
     await expect(updatesFeed).toBeVisible();
   });
 
+  // Hub section tabs prefetch their shells (`prefetchShell`). Bare `/discover` is redirected to
+  // `?type=` in proxy.ts; the shell is `discover/loading.tsx`.
+  test('header → Discover paints the discover skeleton', async ({ page }) => {
+    await page.goto('/feed/threads');
+    const trigger = page.locator('nav[aria-label="Main sections"] a[href="/discover"]');
+    await expect(trigger).toBeVisible();
+
+    const discoverHeading = page.locator('h1', { hasText: 'Discover' });
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('[aria-label="Loading discover"]')).toBeVisible();
+      await expect(discoverHeading).toHaveCount(0);
+    });
+    await expect(discoverHeading).toBeVisible();
+    await expect(page).toHaveURL(/\/discover\?type=/);
+  });
+
+  // `business/loading.tsx` is shared by both tabs, so each page streams its body behind its own
+  // `<Suspense fallback={<BusinessContentSkeleton/>}>`.
+  test('business Offers → Requests paints the business skeleton', async ({ page }) => {
+    await page.goto('/business/offers');
+    const trigger = page.locator('a[href="/business/requests"]');
+    await expect(trigger).toBeVisible();
+
+    // `:visible` — Next keeps the previous route (same nav) hidden in the DOM.
+    const businessNav = page.locator('nav[aria-label="Business navigation"]:visible');
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('[aria-label="Loading business"]')).toBeVisible();
+      await expect(businessNav).toHaveCount(0);
+    });
+    await expect(businessNav).toBeVisible();
+  });
+
   // Object tabs are buttons (navigateInstant): the shell client overlays the center skeleton while
   // the transition is pending; the tab page then streams its chrome and its cards.
   test('object tab Details → Updates paints the content skeleton', async ({ page }) => {

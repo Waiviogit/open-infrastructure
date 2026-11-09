@@ -1,20 +1,12 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { loadMessages } from '@/i18n/runtime/load-messages';
 import { DiscoverPageClient } from '@/modules/discover/presentation/components/discover-page-client';
 import { getCookieDiscoverObjectType } from '@/modules/discover/domain/discover-type-cookie.server';
-import { buildDiscoverHref, parseDiscoverPageState } from '@/modules/discover/domain/discover-url';
-import { resolveInitialDiscoverType } from '@/modules/discover/domain/resolve-initial-discover-type';
 import { buildDiscoverMetadata } from '@/seo';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
-
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
@@ -22,40 +14,20 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildDiscoverMetadata({ locale, messages });
 }
 
-export default async function DiscoverPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+/**
+ * Request-time reads stream behind `discover/loading.tsx` (the prefetched shell on entry).
+ * Bare `/discover` (no type) is redirected in `proxy.ts`; the client reads filters from the URL.
+ */
+export default async function DiscoverPage() {
   const auth = createCookieAuthContextProvider();
-  const [user, rememberedObjectType, rawSearch] = await Promise.all([
+  const [user, rememberedObjectType] = await Promise.all([
     auth.getUser(),
     getCookieDiscoverObjectType(),
-    searchParams,
   ]);
-  const state = parseDiscoverPageState(rawSearch);
-  const resolution = resolveInitialDiscoverType({
-    objectType: state.objectType,
-    usersMode: state.usersMode,
-    remembered: rememberedObjectType,
-  });
-  if (resolution.action === 'navigate') {
-    redirect(
-      buildDiscoverHref({
-        type: resolution.type,
-        q: state.q,
-        tags: state.tags,
-        sort: state.sort,
-        box: state.box,
-        map: state.map,
-      }),
-    );
-  }
-  const viewerUsername = user?.username ?? null;
   return (
     <Suspense fallback={null}>
       <DiscoverPageClient
-        viewerUsername={viewerUsername}
+        viewerUsername={user?.username ?? null}
         rememberedObjectType={rememberedObjectType}
       />
     </Suspense>

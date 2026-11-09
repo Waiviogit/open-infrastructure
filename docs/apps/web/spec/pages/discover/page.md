@@ -8,7 +8,7 @@ related:
 type: spec
 status: active
 scope: web
-updated_at: 2026-10-02
+updated_at: 2026-11-09
 ---
 
 # Discover page (`/discover`)
@@ -21,7 +21,7 @@ Hub chrome: under `(app)/(hub)` with FEED / DISCOVER / MARKET section nav (`AppS
 
 | URL | Mode |
 |-----|------|
-| `/discover` (no `type`, no `users`) | Redirects to remembered `discover_object_type` cookie, otherwise `type=product`. Other query params (`q`, `tags`, `sort`, `box`, `map`) are preserved. |
+| `/discover` (no `type`, no `users`) | Redirects to remembered `discover_object_type` cookie, otherwise `type=product`. Other query params (`q`, `tags`, `sort`, `box`, `map`) are preserved. 307 from `proxy.ts` ([routing-proxy](../../routing-proxy.md#redirects-before-rendering)). |
 | `/discover?type={object_type}` | Object feed for one registry type |
 | `/discover?type=all` | Mixed object-type feed (no `object_type` sent to query-api) |
 | `/discover?users=1` | User list (optional `q` prefix search) |
