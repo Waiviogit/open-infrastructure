@@ -39,8 +39,8 @@ function mergePendingClass(className: string | undefined, pending: boolean): str
  *
  * Default prefetch: a visible link prefetches the route shell — `object/loading.tsx`, which sits
  * above the blocking `[object-id]` layout — so the click paints the object skeleton without a
- * round trip. Cost today: two small requests per visible distinct object (`/_tree` + page
- * segment); Partial Prefetching shares one App Shell across all object links. Hover-only
+ * round trip. Cost under Partial Prefetching: one small `/_tree` request per visible distinct
+ * object; the shell segment is fetched once and shared by all object links. Hover-only
  * prefetch was not enough: those two requests do not finish between hover and click at real
  * network latency.
  */

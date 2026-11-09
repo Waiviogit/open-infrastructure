@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { cookies } from 'next/headers';
+import { connection } from 'next/server';
 import {
   getRequiredUserFromProvider,
   type AuthContextProvider,
@@ -25,6 +26,9 @@ export function createCookieAuthContextProvider(): AuthContextProvider {
       if (!token) {
         return null;
       }
+      // The JWT `exp` check reads the clock. Under Partial Prefetching a shell prerender can see
+      // cookies, but the current time only exists per request.
+      await connection();
       return resolveSessionUserFromAccessToken(token, env.AUTH_JWT_SECRET);
     },
     async getRequiredUser(): Promise<CurrentUser> {

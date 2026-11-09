@@ -1,3 +1,5 @@
+import { unstable_rethrow } from 'next/navigation';
+
 /**
  * Serializable query-api request and its outcome. Everything here is plain data so a request can
  * be the argument (and therefore the cache key) of a `'use cache'` function.
@@ -52,7 +54,8 @@ export function isCacheableBody(body: BodyInit | null | undefined): body is stri
 }
 
 /**
- * Performs the request without any Next.js caching. Never throws. Uncached callers may pass any
+ * Performs the request without any Next.js caching. Never throws, except Next.js control-flow
+ * errors (`unstable_rethrow`: e.g. a completed prerender rejecting its fetch). Uncached callers may pass any
  * `BodyInit`; cached callers pass a {@link QueryApiRequest} with a string body.
  */
 export async function executeQueryApiRequest<T>(
@@ -68,6 +71,9 @@ export async function executeQueryApiRequest<T>(
       cache: 'no-store',
     });
   } catch (err) {
+    // A prerender (App Shell for a prefetch) that completes rejects its pending fetches: that is
+    // Next's control flow, not a network failure — let React handle it instead of logging it.
+    unstable_rethrow(err);
     console.error(`[query-api] network error for ${label}:`, err);
     return { ok: false, status: 'network' };
   }

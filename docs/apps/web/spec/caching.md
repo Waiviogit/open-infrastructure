@@ -62,7 +62,7 @@ streams in behind `<Suspense>`. Two conditions, both required:
 |-------|------------------------|-------|------|
 | `/@name` (profile) | profile skeleton | `user-profile/[name]/layout.tsx` — existence check (`ValidatedProfile`) inside `<Suspense fallback={<UserProfileNameLoading/>}>` | Story author `<Link>` (default prefetch) |
 | `/`, `/feed/{threads,activity,updates}` | `<main>` + feed skeleton | each page renders `<Suspense fallback={<FeedPostsLoadingSkeleton/>}>` around the user/data read | `HomeFeedMenu` → `OptimisticNavLink prefetchShell` |
-| `/object/:id` | object skeleton | `object/loading.tsx` sits above the blocking `[object-id]` layout | `ObjectPageLink` (default prefetch; 2 small requests per visible distinct object until Partial Prefetching) |
+| `/object/:id` | object skeleton | `object/loading.tsx` sits above the blocking `[object-id]` layout | `ObjectPageLink` (default prefetch: one small `/_tree` request per visible distinct object; the shell segment is fetched once and shared) |
 | `/@name/<tab>` (profile tabs) | center skeleton overlay, then the tab's `loading.tsx` | `UserProfileMainContentPendingShell` overlays `ProfileMainPendingSkeleton` while the link is pending; `(profile)` and `(main)` layouts stream their viewer/account reads behind `<Suspense>`; `@leftSidebar` slot pages await `params` inside `<Suspense>` (rail skeleton fallback) | `UserProfileNavLink`, no prefetch needed (the overlay is client-side) |
 | `/@name/<permlink>` (soft nav → `@modal` intercept) | post modal skeleton | `@modal/(...)user-profile/[name]/post/[permlink]/page.tsx` renders the post inside `<Suspense fallback={<ModalLoadingSkeleton/>}>` (`@modal/loading.tsx` sits in the slot shared with `default`, so it does not trigger) | post links (default prefetch) |
 | `/object/:id/<tab>` (tab buttons) | center skeleton overlay, then the tab chrome | `ObjectPageShellClient` overlays `ObjectPageCenterSkeleton` while `navigateInstant` is pending; `page.tsx` renders its body inside `<Suspense fallback={<ObjectDetailLoading/>}>` so the tab chrome streams before its data | buttons, no prefetch needed (the overlay is client-side) |
@@ -95,6 +95,22 @@ An existence check inside `<Suspense>` runs after the shell is sent: `notFound()
 not-found UI with `noindex` and HTTP 200 (profile, business detail pages such as
 `/business/contracts/:id`). Malformed URLs get a real 404 earlier, in `proxy.ts`
 (`isProfileAccountSegment` → rewrite to `/_not-found` with status 404).
+
+## Partial Prefetching
+
+`partialPrefetching: true` (`next.config.js`). A link prefetches the route's **App Shell** — the
+static shell shared by every URL of that route — plus a small per-URL route tree (`/_tree`); the
+shell segment is fetched once and reused, e.g. all object links on a feed share one object shell.
+URL-specific data streams after the click.
+
+No link uses `prefetch={true}` (which would also resolve URL data before the click, at one server
+invocation per link — decide per link, see `node_modules/next/dist/docs/01-app/02-guides/optimizing-prefetching.md`).
+`router.prefetch()` is not used.
+
+Under the flag a prefetch renders the shell at request time, so code reached there must not read
+the clock before a request-time access: the JWT check in `createCookieAuthContextProvider`
+awaits `connection()` first. A completed shell render rejects its pending `fetch` calls;
+`executeQueryApiRequest` passes that to `unstable_rethrow` instead of logging a network error.
 
 ## Adoption status
 

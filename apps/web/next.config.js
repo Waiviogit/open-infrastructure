@@ -12,8 +12,10 @@ const nextConfig = {
   // 'use cache' (query-api reads: modules/user-profile/infrastructure/clients/query-api.client.ts).
   // Routes not adopted yet keep `export const instant = false` (see docs/apps/web/spec/caching.md).
   cacheComponents: true,
-  // Explicit until the Partial Prefetching step of the migration (Next warns when unset).
-  partialPrefetching: false,
+  // Partial Prefetching: every link to a route prefetches one shared App Shell (the route's
+  // static shell); URL-specific data streams after the click. No link uses prefetch={true}.
+  // See docs/apps/web/spec/caching.md.
+  partialPrefetching: true,
   // Image paste/upload Server Actions (FormData); default Next limit is 1mb.
   experimental: {
     // Instant Navigation testing API for the `instant()` e2e suite (apps/web-e2e/instant-nav.rig.md).

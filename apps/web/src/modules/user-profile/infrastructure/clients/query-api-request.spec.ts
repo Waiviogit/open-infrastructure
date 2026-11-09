@@ -75,3 +75,25 @@ describe('executeQueryApiRequest', () => {
     await expect(executeQueryApiRequest(request, '/x')).resolves.toEqual({ ok: false, status: 200 });
   });
 });
+
+describe('executeQueryApiRequest and Next.js control flow', () => {
+  const fetchMock = jest.fn();
+  const request = { url: 'http://api/x', method: 'GET', headers: {} };
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    global.fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  it('rethrows a completed prerender rejecting its fetch instead of reporting a network error', async () => {
+    const aborted = Object.assign(new Error('During prerendering, fetch() rejects'), {
+      digest: 'HANGING_PROMISE_REJECTION',
+    });
+    fetchMock.mockRejectedValueOnce(aborted);
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(executeQueryApiRequest(request, '/x')).rejects.toBe(aborted);
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+});
