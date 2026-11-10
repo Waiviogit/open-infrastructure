@@ -3,12 +3,15 @@
 import { $isLinkNode } from '@lexical/link';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
+  $getNodeByKey,
   $getSelection,
   $isRangeSelection,
+  $setSelection,
   COMMAND_PRIORITY_LOW,
   SELECTION_CHANGE_COMMAND,
-  type EditorState,
+  type LexicalEditor,
   type LexicalNode,
+  type RangeSelection,
 } from 'lexical';
 import {
   useCallback,
@@ -35,10 +38,20 @@ import { MORE_ACTIONS, type FormatActionId } from '../../domain/format-actions';
 
 const TOOLBAR_GAP_PX = 8;
 const VIEWPORT_EDGE_PX = 8;
+const TOOLBAR_FALLBACK_HEIGHT_PX = 40;
+const TOOLBAR_FALLBACK_WIDTH_PX = 200;
+/** CSS Custom Highlight name; styled by `::highlight(editor-link-target)` in `global.css`. */
+const LINK_TARGET_HIGHLIGHT = 'editor-link-target';
 
 type ToolbarPosition = {
   top: number;
   left: number;
+};
+
+/** Text the URL input will link: kept while focus is in the input and the editor has no selection. */
+type LinkTarget = {
+  selection: RangeSelection;
+  range: Range;
 };
 
 /** Keeps Lexical selection on toolbar buttons; allows focus in URL input. */
@@ -54,7 +67,7 @@ function preventToolbarMouseDown(event: MouseEvent) {
   event.preventDefault();
 }
 
-function getSelectionViewportRect(root: HTMLElement | null): DOMRect | null {
+function getEditorDomRange(root: HTMLElement | null): Range | null {
   if (!root) {
     return null;
   }
@@ -66,11 +79,53 @@ function getSelectionViewportRect(root: HTMLElement | null): DOMRect | null {
   if (!root.contains(range.commonAncestorContainer)) {
     return null;
   }
-  const rect = range.getBoundingClientRect();
-  if (rect.width === 0) {
+  return range;
+}
+
+function getVisibleRect(range: Range | null): DOMRect | null {
+  const rect = range?.getBoundingClientRect();
+  if (!rect || rect.width === 0) {
     return null;
   }
   return rect;
+}
+
+function supportsCssHighlights(): boolean {
+  return typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight !== 'undefined';
+}
+
+/** Paints the link target while the URL input owns the DOM selection (progressive enhancement). */
+function showLinkTargetHighlight(range: Range): void {
+  if (supportsCssHighlights()) {
+    CSS.highlights.set(LINK_TARGET_HIGHLIGHT, new Highlight(range));
+  }
+}
+
+function clearLinkTargetHighlight(): void {
+  if (supportsCssHighlights()) {
+    CSS.highlights.delete(LINK_TARGET_HIGHLIGHT);
+  }
+}
+
+function readTextSelection(editor: LexicalEditor): RangeSelection | null {
+  return editor.getEditorState().read(() => {
+    const selection = $getSelection();
+    if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+      return null;
+    }
+    return selection.clone();
+  });
+}
+
+/** Puts the saved selection back into the editor, unless its nodes were removed meanwhile. */
+function restoreEditorSelection(editor: LexicalEditor, selection: RangeSelection): void {
+  editor.update(() => {
+    if (!$getNodeByKey(selection.anchor.key) || !$getNodeByKey(selection.focus.key)) {
+      return;
+    }
+    $setSelection(selection.clone());
+  });
+  editor.focus();
 }
 
 function selectionIsLink(): boolean {
@@ -129,24 +184,41 @@ export function EditorFormatToolbar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [linkMode, setLinkMode] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
-  const savedStateRef = useRef<EditorState | null>(null);
-  const lastRectRef = useRef<DOMRect | null>(null);
+  /**
+   * Set while the URL input is open. A ref (not state) so DOM/Lexical listeners and rAF callbacks
+   * never read a stale value from an older render.
+   */
+  const linkTargetRef = useRef<LinkTarget | null>(null);
+
+  const placeToolbar = useCallback((anchorRect: DOMRect) => {
+    const toolbarEl = toolbarRef.current;
+    const toolbarHeight = toolbarEl?.offsetHeight ?? TOOLBAR_FALLBACK_HEIGHT_PX;
+    const toolbarWidth = toolbarEl?.offsetWidth ?? TOOLBAR_FALLBACK_WIDTH_PX;
+    const centerX = anchorRect.left + anchorRect.width / 2;
+    const clampedLeft = Math.max(
+      VIEWPORT_EDGE_PX + toolbarWidth / 2,
+      Math.min(window.innerWidth - VIEWPORT_EDGE_PX - toolbarWidth / 2, centerX),
+    );
+    const top = Math.max(VIEWPORT_EDGE_PX, anchorRect.top - toolbarHeight - TOOLBAR_GAP_PX);
+    setPosition({ top, left: clampedLeft });
+  }, []);
 
   const syncToolbar = useCallback(() => {
-    const root = editor.getRootElement();
-    const rect = getSelectionViewportRect(root);
-    if (rect) {
-      lastRectRef.current = rect;
+    const linkTarget = linkTargetRef.current;
+    if (linkTarget) {
+      // Focus is in the URL input: stay anchored to the saved text, not the (empty) DOM selection.
+      const targetRect = getVisibleRect(linkTarget.range);
+      if (targetRect) {
+        placeToolbar(targetRect);
+      }
+      return;
     }
 
-    editor.getEditorState().read(() => {
+    const rect = getVisibleRect(getEditorDomRange(editor.getRootElement()));
+    const hasTextSelection = editor.getEditorState().read(() => {
       const selection = $getSelection();
       if (!$isRangeSelection(selection) || selection.isCollapsed()) {
-        if (!linkMode) {
-          setVisible(false);
-          setMoreOpen(false);
-        }
-        return;
+        return false;
       }
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
@@ -154,38 +226,28 @@ export function EditorFormatToolbar() {
       setIsLink(selectionIsLink());
       setBlockType(getSelectedBlockType());
       setHasSpoiler(selectionHasSpoiler());
+      return true;
     });
 
-    const layoutRect = rect ?? (linkMode ? lastRectRef.current : null);
-    if (!layoutRect) {
-      if (!linkMode) {
-        setVisible(false);
-        setPosition(null);
-      }
+    if (!hasTextSelection || !rect) {
+      setVisible(false);
+      setMoreOpen(false);
       return;
     }
+    placeToolbar(rect);
+    setVisible(true);
+  }, [editor, placeToolbar]);
 
-    const toolbarEl = toolbarRef.current;
-    const toolbarHeight = toolbarEl?.offsetHeight ?? 40;
-    const toolbarWidth = toolbarEl?.offsetWidth ?? 200;
-    const centerX = layoutRect.left + layoutRect.width / 2;
-    const clampedLeft = Math.max(
-      VIEWPORT_EDGE_PX + toolbarWidth / 2,
-      Math.min(window.innerWidth - VIEWPORT_EDGE_PX - toolbarWidth / 2, centerX),
-    );
-    const top = Math.max(
-      VIEWPORT_EDGE_PX,
-      layoutRect.top - toolbarHeight - TOOLBAR_GAP_PX,
-    );
-
-    setPosition({ top, left: clampedLeft });
-    if (rect) {
-      setVisible(true);
-    }
-  }, [editor, linkMode]);
+  const exitLinkMode = useCallback(() => {
+    linkTargetRef.current = null;
+    clearLinkTargetHighlight();
+    setLinkMode(false);
+    setLinkUrl('');
+  }, []);
 
   useEffect(() => {
     setPortalReady(true);
+    return clearLinkTargetHighlight;
   }, []);
 
   useEffect(() => {
@@ -234,6 +296,21 @@ export function EditorFormatToolbar() {
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [moreOpen]);
 
+  /** A click outside the toolbar (e.g. a new selection in the editor) drops the pending link. */
+  useEffect(() => {
+    if (!linkMode) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (toolbarRef.current?.contains(event.target as Node)) {
+        return;
+      }
+      exitLinkMode();
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [exitLinkMode, linkMode]);
+
   useLayoutEffect(() => {
     if (!linkMode) {
       return;
@@ -256,40 +333,41 @@ export function EditorFormatToolbar() {
   );
 
   const openLinkMode = useCallback(() => {
-    savedStateRef.current = editor.getEditorState();
+    const domRange = getEditorDomRange(editor.getRootElement());
+    const selection = readTextSelection(editor);
+    if (!domRange || !selection) {
+      return;
+    }
+    const range = domRange.cloneRange();
+    linkTargetRef.current = { selection, range };
+    showLinkTargetHighlight(range);
     setLinkMode(true);
     setLinkUrl('');
     setMoreOpen(false);
+    // Re-center once the wider URL form has rendered.
     requestAnimationFrame(() => syncToolbar());
   }, [editor, syncToolbar]);
 
+  /** Escape / empty Apply: back to the editor with the same text still selected. */
   const cancelLinkMode = useCallback(() => {
-    const saved = savedStateRef.current;
-    if (saved) {
-      editor.setEditorState(saved);
+    const target = linkTargetRef.current;
+    exitLinkMode();
+    if (target) {
+      restoreEditorSelection(editor, target.selection);
     }
-    savedStateRef.current = null;
-    setLinkMode(false);
-    setLinkUrl('');
-    requestAnimationFrame(() => syncToolbar());
-  }, [editor, syncToolbar]);
+  }, [editor, exitLinkMode]);
 
   const submitLink = useCallback(() => {
     const url = linkUrl.trim();
-    if (!url) {
+    const target = linkTargetRef.current;
+    if (!url || !target) {
       cancelLinkMode();
       return;
     }
-    const saved = savedStateRef.current;
-    if (saved) {
-      editor.setEditorState(saved);
-    }
+    exitLinkMode();
+    restoreEditorSelection(editor, target.selection);
     applyFormatAction(editor, 'link', { linkUrl: url });
-    savedStateRef.current = null;
-    setLinkMode(false);
-    setLinkUrl('');
-    requestAnimationFrame(() => syncToolbar());
-  }, [cancelLinkMode, editor, linkUrl, syncToolbar]);
+  }, [cancelLinkMode, editor, exitLinkMode, linkUrl]);
 
   const showToolbar = visible || linkMode;
   if (!portalReady || !showToolbar || !position) {

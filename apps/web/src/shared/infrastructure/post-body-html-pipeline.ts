@@ -1,6 +1,7 @@
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 
+import { isImageCaptionAlt, POST_IMAGE_CAPTION_CLASS } from '../domain/image-caption';
 import { getProxyImageUrl } from './image/get-proxy-image-url';
 import { mediaEmbedIframeHtml, parseMediaEmbedUrl } from './media-embed';
 import { linkifyBareImageUrls, linkifyHiveMentions } from './social-content-html';
@@ -296,6 +297,45 @@ const POST_BODY_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   },
 };
 
+/**
+ * A block holding only one image (optionally wrapped in a link): `<p><img></p>`, `<p><a><img></a></p>`,
+ * same for `<center>` / `<div>`. Images inside text, or with their own caption markup, do not match.
+ */
+const STANDALONE_IMAGE_BLOCK =
+  /(<(p|center|div)(?:\s[^>]*)?>)(\s*(?:<a\s[^>]*>\s*)?<img\s[^>]*>(?:\s*<\/a>)?\s*)(<\/\2>)/gi;
+const IMG_ALT_ATTR = /<img\s[^>]*\balt="([^"]*)"/i;
+const HTML_ENTITY = /&(amp|lt|gt|quot|#39|#x27);/g;
+const HTML_ENTITY_CHARS: Readonly<Record<string, string>> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  '#39': "'",
+  '#x27': "'",
+};
+
+function decodeAttributeEntities(value: string): string {
+  return value.replace(HTML_ENTITY, (_, name: string) => HTML_ENTITY_CHARS[name] ?? '');
+}
+
+/**
+ * Shows the alt text under a standalone image when it reads as a caption (not a file name, URL or
+ * placeholder). Runs on sanitized HTML: the alt attribute is already entity-escaped, so it is reused
+ * as caption text without re-escaping.
+ */
+export function addImageAltCaptions(html: string): string {
+  if (!html.includes('<img')) {
+    return html;
+  }
+  return html.replace(STANDALONE_IMAGE_BLOCK, (match, open: string, _tag, image: string, close: string) => {
+    const escapedAlt = IMG_ALT_ATTR.exec(image)?.[1] ?? '';
+    if (!isImageCaptionAlt(decodeAttributeEntities(escapedAlt))) {
+      return match;
+    }
+    return `${open}${image}<span class="${POST_IMAGE_CAPTION_CLASS}">${escapedAlt.trim()}</span>${close}`;
+  });
+}
+
 /** Markdown or HTML post body → safe HTML for display. Client and server safe. */
 export function sanitizePostBodyHtml(raw: string): string {
   const parsed = postBodyToIntermediateHtml(raw);
@@ -303,7 +343,7 @@ export function sanitizePostBodyHtml(raw: string): string {
   const intermediate = linkifyHiveMentions(
     embedMediaUrls(embedThreeSpeakInBody(convertMarkdownImages(withImages))),
   );
-  return collapseAdjacentIdenticalMediaEmbeds(
-    sanitizeHtml(intermediate, POST_BODY_SANITIZE_OPTIONS),
+  return addImageAltCaptions(
+    collapseAdjacentIdenticalMediaEmbeds(sanitizeHtml(intermediate, POST_BODY_SANITIZE_OPTIONS)),
   );
 }

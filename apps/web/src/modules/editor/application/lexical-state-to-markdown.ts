@@ -1,3 +1,4 @@
+import { imageBlockMarkdown } from '../domain/image-block-fields';
 import { POST_IMAGE_NODE_TYPE } from '../domain/nodes/image-node';
 import { POST_VIDEO_NODE_TYPE } from '../domain/nodes/video-node';
 
@@ -19,6 +20,7 @@ type LexicalJsonNode = {
   src?: string;
   altText?: string;
   cid?: string;
+  linkUrl?: string;
   listType?: string;
   language?: string | null;
   headerState?: number;
@@ -178,8 +180,7 @@ function blockMarkdown(
       if (!url) {
         return '';
       }
-      const alt = (node.altText ?? '').trim();
-      return `![${alt}](${url})\n\n`;
+      return `${imageBlockMarkdown(url, node.altText ?? '', node.linkUrl ?? '')}\n\n`;
     }
     case 'list': {
       const items = node.children ?? [];

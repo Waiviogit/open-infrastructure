@@ -48,7 +48,8 @@ export function ObjectPageContentBody({
         return;
       }
       const target = event.target;
-      if (!(target instanceof HTMLImageElement)) {
+      // A linked image (`[![alt](src)](href)`) follows its link instead of opening the gallery.
+      if (!(target instanceof HTMLImageElement) || target.closest('a[href]')) {
         return;
       }
       const index = resolveGalleryPhotoIndexByUrl(

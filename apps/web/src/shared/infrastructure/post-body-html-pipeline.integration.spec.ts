@@ -4,6 +4,41 @@ import {
   sanitizePostBodyHtml,
 } from './post-body-html-pipeline';
 
+describe('image alt captions (integration, real marked)', () => {
+  const src = 'https://images.hive.blog/p/photo.jpg';
+
+  it('shows a meaningful alt under a linked image and keeps the image a link', () => {
+    const html = sanitizePostBodyHtml(
+      `Intro\n\n[![Cheam Sushi tray](${src})](https://waivio.com/object/cheam)\n\nOutro`,
+    );
+
+    expect(html).toMatch(
+      /<a href="https:\/\/waivio\.com\/object\/cheam"><img [^>]*alt="Cheam Sushi tray"[^>]*\/?><\/a><span class="post-image-caption">Cheam Sushi tray<\/span>/,
+    );
+  });
+
+  it('does not show a file name alt', () => {
+    expect(sanitizePostBodyHtml(`![IMG_20240501.jpg](${src})`)).not.toContain('post-image-caption');
+  });
+
+  it('does not caption an image inside a paragraph of text', () => {
+    expect(sanitizePostBodyHtml(`Look ![tiny icon](${src}) here`)).not.toContain(
+      'post-image-caption',
+    );
+  });
+
+  it('keeps the caption escaped', () => {
+    const html = sanitizePostBodyHtml(
+      `<p><img src="${src}" alt="&lt;script&gt;x&lt;/script&gt; &amp; co"></p>`,
+    );
+
+    expect(html).toContain(
+      '<span class="post-image-caption">&lt;script&gt;x&lt;/script&gt; &amp; co</span>',
+    );
+    expect(html).not.toContain('<script>');
+  });
+});
+
 describe('sanitizePostBodyHtml (integration, real marked)', () => {
   it('renders Peakd 3Speak markdown body with headings, links, and iframe', () => {
     const poster =

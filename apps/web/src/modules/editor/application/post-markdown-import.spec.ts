@@ -65,6 +65,27 @@ describe('importing a published post body', () => {
     expect(json).toContain('"cid":"bafyphoto"');
   });
 
+  it('keeps the link and alt text of a linked image and publishes them back', () => {
+    const source = '[![Cheam Sushi](https://images.hive.blog/p/photo.jpg)](https://waivio.com/object/cheam)';
+
+    const { types, json, markdown } = importMarkdown(source);
+
+    expect(types).toEqual(['post-image']);
+    expect(json).toContain('"linkUrl":"https://waivio.com/object/cheam"');
+    expect(json).toContain('"altText":"Cheam Sushi"');
+    expect(markdown).toBe(source);
+  });
+
+  it('drops an unsafe image link but keeps the image', () => {
+    const { types, json, markdown } = importMarkdown(
+      '[![x](https://images.hive.blog/p/photo.jpg)](javascript:alert(1))',
+    );
+
+    expect(types).toEqual(['post-image']);
+    expect(json).toContain('"linkUrl":""');
+    expect(markdown).toBe('![x](https://images.hive.blog/p/photo.jpg)');
+  });
+
   it('turns a bare image URL line into an image', () => {
     const { types } = importMarkdown('https://images.hive.blog/p/photo.jpg');
 

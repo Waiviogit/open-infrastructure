@@ -11,16 +11,24 @@ import {
   type LexicalNode,
   type NodeKey,
 } from 'lexical';
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 
-import { TrashIcon } from '@/icons';
+import { LinkIcon, PencilIcon, TrashIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 
 import { $openLineBeside, type BlockSide } from '../../application/block-gaps';
 import { $removeMediaBlocksAndPlaceCaret } from '../../application/image-selection';
 import { $appendTableColumn, $appendTableRow, $removeTable } from '../../application/table-actions';
+import {
+  IMAGE_ALT_TEXT_MAX_LENGTH,
+  normalizeImageAltText,
+  normalizeImageLinkUrl,
+} from '../../domain/image-block-fields';
+import { $isImageNode, type ImageNode } from '../../domain/nodes/image-node';
 import { $isMediaBlockNode } from '../../domain/nodes/media-block';
+
+import { EditorImageFieldForm } from './editor-image-field-form';
 
 /** Gap between the toolbar and the block edge. */
 const TOOLBAR_GAP_PX = 6;
@@ -30,18 +38,41 @@ const VIEWPORT_MARGIN_PX = 8;
 /** Below this viewport y the toolbar would sit under the fixed site header → place it under the block. */
 const MIN_TOOLBAR_TOP_PX = 64;
 
-type ActiveBlock = { key: NodeKey; kind: 'table' | 'code' | 'media' };
+/** `image` is a media block that also has link / alt text actions. */
+type ActiveBlock = { key: NodeKey; kind: 'table' | 'code' | 'media' | 'image' };
+
+type ImageField = 'link' | 'alt';
+
+/** Image link / alt text being edited in the toolbar; tied to one block so a new selection closes it. */
+type ImageFieldEdit = { key: NodeKey; field: ImageField; initialValue: string };
 
 type ToolbarPosition = { top: number; left: number };
 
-const BUTTON_CLASS =
-  'flex h-8 shrink-0 items-center rounded-btn px-2 text-body-sm font-weight-label text-fg transition-colors hover:bg-ghost-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2.5';
+const BUTTON_BASE_CLASS =
+  'flex h-8 shrink-0 items-center gap-1 rounded-btn px-2 text-body-sm font-weight-label transition-colors hover:bg-ghost-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2.5';
+const BUTTON_CLASS = `${BUTTON_BASE_CLASS} text-fg`;
+
+/** Image Link / Alt text button: accent when the image already has that value. */
+function imageFieldButtonClass(isSet: boolean): string {
+  return `${BUTTON_BASE_CLASS} ${isSet ? 'text-accent' : 'text-fg'}`;
+}
+
+/** Keeps the editor selection on toolbar buttons; lets the image field input take focus. */
+function preventToolbarMouseDown(event: MouseEvent<HTMLDivElement>) {
+  if (event.target instanceof HTMLElement && event.target.closest('input')) {
+    return;
+  }
+  event.preventDefault();
+}
 
 /** Block the toolbar is for: a node-selected image / video / line, or the table / code block holding the caret. */
 function $activeBlock(): ActiveBlock | null {
   const selection = $getSelection();
   if ($isNodeSelection(selection)) {
     const [node] = selection.getNodes();
+    if ($isImageNode(node)) {
+      return { key: node.getKey(), kind: 'image' };
+    }
     return $isMediaBlockNode(node) ? { key: node.getKey(), kind: 'media' } : null;
   }
   if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
@@ -56,11 +87,16 @@ function $activeBlock(): ActiveBlock | null {
   return $isCodeNode(top) ? { key: top.getKey(), kind: 'code' } : null;
 }
 
+function readImageField(image: ImageNode, field: ImageField): string {
+  return field === 'link' ? image.getLinkUrl() : image.getAltText();
+}
+
 /**
- * Floating actions for the active non-text block. Every block gets "↑ Line" /
- * "↓ Line" (the touch way out of a table, code, image, video or line — there
+ * Floating actions for the active non-text block. Every block gets "+ Line up" /
+ * "+ Line down" (the touch way out of a table, code, image, video or line — there
  * are no arrow keys on phones); tables keep the legacy +Row / +Column / Remove
- * table; images, videos and lines get Remove.
+ * table; images get Link and Alt text (legacy image link / "image text");
+ * images, videos and lines get Remove.
  */
 export function EditorBlockToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
@@ -68,12 +104,28 @@ export function EditorBlockToolbarPlugin() {
   const [active, setActive] = useState<ActiveBlock | null>(null);
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
   const [toolbarEl, setToolbarEl] = useState<HTMLDivElement | null>(null);
+  const [imageFieldEdit, setImageFieldEdit] = useState<ImageFieldEdit | null>(null);
+  const [imageFieldsSet, setImageFieldsSet] = useState<Record<ImageField, boolean>>({
+    link: false,
+    alt: false,
+  });
 
   useEffect(
     () =>
       editor.registerUpdateListener(({ editorState }) => {
-        const next = editorState.read($activeBlock);
+        const { next, linkSet, altSet } = editorState.read(() => {
+          const block = $activeBlock();
+          const image = block?.kind === 'image' ? $getNodeByKey(block.key) : null;
+          return {
+            next: block,
+            linkSet: $isImageNode(image) && image.getLinkUrl() !== '',
+            altSet: $isImageNode(image) && image.getAltText() !== '',
+          };
+        });
         setActive((prev) => (prev?.key === next?.key && prev?.kind === next?.kind ? prev : next));
+        setImageFieldsSet((prev) =>
+          prev.link === linkSet && prev.alt === altSet ? prev : { link: linkSet, alt: altSet },
+        );
       }),
     [editor],
   );
@@ -145,9 +197,57 @@ export function EditorBlockToolbarPlugin() {
 
   const openLine = (side: BlockSide) => runOnBlock((block) => $openLineBeside(block, side));
 
+  const runOnImage = (action: (image: ImageNode) => void) =>
+    runOnBlock((block) => {
+      if ($isImageNode(block)) {
+        action(block);
+      }
+    });
+
+  const openImageField = (field: ImageField) => {
+    if (active?.kind !== 'image') {
+      return;
+    }
+    const initialValue = editor.getEditorState().read(() => {
+      const block = $getNodeByKey(active.key);
+      return $isImageNode(block) ? readImageField(block, field) : '';
+    });
+    setImageFieldEdit({ key: active.key, field, initialValue });
+  };
+
+  const closeImageField = () => {
+    setImageFieldEdit(null);
+    editor.focus();
+  };
+
+  const writeImageField = (field: ImageField, value: string) => {
+    setImageFieldEdit(null);
+    runOnImage((image) => (field === 'link' ? image.setLinkUrl(value) : image.setAltText(value)));
+  };
+
+  /** Empty input removes the value; an invalid link keeps the form open with an error. */
+  const applyImageField = (field: ImageField, raw: string): string | null => {
+    if (field === 'alt') {
+      writeImageField('alt', normalizeImageAltText(raw));
+      return null;
+    }
+    if (!raw.trim()) {
+      writeImageField('link', '');
+      return null;
+    }
+    const url = normalizeImageLinkUrl(raw);
+    if (!url) {
+      return t('editor_image_link_invalid');
+    }
+    writeImageField('link', url);
+    return null;
+  };
+
   if (!active || !position || typeof document === 'undefined') {
     return null;
   }
+
+  const fieldEdit = imageFieldEdit?.key === active.key ? imageFieldEdit : null;
 
   return createPortal(
     <div
@@ -156,8 +256,28 @@ export function EditorBlockToolbarPlugin() {
       aria-label={t('editor_block_toolbar_aria')}
       className="fixed z-[100] flex max-w-[calc(100vw-1rem)] items-center gap-0.5 overflow-x-auto rounded-btn border border-border bg-surface p-1 shadow-card"
       style={{ top: position.top, left: position.left }}
-      onMouseDown={(e) => e.preventDefault()}
+      onMouseDown={preventToolbarMouseDown}
     >
+      {fieldEdit ? (
+        <EditorImageFieldForm
+          key={`${fieldEdit.key}:${fieldEdit.field}`}
+          initialValue={fieldEdit.initialValue}
+          inputType={fieldEdit.field === 'link' ? 'url' : 'text'}
+          maxLength={fieldEdit.field === 'alt' ? IMAGE_ALT_TEXT_MAX_LENGTH : undefined}
+          inputLabel={t(fieldEdit.field === 'link' ? 'editor_format_link' : 'editor_image_alt_text')}
+          placeholder={t(
+            fieldEdit.field === 'link' ? 'editor_format_link_url' : 'editor_image_alt_placeholder',
+          )}
+          applyLabel={t('editor_format_link_apply')}
+          removeLabel={t(
+            fieldEdit.field === 'link' ? 'editor_image_link_remove' : 'editor_image_alt_remove',
+          )}
+          onApply={(value) => applyImageField(fieldEdit.field, value)}
+          onRemove={() => writeImageField(fieldEdit.field, '')}
+          onCancel={closeImageField}
+        />
+      ) : (
+        <>
       {active.kind === 'table' ? (
         <>
           <button type="button" className={BUTTON_CLASS} onClick={() => runOnTable($appendTableRow)}>
@@ -183,7 +303,29 @@ export function EditorBlockToolbarPlugin() {
       <button type="button" className={BUTTON_CLASS} onClick={() => openLine('after')}>
         {t('editor_block_line_below')}
       </button>
-      {active.kind === 'media' ? (
+      {active.kind === 'image' ? (
+        <>
+          <button
+            type="button"
+            className={imageFieldButtonClass(imageFieldsSet.link)}
+            aria-pressed={imageFieldsSet.link}
+            onClick={() => openImageField('link')}
+          >
+            <LinkIcon size={16} />
+            {t('editor_format_link')}
+          </button>
+          <button
+            type="button"
+            className={imageFieldButtonClass(imageFieldsSet.alt)}
+            aria-pressed={imageFieldsSet.alt}
+            onClick={() => openImageField('alt')}
+          >
+            <PencilIcon size={16} />
+            {t('editor_image_alt_text')}
+          </button>
+        </>
+      ) : null}
+      {active.kind === 'media' || active.kind === 'image' ? (
         <button
           type="button"
           className={BUTTON_CLASS}
@@ -200,6 +342,8 @@ export function EditorBlockToolbarPlugin() {
           <TrashIcon size={16} />
         </button>
       ) : null}
+        </>
+      )}
     </div>,
     document.body,
   );

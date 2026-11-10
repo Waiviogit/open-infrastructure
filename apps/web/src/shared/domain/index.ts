@@ -29,3 +29,4 @@ export {
   stripCommentParentPermlinkSuffix,
   titleToPostSlug,
 } from './hive-permlink';
+export { isImageCaptionAlt, POST_IMAGE_CAPTION_CLASS } from './image-caption';

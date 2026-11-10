@@ -24,6 +24,14 @@
     @apply ring-2 ring-accent ring-offset-2 ring-offset-bg;
   }
 
+  /**
+   * Alt text shown under a standalone image (post body pipeline `addImageAltCaptions`, editor `ImageNode`).
+   * File names, URLs and placeholder words are not shown (`isImageCaptionAlt`).
+   */
+  .post-image-caption {
+    @apply -mt-1 mb-2 block text-center text-body-sm italic text-fg-secondary;
+  }
+
   /** No stale text caret while a whole block is selected. */
   [data-block-selected] {
     caret-color: transparent;
@@ -810,4 +818,13 @@ html[data-theme='light'] .bg-surface\/80,
 html[data-theme='light'] .bg-surface-control\/40,
 html[data-theme='light'] .bg-surface-control\/60 {
   background-color: var(--color-surface);
+}
+
+/**
+ * Post editor: text a pending link will wrap, painted while focus is in the toolbar URL input
+ * (CSS Custom Highlight set by editor-format-toolbar.tsx). System colors match the native selection.
+ */
+::highlight(editor-link-target) {
+  background-color: Highlight;
+  color: HighlightText;
 }

@@ -28,7 +28,8 @@ The legacy editor (Slate, markdown storage, Redux) is replaced by one Lexical co
 | Object by `#` at the caret | [`#` object search](hash-object-search.md) |
 | Nearby (Google Maps import modal) | `#` search Google section (no separate menu item). Objects are created by the user (no import service) |
 | Line, Code, Table, Emoji | Insert → Line / Code / Table / Emoji |
-| Table toolbar: +Row, +Column, Remove table (2×2 default) | `EditorBlockToolbarPlugin` (also ↑ / ↓ Line for every non-text block, for touch) |
+| Table toolbar: +Row, +Column, Remove table (2×2 default) | `EditorBlockToolbarPlugin` (also + Line up / + Line down for every non-text block, for touch) |
+| Image toolbar: add / remove image link, add / remove "image text" under the image | `EditorBlockToolbarPlugin` → **Link** / **Alt text** on a selected image (`[![alt](src)](href)`) |
 | Paste HTML with `/object/` links → attach objects | `EditorPasteObjectLinksPlugin` |
 | Paste rich HTML (copied post / page) with its formatting | [Rich paste](rich-paste.md) |
 | Linked objects + influence percents, hashtag objects → tags | Linked objects panel |

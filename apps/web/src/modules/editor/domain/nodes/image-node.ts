@@ -11,6 +11,8 @@ import {
   type LexicalCommand,
 } from 'lexical';
 
+import { isImageCaptionAlt, POST_IMAGE_CAPTION_CLASS } from '@/shared/domain';
+
 import { pastedImagePayload } from '../pasted-media';
 
 export const POST_IMAGE_NODE_TYPE = 'post-image';
@@ -19,7 +21,12 @@ export type ImagePayload = {
   src: string;
   altText?: string;
   cid?: string;
+  /** Where a click on the published image goes (`[![alt](src)](linkUrl)`). */
+  linkUrl?: string;
 };
+
+/** Alt text under the image in the editor, same look and rule as in the published post (not editable text). */
+const IMAGE_CAPTION_ATTR = 'data-post-image-caption';
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<ImagePayload> =
   createCommand('INSERT_IMAGE_COMMAND');
@@ -31,6 +38,8 @@ export type SerializedImageNode = Spread<
     src: string;
     altText: string;
     cid: string;
+    /** Absent in drafts saved before image links existed. */
+    linkUrl?: string;
   },
   SerializedElementNode
 >;
@@ -42,6 +51,7 @@ function serializedImageNode(payload: ImagePayload): SerializedImageNode {
     src: payload.src,
     altText: payload.altText ?? '',
     cid: payload.cid ?? '',
+    linkUrl: payload.linkUrl ?? '',
     children: [],
     format: '',
     indent: 0,
@@ -53,20 +63,22 @@ export class ImageNode extends ElementNode {
   __src: string;
   __altText: string;
   __cid: string;
+  __linkUrl: string;
 
   static getType(): string {
     return POST_IMAGE_NODE_TYPE;
   }
 
   static clone(node: ImageNode): ImageNode {
-    return new ImageNode(node.__src, node.__altText, node.__cid, node.__key);
+    return new ImageNode(node.__src, node.__altText, node.__cid, node.__linkUrl, node.__key);
   }
 
-  constructor(src: string, altText: string, cid: string, key?: string) {
+  constructor(src: string, altText: string, cid: string, linkUrl = '', key?: string) {
     super(key);
     this.__src = src;
     this.__altText = altText;
     this.__cid = cid;
+    this.__linkUrl = linkUrl;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -83,6 +95,7 @@ export class ImageNode extends ElementNode {
     img.draggable = false;
     img.className = 'max-w-full h-auto rounded-card';
     wrapper.appendChild(img);
+    this.renderCaption(wrapper);
     return wrapper;
   }
 
@@ -95,7 +108,31 @@ export class ImageNode extends ElementNode {
         img.setAttribute('data-cid', this.__cid);
       }
     }
+    if (prevNode.__altText !== this.__altText || prevNode.__linkUrl !== this.__linkUrl) {
+      this.renderCaption(dom);
+    }
     return false;
+  }
+
+  /**
+   * Alt text under the image (legacy "image text") unless it is a file name, URL or placeholder —
+   * the same rule as the published post. The link is not shown: the image's tooltip names it.
+   */
+  private renderCaption(wrapper: HTMLElement): void {
+    const img = wrapper.querySelector('img');
+    if (img) {
+      img.title = this.__linkUrl;
+    }
+    wrapper.querySelector(`[${IMAGE_CAPTION_ATTR}]`)?.remove();
+    if (!isImageCaptionAlt(this.__altText)) {
+      return;
+    }
+    const caption = document.createElement('span');
+    caption.setAttribute(IMAGE_CAPTION_ATTR, 'true');
+    caption.contentEditable = 'false';
+    caption.className = `${POST_IMAGE_CAPTION_CLASS} select-none`;
+    caption.textContent = this.__altText;
+    wrapper.appendChild(caption);
   }
 
   /** Pasted rich HTML: `<img>` becomes an image block with the original URL. */
@@ -111,6 +148,7 @@ export class ImageNode extends ElementNode {
       serializedNode.src,
       serializedNode.altText ?? '',
       serializedNode.cid ?? '',
+      serializedNode.linkUrl ?? '',
     ).updateFromJSON(serializedNode);
   }
 
@@ -122,6 +160,7 @@ export class ImageNode extends ElementNode {
       src: this.__src,
       altText: this.__altText,
       cid: this.__cid,
+      linkUrl: this.__linkUrl,
     };
   }
 
@@ -133,9 +172,29 @@ export class ImageNode extends ElementNode {
     return this.__cid;
   }
 
+  getAltText(): string {
+    return this.__altText;
+  }
+
+  getLinkUrl(): string {
+    return this.__linkUrl;
+  }
+
   setSrc(src: string): void {
     const writable = this.getWritable();
     writable.__src = src;
+  }
+
+  /** Empty string removes the alt text. */
+  setAltText(altText: string): void {
+    const writable = this.getWritable();
+    writable.__altText = altText;
+  }
+
+  /** Empty string removes the link. */
+  setLinkUrl(linkUrl: string): void {
+    const writable = this.getWritable();
+    writable.__linkUrl = linkUrl;
   }
 
   isInline(): boolean {

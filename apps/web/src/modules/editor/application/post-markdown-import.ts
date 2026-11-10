@@ -24,6 +24,7 @@ import {
 
 import { extractCidFromContentGatewayUrl } from '@/config/ipfs-content-url';
 
+import { normalizeImageLinkUrl } from '../domain/image-block-fields';
 import { $createImageNode, ImageNode } from '../domain/nodes/image-node';
 import { $createLineNode, $isLineNode, LineNode } from '../domain/nodes/line-node';
 import { $createVideoNodeForUrl, VideoNode } from '../domain/nodes/video-node';
@@ -31,15 +32,18 @@ import { $createVideoNodeForUrl, VideoNode } from '../domain/nodes/video-node';
 /** A video URL alone on a line, bare or as `[text](url)` (legacy bodies and old drafts). */
 const VIDEO_LINE_REGEX = /^(?:\[[^\]]*\]\((https?:\/\/\S+?)\)|(https?:\/\/\S+))\s*$/i;
 const IMAGE_LINE_REGEX = /^!\[([^\]]*)\]\((\S+?)(?:\s+"[^"]*")?\)\s*$/;
+/** `[![alt](src)](href)` alone on a line: an image that links somewhere. */
+const LINKED_IMAGE_LINE_REGEX =
+  /^\[!\[([^\]]*)\]\((\S+?)(?:\s+"[^"]*")?\)\]\((\S+?)(?:\s+"[^"]*")?\)\s*$/;
 const BARE_IMAGE_URL_REGEX = /^(https?:\/\/\S+\.(?:png|jpe?g|gif|webp|avif)(?:\?\S*)?)\s*$/i;
 const HORIZONTAL_RULE_REGEX = /^(?:---|\*\*\*|___)\s*$/;
 const TABLE_ROW_REGEX = /^\|(.+)\|\s*$/;
 const TABLE_DIVIDER_CELL_REGEX = /^\s*:?-{3,}:?\s*$/;
 const CELL_LINE_BREAK_REGEX = /<br\s*\/?>/i;
 
-function imageNodeForUrl(url: string, altText: string) {
+function imageNodeForUrl(url: string, altText: string, linkUrl = '') {
   const cid = extractCidFromContentGatewayUrl(url);
-  return $createImageNode({ src: url, altText, ...(cid ? { cid } : {}) });
+  return $createImageNode({ src: url, altText, linkUrl, ...(cid ? { cid } : {}) });
 }
 
 const VIDEO_LINE: ElementTransformer = {
@@ -63,6 +67,19 @@ const IMAGE_LINE: ElementTransformer = {
   regExp: IMAGE_LINE_REGEX,
   replace: (parentNode, _children, match) => {
     parentNode.replace(imageNodeForUrl(match[2] ?? '', match[1] ?? ''));
+    return true;
+  },
+  type: 'element',
+};
+
+/** Unsafe or invalid hrefs keep the image and drop the link. */
+const LINKED_IMAGE_LINE: ElementTransformer = {
+  dependencies: [ImageNode],
+  export: () => null,
+  regExp: LINKED_IMAGE_LINE_REGEX,
+  replace: (parentNode, _children, match) => {
+    const linkUrl = normalizeImageLinkUrl(match[3] ?? '') ?? '';
+    parentNode.replace(imageNodeForUrl(match[2] ?? '', match[1] ?? '', linkUrl));
     return true;
   },
   type: 'element',
@@ -168,6 +185,7 @@ const TABLE_ROW: ElementTransformer = {
 
 export const POST_MARKDOWN_TRANSFORMERS: Transformer[] = [
   VIDEO_LINE,
+  LINKED_IMAGE_LINE,
   IMAGE_LINE,
   BARE_IMAGE_URL,
   HORIZONTAL_RULE,

@@ -70,4 +70,24 @@ describe('lexicalStateToMarkdown', () => {
       '![pic](https://ipfs.example/ipfs/QmTest)',
     );
   });
+
+  it('wraps a linked post-image in a markdown link', () => {
+    const json = JSON.stringify({
+      root: {
+        children: [
+          {
+            type: 'post-image',
+            cid: 'QmTest',
+            src: '',
+            altText: 'pic',
+            linkUrl: 'https://waivio.com/',
+            children: [],
+          },
+        ],
+      },
+    });
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe(
+      '[![pic](https://ipfs.example/ipfs/QmTest)](https://waivio.com/)',
+    );
+  });
 });
