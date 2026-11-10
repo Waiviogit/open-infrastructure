@@ -6,12 +6,13 @@ type: spec
 status: active
 scope: web
 tags: [web, page, object, social]
-updated_at: 2026-11-03
+updated_at: 2026-11-10
 related:
   - docs/apps/web/spec/pages/object/page-shell.md
   - docs/apps/web/spec/pages/object/navigation.md
   - docs/apps/query-api/spec/object-posts-feed.md
   - docs/apps/query-api/spec/object-threads-feed.md
+  - docs/apps/query-api/spec/osl-messaging.md
 ---
 
 # Object page — Social tab
@@ -50,9 +51,22 @@ Shell: [`ObjectPrimaryContent`](../../../../../apps/web/src/modules/object/prese
 
 See [messaging.md](../../../messaging.md) — [`ObjectActivityComposeBar`](../../../../../apps/web/src/modules/messaging/presentation/object-activity-compose-bar.tsx) on the Activity sub-tab only. Mention cross-posts (object links in body) appear on linked objects' Activity feeds with a **From {name}** source link; reply/edit/delete on foreign rows use the source message's `channel_id`.
 
+### Activity message permalink
+
+Every activity message has a public URL: `/object/{objectId}/social/activity/{messageId}` (`messageId` = on-chain `message_id`, `{trxId}-{trxIndex}-{opIndex}-{eventIndex}`). Builder: `buildObjectActivityMessagePath` / `resolveActivityMessageHref` in [`activity-message-permalink.ts`](../../../../../apps/web/src/modules/messaging/domain/activity-message-permalink.ts).
+
+| Surface | Behavior |
+|---------|----------|
+| Feed row | ↗ open icon beside the "…" menu (hover/focus on desktop, always visible on touch) — a real `<a href>` to the permalink. **Plain click** opens the preview modal; Ctrl/Cmd/Shift/middle click opens the full page in a new tab. "…" menu / long-press sheet adds **Copy link** (absolute URL). |
+| Preview modal | [`ActivityMessagePreviewModal`](../../../../../apps/web/src/modules/messaging/presentation/activity-message-preview-modal.tsx) (`ModalShell`, post-modal layout): author, **From {name}**, full body with social embeds, caption. Pills: Close, Open full page, Copy link. Opening pushes the permalink (own history entry, feed stays mounted); Close / Esc / Back pops it ([`useActivityMessagePreview`](../../../../../apps/web/src/modules/messaging/presentation/use-activity-message-preview.ts)). Social > Activity stays selected while the permalink is in the address bar. |
+| Full page | Direct visit or refresh: [`proxy.ts`](../../../../../apps/web/src/proxy.ts) rewrites to `?tab=social&social_sub=activity&activity_message_id=…`; the Activity slot renders [`ObjectPageActivityMessageSection`](../../../../../apps/web/src/app/(app)/object/[object-id]/object-page-activity-message-section.server.tsx) — **← All activity** link + the single message (read-only, Copy link kept). Unknown, unlinked or muted message → `notFound()`. Metadata: `{author} · {object} · Activity`, description = plain-text body excerpt; canonical and image stay the object's. |
+| Home Activity feed | Same open icon and preview; the row's own object (`source_object`) builds the URL. [`HomeFeedScrollReset`](../../../../../apps/web/src/modules/home/presentation/components/home-feed-scroll-reset.tsx) ignores permalink pathnames so the feed keeps its scroll position. |
+
+Data: `GET /query/v1/objects/{objectId}/channel/messages/{messageId}` ([osl-messaging.md](../../../../../query-api/spec/osl-messaging.md)), cache tag `objectChannelMessages(objectId)` (revalidated after edit/delete broadcasts).
+
 ## Verification
 
 ```bash
-pnpm nx test web --testPathPatterns="object-primary-content|object-write-post|object-thread|append-object-anchor"
+pnpm nx test web --testPathPatterns="object-primary-content|object-write-post|object-thread|append-object-anchor|object-activity-feed-list|activity-message|object-page-search|proxy.spec"
 pnpm typecheck:web
 ```

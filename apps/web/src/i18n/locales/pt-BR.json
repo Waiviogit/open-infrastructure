@@ -2986,5 +2986,9 @@
   "object_edit_affiliate_add": "Adicionar novos códigos",
   "object_edit_affiliate_context": "Contexto",
   "object_edit_affiliate_frequency": "Frequência de uso:",
-  "object_edit_affiliate_remove": "Remover"
+  "object_edit_affiliate_remove": "Remover",
+  "object_activity_open_message_aria": "Abrir mensagem",
+  "object_activity_open_full_page": "Abrir página completa",
+  "object_activity_back_to_all": "← Toda a atividade",
+  "messaging_action_copy_link": "Copiar link"
 }

@@ -2985,5 +2985,9 @@
   "object_edit_affiliate_add": "Tambah kod baharu",
   "object_edit_affiliate_context": "Konteks",
   "object_edit_affiliate_frequency": "Kekerapan penggunaan:",
-  "object_edit_affiliate_remove": "Buang"
+  "object_edit_affiliate_remove": "Buang",
+  "object_activity_open_message_aria": "Buka mesej",
+  "object_activity_open_full_page": "Buka halaman penuh",
+  "object_activity_back_to_all": "← Semua aktiviti",
+  "messaging_action_copy_link": "Salin pautan"
 }

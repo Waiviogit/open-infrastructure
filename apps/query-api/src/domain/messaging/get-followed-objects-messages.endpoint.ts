@@ -12,6 +12,7 @@ import {
   encodeMessageCursor,
 } from './message-feed-cursor';
 import { mapMessageToDto, type MessageDto } from './message-projection';
+import { resolveActivityExcludedAuthors } from './resolve-activity-excluded-authors';
 
 export type FollowedObjectRefDto = {
   object_id: string;
@@ -53,17 +54,13 @@ export class GetFollowedObjectsMessagesEndpoint {
       return null;
     }
 
-    const governance = await this.governanceResolver.resolveMergedForObjectView(
-      governanceObjectIdFromHeader,
-    );
-
     const viewerTrimmed = viewerAccount?.trim() ?? '';
-    const viewerMutes =
-      viewerTrimmed.length > 0
-        ? await this.userAccountMutesRepo.listMutedForMuters([viewerTrimmed])
-        : [];
-
-    const excludedAuthors = dedupeStrings([...governance.muted, ...viewerMutes]);
+    const excludedAuthors = await resolveActivityExcludedAuthors(
+      this.governanceResolver,
+      this.userAccountMutesRepo,
+      governanceObjectIdFromHeader,
+      viewerTrimmed,
+    );
     const includeDuplicates = body.for_context
       ? false
       : (body.include_duplicates ?? false);
@@ -136,8 +133,4 @@ export class GetFollowedObjectsMessagesEndpoint {
       hasMore: hasMore && nextCursor != null,
     };
   }
-}
-
-function dedupeStrings(values: readonly string[]): string[] {
-  return [...new Set(values.filter((value) => value.trim().length > 0))];
 }

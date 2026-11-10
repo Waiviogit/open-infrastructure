@@ -11,6 +11,7 @@ import {
   encodeMessageCursor,
 } from './message-feed-cursor';
 import { mapMessageToDto, type MessageDto } from './message-projection';
+import { resolveActivityExcludedAuthors } from './resolve-activity-excluded-authors';
 
 export type { MessageDto, MessageEncryptionDto, MessageSourceObjectDto } from './message-projection';
 
@@ -73,17 +74,13 @@ export class GetObjectChannelMessagesEndpoint {
       return null;
     }
 
-    const governance = await this.governanceResolver.resolveMergedForObjectView(
-      governanceObjectIdFromHeader,
-    );
-
     const viewerTrimmed = viewerAccount?.trim() ?? '';
-    const viewerMutes =
-      viewerTrimmed.length > 0
-        ? await this.userAccountMutesRepo.listMutedForMuters([viewerTrimmed])
-        : [];
-
-    const excludedAuthors = dedupeStrings([...governance.muted, ...viewerMutes]);
+    const excludedAuthors = await resolveActivityExcludedAuthors(
+      this.governanceResolver,
+      this.userAccountMutesRepo,
+      governanceObjectIdFromHeader,
+      viewerTrimmed,
+    );
 
     const includeDuplicates = body.for_context
       ? false
@@ -170,8 +167,4 @@ export class GetObjectChannelMessagesEndpoint {
 
     return { items, cursor: nextCursor, hasMore: safeHasMore };
   }
-}
-
-function dedupeStrings(values: readonly string[]): string[] {
-  return [...new Set(values.filter((v) => v.trim().length > 0))];
 }

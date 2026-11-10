@@ -17,6 +17,7 @@ import {
 } from './validate-members.endpoint';
 import { GetMemoPublicKeyEndpoint } from './get-memo-public-key.endpoint';
 import { CheckActivityDuplicateEndpoint } from './check-activity-duplicate.endpoint';
+import { GetObjectActivityMessageEndpoint } from './get-object-activity-message.endpoint';
 
 @Module({
   imports: [RepositoriesModule, GovernanceModule],
@@ -27,6 +28,7 @@ import { CheckActivityDuplicateEndpoint } from './check-activity-duplicate.endpo
     GetChannelMessagesEndpoint,
     GetObjectChannelEndpoint,
     GetObjectChannelMessagesEndpoint,
+    GetObjectActivityMessageEndpoint,
     GetFollowedObjectsMessagesEndpoint,
     CheckActivityDuplicateEndpoint,
     MarkChannelReadEndpoint,
@@ -41,6 +43,7 @@ import { CheckActivityDuplicateEndpoint } from './check-activity-duplicate.endpo
     GetChannelMessagesEndpoint,
     GetObjectChannelEndpoint,
     GetObjectChannelMessagesEndpoint,
+    GetObjectActivityMessageEndpoint,
     GetFollowedObjectsMessagesEndpoint,
     CheckActivityDuplicateEndpoint,
     MarkChannelReadEndpoint,

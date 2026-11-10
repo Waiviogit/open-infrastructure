@@ -11,6 +11,8 @@ export type MessageActionsMenuProps = {
   onDelete?: () => void;
   onReply?: () => void;
   onCopy?: () => void;
+  /** Copies the message permalink; shown whenever set (activity rows with a permalink). */
+  onCopyLink?: () => void;
   className?: string;
 };
 
@@ -43,6 +45,7 @@ export function MessageActionsMenu({
   onDelete,
   onReply,
   onCopy,
+  onCopyLink,
   className = '',
 }: MessageActionsMenuProps) {
   const { t } = useI18n();
@@ -56,6 +59,15 @@ export function MessageActionsMenu({
   if (actions.copy && onCopy) {
     items.push(
       <MenuButton key="copy" label={t('messaging_action_copy')} onClick={onCopy} />,
+    );
+  }
+  if (onCopyLink) {
+    items.push(
+      <MenuButton
+        key="copy-link"
+        label={t('messaging_action_copy_link')}
+        onClick={onCopyLink}
+      />,
     );
   }
   if (actions.reply && onReply) {

@@ -3,23 +3,33 @@
 import { useMemo } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { sanitizePostBodyHtml } from '@/shared/infrastructure/post-body-html-pipeline';
-import { SocialEmbedHtml } from '@/shared/presentation';
-import { OptimisticNavLink } from '@/shared/presentation/navigation';
 
+import { resolveActivityMessageHref } from '../domain/activity-message-permalink';
 import {
   compareActivityMessagesDesc,
   groupMessagesByDay,
   isOutgoingMessage,
   messageActivitySortUnix,
-  resolveMessagePresentation,
+  resolveMessageQuotePreview,
 } from '../domain/messaging.helpers';
 import type { MessageItem } from '../domain/messaging.types';
+import { ActivityMessageAuthor, ActivityMessageBody } from './activity-message-body';
+import { ActivityMessagePreviewModal } from './activity-message-preview-modal';
 import { MessageRow } from './message-row';
+import { useActivityMessagePreview } from './use-activity-message-preview';
 
 export type ObjectActivityFeedListProps = {
   messages: MessageItem[];
+  /** Not rendered as rows — only resolve reply quotes (e.g. the parent on the permalink page). */
+  relatedMessages?: MessageItem[];
   viewerUsername: string | null;
+  /**
+   * Object whose feed renders the list — permalinks use it. Omit on multi-object feeds (home):
+   * each row then links under its own object (`source_object`).
+   */
+  contextObjectId?: string | null;
+  /** Open icon → preview modal (default). `false` on the permalink page itself (Copy link stays). */
+  showOpenPermalink?: boolean;
   loadingMore?: boolean;
   sentinelRef?: React.RefObject<HTMLDivElement | null>;
   onReply?: (message: MessageItem) => void;
@@ -29,7 +39,10 @@ export type ObjectActivityFeedListProps = {
 
 export function ObjectActivityFeedList({
   messages,
+  relatedMessages,
   viewerUsername,
+  contextObjectId = null,
+  showOpenPermalink = true,
   loadingMore = false,
   sentinelRef,
   onReply,
@@ -37,10 +50,14 @@ export function ObjectActivityFeedList({
   onDelete,
 }: ObjectActivityFeedListProps) {
   const { t, locale } = useI18n();
+  const preview = useActivityMessagePreview();
 
   const messagesById = useMemo(
-    () => new Map(messages.map((message) => [message.message_id, message])),
-    [messages],
+    () =>
+      new Map(
+        [...(relatedMessages ?? []), ...messages].map((message) => [message.message_id, message]),
+      ),
+    [messages, relatedMessages],
   );
 
   const sortedMessages = useMemo(
@@ -63,6 +80,12 @@ export function ObjectActivityFeedList({
     [sortedMessages, locale],
   );
 
+  const previewState = preview.preview;
+  /** Latest row data (edits) for the open preview; the snapshot covers a row that left the list. */
+  const previewMessage = previewState
+    ? (messagesById.get(previewState.message.message_id) ?? previewState.message)
+    : null;
+
   if (messages.length === 0) {
     return (
       <p className="py-6 text-center text-body-sm text-muted">
@@ -83,23 +106,7 @@ export function ObjectActivityFeedList({
           <div className="space-y-3">
             {group.messages.map((message) => {
               const outgoing = isOutgoingMessage(message, viewerUsername);
-              const presentation = resolveMessagePresentation(message, viewerUsername);
-
-              let bodyNode: React.ReactNode;
-              if (presentation.kind === 'plain' || presentation.kind === 'decrypted') {
-                bodyNode = (
-                  <SocialEmbedHtml
-                    html={sanitizePostBodyHtml(presentation.text)}
-                    className="blog-post-body break-words text-body-sm [&_a]:text-link [&_a]:underline"
-                  />
-                );
-              } else {
-                bodyNode = (
-                  <p className="text-body-sm text-muted">
-                    {t('object_activity_encrypted_unsupported')}
-                  </p>
-                );
-              }
+              const permalinkHref = resolveActivityMessageHref(message, contextObjectId);
 
               return (
                 <MessageRow
@@ -107,23 +114,21 @@ export function ObjectActivityFeedList({
                   message={message}
                   viewerUsername={viewerUsername}
                   messagesById={messagesById}
-                  bodyNode={bodyNode}
+                  bodyNode={
+                    <ActivityMessageBody message={message} viewerUsername={viewerUsername} />
+                  }
                   activityCaption
                   authorNode={
-                    !outgoing ? (
-                      <p className="mb-1 text-caption font-weight-label">
-                        <OptimisticNavLink
-                          href={`/@${encodeURIComponent(message.author)}`}
-                          className="text-accent hover:underline"
-                        >
-                          {message.author}
-                        </OptimisticNavLink>
-                      </p>
-                    ) : undefined
+                    !outgoing ? <ActivityMessageAuthor author={message.author} /> : undefined
                   }
                   onReply={onReply}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  permalinkHref={permalinkHref}
+                  showPermalinkIcon={showOpenPermalink}
+                  onOpenPermalink={
+                    permalinkHref ? (row) => preview.open(row, permalinkHref) : undefined
+                  }
                 />
               );
             })}
@@ -136,6 +141,15 @@ export function ObjectActivityFeedList({
         </p>
       ) : null}
       <div ref={sentinelRef} aria-hidden className="h-px" />
+      {previewState && previewMessage ? (
+        <ActivityMessagePreviewModal
+          message={previewMessage}
+          quote={resolveMessageQuotePreview(previewMessage, messagesById)}
+          href={previewState.href}
+          viewerUsername={viewerUsername}
+          onClose={preview.close}
+        />
+      ) : null}
     </div>
   );
 }

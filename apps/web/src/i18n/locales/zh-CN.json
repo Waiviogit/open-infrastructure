@@ -3689,5 +3689,9 @@
   "object_edit_affiliate_add": "添加新代码",
   "object_edit_affiliate_context": "上下文",
   "object_edit_affiliate_frequency": "使用频率：",
-  "object_edit_affiliate_remove": "删除"
+  "object_edit_affiliate_remove": "删除",
+  "object_activity_open_message_aria": "打开消息",
+  "object_activity_open_full_page": "打开完整页面",
+  "object_activity_back_to_all": "← 全部动态",
+  "messaging_action_copy_link": "复制链接"
 }

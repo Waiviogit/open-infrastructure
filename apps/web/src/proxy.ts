@@ -16,6 +16,7 @@ import {
   OBJECT_PAGE_FIELD_REFERENCE_TYPE_PARAM,
   OBJECT_PAGE_FIELD_REFERENCES_PATH_SEGMENT,
   OBJECT_PAGE_UPDATE_ID_PARAM,
+  OBJECT_PAGE_ACTIVITY_MESSAGE_ID_PARAM,
   OBJECT_PAGE_PATH_TAB_SEGMENTS,
   OBJECT_PAGE_SOCIAL_SUB_PARAM,
   SOCIAL_FEED_PATH_SEGMENTS,
@@ -156,6 +157,20 @@ export async function proxy(request: NextRequest) {
     url.pathname = `/object/${id}`;
     url.searchParams.set('tab', 'updates');
     url.searchParams.set(OBJECT_PAGE_UPDATE_ID_PARAM, updateEncoded);
+    return finish(NextResponse.rewrite(url));
+  }
+
+  const activityMessageMatch = pathname.match(
+    /^\/object\/([^/]+)\/social\/activity\/([^/]+)\/?$/,
+  );
+  if (activityMessageMatch) {
+    const id = activityMessageMatch[1];
+    const messageEncoded = activityMessageMatch[2];
+    const url = request.nextUrl.clone();
+    url.pathname = `/object/${id}`;
+    url.searchParams.set('tab', 'social');
+    url.searchParams.set(OBJECT_PAGE_SOCIAL_SUB_PARAM, 'activity');
+    url.searchParams.set(OBJECT_PAGE_ACTIVITY_MESSAGE_ID_PARAM, messageEncoded);
     return finish(NextResponse.rewrite(url));
   }
 

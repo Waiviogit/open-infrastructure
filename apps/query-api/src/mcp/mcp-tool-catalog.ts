@@ -605,6 +605,13 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/osl-messaging.md',
   },
   {
+    name: 'get_object_activity_message',
+    description:
+      'One object activity message by message_id (permalink /object/:object_id/social/activity/:message_id). Same visibility as the activity feed: the message is in the object channel or links the object, and its author is not muted by governance or the viewer.',
+    httpEquivalent: 'GET /query/v1/objects/:object_id/channel/messages/:message_id',
+    specPath: 'docs/apps/query-api/spec/osl-messaging.md',
+  },
+  {
     name: 'get_followed_objects_messages',
     description:
       'Merged object-channel messages for every active object the account follows, newest coalesced publish time first. Optional authors_only restricts to governance authors; authors_governance_object_id unions a second governance authors list.',

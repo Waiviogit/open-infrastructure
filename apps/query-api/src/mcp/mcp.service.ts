@@ -107,6 +107,7 @@ import {
   GetChannelMessagesEndpoint,
   GetObjectChannelEndpoint,
   GetObjectChannelMessagesEndpoint,
+  GetObjectActivityMessageEndpoint,
   GetFollowedObjectsMessagesEndpoint,
   GetMemoPublicKeyEndpoint,
 } from '../domain/messaging';
@@ -205,6 +206,7 @@ export class McpService {
     private readonly getChannelMessages: GetChannelMessagesEndpoint,
     private readonly getObjectChannel: GetObjectChannelEndpoint,
     private readonly getObjectChannelMessages: GetObjectChannelMessagesEndpoint,
+    private readonly getObjectActivityMessage: GetObjectActivityMessageEndpoint,
     private readonly getFollowedObjectsMessages: GetFollowedObjectsMessagesEndpoint,
     private readonly getFollowedObjectsThreads: GetFollowedObjectsThreadsFeedEndpoint,
     private readonly getFollowedObjectsUpdates: GetFollowedObjectsUpdatesFeedEndpoint,
@@ -300,6 +302,7 @@ export class McpService {
       getChannelMessages: this.getChannelMessages,
       getObjectChannel: this.getObjectChannel,
       getObjectChannelMessages: this.getObjectChannelMessages,
+      getObjectActivityMessage: this.getObjectActivityMessage,
       getFollowedObjectsMessages: this.getFollowedObjectsMessages,
       getFollowedObjectsThreads: this.getFollowedObjectsThreads,
       getFollowedObjectsUpdates: this.getFollowedObjectsUpdates,

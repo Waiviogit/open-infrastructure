@@ -2987,5 +2987,9 @@
   "object_edit_affiliate_add": "Tilføj nye koder",
   "object_edit_affiliate_context": "Kontekst",
   "object_edit_affiliate_frequency": "Brugsfrekvens:",
-  "object_edit_affiliate_remove": "Fjern"
+  "object_edit_affiliate_remove": "Fjern",
+  "object_activity_open_message_aria": "Åbn besked",
+  "object_activity_open_full_page": "Åbn hele siden",
+  "object_activity_back_to_all": "← Al aktivitet",
+  "messaging_action_copy_link": "Kopiér link"
 }

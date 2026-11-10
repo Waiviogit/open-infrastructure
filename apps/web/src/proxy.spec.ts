@@ -122,3 +122,31 @@ describe('proxy signed-in routes', () => {
     expect(response.headers.get('location')).toBeNull();
   });
 });
+
+describe('proxy object activity message permalink', () => {
+  beforeEach(() => {
+    mockEnv.requireAuth = false;
+  });
+
+  it('rewrites /object/:id/social/activity/:messageId to the object page Activity tab', async () => {
+    const response = await proxy(
+      new NextRequest('https://waiviodev.com/object/justin-bellware/social/activity/abc123-0-0-1'),
+    );
+
+    const rewrite = new URL(response.headers.get('x-middleware-rewrite') ?? '');
+    expect(rewrite.pathname).toBe('/object/justin-bellware');
+    expect(rewrite.searchParams.get('tab')).toBe('social');
+    expect(rewrite.searchParams.get('social_sub')).toBe('activity');
+    expect(rewrite.searchParams.get('activity_message_id')).toBe('abc123-0-0-1');
+  });
+
+  it('keeps the plain Activity feed rewrite without a message id', async () => {
+    const response = await proxy(
+      new NextRequest('https://waiviodev.com/object/justin-bellware/social/activity'),
+    );
+
+    const rewrite = new URL(response.headers.get('x-middleware-rewrite') ?? '');
+    expect(rewrite.searchParams.get('social_sub')).toBe('activity');
+    expect(rewrite.searchParams.has('activity_message_id')).toBe(false);
+  });
+});

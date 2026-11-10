@@ -3708,5 +3708,9 @@
   "object_edit_affiliate_add": "Ajouter de nouveaux codes",
   "object_edit_affiliate_context": "Contexte",
   "object_edit_affiliate_frequency": "Fréquence d'utilisation :",
-  "object_edit_affiliate_remove": "Supprimer"
+  "object_edit_affiliate_remove": "Supprimer",
+  "object_activity_open_message_aria": "Ouvrir le message",
+  "object_activity_open_full_page": "Ouvrir la page complète",
+  "object_activity_back_to_all": "← Toute l'activité",
+  "messaging_action_copy_link": "Copier le lien"
 }

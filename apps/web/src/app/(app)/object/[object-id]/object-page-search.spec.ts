@@ -20,6 +20,8 @@ import {
   resolvePrimarySegmentForObjectPage,
   resolvePrimarySegmentFromObjectUrl,
   resolveSocialFeedSubFromObjectUrl,
+  resolveActivityMessageIdFromObjectUrl,
+  parseActivityMessageIdParam,
   resolveUpdateIdFromObjectUrl,
   sanitizeNestedStack,
 } from './object-page-search';
@@ -586,5 +588,27 @@ describe('resolveSocialFeedSubFromObjectUrl', () => {
     const sp = new URLSearchParams();
     sp.set('social_sub', 'threads');
     expect(resolveSocialFeedSubFromObjectUrl(objectId, base, sp)).toBe('threads');
+  });
+});
+
+describe('activity message permalink URL', () => {
+  const objectId = 'test-obj';
+  const base = `/object/${encodeURIComponent(objectId)}`;
+  const permalink = `${base}/social/activity/abc-0-0-1`;
+
+  it('parses the message id from the permalink pathname', () => {
+    expect(resolveActivityMessageIdFromObjectUrl(objectId, permalink)).toBe('abc-0-0-1');
+    expect(resolveActivityMessageIdFromObjectUrl(objectId, `${base}/social/activity`)).toBeNull();
+  });
+
+  it('keeps Social > Activity active on the permalink (preview modal URL)', () => {
+    const sp = new URLSearchParams();
+    expect(resolvePrimarySegmentFromObjectUrl(objectId, permalink, sp)).toBe('social');
+    expect(resolveSocialFeedSubFromObjectUrl(objectId, permalink, sp)).toBe('activity');
+  });
+
+  it('decodes the proxy-injected message id param', () => {
+    expect(parseActivityMessageIdParam({ activity_message_id: 'abc%2D0-0-1' })).toBe('abc-0-0-1');
+    expect(parseActivityMessageIdParam({})).toBeNull();
   });
 });

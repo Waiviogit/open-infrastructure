@@ -1,22 +1,10 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-
-import Image from 'next/image';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { MoreHorizontalIcon, ReplyIcon } from '@/icons';
-import {
-  getImagePathPost,
-  shouldUnoptimizeRemoteImage,
-} from '@/shared/presentation';
+import { ExternalLinkIcon, MoreHorizontalIcon, ReplyIcon } from '@/icons';
+import { HydrationSafeAnchor } from '@/shared/presentation/components/hydration-safe-anchor';
 import { OptimisticNavLink } from '@/shared/presentation/navigation/optimistic-nav-link';
 import { useMediaQuery } from '@/shared/presentation/layout/hooks/use-breakpoint';
 
@@ -27,11 +15,14 @@ import {
   messageCopyText,
   resolveMessageQuotePreview,
 } from '../domain/messaging.helpers';
+import { buildObjectActivityFeedPath } from '../domain/activity-message-permalink';
 import { resolveMessageActions } from '../domain/resolve-message-actions';
 import type { MessageItem } from '../domain/messaging.types';
+import { copyPermalinkToClipboard, isPlainPrimaryClick } from './copy-permalink';
 import { DeleteMessageModal } from './delete-message-modal';
 import { MessageActionsMenu } from './message-actions-menu';
 import { MessageActionsSheet } from './message-actions-sheet';
+import { MessageQuoteBlock } from './message-quote-block';
 
 const LONG_PRESS_MS = 500;
 
@@ -46,6 +37,12 @@ export type MessageRowProps = {
   onReply?: (message: MessageItem) => void;
   onEdit?: (message: MessageItem) => void;
   onDelete?: (message: MessageItem) => void | Promise<void>;
+  /** Activity permalink (`/object/:id/social/activity/:messageId`): open icon + "Copy link". */
+  permalinkHref?: string | null;
+  /** `false` hides the open icon but keeps "Copy link" (the permalink page itself). */
+  showPermalinkIcon?: boolean;
+  /** Plain click on the open icon (preview modal). Without it the icon navigates to the full page. */
+  onOpenPermalink?: (message: MessageItem) => void;
 };
 
 export function MessageRow({
@@ -58,6 +55,9 @@ export function MessageRow({
   onReply,
   onEdit,
   onDelete,
+  permalinkHref = null,
+  showPermalinkIcon = true,
+  onOpenPermalink,
 }: MessageRowProps) {
   const { t, locale } = useI18n();
   const coarsePointer = useMediaQuery('(pointer: coarse)');
@@ -66,7 +66,8 @@ export function MessageRow({
   const showDesktopChrome = canHover && finePointer && !coarsePointer;
   const outgoing = isOutgoingMessage(message, viewerUsername);
   const actions = resolveMessageActions(message, viewerUsername);
-  const hasAnyAction = actions.edit || actions.delete || actions.copy || actions.reply;
+  const hasAnyAction =
+    actions.edit || actions.delete || actions.copy || actions.reply || permalinkHref != null;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -77,10 +78,6 @@ export function MessageRow({
   const longPressMovedRef = useRef(false);
 
   const quote = resolveMessageQuotePreview(message, messagesById);
-  const quoteImageDisplayUrl = useMemo(
-    () => (quote?.imageUrl ? getImagePathPost(quote.imageUrl) : null),
-    [quote?.imageUrl],
-  );
   const editedLabel = t('messaging_edited');
 
   const timeCaption = activityCaption
@@ -126,6 +123,25 @@ export function MessageRow({
     setMenuOpen(false);
     setSheetOpen(false);
   }, [message]);
+
+  const handleCopyLink = useCallback(async () => {
+    setMenuOpen(false);
+    setSheetOpen(false);
+    if (permalinkHref) {
+      await copyPermalinkToClipboard(permalinkHref);
+    }
+  }, [permalinkHref]);
+
+  const handlePermalinkClick = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
+      if (!onOpenPermalink || !isPlainPrimaryClick(event)) {
+        return;
+      }
+      event.preventDefault();
+      onOpenPermalink(message);
+    },
+    [message, onOpenPermalink],
+  );
 
   const handleReply = useCallback(() => {
     setMenuOpen(false);
@@ -196,14 +212,28 @@ export function MessageRow({
     onCopy: actions.copy ? handleCopy : undefined,
     onEdit: onEdit ? handleEdit : undefined,
     onDelete: onDelete ? handleDeleteRequest : undefined,
+    onCopyLink: permalinkHref ? handleCopyLink : undefined,
   };
+
+  const permalinkAnchor = permalinkHref && showPermalinkIcon ? (
+    <HydrationSafeAnchor
+      href={permalinkHref}
+      className="rounded-btn p-1 text-fg-secondary hover:bg-surface-muted hover:text-fg"
+      aria-label={t('object_activity_open_message_aria')}
+      title={t('object_activity_open_message_aria')}
+      onClick={handlePermalinkClick}
+    >
+      <ExternalLinkIcon size={18} />
+    </HydrationSafeAnchor>
+  ) : null;
 
   const desktopActions =
     showDesktopChrome && hasAnyAction ? (
       <div
         ref={menuRef}
-        className="flex shrink-0 items-start gap-0.5 pt-1 opacity-0 transition-opacity group-hover/message:opacity-100"
+        className="flex shrink-0 items-start gap-0.5 pt-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/message:opacity-100"
       >
+        {permalinkAnchor}
         {actions.reply && onReply ? (
           <button
             type="button"
@@ -238,6 +268,13 @@ export function MessageRow({
       </div>
     ) : null;
 
+  /** Touch has no hover chrome — keep the open icon visible so the permalink is discoverable. */
+  const touchPermalink =
+    !showDesktopChrome && permalinkAnchor ? (
+      <div className="flex shrink-0 items-start pt-1">{permalinkAnchor}</div>
+    ) : null;
+  const sideActions = desktopActions ?? touchPermalink;
+
   return (
     <>
       <div
@@ -250,14 +287,14 @@ export function MessageRow({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        {outgoing ? desktopActions : null}
+        {outgoing ? sideActions : null}
 
         <div className={bubbleClass}>
           {authorNode}
           {message.source_object ? (
             <p className="mb-1 text-caption">
               <OptimisticNavLink
-                href={`/object/${encodeURIComponent(message.source_object.object_id)}/social/activity`}
+                href={buildObjectActivityFeedPath(message.source_object.object_id)}
                 className="text-link hover:underline"
               >
                 {t('object_activity_source_from').replace(
@@ -267,40 +304,7 @@ export function MessageRow({
               </OptimisticNavLink>
             </p>
           ) : null}
-          {quote ? (
-            <div
-              className={[
-                'mb-2 border-s-2 ps-2 text-caption',
-                quote.deleted ? 'border-border text-muted' : 'border-accent text-muted',
-              ].join(' ')}
-            >
-              {quote.deleted ? (
-                <span>{t('messaging_reply_deleted')}</span>
-              ) : quoteImageDisplayUrl ? (
-                <div className="flex items-start gap-2">
-                  <Image
-                    src={quoteImageDisplayUrl}
-                    alt=""
-                    width={160}
-                    height={120}
-                    className="h-12 w-auto shrink-0"
-                    unoptimized={shouldUnoptimizeRemoteImage(quoteImageDisplayUrl)}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <span className="font-weight-label text-fg-secondary">{quote.author}</span>
-                    {quote.body.trim().length > 0 ? (
-                      <p className="line-clamp-2 break-words">{quote.body}</p>
-                    ) : null}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <span className="font-weight-label text-fg-secondary">{quote.author}</span>
-                  <p className="line-clamp-2 break-words">{quote.body}</p>
-                </>
-              )}
-            </div>
-          ) : null}
+          {quote ? <MessageQuoteBlock quote={quote} /> : null}
           {bodyNode}
           <p className="mt-1 text-caption text-muted">{timeCaption}</p>
           {activityCaption && (message.duplicate_count ?? 1) > 1 ? (
@@ -313,7 +317,7 @@ export function MessageRow({
           ) : null}
         </div>
 
-        {!outgoing ? desktopActions : null}
+        {!outgoing ? sideActions : null}
       </div>
 
       <MessageActionsSheet

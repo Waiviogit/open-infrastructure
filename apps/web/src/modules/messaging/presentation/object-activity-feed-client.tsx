@@ -176,6 +176,7 @@ export function ObjectActivityFeedClient({
       <ObjectActivityFeedList
         messages={items}
         viewerUsername={viewerUsername}
+        contextObjectId={objectId}
         loadingMore={loadingMore}
         sentinelRef={sentinelRef}
         onReply={handleReply}

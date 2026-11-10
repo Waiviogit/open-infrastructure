@@ -3708,5 +3708,9 @@
   "object_edit_affiliate_add": "Voeg nuwe kodes by",
   "object_edit_affiliate_context": "Konteks",
   "object_edit_affiliate_frequency": "Gebruikfrekwensie:",
-  "object_edit_affiliate_remove": "Verwyder"
+  "object_edit_affiliate_remove": "Verwyder",
+  "object_activity_open_message_aria": "Maak boodskap oop",
+  "object_activity_open_full_page": "Maak volle bladsy oop",
+  "object_activity_back_to_all": "← Alle aktiwiteit",
+  "messaging_action_copy_link": "Kopieer skakel"
 }

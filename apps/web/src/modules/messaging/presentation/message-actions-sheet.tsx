@@ -14,6 +14,7 @@ export type MessageActionsSheetProps = {
   onDelete?: () => void;
   onReply?: () => void;
   onCopy?: () => void;
+  onCopyLink?: () => void;
 };
 
 export function MessageActionsSheet({
@@ -24,6 +25,7 @@ export function MessageActionsSheet({
   onDelete,
   onReply,
   onCopy,
+  onCopyLink,
 }: MessageActionsSheetProps) {
   const { t } = useI18n();
 
@@ -50,6 +52,7 @@ export function MessageActionsSheet({
           actions={actions}
           onReply={() => run(onReply)}
           onCopy={() => run(onCopy)}
+          onCopyLink={onCopyLink ? () => run(onCopyLink) : undefined}
           onEdit={() => run(onEdit)}
           onDelete={() => run(onDelete)}
           className="w-full border-0 shadow-none"

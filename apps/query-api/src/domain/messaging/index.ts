@@ -25,3 +25,6 @@ export { GetMemoPublicKeyEndpoint } from './get-memo-public-key.endpoint';
 export type { MemoPublicKeyResponseDto } from './get-memo-public-key.endpoint';
 export { CheckActivityDuplicateEndpoint } from './check-activity-duplicate.endpoint';
 export type { ActivityDedupCheckDto } from './check-activity-duplicate.endpoint';
+export { GetObjectActivityMessageEndpoint } from './get-object-activity-message.endpoint';
+export type { GetObjectActivityMessageParams } from './get-object-activity-message.endpoint';
+export type { MessageDto } from './message-projection';

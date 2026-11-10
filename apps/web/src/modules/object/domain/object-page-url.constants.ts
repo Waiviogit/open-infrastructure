@@ -274,6 +274,12 @@ export function buildObjectSocialSubPath(
   return sub === 'posts' ? base : `${base}/${sub}`;
 }
 
+/**
+ * Internal query param when proxy rewrites `/object/:id/social/activity/:messageId`
+ * (permalink builder: `buildObjectActivityMessagePath` in `@/modules/messaging`).
+ */
+export const OBJECT_PAGE_ACTIVITY_MESSAGE_ID_PARAM = 'activity_message_id';
+
 export function buildObjectExpertsPath(objectId: string): string {
   return `/object/${encodeURIComponent(objectId)}/experts`;
 }

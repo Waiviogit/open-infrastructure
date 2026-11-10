@@ -890,6 +890,41 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: 'get',
+  path: '/query/v1/objects/{objectId}/channel/messages/{messageId}',
+  tags: [queryApiOpenApiTags.objects],
+  summary: 'Single object activity message',
+  description:
+    'One activity message by `message_id` (web permalink `/object/:objectId/social/activity/:messageId`). Visible when the message is in the object channel or links the object, and its author is not muted by governance or the viewer. Duplicates are returned with `duplicate_of` set.',
+  request: {
+    params: z.object({
+      objectId: z
+        .string()
+        .min(1)
+        .openapi({ param: { name: 'objectId', in: 'path', required: true } }),
+      messageId: z
+        .string()
+        .min(1)
+        .openapi({ param: { name: 'messageId', in: 'path', required: true } }),
+    }),
+    headers: z.object({
+      'x-governance-object-id': z.string().optional(),
+      'x-viewer': z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Activity message (same shape as an item of the object channel message feed).',
+      content: { 'application/json': { schema: z.object({}).passthrough() } },
+    },
+    404: {
+      description: 'Object or message not found, not linked to the object, or author muted.',
+      content: { 'application/json': { schema: notFoundSchema } },
+    },
+  },
+});
+
 const instacartLinkResponseSchema = registry.register(
   'InstacartRecipeLinkResponse',
   z.object({

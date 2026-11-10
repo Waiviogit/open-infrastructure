@@ -352,6 +352,38 @@ export class MessagingRepository {
     }));
   }
 
+  /**
+   * One activity message visible on `objectId` — same channel/link rule as
+   * {@link listObjectActivityMessages}. Duplicates are returned too (a direct link may point at one).
+   */
+  async findObjectActivityMessage(
+    objectId: string,
+    messageId: string,
+    excludedAuthors: readonly string[],
+  ): Promise<ObjectActivityMessageRow | undefined> {
+    const duplicateCount = sql<number>`(
+      SELECT COUNT(*)::int
+      FROM messages d
+      WHERE d.dup_group_id = m.dup_group_id
+    )`.as('duplicate_count');
+
+    let query = this.db
+      .selectFrom('messages as m')
+      .innerJoin('channels as c', 'c.channel_id', 'm.channel_id')
+      .selectAll('m')
+      .select('c.object_id as channel_object_id')
+      .select(duplicateCount)
+      .where('m.message_id', '=', messageId)
+      .where('c.kind', '=', 'object')
+      .where(sql<boolean>`(c.object_id = ${objectId} OR ${objectId} = ANY(m.linked_object_ids))`);
+
+    if (excludedAuthors.length > 0) {
+      query = query.where('m.author', 'not in', excludedAuthors as string[]);
+    }
+
+    return query.executeTakeFirst();
+  }
+
   async listObjectActivityMessages(
     objectId: string,
     excludedAuthors: readonly string[],

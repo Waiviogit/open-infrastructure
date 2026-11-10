@@ -26,6 +26,14 @@ export {
   getObjectChannelQuery,
   getObjectChannelMessagesQuery,
 } from './application/queries/get-object-channel-messages.query';
+export { getObjectActivityMessageQuery } from './application/queries/get-object-activity-message.query';
+export {
+  buildObjectActivityFeedPath,
+  buildObjectActivityMessagePath,
+  resolveActivityMessageHref,
+  isObjectActivityMessagePath,
+} from './domain/activity-message-permalink';
+export { buildActivityMessageExcerpt } from './domain/activity-message-excerpt';
 
 export { MessagingInboxClient } from './presentation/messaging-inbox-client';
 export { MessagingChannelListRail } from './presentation/messaging-channel-list-rail';

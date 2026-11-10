@@ -48,6 +48,8 @@ import { ObjectPageUpdatesFeedSection } from './object-page-updates-feed-section
 import { ObjectPageUpdateDetailSection } from './object-page-update-detail-section.server';
 import { ObjectPagePostsFeedSection } from './object-page-posts-feed-section.server';
 import { ObjectPageActivityFeedSection } from './object-page-activity-section.server';
+import { ObjectPageActivityMessageSection } from './object-page-activity-message-section.server';
+import { buildActivityMessageExcerpt, getObjectActivityMessageQuery } from '@/modules/messaging';
 import { ObjectThreadsFeedList } from './object-threads-feed-list';
 import { FeedPostsLoadingSkeleton } from '@/modules/feed';
 import {
@@ -66,6 +68,7 @@ import {
   OBJECT_PAGE_PRIMARY_TAB_PARAM,
   OBJECT_PAGE_SOCIAL_SUB_PARAM,
   OBJECT_PAGE_UPDATE_ID_PARAM,
+  parseActivityMessageIdParam,
   parseFollowersSubTypeParam,
   parseOwnershipSubTypeParam,
   parseSocialFeedSubParam,
@@ -217,6 +220,7 @@ export async function generateMetadata({
 
   const tab = firstSearchParam(sp, OBJECT_PAGE_PRIMARY_TAB_PARAM)?.trim();
   let title = `${baseTitle} · ${objectLabel}`;
+  let description = model.seo?.description ?? model.tagline;
   if (tab === 'updates') {
     const updatesLabel =
       typeof messages.object_updates_title === 'string'
@@ -251,6 +255,14 @@ export async function generateMetadata({
           ? messages.object_social_activity
           : 'Activity';
       title = `${baseTitle} · ${activityLabel}`;
+      const activityMessageId = parseActivityMessageIdParam(sp);
+      const activityMessage = activityMessageId
+        ? await getObjectActivityMessageQuery(objectId, activityMessageId, null)
+        : null;
+      if (activityMessage) {
+        title = `${activityMessage.author} · ${baseTitle} · ${activityLabel}`;
+        description = buildActivityMessageExcerpt(activityMessage.body) ?? description;
+      }
     }
   } else if (tab === 'messages') {
     const activityLabel =
@@ -325,7 +337,7 @@ export async function generateMetadata({
   return buildObjectMetadata({
     objectId: model.objectId,
     title,
-    description: model.seo?.description ?? model.tagline,
+    description,
     canonicalUrl: model.seo?.canonical_url ?? null,
     avatarUrl: model.avatarUrl,
     coverImageUrl: model.coverImageUrl,
@@ -566,14 +578,25 @@ async function ObjectDetailPageContent({ params, searchParams }: ObjectDetailPag
       />
     ) : null;
 
+  const activityMessageId = parseActivityMessageIdParam(sp);
+
   const activityFeedSlot =
     onSocialTab && socialFeedSub === 'activity' ? (
-      <ObjectPageActivityFeedSection
-        key="object-activity-feed"
-        objectId={objectId}
-        objectName={model.title}
-        viewerUsername={viewerUsername}
-      />
+      activityMessageId ? (
+        <ObjectPageActivityMessageSection
+          key="object-activity-message"
+          objectId={objectId}
+          messageId={activityMessageId}
+          viewerUsername={viewerUsername}
+        />
+      ) : (
+        <ObjectPageActivityFeedSection
+          key="object-activity-feed"
+          objectId={objectId}
+          objectName={model.title}
+          viewerUsername={viewerUsername}
+        />
+      )
     ) : null;
 
   return (

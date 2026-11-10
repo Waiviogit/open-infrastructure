@@ -74,6 +74,7 @@ import {
 } from '../domain/feed';
 import {
   CheckActivityDuplicateEndpoint,
+  GetObjectActivityMessageEndpoint,
   GetObjectChannelEndpoint,
   GetObjectChannelMessagesEndpoint,
 } from '../domain/messaging';
@@ -85,6 +86,7 @@ import {
 } from '../domain/messaging/schemas/messaging.schema';
 import type {
   ActivityDedupCheckDto,
+  MessageDto,
   MessageHistoryResponseDto,
 } from '../domain/messaging';
 import type { ChannelDetailDto } from '../domain/messaging/get-channel-by-id.endpoint';
@@ -123,6 +125,7 @@ export class ObjectsController {
     private readonly getObjectChannelEndpoint: GetObjectChannelEndpoint,
     private readonly getObjectChannelMessagesEndpoint: GetObjectChannelMessagesEndpoint,
     private readonly checkActivityDuplicate: CheckActivityDuplicateEndpoint,
+    private readonly getObjectActivityMessage: GetObjectActivityMessageEndpoint,
     private readonly getInstacartRecipeLink: GetInstacartRecipeLinkEndpoint,
     private readonly countryResolver: CountryResolverService,
   ) {}
@@ -542,6 +545,29 @@ export class ObjectsController {
     );
     if (!result) {
       throw new NotFoundException(`Object channel not found: ${objectId}`);
+    }
+    return result;
+  }
+
+  @Get(':objectId/channel/messages/:messageId')
+  async getObjectActivityMessageById(
+    @Param('objectId') rawObjectId: string,
+    @Param('messageId') rawMessageId: string,
+    @ReqGovernanceObjectId() governanceObjectIdFromHeader: string | undefined,
+    @ReqViewer() viewer: string | undefined,
+  ): Promise<MessageDto> {
+    const objectId = decodeURIComponent(rawObjectId);
+    const messageId = decodeURIComponent(rawMessageId);
+    const result = await this.getObjectActivityMessage.execute({
+      objectId,
+      messageId,
+      governanceObjectIdFromHeader,
+      viewerAccount: viewer,
+    });
+    if (!result) {
+      throw new NotFoundException(
+        `Activity message not found: ${messageId} on object ${objectId}`,
+      );
     }
     return result;
   }

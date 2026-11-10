@@ -82,6 +82,7 @@ import type {
   GetObjectChannelEndpoint,
   GetObjectChannelMessagesEndpoint,
 } from '../domain/messaging/get-object-channel.endpoint';
+import type { GetObjectActivityMessageEndpoint } from '../domain/messaging/get-object-activity-message.endpoint';
 import type { GetFollowedObjectsMessagesEndpoint } from '../domain/messaging/get-followed-objects-messages.endpoint';
 import type { GetFollowedObjectsThreadsFeedEndpoint } from '../domain/feed/get-followed-objects-threads-feed.endpoint';
 import type { GetFollowedObjectsUpdatesFeedEndpoint } from '../domain/object-updates/get-followed-objects-updates-feed.endpoint';
@@ -196,6 +197,7 @@ export interface McpToolDeps {
   getChannelMessages: GetChannelMessagesEndpoint;
   getObjectChannel: GetObjectChannelEndpoint;
   getObjectChannelMessages: GetObjectChannelMessagesEndpoint;
+  getObjectActivityMessage: GetObjectActivityMessageEndpoint;
   getFollowedObjectsMessages: GetFollowedObjectsMessagesEndpoint;
   getFollowedObjectsThreads: GetFollowedObjectsThreadsFeedEndpoint;
   getFollowedObjectsUpdates: GetFollowedObjectsUpdatesFeedEndpoint;

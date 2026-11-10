@@ -7,6 +7,7 @@ import type {
   ChannelDetail,
   ChannelListPage,
   MessageHistoryPage,
+  MessageItem,
 } from '../domain/messaging.types';
 
 function viewerHeaders(viewer: string | null | undefined): Record<string, string> {
@@ -100,6 +101,18 @@ export async function fetchObjectChannelMessages(
     method: 'POST',
     headers: viewerHeaders(viewer),
     body: JSON.stringify(body),
+    cacheTags: [queryApiCacheTags.objectChannelMessages(objectId)],
+  });
+}
+
+export async function fetchObjectActivityMessage(
+  objectId: string,
+  messageId: string,
+  viewer?: string | null,
+): Promise<MessageItem | null> {
+  const path = `/query/v1/objects/${encodeURIComponent(objectId)}/channel/messages/${encodeURIComponent(messageId)}`;
+  return queryApiFetch<MessageItem>(path, {
+    headers: viewerHeaders(viewer),
     cacheTags: [queryApiCacheTags.objectChannelMessages(objectId)],
   });
 }

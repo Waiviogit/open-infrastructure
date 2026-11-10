@@ -1,11 +1,14 @@
 /** @jest-environment jsdom */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import { I18nProvider } from '@/i18n/providers/i18n-provider';
 import type { Messages } from '@/i18n/types';
 
+const mockPushInstantUrl = jest.fn();
+
 jest.mock('@/shared/presentation/navigation', () => ({
+  pushInstantUrl: (href: string) => mockPushInstantUrl(href),
   OptimisticNavLink: ({
     href,
     children,
@@ -24,8 +27,25 @@ jest.mock('@/shared/presentation/navigation', () => ({
 jest.mock('@/shared/presentation', () => ({
   AppModal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
     open ? <div>{children}</div> : null,
-  ModalShell: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div>{children}</div> : null,
+  ModalShellCloseButton: () => null,
+  ModalShell: ({
+    open,
+    children,
+    header,
+    aside,
+  }: {
+    open: boolean;
+    children: React.ReactNode;
+    header?: React.ReactNode;
+    aside?: React.ReactNode;
+  }) =>
+    open ? (
+      <div>
+        {header}
+        {aside}
+        {children}
+      </div>
+    ) : null,
   SocialEmbedHtml: ({ html, className }: { html: string; className?: string }) => (
     <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
   ),
@@ -45,6 +65,9 @@ const messages = {
   object_activity_encrypted_unsupported: 'Encrypted messages are not supported on object activity.',
   object_activity_original_date_caption: 'Originally {datetime}',
   messaging_loading_older: 'Loading older messages...',
+  object_activity_open_message_aria: 'Open message',
+  object_activity_open_full_page: 'Open full page',
+  messaging_action_copy_link: 'Copy link',
 } as Messages;
 
 function renderList(items: MessageItem[]) {
@@ -190,5 +213,116 @@ describe('ObjectActivityFeedList', () => {
     renderList([baseMessage]);
 
     expect(screen.queryByText(/Originally/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('ObjectActivityFeedList permalink', () => {
+  function renderWithObject() {
+    return render(
+      <I18nProvider locale="en-US" messages={messages}>
+        <ObjectActivityFeedList
+          messages={[baseMessage]}
+          viewerUsername="alice"
+          contextObjectId="justin-bellware"
+        />
+      </I18nProvider>,
+    );
+  }
+
+  beforeEach(() => {
+    mockPushInstantUrl.mockClear();
+  });
+
+  it('links the open icon to the message permalink', () => {
+    renderWithObject();
+
+    expect(screen.getByRole('link', { name: 'Open message' })).toHaveAttribute(
+      'href',
+      '/object/justin-bellware/social/activity/m1',
+    );
+  });
+
+  it('opens the preview modal and pushes the permalink on a plain click', () => {
+    renderWithObject();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Open message' }));
+
+    expect(mockPushInstantUrl).toHaveBeenCalledWith('/object/justin-bellware/social/activity/m1');
+    expect(screen.getAllByRole('link', { name: 'Open full page' })[0]).toHaveAttribute(
+      'href',
+      '/object/justin-bellware/social/activity/m1',
+    );
+  });
+
+  it('leaves modified clicks to the browser (new tab)', () => {
+    renderWithObject();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Open message' }), { ctrlKey: true });
+
+    expect(mockPushInstantUrl).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: 'Open full page' })).not.toBeInTheDocument();
+  });
+
+  it('has no permalink without an object', () => {
+    renderList([baseMessage]);
+
+    expect(screen.queryByRole('link', { name: 'Open message' })).not.toBeInTheDocument();
+  });
+});
+
+describe('ObjectActivityFeedList reply quote', () => {
+  const parent: MessageItem = {
+    ...baseMessage,
+    message_id: 'p1',
+    author: 'insta.agent',
+    body: 'Original reel ![cover](https://images.example.com/cover.jpg)',
+  };
+  const reply: MessageItem = {
+    ...baseMessage,
+    message_id: 'r1',
+    author: 'bob',
+    body: 'great reel',
+    reply_to: 'p1',
+    created_at_unix: 1_700_000_100,
+  };
+
+  beforeEach(() => {
+    mockPushInstantUrl.mockClear();
+  });
+
+  it('shows the quoted parent in the preview modal', () => {
+    render(
+      <I18nProvider locale="en-US" messages={messages}>
+        <ObjectActivityFeedList
+          messages={[reply, parent]}
+          viewerUsername="alice"
+          contextObjectId="justin-bellware"
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getAllByRole('link', { name: 'Open message' })[0]);
+
+    // Feed row + modal both quote the parent.
+    // Quote blocks (feed row + modal), not the parent row's own body.
+    expect(screen.getAllByText('Original reel', { selector: 'p.line-clamp-2' })).toHaveLength(2);
+  });
+
+  it('resolves the quote from relatedMessages without rendering the parent row', () => {
+    const { container } = render(
+      <I18nProvider locale="en-US" messages={messages}>
+        <ObjectActivityFeedList
+          messages={[reply]}
+          relatedMessages={[parent]}
+          viewerUsername="alice"
+          contextObjectId="justin-bellware"
+          showOpenPermalink={false}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByText('Original reel')).toBeInTheDocument();
+    expect(container.querySelector('img[src*="cover.jpg"]')).not.toBeNull();
+    expect(container.querySelectorAll('[class*="group/message"]')).toHaveLength(1);
   });
 });

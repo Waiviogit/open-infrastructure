@@ -16,6 +16,7 @@ import {
   OBJECT_PAGE_FIELD_REFERENCE_TYPE_PARAM,
   OBJECT_PAGE_FIELD_REFERENCES_PATH_SEGMENT,
   OBJECT_PAGE_UPDATE_ID_PARAM,
+  OBJECT_PAGE_ACTIVITY_MESSAGE_ID_PARAM,
   OBJECT_PAGE_PATH_TAB_SEGMENTS,
   OBJECT_PAGE_VIEW_PATH_PARAM,
   OBJECT_PAGE_SOCIAL_SUB_PARAM,
@@ -130,6 +131,9 @@ export function resolveSocialFeedSubFromObjectUrl(
   pathname: string,
   searchParams: URLSearchParams,
 ): SocialFeedSubType {
+  if (resolveActivityMessageIdFromObjectUrl(objectId, pathname) != null) {
+    return 'activity';
+  }
   const base = `/object/${encodeURIComponent(objectId)}`;
   const path = normalizePathname(pathname);
   const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -227,6 +231,9 @@ export function resolvePrimarySegmentFromObjectUrl(
   if (path === `${base}/updates` || path.startsWith(updatesDetailPrefix)) {
     return 'updates';
   }
+  if (resolveActivityMessageIdFromObjectUrl(objectId, pathname) != null) {
+    return 'social';
+  }
   const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   if (
     path === `${base}/social` ||
@@ -265,6 +272,44 @@ export {
   resolveFieldReferenceTypeFromObjectUrl,
   resolveFieldReferenceTypeForObjectPage,
 };
+
+/** Decoded `?activity_message_id=` injected by proxy for `/object/:id/social/activity/:messageId`. */
+export function parseActivityMessageIdParam(
+  sp: Record<string, string | string[] | undefined>,
+): string | null {
+  return decodePathSegment(firstSearchParam(sp, OBJECT_PAGE_ACTIVITY_MESSAGE_ID_PARAM)?.trim());
+}
+
+/**
+ * Parses the activity message id from `/object/:id/social/activity/:messageId`
+ * (full page, or the preview modal pushed over the Activity feed).
+ */
+export function resolveActivityMessageIdFromObjectUrl(
+  objectId: string,
+  pathname: string,
+): string | null {
+  const prefix = `/object/${encodeURIComponent(objectId)}/social/activity/`;
+  const path = normalizePathname(pathname);
+  if (!path.startsWith(prefix)) {
+    return null;
+  }
+  const encoded = path.slice(prefix.length);
+  if (encoded.includes('/')) {
+    return null;
+  }
+  return decodePathSegment(encoded);
+}
+
+function decodePathSegment(encoded: string | undefined): string | null {
+  if (!encoded) {
+    return null;
+  }
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
+}
 
 /**
  * Parses the update id from `/object/:id/updates/:updateId`.

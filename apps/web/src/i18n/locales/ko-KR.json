@@ -2987,5 +2987,9 @@
   "object_edit_affiliate_add": "새 코드 추가",
   "object_edit_affiliate_context": "컨텍스트",
   "object_edit_affiliate_frequency": "사용 빈도:",
-  "object_edit_affiliate_remove": "삭제"
+  "object_edit_affiliate_remove": "삭제",
+  "object_activity_open_message_aria": "메시지 열기",
+  "object_activity_open_full_page": "전체 페이지 열기",
+  "object_activity_back_to_all": "← 모든 활동",
+  "messaging_action_copy_link": "링크 복사"
 }

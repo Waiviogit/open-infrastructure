@@ -158,6 +158,37 @@ export function registerChannelTools(server: McpServer, deps: McpToolDeps): void
   );
 
   server.registerTool(
+    'get_object_activity_message',
+    {
+      description: catalogDescription('get_object_activity_message'),
+      inputSchema: withMcpLocaleContext(
+        z.object({
+          object_id: z.string().min(1),
+          message_id: z
+            .string()
+            .min(1)
+            .describe('Activity message id (`message_id` from get_object_channel_messages)'),
+        }),
+      ),
+    },
+    async (args) => {
+      const ctx = pickMcpContext(args);
+      const result = await deps.getObjectActivityMessage.execute({
+        objectId: args.object_id,
+        messageId: args.message_id,
+        governanceObjectIdFromHeader: ctx.governanceObjectIdFromHeader,
+        viewerAccount: ctx.viewerAccount,
+      });
+      if (!result) {
+        return toolError(
+          `Activity message not found: ${args.message_id} on object ${args.object_id}`,
+        );
+      }
+      return jsonToolResult(result);
+    },
+  );
+
+  server.registerTool(
     'check_object_activity_duplicate',
     {
       description: catalogDescription('check_object_activity_duplicate'),

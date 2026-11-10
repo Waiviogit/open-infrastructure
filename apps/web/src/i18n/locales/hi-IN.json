@@ -3708,5 +3708,9 @@
   "object_edit_affiliate_add": "नए कोड जोड़ें",
   "object_edit_affiliate_context": "संदर्भ",
   "object_edit_affiliate_frequency": "उपयोग की आवृत्ति:",
-  "object_edit_affiliate_remove": "हटाएँ"
+  "object_edit_affiliate_remove": "हटाएँ",
+  "object_activity_open_message_aria": "संदेश खोलें",
+  "object_activity_open_full_page": "पूरा पेज खोलें",
+  "object_activity_back_to_all": "← सभी गतिविधि",
+  "messaging_action_copy_link": "लिंक कॉपी करें"
 }

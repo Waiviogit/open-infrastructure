@@ -126,6 +126,7 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 | `get_channel_messages` | `POST /query/v1/channels/:id/messages` | [osl-messaging.md](osl-messaging.md) |
 | `get_object_channel` | `GET /query/v1/objects/:object_id/channel` | [osl-messaging.md](osl-messaging.md) |
 | `get_object_channel_messages` | `POST /query/v1/objects/:object_id/channel/messages` | [osl-messaging.md](osl-messaging.md) |
+| `get_object_activity_message` | `GET /query/v1/objects/:object_id/channel/messages/:message_id` | [osl-messaging.md](osl-messaging.md) |
 | `get_followed_objects_messages` | `POST /query/v1/users/:name/following-objects/messages` | [osl-messaging.md](osl-messaging.md) |
 | `get_followed_objects_threads` | `POST /query/v1/users/:name/following-objects/threads` | [followed-objects-feeds.md](followed-objects-feeds.md) |
 | `get_followed_objects_updates` | `POST /query/v1/users/:name/following-objects/updates` | [followed-objects-feeds.md](followed-objects-feeds.md) |
