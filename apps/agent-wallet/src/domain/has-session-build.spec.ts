@@ -107,6 +107,34 @@ describe('HasSessionService ODL build helpers', () => {
     expect(result.bytes).toBeGreaterThan(8192);
   });
 
+  it('buildUpdateVote returns update_vote op signed by the normalized voter', () => {
+    const result = service.buildUpdateVote({
+      objectId: ' obj-1 ',
+      updateId: ' upd-1 ',
+      voter: '@Alice',
+      vote: 'against',
+    });
+
+    expect(result.opsCount).toBe(1);
+    const op = result.ops[0] as {
+      id: string;
+      json: string;
+      required_posting_auths: string[];
+    };
+    expect(op.id).toBe('odl-testnet');
+    expect(op.required_posting_auths).toEqual(['alice']);
+    const envelope = JSON.parse(op.json) as {
+      events: Array<{ action: string; payload: Record<string, unknown> }>;
+    };
+    expect(envelope.events).toHaveLength(1);
+    expect(envelope.events[0]?.action).toBe('update_vote');
+    expect(envelope.events[0]?.payload).toEqual({
+      update_id: 'upd-1',
+      object_id: 'obj-1',
+      vote: 'against',
+    });
+  });
+
   it('buildBatchImport returns batch_import op for account and cid', () => {
     const result = service.buildBatchImport({
       account: '@Alice',

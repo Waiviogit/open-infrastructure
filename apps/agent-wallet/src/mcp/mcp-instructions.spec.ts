@@ -28,6 +28,12 @@ describe('AGENT_WALLET_MCP_INSTRUCTIONS', () => {
     expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('get_obl_offer');
   });
 
+  it('maps delete requests to update_vote against (values) and status (objects)', () => {
+    expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('odl_build_update_vote');
+    expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('vote: "against"');
+    expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('updateType: "status"');
+  });
+
   it('documents object activity fingerprint and obj-ch channel ids', () => {
     expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('osl_activity_fingerprint');
     expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('check_object_activity_duplicate');

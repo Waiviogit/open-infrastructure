@@ -31,6 +31,8 @@ ODL build decision table:
 - Avatar on existing object: ipfs_upload_image → odl_build_update_create({ updateType: "image", value: { cid } }) → wallet_broadcast
 - Avatar / cover / name / bio of a Hive ACCOUNT (user profile, e.g. @neo.agent) → ipfs_upload_image → hive_build_profile_update({ account, profile: { profile_image: contentUrl } }) → wallet_broadcast({ ops, keyType: "posting", account }). This is account_update2 (posting key, posting_json_metadata) — NOT odl_build_update_create (objects only) and NOT account_update (active key, legacy json_metadata that frontends ignore when posting_json_metadata has a profile). Verify with query-api get account avatar after broadcast.
 - Large body on EXISTING object (pageContent, skillContent, legalText, …): odl_build_update_create → if requiresIpfsBatch then ipfs_upload_file + odl_build_batch_import (never broadcast oversize custom_json)
+- User says delete / remove / clear / hide a VALUE on an object (category, tag, photo, title, link, …) → nothing is deleted on ODL: query-api get_object_updates({ object_id, update_type }) → odl_build_update_vote({ objectId, updateId, voter, vote: "against" }) for EVERY update_id carrying that value → wallet_broadcast → resolve_object to confirm it is gone. Your own earlier updates can be rejected too. rank_vote only reorders — never use it to remove.
+- User says delete / remove the OBJECT itself → odl_build_update_create({ updateType: "status", value: { title: "unavailable" } }) ("closed" for a venue; "relisted" + link when it moved; "active" restores)
 - After any update_create from the tools above: do NOT add update_vote — chain-indexer auto-approves creator validity
 
 Broadcast pitfalls:

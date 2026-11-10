@@ -17,6 +17,11 @@ Find a solution — OBL first (provider, site, or service for any task: account 
 A VIP ticket, invite code, or voucher from the user is redeemed only through the OBL offer that issued it — never on a site found on the web.
 Detail: odl/knowledge-api-routing/SKILL.md § Find a solution: OBL first.
 
+"Delete" / "remove" on an object — nothing on ODL is deleted, and there is no delete or retract op:
+- A field value (category, tag, photo, title, link, …) → update_vote "against" on every update_id that added it (query-api get_object_updates → agent-wallet odl_build_update_vote). rank_vote only reorders; it never hides.
+- The object itself → update_create of type "status" with title "unavailable" (or "closed" for a venue, "relisted" + link when it moved).
+Detail: odl/object-remove/SKILL.md.
+
 Doc taxonomy:
 - skill — procedural playbooks (odl/<name>/SKILL.md)
 - playbook — per-object-type create reference (odl/object-create/references/); reach via get_object_create_playbook or list_files({ type: "playbook" }), not list_files({ type: "skill" })
@@ -33,6 +38,7 @@ Key paths:
 - docs/getting-started.md — local dev (Docker, migrate, pnpm nx serve)
 - odl/hive-account-signup/SKILL.md — new Hive account (OBL VIP ticket redeem first, then public providers)
 - odl/hive-blockchain-broadcast/SKILL.md — sign and broadcast chain ops
+- odl/object-remove/SKILL.md — user says delete/remove: reject the update (field value) or set status (object)
 - odl/query-api-mcp-routing/SKILL.md — live-data query-api MCP tools (incl. OBL reads)
 - odl/obl-offers-contracts/SKILL.md — OBL discover/publish/sign contracts
 - odl/obl-ledger/SKILL.md — OBL invoices, payments, balances

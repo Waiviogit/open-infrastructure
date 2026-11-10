@@ -30,6 +30,7 @@ const REQUIRED_TOOLS = [
   'odl_build_object_create',
   'odl_build_update_create',
   'odl_build_gallery_item',
+  'odl_build_update_vote',
   'has_broadcast',
   'has_broadcast_status',
   'hive_build_post',

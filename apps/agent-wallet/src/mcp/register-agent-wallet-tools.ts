@@ -332,6 +332,28 @@ export function registerAgentWalletTools(
   );
 
   server.registerTool(
+    'odl_build_update_vote',
+    {
+      description:
+        'Build an update_vote custom_json op on an EXISTING update. This is how a field value is "deleted" or "removed" on ODL: vote against the update_id that added it (one op per update_id; get ids from query-api get_object_updates). vote "remove" clears your earlier vote; "for" restores. Your vote hides the value only when you are decisive (exclusive owner, admin, or trusted) or community weight goes negative. Not for your brand-new update_create in the same job. Ranking order is rank_vote, not this.',
+      inputSchema: z.object({
+        objectId: z.string().min(1).describe('Object that owns the update'),
+        updateId: z.string().min(1).describe('update_id of the existing field value'),
+        voter: z.string().min(1).describe('Hive account that signs the vote'),
+        vote: z.enum(['for', 'against', 'remove']),
+      }),
+    },
+    async (args) => {
+      try {
+        const result = deps.hasSession.buildUpdateVote(args);
+        return jsonToolResult(result);
+      } catch (error) {
+        return toolError((error as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
     'odl_build_batch_import',
     {
       description:

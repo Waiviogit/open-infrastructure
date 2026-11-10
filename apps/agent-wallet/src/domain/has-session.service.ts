@@ -13,9 +13,11 @@ import {
   buildObjectCreateEnvelope,
   buildOdlBatchImportOp,
   buildOdlEnvelopeJson,
+  buildOdlUpdateVoteOp,
   buildValidatedUpdateCreateOp,
   exceedsHiveCustomJsonLimit,
   utf8ByteLength,
+  type OdlUpdateVoteValue,
 } from '@opden-data-layer/hive-broadcast';
 import qrcode from 'qrcode';
 
@@ -343,6 +345,26 @@ export class HasSessionService implements OnModuleInit, OnModuleDestroy {
       id: this.config.get('odlCustomJsonId', { infer: true }),
       account,
       cid,
+    });
+    return this.singleOpBuildResult(op);
+  }
+
+  buildUpdateVote(input: {
+    objectId: string;
+    updateId: string;
+    voter: string;
+    vote: OdlUpdateVoteValue;
+  }): {
+    ops: unknown[];
+    opsCount: number;
+    bytes: number;
+  } {
+    const op = buildOdlUpdateVoteOp({
+      id: this.config.get('odlCustomJsonId', { infer: true }),
+      objectId: input.objectId.trim(),
+      updateId: input.updateId.trim(),
+      voter: input.voter.trim().replace(/^@/, '').toLowerCase(),
+      vote: input.vote,
     });
     return this.singleOpBuildResult(op);
   }

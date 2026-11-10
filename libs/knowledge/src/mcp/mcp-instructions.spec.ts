@@ -10,6 +10,13 @@ describe('KNOWLEDGE_MCP_INSTRUCTIONS', () => {
     expect(webIndex).toBeGreaterThan(odlIndex);
   });
 
+  it('maps "delete" to update_vote against for values and status for objects', () => {
+    expect(KNOWLEDGE_MCP_INSTRUCTIONS).toContain('update_vote "against"');
+    expect(KNOWLEDGE_MCP_INSTRUCTIONS).toContain('odl_build_update_vote');
+    expect(KNOWLEDGE_MCP_INSTRUCTIONS).toContain('"unavailable"');
+    expect(KNOWLEDGE_MCP_INSTRUCTIONS).toContain('odl/object-remove/SKILL.md');
+  });
+
   it('keeps user-supplied tickets on the issuing OBL offer', () => {
     expect(KNOWLEDGE_MCP_INSTRUCTIONS).toContain('VIP ticket');
     expect(KNOWLEDGE_MCP_INSTRUCTIONS).toContain('OBL offer that issued it');

@@ -6,7 +6,7 @@ type: overview
 status: active
 scope: agent-wallet
 tags: [agent-wallet, has, mcp, overview]
-updated_at: 2026-08-20
+updated_at: 2026-11-10
 related:
   - docs/apps/knowledge-api/spec/overview.md
 ---
@@ -72,6 +72,7 @@ CI publishes a **portable archive** (`agent-wallet-portable.tar.gz`: `main.js`, 
 | `odl_build_update_create` | `ops`, `opsCount`, `bytes`, `requiresIpfsBatch`, `envelopeJson?` — single `update_create` for existing object |
 | `odl_build_batch_import` | `ops`, `opsCount`, `bytes` — one `batch_import` op for an IPFS CID |
 | `odl_build_gallery_item` | `ops`, `opsCount`, `bytes` — gallery item (+ album ensure when needed) |
+| `odl_build_update_vote` | `ops`, `opsCount`, `bytes` — one `update_vote` (`for` / `against` / `remove`) on an existing `update_id`; `against` is how a field value is “deleted” |
 | `hive_build_post` | `ops`, `opsCount: 2`, `json_metadata`, `warnings` — root Hive post (`comment` + `comment_options`); `author` may be a grantor |
 | `hive_build_posting_authority_grant` | `ops`, `keyType: active`, `signerAccount`, `canSignLocally`, `warnings` — grant/revoke posting `account_auths` |
 | `hive_build_profile_update` | `ops`, `keyType: posting`, `signerAccount`, `canSignLocally`, `changedFields`, `profile`, `warnings` — `account_update2` on `posting_json_metadata` (account avatar/profile, not objects) |

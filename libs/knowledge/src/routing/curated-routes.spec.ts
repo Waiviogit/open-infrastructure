@@ -17,6 +17,16 @@ describe('curated-routes', () => {
     expect(hits[0]?.path).toBe('odl/hive-account-signup/SKILL.md');
   });
 
+  it('matches "remove from categories" intent to object-remove', () => {
+    const hits = matchCuratedRoutes('Remove "all products" from Categories');
+    expect(hits[0]?.path).toBe('odl/object-remove/SKILL.md');
+  });
+
+  it('matches delete object intent to object-remove', () => {
+    const hits = matchCuratedRoutes('delete object duconz');
+    expect(hits[0]?.path).toBe('odl/object-remove/SKILL.md');
+  });
+
   it('matches provider search intent to routing skill', () => {
     const hits = matchCuratedRoutes('find a provider for this task');
     expect(hits[0]?.path).toBe('odl/knowledge-api-routing/SKILL.md');
