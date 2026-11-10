@@ -27,7 +27,7 @@ Google Maps places are **off by default**: `POST_EDITOR_GOOGLE_PLACES_ENABLED=tr
 2. **Objects** section — our search (`/api/search`, ≥ 2 chars, 300 ms debounce).
 3. **Google Maps nearby** section — `/api/places/search` (≥ 3 chars, 500 ms debounce; signed-in users only). Places are biased to the user's IP location by query-api.
 4. Order and dedup (`buildHashSearchEntries`): objects first; a place that already has an object (`existing_object_id`) is never offered for creation — it is listed once as that object, or dropped when the object is already in the first section.
-5. Picking an object (or a linked place) replaces `#query` with an object link and attaches the object (`jsonMetadata.objects`, hashtag objects also add a tag).
+5. Picking an object (or a linked place) replaces `#query` with an object link and attaches the object (`jsonMetadata.objects`, hashtag objects also add a tag). The link text is the object name without the typed `#`, except for an object of type `hashtag`: it keeps a leading `#` (`india` → `#india`, never `##`; `objectLinkDisplayLabel`, also used by Insert → Object).
 6. Picking a new place removes `#query` and opens **`EditorPlaceCreateModal`** (confirmation): name, address, phone, website, photo, object type (`restaurant` / `place` / `business`, preselected from Google types).
 
 ## Creating an object from a place

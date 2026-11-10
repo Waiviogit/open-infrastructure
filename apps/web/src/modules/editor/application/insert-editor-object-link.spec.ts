@@ -26,6 +26,30 @@ describe('objectLinkDisplayLabel', () => {
     ).toBe('My List');
   });
 
+  it('keeps the # in front of a hashtag object', () => {
+    expect(
+      objectLinkDisplayLabel({
+        object_id: 'india',
+        object_type: 'hashtag',
+        name: 'india',
+        image_url: null,
+        parent_name: null,
+      }),
+    ).toBe('#india');
+  });
+
+  it('does not double a # the hashtag name already has', () => {
+    expect(
+      objectLinkDisplayLabel({
+        object_id: 'india',
+        object_type: 'hashtag',
+        name: '#india',
+        image_url: null,
+        parent_name: null,
+      }),
+    ).toBe('#india');
+  });
+
   it('falls back to object_id', () => {
     expect(
       objectLinkDisplayLabel({

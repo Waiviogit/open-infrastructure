@@ -9,6 +9,9 @@ import {
   type LexicalEditor,
 } from 'lexical';
 
+import { HASH_TRIGGER } from './hash-object-search';
+import { POST_EDITOR_HASHTAG_OBJECT_TYPE } from './post-editor-advanced-settings';
+
 export function buildObjectLinkHref(objectId: string): string {
   const path = objectPagePath(objectId);
   if (typeof window === 'undefined') {
@@ -17,8 +20,17 @@ export function buildObjectLinkHref(objectId: string): string {
   return `${window.location.origin}${path}`;
 }
 
+/**
+ * Visible text of an inserted object link: the object name, or its id. A hashtag object keeps
+ * its `#` (`india` → `#india`), even though the `#` typed to open the search is replaced.
+ */
 export function objectLinkDisplayLabel(result: SearchObjectResult): string {
-  return result.name?.trim() || result.object_id;
+  const label = result.name?.trim() || result.object_id;
+  const isHashtag = result.object_type.toLowerCase() === POST_EDITOR_HASHTAG_OBJECT_TYPE;
+  if (!isHashtag || label.startsWith(HASH_TRIGGER)) {
+    return label;
+  }
+  return `${HASH_TRIGGER}${label}`;
 }
 
 /** Object link node (visible name, href on current host). Call inside `editor.update`. */
