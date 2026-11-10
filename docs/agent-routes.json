@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-28T13:31:33.536Z",
+  "generated_at": "2026-11-10T09:33:38.069Z",
   "routes": [
     {
       "path": "docs/apps/agent-wallet/spec/overview.md",
@@ -236,9 +236,17 @@
       "tags": []
     },
     {
+      "path": "odl/hive-account-profile-update/SKILL.md",
+      "title": "hive account profile update",
+      "description": "Update a Hive account profile (user avatar, cover image, display name, about, location, website) with agent-wallet hive_build_profile_update, which builds a posting-key account_update2 on posting_json_metadata. Explains account_update vs account_update2 and account profile vs ODL object avatar. Use when an agent or user asks to set, change, or remove their own profile picture, avatar, cover, name, or bio on Hive / Waivio.",
+      "type": "skill",
+      "scope": "platform",
+      "tags": []
+    },
+    {
       "path": "odl/hive-account-signup/SKILL.md",
       "title": "hive account signup",
-      "description": "Guide a user through creating a new Hive blockchain account via public signup providers. Use when the user needs a new Hive account or signup before an on-chain write.",
+      "description": "Guide a user through creating a new Hive blockchain account: first through an OBL account-creation offer (VIP ticket redeem), then through public signup providers. Use when the user needs a new Hive account, gives you a VIP ticket or invite code, or needs signup before an on-chain write.",
       "type": "skill",
       "scope": "platform",
       "tags": []
@@ -310,7 +318,7 @@
     {
       "path": "odl/knowledge-api-routing/SKILL.md",
       "title": "knowledge api routing",
-      "description": "First-visit map for MCP tools, doc types, and which skill or spec to open for a task. Use when first connecting to knowledge-api MCP or routing a task to the right spec or skill.",
+      "description": "First-visit map for MCP tools, doc types, and which skill or spec to open for a task. Also sets the search order for providers and services: OBL offers, then ODL service_offer objects, then the web. Use when choosing a provider or service for a task, when first connecting to knowledge-api MCP, or routing a task to the right spec or skill.",
       "type": "skill",
       "scope": "platform",
       "tags": []

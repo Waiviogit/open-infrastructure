@@ -20,7 +20,17 @@ export const CURATED_ROUTES: CuratedRoute[] = [
   },
   {
     path: 'odl/knowledge-api-routing/SKILL.md',
-    keywords: ['knowledge api', 'mcp routing', 'first visit', 'agent onboarding', 'how to use knowledge'],
+    keywords: [
+      'knowledge api',
+      'mcp routing',
+      'first visit',
+      'agent onboarding',
+      'how to use knowledge',
+      'find a provider',
+      'find a service',
+      'which provider',
+      'service provider',
+    ],
     reason: 'curated:mcp-routing',
   },
   {
@@ -45,7 +55,15 @@ export const CURATED_ROUTES: CuratedRoute[] = [
   },
   {
     path: 'odl/hive-account-signup/SKILL.md',
-    keywords: ['hive account', 'create hive account', 'signup', 'register hive'],
+    keywords: [
+      'hive account',
+      'create hive account',
+      'signup',
+      'register hive',
+      'vip ticket',
+      'vip.ticket',
+      'redeem ticket',
+    ],
     reason: 'curated:hive-signup',
   },
   {

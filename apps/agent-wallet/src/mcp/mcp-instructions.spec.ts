@@ -20,6 +20,14 @@ describe('AGENT_WALLET_MCP_INSTRUCTIONS', () => {
     expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('has_broadcast with keyType active');
   });
 
+  it('routes new Hive accounts with a VIP ticket through OBL before public providers', () => {
+    const oblIndex = AGENT_WALLET_MCP_INSTRUCTIONS.indexOf('search_obl_offers');
+    const fallbackIndex = AGENT_WALLET_MCP_INSTRUCTIONS.indexOf('hive-account-signup');
+    expect(oblIndex).toBeGreaterThanOrEqual(0);
+    expect(fallbackIndex).toBeGreaterThan(oblIndex);
+    expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('get_obl_offer');
+  });
+
   it('documents object activity fingerprint and obj-ch channel ids', () => {
     expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('osl_activity_fingerprint');
     expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('check_object_activity_duplicate');

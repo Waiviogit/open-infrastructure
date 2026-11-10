@@ -12,6 +12,16 @@ describe('curated-routes', () => {
     expect(hits.some((h) => h.path === 'odl/hive-account-signup/SKILL.md')).toBe(true);
   });
 
+  it('matches VIP ticket redeem intent to hive signup', () => {
+    const hits = matchCuratedRoutes('create an account with vip.ticket');
+    expect(hits[0]?.path).toBe('odl/hive-account-signup/SKILL.md');
+  });
+
+  it('matches provider search intent to routing skill', () => {
+    const hits = matchCuratedRoutes('find a provider for this task');
+    expect(hits[0]?.path).toBe('odl/knowledge-api-routing/SKILL.md');
+  });
+
   it('matches build tenant site intent', () => {
     const hits = matchCuratedRoutes('build tenant site');
     expect(hits[0]?.path).toBe('odl/build-tenant-site/SKILL.md');

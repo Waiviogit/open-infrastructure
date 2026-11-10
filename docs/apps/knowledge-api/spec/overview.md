@@ -6,7 +6,7 @@ type: overview
 status: active
 scope: knowledge-api
 tags: [knowledge-api, overview]
-updated_at: 2026-06-11
+updated_at: 2026-11-10
 related:
   - docs/README.md
   - docs/apps/knowledge-api/spec/search.md
@@ -25,7 +25,9 @@ MCP HTTP service for agent access to project documentation, skills, lessons, and
 5. `list_files({ type: "skill" })` — playbooks with `description` one-liners.
 6. Chain payloads: `get_object_create_playbook` → `get_object_type` / `get_update_schema` (not search).
 
-Canonical detail: skill `knowledge-api-routing`. Search detail: [hybrid search](search.md).
+The server instructions also set the search order for any provider or service: OBL offers (`search_obl_offers`), then ODL `service_offer` objects, then the open web or the agent's own training knowledge. A VIP ticket or invite code from the user is redeemed only through the OBL offer that issued it.
+
+Canonical detail: skill `knowledge-api-routing` (§ Find a solution: OBL first). Search detail: [hybrid search](search.md).
 
 Legacy `docs/skills/...` paths still resolve via `get_file` for one release (`moved_from` in the response).
 
