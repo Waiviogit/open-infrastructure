@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, user-social-lists]
-updated_at: 2026-06-10
+updated_at: 2026-11-10
 related:
   - docs/apps/query-api/spec/overview.md
   - docs/README.md
@@ -22,12 +22,12 @@ Read endpoints on `accounts_current`, `user_subscriptions`, `user_object_follows
 | ------ | ---- | ----------- |
 | `GET` | `/query/v1/users/{name}/followers` | Accounts that follow `{name}`, joined to `accounts_current`. |
 | `GET` | `/query/v1/users/{name}/following` | Accounts `{name}` follows, joined to `accounts_current`. |
-| `GET` | `/query/v1/users/{name}/following-objects` | Objects `{name}` follows; returns `ProjectedObject` JSON (`name`, `image`, `weight`). |
+| `GET` | `/query/v1/users/{name}/following-objects` | Objects `{name}` follows; returns `ProjectedObject` JSON (`name`, `image`, `weight`) plus `isCurrentFollowing`. |
 | `GET` | `/query/v1/objects/{objectId}/followers` | Hive accounts following `{objectId}` (`user_object_follows` joined to `accounts_current`). Same list shape as user followers. |
 | `GET` | `/query/v1/objects/{objectId}/favorited-by` | Accounts that favorited `{objectId}` (`object_favorite` joined to `accounts_current`). Same list shape as followers. |
 | `GET` | `/query/v1/objects/{objectId}/ownership` | Accounts with `exclusive` or `supervised` ownership on `{objectId}` (`object_ownership` joined to `accounts_current`). Query `ownership_type`; same list shape as followers. |
 
-Optional header: **`X-Viewer`** — when set, each account row includes **`isCurrentFollowing`** (whether the viewer has a `user_subscriptions` edge to that account).
+Optional header: **`X-Viewer`** — when set, each account row includes **`isCurrentFollowing`** (whether the viewer has a `user_subscriptions` edge to that account). On `following-objects`, each item's **`isCurrentFollowing`** says whether the viewer follows that object (active objects in `user_object_follows`); it is `true` for every row when the viewer is `{name}` and `false` without `X-Viewer`.
 
 Locale: **`Accept-Language`** / **`X-Locale`** resolve object fields for `following-objects` (same as other object reads).
 

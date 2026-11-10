@@ -6,10 +6,10 @@ import {
   AggregatedObjectRepository,
   UserObjectFollowsRepository,
 } from '../../repositories';
-import { ObjectProjectionService, type ProjectedObject } from '../object-projection';
+import { ObjectProjectionService } from '../object-projection';
 import { FOLLOWING_OBJECTS_CARD_UPDATE_TYPES } from './social.constants';
 import type { UserFollowingObjectsQuery } from './user-social-list.schema';
-import type { PaginatedProjectedObjects } from './paginated-objects.types';
+import type { FollowingObjectItem, PaginatedFollowingObjects } from './paginated-objects.types';
 
 function orderAggregatedByIds(objects: AggregatedObject[], objectIds: string[]): AggregatedObject[] {
   const map = new Map(objects.map((o) => [o.core.object_id, o]));
@@ -32,7 +32,7 @@ export class GetUserFollowingObjectsEndpoint {
     locale: string,
     governanceObjectIdFromHeader: string | undefined,
     viewerAccount: string | undefined,
-  ): Promise<PaginatedProjectedObjects | null> {
+  ): Promise<PaginatedFollowingObjects | null> {
     const name = username.trim();
     if (name.length === 0) {
       return null;
@@ -69,7 +69,7 @@ export class GetUserFollowingObjectsEndpoint {
       include_rejected: false,
     });
 
-    let projectedList = await this.objectProjection.batchProject(views, {
+    const projectedList = await this.objectProjection.batchProject(views, {
       locale,
       includeSeo: false,
       governanceObjectIdFromHeader,
@@ -77,17 +77,34 @@ export class GetUserFollowingObjectsEndpoint {
       rankVoteProjection,
     });
 
-    projectedList = projectedList.map((p) => ({
+    const followedByViewer = await this.resolveViewerFollowedIds(name, viewerAccount, objectIds);
+
+    const items: FollowingObjectItem[] = projectedList.map((p) => ({
       ...p,
       weight: weightById.get(p.object_id) ?? p.weight,
+      isCurrentFollowing: followedByViewer.has(p.object_id),
     }));
-
-    const items: ProjectedObject[] = projectedList;
 
     return {
       items,
       total,
       hasMore: query.skip + items.length < total,
     };
+  }
+
+  /** Object ids on this page that the viewer follows; the profile owner follows every row by definition. */
+  private async resolveViewerFollowedIds(
+    profileName: string,
+    viewerAccount: string | undefined,
+    objectIds: string[],
+  ): Promise<Set<string>> {
+    const viewer = viewerAccount?.trim();
+    if (!viewer) {
+      return new Set();
+    }
+    if (viewer.toLowerCase() === profileName.toLowerCase()) {
+      return new Set(objectIds);
+    }
+    return new Set(await this.objectFollows.findFollowedActiveObjectIdsAmong(viewer, objectIds));
   }
 }

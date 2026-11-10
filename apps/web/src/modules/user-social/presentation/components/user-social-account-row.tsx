@@ -11,11 +11,14 @@ import { StatHoverTooltip, UserAvatar } from '@/shared/presentation';
 import type { UserFollowListView } from '@/modules/user-social/application/dto/user-social.dto';
 import { broadcastUserFollowToggle } from '@/modules/user-social/infrastructure/broadcast-user-subscription';
 import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-after-broadcast';
+import { revalidateUserSocialAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
+
+import { SocialFollowButton } from './social-follow-button';
 
 export type UserSocialAccountRowProps = {
   row: UserFollowListView;
   profileAccountName: string;
-  /** Current logged-in Hive account; when absent, follow control is disabled. */
+  /** Current logged-in Hive account; when absent, the follow control opens the login modal. */
   viewerUsername: string | null;
   /** When set, badge shows per-object expertise instead of global wobjectsWeight. */
   expertiseWeight?: number;
@@ -35,7 +38,8 @@ export function UserSocialAccountRow({
   const router = useRouter();
   const { openLogin } = useLoginModal();
   const href = `/@${row.name}`;
-  const isSelf = viewerUsername != null && viewerUsername === row.name;
+  const isSelf =
+    viewerUsername != null && viewerUsername.trim().toLowerCase() === row.name.toLowerCase();
   const showFollowControl = !isSelf;
   const [isCurrentFollowing, setIsCurrentFollowing] = useState(row.isCurrentFollowing);
   const [pending, setPending] = useState(false);
@@ -58,10 +62,13 @@ export function UserSocialAccountRow({
     setPending(true);
     try {
       await broadcastUserFollowToggle(account, row.name, previous);
-      await refreshAfterBroadcast(
-        router,
-        () => onBroadcastRevalidate?.(profileAccountName) ?? Promise.resolve(),
-      );
+      await refreshAfterBroadcast(router, async () => {
+        await Promise.all([
+          onBroadcastRevalidate?.(profileAccountName),
+          revalidateUserSocialAfterBroadcast(account),
+          revalidateUserSocialAfterBroadcast(row.name),
+        ]);
+      });
     } catch {
       setIsCurrentFollowing(previous);
     } finally {
@@ -102,26 +109,11 @@ export function UserSocialAccountRow({
         </p>
       </div>
       {showFollowControl ? (
-        <button
-          type="button"
-          disabled={viewerUsername == null || pending}
-          title={viewerUsername == null ? t('social_follow_login_hint') : undefined}
+        <SocialFollowButton
+          isFollowing={isCurrentFollowing}
+          pending={pending}
           onClick={() => void onFollowClick()}
-          className={[
-            'group shrink-0 rounded-btn border px-3 py-1.5 text-body-sm font-weight-label transition-colors disabled:opacity-50',
-            isCurrentFollowing
-              ? 'border-border bg-surface-control text-muted hover:border-error hover:bg-error/10 hover:text-error'
-              : 'border-accent text-accent hover:bg-accent/10',
-            viewerUsername == null ? 'cursor-not-allowed opacity-50' : '',
-          ].join(' ')}
-        >
-          <span className={isCurrentFollowing ? 'group-hover:hidden' : ''}>
-            {isCurrentFollowing ? t('following') : t('follow')}
-          </span>
-          {isCurrentFollowing ? (
-            <span className="hidden group-hover:inline">{t('unfollow')}</span>
-          ) : null}
-        </button>
+        />
       ) : null}
     </li>
   );

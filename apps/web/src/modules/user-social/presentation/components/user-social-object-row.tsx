@@ -2,18 +2,23 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { objectFields, type ProjectedObjectView } from '@/modules/feed/application/dto/object-fields';
 import type { SocialProjectedObjectView } from '@/modules/user-social/application/dto/user-social.dto';
 import { useOdlCustomJsonId } from '@/config/odl-network-provider';
 import { useLoginModal } from '@/modules/auth/presentation';
-import { broadcastObjectUnfollow } from '@/modules/user-social/infrastructure/broadcast-object-unfollow';
+import { broadcastObjectFollowToggle } from '@/modules/user-social/infrastructure/broadcast-object-follow';
 import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-after-broadcast';
-import { revalidateUserSocialAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
+import {
+  revalidateObjectAfterBroadcast,
+  revalidateUserSocialAfterBroadcast,
+} from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 import { ObjectThumbnail, StatHoverTooltip } from '@/shared/presentation';
 import { objectPagePath } from '@/shared/routes/object-page-path';
+
+import { SocialFollowButton } from './social-follow-button';
 
 const THUMB = 44;
 
@@ -21,19 +26,18 @@ export type UserSocialObjectRowProps = {
   object: SocialProjectedObjectView;
   profileAccountName: string;
   viewerUsername: string | null;
-  onRemoved?: (objectId: string) => void;
 };
 
 export function UserSocialObjectRow({
   object: o,
   profileAccountName,
   viewerUsername,
-  onRemoved,
 }: UserSocialObjectRowProps) {
   const { t } = useI18n();
   const odlCustomJsonId = useOdlCustomJsonId();
   const router = useRouter();
   const { openLogin } = useLoginModal();
+  const [isCurrentFollowing, setIsCurrentFollowing] = useState(o.isCurrentFollowing);
   const [pending, setPending] = useState(false);
   const view = o as unknown as ProjectedObjectView;
   const name = objectFields.name(view) ?? o.object_id;
@@ -41,9 +45,12 @@ export function UserSocialObjectRow({
   const weight = o.weight ?? null;
   const weightLabel = weight == null ? '—' : weight.toFixed(2);
   const href = objectPagePath(o.object_id);
-  const showUnfollow = viewerUsername != null;
 
-  const onUnfollowClick = useCallback(async () => {
+  useEffect(() => {
+    setIsCurrentFollowing(o.isCurrentFollowing);
+  }, [o.isCurrentFollowing]);
+
+  const onFollowClick = useCallback(async () => {
     const account = viewerUsername?.trim();
     if (!account) {
       openLogin();
@@ -52,19 +59,33 @@ export function UserSocialObjectRow({
     if (pending) {
       return;
     }
+    const previous = isCurrentFollowing;
+    setIsCurrentFollowing(!previous);
     setPending(true);
     try {
-      await broadcastObjectUnfollow(account, o.object_id, odlCustomJsonId);
-      onRemoved?.(o.object_id);
-      await refreshAfterBroadcast(router, () =>
-        revalidateUserSocialAfterBroadcast(profileAccountName),
-      );
+      await broadcastObjectFollowToggle(account, o.object_id, previous, odlCustomJsonId);
+      await refreshAfterBroadcast(router, async () => {
+        await Promise.all([
+          revalidateUserSocialAfterBroadcast(profileAccountName),
+          revalidateUserSocialAfterBroadcast(account),
+          revalidateObjectAfterBroadcast(o.object_id),
+        ]);
+      });
     } catch {
-      /* revert via refresh on next success */
+      setIsCurrentFollowing(previous);
     } finally {
       setPending(false);
     }
-  }, [o.object_id, odlCustomJsonId, onRemoved, openLogin, pending, profileAccountName, router, viewerUsername]);
+  }, [
+    isCurrentFollowing,
+    o.object_id,
+    odlCustomJsonId,
+    openLogin,
+    pending,
+    profileAccountName,
+    router,
+    viewerUsername,
+  ]);
 
   return (
     <li className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
@@ -74,6 +95,7 @@ export function UserSocialObjectRow({
           prefetch={false}
           className="inline-flex rounded-btn focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           aria-label={`View object: ${name}`}
+          suppressHydrationWarning
         >
           <span className="flex size-11 items-center justify-center overflow-hidden rounded-card border border-border bg-surface ring-1 ring-border/60">
             <ObjectThumbnail
@@ -91,6 +113,7 @@ export function UserSocialObjectRow({
           href={href}
           prefetch={false}
           className="block truncate font-weight-label text-fg underline-offset-2 hover:underline focus-visible:rounded-btn focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          suppressHydrationWarning
         >
           {name}
         </Link>
@@ -100,16 +123,11 @@ export function UserSocialObjectRow({
           {weightLabel}
         </span>
       </StatHoverTooltip>
-      {showUnfollow ? (
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => void onUnfollowClick()}
-          className="shrink-0 rounded-btn border border-border bg-surface-control px-3 py-1.5 text-body-sm font-weight-label text-muted transition-colors hover:border-error hover:bg-error/10 hover:text-error disabled:opacity-50"
-        >
-          {t('unfollow')}
-        </button>
-      ) : null}
+      <SocialFollowButton
+        isFollowing={isCurrentFollowing}
+        pending={pending}
+        onClick={() => void onFollowClick()}
+      />
     </li>
   );
 }

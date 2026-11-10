@@ -43,12 +43,12 @@ Shared UI: `UserSocialAccountList` from `@/modules/user-social`.
 |-------|----------|
 | Page queries | `getUserFollowersPageQuery`, `getUserFollowingPageQuery`, `getUserFollowingObjectsPageQuery` |
 | Load-more actions | `user-profile-social.actions.ts` |
-| Broadcast refresh | `revalidateUserSocialAfterBroadcast` after Hive follow / ODL bell |
+| Broadcast refresh | `revalidateUserSocialAfterBroadcast` (profile owner, viewer, target) after Hive follow / ODL `object_follow`; `revalidateObjectAfterBroadcast` for object rows |
 | Follow UI in rows | [user-follow.md](../../../user-follow.md) |
 
 ## Behavior
 
-- Initial page: RSC fetch with `USER_SOCIAL_PAGE_SIZE`, viewer username for follow state.
+- Initial page: RSC fetch with `USER_SOCIAL_PAGE_SIZE`, viewer username (`X-Viewer`) for follow state. Row buttons always show the **viewer's** follow state, never the profile owner's; guests see **Follow** → login modal.
 - Client list: `useSyncedPaginatedList` + infinite scroll; `key={sort}` on sort change.
 - Hero counts: `(profile)/layout.tsx` loads following-objects total for badge sync.
 
@@ -57,7 +57,7 @@ Shared UI: `UserSocialAccountList` from `@/modules/user-social`.
 | Command | Purpose |
 |---------|---------|
 | `pnpm nx test web --testPathPattern=user-social` | Sort parsing, list helpers |
-| Manual | Follow/unfollow from list; counts refresh after trx confirmation |
+| Manual | Follow/unfollow from list; counts refresh after trx confirmation; on another user's lists rows show your own state |
 
 ## Related code paths
 

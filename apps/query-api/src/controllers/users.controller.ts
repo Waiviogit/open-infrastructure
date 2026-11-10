@@ -71,6 +71,7 @@ import {
   userFollowingObjectsQuerySchema,
   userAccountAuthListQuerySchema,
   type PaginatedProjectedObjects,
+  type PaginatedFollowingObjects,
   type PaginatedUserFollowList,
   type PaginatedUserAccountAuthGrantors,
   type PaginatedUserAccountAuthGrantees,
@@ -234,7 +235,7 @@ export class UsersController {
     @ReqLocale() locale: string,
     @ReqGovernanceObjectId() governanceObjectIdFromHeader: string | undefined,
     @ReqViewer() viewer: string | undefined,
-  ): Promise<PaginatedProjectedObjects> {
+  ): Promise<PaginatedFollowingObjects> {
     const result = await this.getUserFollowingObjects.execute(
       name,
       query,

@@ -37,6 +37,8 @@ export const socialProjectedObjectSchema = z.object({
   isFavorited: z.boolean().optional().default(false),
   hasSupervisedOwnership: z.boolean().optional().default(false),
   hasExclusiveOwnership: z.boolean().optional().default(false),
+  /** Viewer (`X-Viewer`) follows this object — not the profile owner. */
+  isCurrentFollowing: z.boolean().optional().default(false),
   seo: z.record(z.string(), z.unknown()).optional(),
   affiliateLinks: z.array(affiliateLinkViewSchema).optional(),
 });

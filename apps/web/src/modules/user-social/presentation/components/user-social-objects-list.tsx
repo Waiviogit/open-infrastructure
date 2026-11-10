@@ -57,9 +57,6 @@ export function UserSocialObjectsList({
                 object={o}
                 profileAccountName={profileAccountName}
                 viewerUsername={viewerUsername}
-                onRemoved={(objectId) => {
-                  setItems((prev) => prev.filter((item) => item.object_id !== objectId));
-                }}
               />
             ))}
           </ul>

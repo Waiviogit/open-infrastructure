@@ -70,6 +70,22 @@ export const subscriptionSortEnum = ['rank', 'followers', 'a-z', 'recency'] as c
 /** Shared response schema for user-profile and object follower lists. */
 export const paginatedUserFollowListOpenApiSchema = paginatedUserFollowListSchema;
 
+const paginatedFollowingObjectsSchema = registry.register(
+  'PaginatedFollowingObjects',
+  z.object({
+    items: z.array(
+      projectedObjectOpenApiSchema.extend({
+        isCurrentFollowing: z.boolean().openapi({
+          description:
+            'True when the request viewer (`X-Viewer`) follows this object (not the profile owner). False for guests.',
+        }),
+      }),
+    ),
+    total: z.number().int(),
+    hasMore: z.boolean(),
+  }),
+);
+
 export { accountNameParam, paginatedProjectedObjectsSchema };
 
 registry.registerPath({
@@ -139,7 +155,7 @@ registry.registerPath({
   tags: [queryApiOpenApiTags.users],
   summary: 'List objects the profile follows',
   description:
-    'Reads `user_object_follows` joined with `objects_core`, resolves `name` and `image` updates, returns `ProjectedObject` JSON (including `weight`).',
+    'Reads `user_object_follows` joined with `objects_core`, resolves `name` and `image` updates, returns `ProjectedObject` JSON (including `weight`). Optional `X-Viewer` populates `isCurrentFollowing`.',
   request: {
     params: z.object({ name: accountNameParam }),
     query: z.object({
@@ -154,8 +170,8 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: 'Paginated projected objects.',
-      content: { 'application/json': { schema: paginatedProjectedObjectsSchema } },
+      description: 'Paginated projected objects with the viewer follow flag.',
+      content: { 'application/json': { schema: paginatedFollowingObjectsSchema } },
     },
     404: {
       description: 'Profile not in `accounts_current`.',
