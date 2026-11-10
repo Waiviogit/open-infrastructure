@@ -12,7 +12,7 @@ import { apiNavContextFromLineage, UNCATEGORIZED_SHOP_PATH_SEGMENT } from './cat
 import { ProfileShopFilterChips } from './profile-shop-filter-chips';
 import { ProfileShopFilteredEmpty } from './profile-shop-filtered-empty';
 import { ShopObjectList } from './shop-object-list';
-import { ShopSections } from './shop-sections';
+import { ShopSections, type ShopUncategorizedSection } from './shop-sections';
 
 export type ProfileShopMainContentProps = {
   accountName: string;
@@ -25,9 +25,13 @@ export type ProfileShopMainContentProps = {
 
 const EMPTY_SHOP_FILTERS: ProfileShopFiltersState = { tags: [], rating: null };
 
+/** Preview cards in the trailing Uncategorized section (matches query-api `SHOP_SECTION_OBJECTS_PER_CATEGORY`). */
+const UNCATEGORIZED_PREVIEW_LIMIT = 3;
+
 /**
  * Resolves category nav for the current URL; leaf routes render an infinite object list,
  * intermediate routes render section groups (child categories × preview objects).
+ * The root view appends an Uncategorized section (objects without any category) after the last category.
  * Active tag/rating filters always use a flat object list so facet counts match visible rows.
  */
 export async function ProfileShopMainContent({
@@ -122,17 +126,36 @@ export async function ProfileShopMainContent({
     );
   }
 
-  const sections = await getShopSectionsQuery(
-    accountName,
-    {
-      types,
-      name: parentName,
-      path,
-      sectionLimit: 3,
-      ...filterQuery,
-    },
-    viewerUsername,
-  );
+  const showUncategorized = lineageSegments.length === 0 && nav.uncategorized_count > 0;
+  const [sections, uncategorizedPage] = await Promise.all([
+    getShopSectionsQuery(
+      accountName,
+      {
+        types,
+        name: parentName,
+        path,
+        sectionLimit: 3,
+        ...filterQuery,
+      },
+      viewerUsername,
+    ),
+    showUncategorized
+      ? getShopObjectsQuery(
+          accountName,
+          {
+            types,
+            categoryPath: [],
+            uncategorizedOnly: true,
+            limit: UNCATEGORIZED_PREVIEW_LIMIT,
+          },
+          viewerUsername,
+        )
+      : null,
+  ]);
+  const uncategorizedSection: ShopUncategorizedSection | null =
+    uncategorizedPage && uncategorizedPage.items.length > 0
+      ? { items: uncategorizedPage.items, totalObjects: nav.uncategorized_count }
+      : null;
 
   return (
     <>
@@ -146,6 +169,7 @@ export async function ProfileShopMainContent({
         lineageSegments={lineageSegments}
         navName={parentName}
         navPath={path}
+        uncategorizedSection={uncategorizedSection}
         shopFilters={shopFilters}
         viewerUsername={viewerUsername}
         sectionKey={sectionKey}

@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, page, user-profile, shop]
-updated_at: 2026-06-17
+updated_at: 2026-11-10
 related:
   - docs/apps/web/spec/overview.md
   - docs/apps/web/spec/pages/user-profile/profile-shell.md
@@ -46,6 +46,7 @@ Department-style object catalogs for a user’s shop (`book`, `product`) and rec
 - **basePath:** `/@${accountName}/user-shop` or `/recipe` — used for nav links and breadcrumbs.
 - **Parallel routes:** `(main)/layout.tsx` renders `@leftSidebar` slot; shop/recipe pages pair main + sidebar segments.
 - **Filters:** URL query `tags=Category:value` (repeatable, AND) and optional `rating` (`6` | `8` | `10`). Right column loads facets from BFF `GET /api/users/:name/shop/filters` (scoped to current category path). Same filters on `user-shop` and `recipe`. When any filter is active, the center column uses a **flat** `shop-objects` list (not category sections) so facet counts match visible rows.
+- **Uncategorized section (root):** on `/@:name/user-shop` and `/@:name/recipe` (no category in the URL, no active filters) the center column appends an **Uncategorized** section after the last category section, once all sections are loaded. It previews up to 3 objects that have no category (`shop-objects?uncategorizedOnly=true`) and shows the root nav `uncategorized_count`. The header links to `…/uncategorized`. Hidden when the count is 0. Mobile has no left rail, so this is the only way to reach these objects there.
 - **Filter preservation:** Left category nav links, section header links, Up/All, and Uncategorized preserve active `tags`/`rating` query params via `buildProfileShopHref`.
 - **Pagination:** load-more buttons on object lists and section pages; maps API rows via `ObjectCard`.
 - **Shell mode:** left category rail hidden on Instagram/Twitter presets per `shell-hide-instagram` / vertical rail swap (see [profile-shell.md](../profile-shell.md)).

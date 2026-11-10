@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import type { ShopSectionsPage } from '../../domain/types/shop-objects';
+import type { ShopSectionView, ShopSectionsPage } from '../../domain/types/shop-objects';
 import type { ProfileShopFiltersState } from '../../domain/profile-shop-filters-url';
 import {
   buildProfileShopHref,
@@ -18,7 +18,11 @@ import { FeedColumn } from '@/shared/presentation/layout';
 import { useLoginModal } from '@/modules/auth';
 
 import { loadMoreShopSectionsAction } from '@/app/(app)/user-profile/[name]/shop-feed.actions';
+import { UNCATEGORIZED_SHOP_PATH_SEGMENT } from './category-nav-path';
 import { ProfileShopFilteredEmpty } from './profile-shop-filtered-empty';
+
+/** Objects with no category; rendered after the last category section on the root shop view. */
+export type ShopUncategorizedSection = Pick<ShopSectionView, 'items' | 'totalObjects'>;
 
 export type ShopSectionsProps = {
   accountName: string;
@@ -31,6 +35,8 @@ export type ShopSectionsProps = {
   navName?: string;
   /** Ancestors before `navName`. */
   navPath: string[];
+  /** Shown once every category section is loaded (root view only). */
+  uncategorizedSection?: ShopUncategorizedSection | null;
   shopFilters?: ProfileShopFiltersState;
   viewerUsername?: string | null;
   sectionKey?: 'user-shop' | 'recipe';
@@ -43,6 +49,55 @@ function sectionPath(basePath: string, lineageSegments: string[], categoryName: 
   return `${basePath}/${segments.join('/')}`;
 }
 
+type ShopSectionCardProps = {
+  headingId: string;
+  title: string;
+  href: string;
+  section: ShopUncategorizedSection;
+  viewerUsername?: string | null;
+};
+
+function ShopSectionCard({ headingId, title, href, section, viewerUsername }: ShopSectionCardProps) {
+  const { t } = useI18n();
+  const { openLogin } = useLoginModal();
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="rounded-card border border-border bg-surface/60 p-card-padding"
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id={headingId} className="text-heading font-label text-body-lg">
+          <Link
+            href={href}
+            suppressHydrationWarning
+            className="text-fg underline-offset-2 hover:underline"
+          >
+            {title}
+          </Link>
+        </h2>
+        <p className="text-caption text-fg-secondary tabular-nums">
+          {t('profile_shop_object_count').replace('{count}', String(section.totalObjects))}
+        </p>
+      </div>
+      {section.items.length === 0 ? (
+        <p className="mt-3 text-body-sm text-muted">{t('profile_shop_no_preview')}</p>
+      ) : (
+        <ul className="mt-4 flex flex-col gap-card-padding">
+          {section.items.map((o) => (
+            <ObjectCard
+              key={o.object_id}
+              object={o}
+              viewerUsername={viewerUsername}
+              onRequireLogin={openLogin}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export function ShopSections({
   accountName,
   initialSections,
@@ -51,12 +106,12 @@ export function ShopSections({
   lineageSegments,
   navName,
   navPath,
+  uncategorizedSection = null,
   shopFilters = EMPTY_SHOP_FILTERS,
   viewerUsername,
   sectionKey = 'user-shop',
 }: ShopSectionsProps) {
   const { t } = useI18n();
-  const { openLogin } = useLoginModal();
   const searchParams = useSearchParams();
   const urlFilters = useMemo(() => parseProfileShopFilters(searchParams), [searchParams]);
   const [sections, setSections] = useState(initialSections.sections);
@@ -73,7 +128,9 @@ export function ShopSections({
   const emptyTitle =
     sectionKey === 'recipe' ? t('user_profile_recipe') : t('profile_shop_title');
 
-  if (sections.length === 0) {
+  const trailingUncategorized = hasMore ? null : uncategorizedSection;
+
+  if (sections.length === 0 && trailingUncategorized === null) {
     if (profileShopFiltersActive(shopFilters)) {
       return <ProfileShopFilteredEmpty />;
     }
@@ -94,44 +151,30 @@ export function ShopSections({
     <FeedColumn>
       <div className="flex flex-col gap-8">
         {sections.map((sec) => (
-          <section
+          <ShopSectionCard
             key={sec.categoryName}
-            aria-labelledby={`shop-section-${sec.categoryName}`}
-            className="rounded-card border border-border bg-surface/60 p-card-padding"
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 id={`shop-section-${sec.categoryName}`} className="text-heading font-label text-body-lg">
-                <Link
-                  href={buildProfileShopHref(
-                    sectionPath(basePath, lineageSegments, sec.categoryName),
-                    urlFilters,
-                  )}
-                  suppressHydrationWarning
-                  className="text-fg underline-offset-2 hover:underline"
-                >
-                  {sec.categoryName}
-                </Link>
-              </h2>
-              <p className="text-caption text-fg-secondary tabular-nums">
-                {t('profile_shop_object_count').replace('{count}', String(sec.totalObjects))}
-              </p>
-            </div>
-            {sec.items.length === 0 ? (
-              <p className="mt-3 text-body-sm text-muted">{t('profile_shop_no_preview')}</p>
-            ) : (
-              <ul className="mt-4 flex flex-col gap-card-padding">
-                {sec.items.map((o) => (
-                  <ObjectCard
-                    key={`${sec.categoryName}-${o.object_id}`}
-                    object={o}
-                    viewerUsername={viewerUsername}
-                    onRequireLogin={openLogin}
-                  />
-                ))}
-              </ul>
+            headingId={`shop-section-${sec.categoryName}`}
+            title={sec.categoryName}
+            href={buildProfileShopHref(
+              sectionPath(basePath, lineageSegments, sec.categoryName),
+              urlFilters,
             )}
-          </section>
+            section={sec}
+            viewerUsername={viewerUsername}
+          />
         ))}
+        {trailingUncategorized ? (
+          <ShopSectionCard
+            headingId="shop-section-uncategorized"
+            title={t('profile_categories_uncategorized')}
+            href={buildProfileShopHref(
+              `${basePath}/${encodeURIComponent(UNCATEGORIZED_SHOP_PATH_SEGMENT)}`,
+              urlFilters,
+            )}
+            section={trailingUncategorized}
+            viewerUsername={viewerUsername}
+          />
+        ) : null}
       </div>
       {hasMore ? (
         <div className="flex justify-center">
