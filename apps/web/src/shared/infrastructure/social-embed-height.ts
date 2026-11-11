@@ -1,6 +1,3 @@
-/** Likes count + “Add a comment” rows in the official `/embed` chrome (cannot be hidden via URL). */
-export const INSTAGRAM_EMBED_LIKES_COMMENT_CHROME_PX = 140;
-
 const HEIGHT_KEYS = ['height', 'clientHeight', 'scrollHeight', 'iframeHeight'] as const;
 
 const NESTED_KEYS = ['details', 'payload', 'params', 'data', 'value'] as const;
@@ -103,40 +100,21 @@ export function parseSocialEmbedHeight(data: unknown): number | null {
   return findHeight(payload, 0);
 }
 
-export function socialEmbedFrameHeights(
-  iframeSrc: string,
-  measuredHeight: number,
-): { iframeHeight: number; visibleHeight: number } {
-  if (!/instagram\.com/i.test(iframeSrc)) {
-    return { iframeHeight: measuredHeight, visibleHeight: measuredHeight };
-  }
-  return {
-    iframeHeight: measuredHeight,
-    visibleHeight: Math.max(
-      measuredHeight - INSTAGRAM_EMBED_LIKES_COMMENT_CHROME_PX,
-      80,
-    ),
-  };
-}
-
+/** Grows the iframe and its wrapper to the full posted height — embeds are never clipped. */
 export function applySocialEmbedFrameHeight(
   iframe: HTMLIFrameElement,
   height: number,
 ): void {
-  const { iframeHeight, visibleHeight } = socialEmbedFrameHeights(
-    iframe.src,
-    height,
-  );
-  iframe.style.height = `${iframeHeight}px`;
-  iframe.style.minHeight = `${iframeHeight}px`;
+  iframe.style.height = `${height}px`;
+  iframe.style.minHeight = `${height}px`;
   iframe.style.overflow = 'hidden';
   iframe.setAttribute('scrolling', 'no');
   const wrap = iframe.parentElement;
   if (!wrap) {
     return;
   }
-  wrap.style.height = `${visibleHeight}px`;
-  wrap.style.minHeight = `${visibleHeight}px`;
+  wrap.style.height = `${height}px`;
+  wrap.style.minHeight = `${height}px`;
   wrap.style.aspectRatio = 'auto';
   wrap.style.overflow = 'hidden';
 }

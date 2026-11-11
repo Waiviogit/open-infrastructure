@@ -1,8 +1,10 @@
+/**
+ * @jest-environment jsdom
+ */
 import {
-  INSTAGRAM_EMBED_LIKES_COMMENT_CHROME_PX,
+  applySocialEmbedFrameHeight,
   isSocialEmbedResizeOrigin,
   parseSocialEmbedHeight,
-  socialEmbedFrameHeights,
 } from './social-embed-height';
 
 describe('parseSocialEmbedHeight', () => {
@@ -36,23 +38,18 @@ describe('parseSocialEmbedHeight', () => {
   });
 });
 
-describe('socialEmbedFrameHeights', () => {
-  it('clips Instagram likes + comment chrome and leaves other hosts full height', () => {
-    expect(
-      socialEmbedFrameHeights(
-        'https://www.instagram.com/p/DcncWF8DaIb/embed',
-        883,
-      ),
-    ).toEqual({
-      iframeHeight: 883,
-      visibleHeight: 883 - INSTAGRAM_EMBED_LIKES_COMMENT_CHROME_PX,
-    });
-    expect(
-      socialEmbedFrameHeights(
-        'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fexample',
-        584,
-      ),
-    ).toEqual({ iframeHeight: 584, visibleHeight: 584 });
+describe('applySocialEmbedFrameHeight', () => {
+  it('shows the whole Instagram embed — wrapper is as tall as the iframe', () => {
+    const wrap = document.createElement('div');
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.instagram.com/p/DcncWF8DaIb/embed';
+    wrap.appendChild(iframe);
+
+    applySocialEmbedFrameHeight(iframe, 883);
+
+    expect(iframe.style.height).toBe('883px');
+    expect(wrap.style.height).toBe('883px');
+    expect(wrap.style.minHeight).toBe('883px');
   });
 });
 
