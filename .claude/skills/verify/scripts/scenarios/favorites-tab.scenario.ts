@@ -97,6 +97,18 @@ function buildSpecs(): ObjectSpec[] {
     specs.push({ objectId: `fav-prod-${i}`, objectType: 'product', name: `Gadget ${i}`, categories: ['Gadgets'], tags: [] });
   }
   specs.push({ objectId: 'fav-book-1', objectType: 'book', name: 'Uncategorized book', categories: [], tags: [] });
+  // person and link support `category` too: categorized + one uncategorized object each.
+  for (let i = 1; i <= 3; i++) {
+    specs.push({ objectId: `fav-person-chef-${i}`, objectType: 'person', name: `Chef ${i}`, categories: ['Chefs'], tags: [] });
+  }
+  for (let i = 1; i <= 2; i++) {
+    specs.push({ objectId: `fav-person-blog-${i}`, objectType: 'person', name: `Blogger ${i}`, categories: ['Bloggers'], tags: [] });
+  }
+  specs.push({ objectId: 'fav-person-unc', objectType: 'person', name: 'Uncategorized person', categories: [], tags: [] });
+  for (let i = 1; i <= 2; i++) {
+    specs.push({ objectId: `fav-link-${i}`, objectType: 'link', name: `Recipe site ${i}`, categories: ['Recipe Sites'], tags: [] });
+  }
+  specs.push({ objectId: 'fav-link-unc', objectType: 'link', name: 'Uncategorized link', categories: [], tags: [] });
   return specs;
 }
 

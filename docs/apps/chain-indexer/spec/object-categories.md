@@ -28,7 +28,7 @@ Aggregated **`object_categories_related`** rows per **`scope_type` / `scope_key`
 ## Scopes
 
 - **Global** — `('global', '_')`: all active objects; `group_keys` stored as empty arrays.
-- **User** — one scope per account and **category type**: `scope_key = buildUserCategoryScopeKey(account, objectType)` → `alice:recipe` (`@opden-data-layer/core`). Category types are `CATEGORY_OBJECT_TYPES`: registry types whose `supported_updates` include `category` (today book, product, recipe, service, service_offer, service_request). Book and product are separate scopes.
+- **User** — one scope per account and **category type**: `scope_key = buildUserCategoryScopeKey(account, objectType)` → `alice:recipe` (`@opden-data-layer/core`). Category types are `CATEGORY_OBJECT_TYPES`: registry types whose `supported_updates` include `category` (today book, link, person, product, recipe, service, service_offer, service_request). Book and product are separate scopes. A type added to the registry later gets per-type scopes from its first category update; no migration is needed, because no category rows can exist before the registry allows them.
 - `parseUserCategoryScopeKey` returns `null` for legacy keys (`alice`, `alice:book,product`) and non-category types; the worker deletes such scopes instead of rebuilding them.
 
 **User scope membership** is the Favorites scope defined in [users-favorites-endpoint.md](../../query-api/spec/users-favorites-endpoint.md) (favorites ∪ authored post objects, deselect and hide-flag rules, active only), restricted to the single `objects_core.object_type` of the scope. **`object_ownership` is not part of it.** The hide flag per type comes from `resolvePostLinkedObjectTypes` / `getPostLinkedHideFlagKey` in `@opden-data-layer/core`.

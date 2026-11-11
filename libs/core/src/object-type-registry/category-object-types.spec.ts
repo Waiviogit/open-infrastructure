@@ -6,6 +6,8 @@ describe('CATEGORY_OBJECT_TYPES', () => {
   it('lists the registry types that support the category update', () => {
     expect(CATEGORY_OBJECT_TYPES).toEqual([
       'book',
+      'link',
+      'person',
       'product',
       'recipe',
       'service',
