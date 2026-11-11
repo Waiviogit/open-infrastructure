@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: chain-indexer
 tags: [chain-indexer, meta-group-sync]
-updated_at: 2026-06-10
+updated_at: 2026-11-11
 related:
   - docs/apps/chain-indexer/spec/overview.md
   - docs/apps/chain-indexer/spec/odl-pipeline.md
@@ -38,7 +38,7 @@ Each trigger emits an in-process event handled by `MetaGroupSyncHandler` (`apps/
 3. Call `ObjectViewService.resolve` with `update_types: ['productGroupId']` and that snapshot.
 4. Read the winning value from `fields.group_id.values[0].value_text`, or `null` if none.
 5. If it equals `objects_core.meta_group_id`, exit; otherwise `UPDATE objects_core SET meta_group_id = …`.
-6. After a successful `UPDATE`, emit `CATEGORY_MUTATED_EVENT` so `CategorySyncHandler` enqueues `object_categories_sync_queue` and user/global related scopes in `object_categories_related_sync_queue` (same path as category mutations — `meta_group_id` affects materialized categories).
+6. After a successful `UPDATE`, emit `CATEGORY_MUTATED_EVENT` so `CategorySyncHandler` enqueues `object_categories_sync_queue`; `ObjectCategoriesWorker` then sees the changed `meta_group_id` and enqueues the global and user related scopes (see [object-categories.md](object-categories.md#triggers)).
 
 ## Invariant
 

@@ -389,19 +389,21 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   },
   {
     name: 'get_user_favorites_types',
-    description: 'Object types present in user favorites (sidebar).',
+    description:
+      'Object types in the user Favorites scope (favorites ∪ authored post links − deselect; no ownership) with counts, supports_categories and has_categories (category navigation only when true).',
     httpEquivalent: 'GET /query/v1/users/:name/favorites/types',
     specPath: 'docs/apps/query-api/spec/users-favorites-endpoint.md',
   },
   {
     name: 'get_user_favorites',
-    description: 'Paginated favorite objects for a user profile.',
+    description:
+      'Paginated objects from the user Favorites scope, optionally one objectType (weight DESC).',
     httpEquivalent: 'GET /query/v1/users/:name/favorites',
     specPath: 'docs/apps/query-api/spec/users-favorites-endpoint.md',
   },
   {
     name: 'post_user_favorites_map',
-    description: 'Geo-filtered favorites in a bounding box for profile map.',
+    description: 'Geo-filtered objects from the user Favorites scope in a bounding box (profile map).',
     httpEquivalent: 'POST /query/v1/users/:name/favorites/map',
     specPath: 'docs/apps/query-api/spec/users-favorites-endpoint.md',
   },
@@ -419,7 +421,8 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   },
   {
     name: 'get_user_categories',
-    description: 'Shop department tree for a user catalog.',
+    description:
+      'Category navigation for exactly one category type (types=[recipe|book|…]) of a user Favorites scope; live counts over the full lineage.',
     httpEquivalent: 'GET /query/v1/users/:name/categories',
     specPath: 'docs/apps/query-api/spec/categories.md',
   },
@@ -432,19 +435,22 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   },
   {
     name: 'get_user_shop_filters',
-    description: 'Tag category and rating filter facets for a user shop/recipe catalog.',
+    description:
+      'Tag category and rating filter facets for Favorites types of a user (types required, USER_FAVORITES_OBJECT_TYPES).',
     httpEquivalent: 'GET /query/v1/users/:name/shop/filters',
     specPath: 'docs/apps/query-api/spec/shop-feed-endpoints.md',
   },
   {
     name: 'get_user_shop_objects',
-    description: 'Flat shop object list with categoryPath filter.',
+    description:
+      'Flat Favorites object list (types required) with categoryPath/uncategorized/tags/rating filters; weight DESC keyset cursor.',
     httpEquivalent: 'GET /query/v1/users/:name/shop-objects',
     specPath: 'docs/apps/query-api/spec/shop-feed-endpoints.md',
   },
   {
     name: 'get_user_shop_sections',
-    description: 'Grouped shop sections (categories with object previews).',
+    description:
+      'Category sections (non-empty child categories with live counts and weight-ordered previews) for one category type.',
     httpEquivalent: 'GET /query/v1/users/:name/shop-sections',
     specPath: 'docs/apps/query-api/spec/shop-feed-endpoints.md',
   },

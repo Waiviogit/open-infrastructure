@@ -1,19 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import type { AggregatedObject } from '@opden-data-layer/objects-domain';
 import { ObjectViewService } from '@opden-data-layer/objects-domain';
-import {
-  AggregatedObjectRepository,
-  ObjectCategoriesRepository,
-  UserMetadataRepository,
-  UserShopDeselectRepository,
-} from '../../repositories';
+import { AggregatedObjectRepository, ObjectCategoriesRepository } from '../../repositories';
 import { AffiliateLinksEnricher, flattenAffiliateTargets } from '../affiliate';
 import { parseTagFilters } from '../discover/get-discover-objects.endpoint';
+import { USER_FAVORITES_CARD_UPDATE_TYPES } from '../favorites/favorites.constants';
+import { UserFavoritesScopeResolver } from '../favorites/user-favorites-scope.resolver';
 import { ObjectProjectionService } from '../object-projection';
 import type { ProjectedObject } from '../object-projection/projected-object.types';
-import { SHOP_CARD_UPDATE_TYPES } from './shop.constants';
+import {
+  decodeWeightObjectCursor,
+  encodeWeightObjectCursor,
+} from '../pagination/weight-object-cursor';
 import type { ShopObjectsQuery } from './shop.schema';
-import { shouldHidePostLinkedObjects } from './shop-visibility';
 
 export type ShopObjectsResponse = {
   items: ProjectedObject[];
@@ -21,16 +20,18 @@ export type ShopObjectsResponse = {
   hasMore: boolean;
 };
 
+const EMPTY_PAGE: ShopObjectsResponse = { items: [], cursor: null, hasMore: false };
+
 function orderAggregatedByIds(objects: AggregatedObject[], objectIds: string[]): AggregatedObject[] {
   const map = new Map(objects.map((o) => [o.core.object_id, o]));
   return objectIds.map((id) => map.get(id)).filter((o): o is AggregatedObject => o != null);
 }
 
+/** Flat Favorites list (leaf / uncategorized / filtered), `weight DESC NULLS LAST, object_id`. */
 @Injectable()
 export class GetUserShopObjectsEndpoint {
   constructor(
-    private readonly userMetadataRepo: UserMetadataRepository,
-    private readonly shopDeselectRepo: UserShopDeselectRepository,
+    private readonly scopeResolver: UserFavoritesScopeResolver,
     private readonly objectCategoriesRepo: ObjectCategoriesRepository,
     private readonly aggregatedObjectRepo: AggregatedObjectRepository,
     private readonly objectViewService: ObjectViewService,
@@ -51,37 +52,35 @@ export class GetUserShopObjectsEndpoint {
       return null;
     }
 
-    const [flags, deselectIds] = await Promise.all([
-      this.userMetadataRepo.findShopVisibilityFlags(name),
-      this.shopDeselectRepo.findObjectIdsByAccount(name),
-    ]);
+    const rawCursor = query.cursor?.trim();
+    const cursor = rawCursor ? decodeWeightObjectCursor(rawCursor) : null;
+    if (rawCursor && cursor == null) {
+      return { ...EMPTY_PAGE };
+    }
 
-    const hideLinked = shouldHidePostLinkedObjects(query.types, flags);
-
+    const scope = await this.scopeResolver.resolve(name, query.types);
     const page = await this.objectCategoriesRepo.findObjectIdsByScope({
-      username: name,
-      types: query.types,
+      scope,
       categoryPath: query.categoryPath,
       uncategorizedOnly: query.uncategorizedOnly,
       limit: query.limit,
-      cursor: query.cursor ?? null,
-      hideLinkedObjects: hideLinked,
-      shopDeselectObjectIds: deselectIds,
+      cursor,
       tags: parseTagFilters(query.tags ?? []),
       rating: query.rating ?? null,
     });
 
-    if (page.objectIds.length === 0) {
-      return { items: [], cursor: null, hasMore: false };
+    if (page.rows.length === 0) {
+      return { ...EMPTY_PAGE };
     }
 
+    const pageIds = page.rows.map((row) => row.object_id);
     const { objects, voterWaivPowers, rankVoteProjection } =
-      await this.aggregatedObjectRepo.loadByObjectIds(page.objectIds, {
+      await this.aggregatedObjectRepo.loadByObjectIds(pageIds, {
         viewerAccount,
       });
-    const ordered = orderAggregatedByIds(objects, page.objectIds);
+    const ordered = orderAggregatedByIds(objects, pageIds);
     const views = this.objectViewService.resolve(ordered, voterWaivPowers, {
-      update_types: [...SHOP_CARD_UPDATE_TYPES],
+      update_types: [...USER_FAVORITES_CARD_UPDATE_TYPES],
       locale,
       include_rejected: false,
     });
@@ -100,9 +99,15 @@ export class GetUserShopObjectsEndpoint {
       governanceObjectIdFromHeader,
     });
 
+    const lastRow = page.rows[page.rows.length - 1];
+    const nextCursor =
+      page.hasMore && lastRow != null
+        ? encodeWeightObjectCursor({ weight: lastRow.weight, object_id: lastRow.object_id })
+        : null;
+
     return {
       items: projected,
-      cursor: page.nextCursor,
+      cursor: nextCursor,
       hasMore: page.hasMore,
     };
   }

@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, page, user-profile, data-loading]
-updated_at: 2026-06-10
+updated_at: 2026-11-11
 related:
   - docs/apps/web/spec/overview.md
   - docs/apps/web/spec/pages/user-profile/profile-shell.md
@@ -27,7 +27,7 @@ This document covers loading **shell profile** data (hero / header counts and di
 |----------|------|
 | `apps/web/src/app/(app)/user-profile/[name]/layout.tsx` | Validates `name` regex; `await getUserProfileQuery(decoded)` — `notFound()` if null |
 | `apps/web/src/app/(app)/user-profile/[name]/(profile)/layout.tsx` | Re-fetches profile with viewer + locale; loads following-objects count head and expertise counters for hero badges |
-| `apps/web/src/app/(app)/user-profile/[name]/(profile)/(main)/@leftSidebar/*` | `getUserAccountSidebarQuery` on default routes (not shop/recipe/favorites) |
+| `apps/web/src/app/(app)/user-profile/[name]/(profile)/(main)/@leftSidebar/*` | `getUserAccountSidebarQuery` on default routes (not favorites — see [routes/favorites.md](routes/favorites.md)) |
 
 ### Left sidebar (account panel)
 

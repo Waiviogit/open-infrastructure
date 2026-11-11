@@ -70,6 +70,7 @@ import * as m00069 from './00069_affiliate_code_drop_domain_scope';
 import * as m00070 from './00070_affiliate_button_image_json';
 import * as m00071 from './00071_obl_payments_paid_by';
 import * as m00072 from './00072_followed_objects_feed_indexes';
+import * as m00073 from './00073_object_categories_related_per_type_scopes';
 import type { Migration } from 'kysely';
 
 /** Ordered migrations for OdlMigrationProvider. Schema matches @opden-data-layer/odl-db-types OdlDatabase and docs/spec/data-model/schema.sql */
@@ -155,4 +156,5 @@ export const MIGRATIONS: Record<string, Migration> = {
   '00070_affiliate_button_image_json': { up: m00070.up, down: m00070.down },
   '00071_obl_payments_paid_by': { up: m00071.up, down: m00071.down },
   '00072_followed_objects_feed_indexes': { up: m00072.up, down: m00072.down },
+  '00073_object_categories_related_per_type_scopes': { up: m00073.up, down: m00073.down },
 };

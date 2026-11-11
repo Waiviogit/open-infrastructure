@@ -12,9 +12,9 @@ import { expandObjectRefs } from '../object-projection/object-ref-expansion';
 import { ListItemsRecursiveCountService } from '../object-projection/list-items-recursive-count.service';
 import type { RefSummary } from '../object-projection/projected-object.types';
 import {
-  decodeCategoryObjectsCursor,
-  encodeCategoryObjectsCursor,
-} from './category-objects-cursor';
+  decodeWeightObjectCursor,
+  encodeWeightObjectCursor,
+} from '../pagination/weight-object-cursor';
 import type { CategoryObjectsQuery } from './category-objects-query.schema';
 import type { ObjectRefListResponseDto } from '../objects/schemas/object-ref-list.schema';
 
@@ -46,7 +46,7 @@ export class GetCategoryObjectsEndpoint {
     }
 
     const cursor = input.query.cursor
-      ? decodeCategoryObjectsCursor(input.query.cursor)
+      ? decodeWeightObjectCursor(input.query.cursor)
       : null;
     const excludeObjectId = input.query.exclude_object_id?.trim() || undefined;
 
@@ -99,7 +99,7 @@ export class GetCategoryObjectsEndpoint {
     const lastRow = rows[rows.length - 1];
     const nextCursor =
       hasMore && lastRow != null
-        ? encodeCategoryObjectsCursor({
+        ? encodeWeightObjectCursor({
             weight: lastRow.weight,
             object_id: lastRow.object_id,
           })

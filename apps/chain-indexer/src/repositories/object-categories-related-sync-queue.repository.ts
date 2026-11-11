@@ -1,36 +1,75 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Kysely } from 'kysely';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import type { Kysely, Transaction } from 'kysely';
 import { sql } from 'kysely';
 import type { Database } from '../database';
 import { KYSELY } from '../database';
 import { ObjectCategoriesRelatedScopeType, ObjectCategoriesRelatedSyncQueueRow } from '@opden-data-layer/odl-db-types';
 
+type DbExecutor = Kysely<Database> | Transaction<Database>;
+
+/**
+ * Queue of `object_categories_related` scopes to rebuild.
+ *
+ * Re-enqueueing an existing key bumps `enqueued_at` strictly above its previous value
+ * (`GREATEST(old + 1, new)`, so two enqueues in the same second still differ) and resets
+ * `attempts`. `deleteClaimed` only removes the row when it was not re-enqueued after the claim,
+ * so a change that arrives while a worker processes the scope is never lost.
+ */
 @Injectable()
 export class ObjectCategoriesRelatedSyncQueueRepository {
+  private readonly logger = new Logger(ObjectCategoriesRelatedSyncQueueRepository.name);
+
   constructor(@Inject(KYSELY) private readonly db: Kysely<Database>) {}
+
+  private executor(trx?: DbExecutor): DbExecutor {
+    return trx ?? this.db;
+  }
 
   async enqueue(
     scopeType: ObjectCategoriesRelatedScopeType,
     scopeKey: string,
     enqueuedAt: number,
+    trx?: DbExecutor,
   ): Promise<void> {
-    await sql`
-      INSERT INTO object_categories_related_sync_queue (
-        scope_type,
-        scope_key,
-        enqueued_at,
-        attempts,
-        last_attempt_at
-      )
-      VALUES (
-        ${scopeType},
-        ${scopeKey},
-        ${enqueuedAt},
-        0,
-        NULL
-      )
-      ON CONFLICT (scope_type, scope_key) DO NOTHING
-    `.execute(this.db);
+    await this.enqueueMany(scopeType, [scopeKey], enqueuedAt, trx);
+  }
+
+  /** One multi-row insert; duplicate keys in `scopeKeys` are collapsed. */
+  async enqueueMany(
+    scopeType: ObjectCategoriesRelatedScopeType,
+    scopeKeys: readonly string[],
+    enqueuedAt: number,
+    trx?: DbExecutor,
+  ): Promise<void> {
+    const keys = [...new Set(scopeKeys)];
+    if (keys.length === 0) {
+      return;
+    }
+    const values = sql.join(
+      keys.map((key) => sql`(${scopeType}, ${key}, ${enqueuedAt}::bigint, 0, NULL::bigint)`),
+      sql`, `,
+    );
+    try {
+      await sql`
+        INSERT INTO object_categories_related_sync_queue (
+          scope_type,
+          scope_key,
+          enqueued_at,
+          attempts,
+          last_attempt_at
+        )
+        VALUES ${values}
+        ON CONFLICT (scope_type, scope_key) DO UPDATE SET
+          enqueued_at = GREATEST(
+            object_categories_related_sync_queue.enqueued_at + 1,
+            EXCLUDED.enqueued_at
+          ),
+          attempts = 0
+      `.execute(this.executor(trx));
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
   }
 
   async claimBatch(
@@ -59,15 +98,27 @@ export class ObjectCategoriesRelatedSyncQueueRepository {
     return rows;
   }
 
-  async deleteOne(
+  /**
+   * Deletes a claimed row unless it was re-enqueued after the claim
+   * (`enqueued_at > claimedEnqueuedAt`). Returns true when the row is gone.
+   */
+  async deleteClaimed(
     scopeType: ObjectCategoriesRelatedScopeType,
     scopeKey: string,
-  ): Promise<void> {
-    await this.db
-      .deleteFrom('object_categories_related_sync_queue')
-      .where('scope_type', '=', scopeType)
-      .where('scope_key', '=', scopeKey)
-      .execute();
+    claimedEnqueuedAt: number | string,
+  ): Promise<boolean> {
+    try {
+      const result = await this.db
+        .deleteFrom('object_categories_related_sync_queue')
+        .where('scope_type', '=', scopeType)
+        .where('scope_key', '=', scopeKey)
+        .where('enqueued_at', '<=', sql<number>`${claimedEnqueuedAt}::bigint`)
+        .executeTakeFirst();
+      return result.numDeletedRows > BigInt(0);
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
   }
 
   async resetAttempt(

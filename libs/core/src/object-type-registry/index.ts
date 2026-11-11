@@ -34,3 +34,4 @@ export { SERVICE_OFFER_OBJECT_TYPE } from './object-types/service-offer';
 export { SERVICE_REQUEST_OBJECT_TYPE } from './object-types/service-request';
 export { LEGAL_DOCUMENT_OBJECT_TYPE } from './object-types/legal-document';
 export { SKILL_OBJECT_TYPE } from './object-types/skill';
+export { CATEGORY_OBJECT_TYPES, objectTypeSupportsCategories } from './category-object-types';

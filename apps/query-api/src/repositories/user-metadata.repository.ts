@@ -1,13 +1,8 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
+import type { UserFavoritesVisibilityFlags } from '@opden-data-layer/core';
 import type { Kysely } from 'kysely';
 import type { Database } from '../database';
 import { KYSELY } from '../database';
-
-export type UserShopVisibilityFlags = {
-  hide_linked_objects: boolean;
-  hide_recipe_objects: boolean;
-  hide_favorite_objects: boolean;
-};
 
 @Injectable()
 export class UserMetadataRepository {
@@ -16,9 +11,9 @@ export class UserMetadataRepository {
   constructor(@Inject(KYSELY) private readonly db: Kysely<Database>) {}
 
   /**
-   * Visibility flags for shop/recipe feeds. When no row exists, linked posts are visible (both false).
+   * Per-type post-link hide flags for the Favorites scope. Missing row → all false (posts visible).
    */
-  async findShopVisibilityFlags(account: string): Promise<UserShopVisibilityFlags> {
+  async findShopVisibilityFlags(account: string): Promise<UserFavoritesVisibilityFlags> {
     const trimmed = account.trim();
     if (trimmed.length === 0) {
       return {

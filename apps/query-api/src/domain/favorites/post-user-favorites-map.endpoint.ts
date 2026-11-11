@@ -1,27 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { MAP_GEO_OBJECT_TYPES } from '@opden-data-layer/core';
 import type { AggregatedObject } from '@opden-data-layer/objects-domain';
 import { ObjectViewService } from '@opden-data-layer/objects-domain';
-import {
-  AggregatedObjectRepository,
-  UserFavoritesRepository,
-  UserMetadataRepository,
-  UserShopDeselectRepository,
-} from '../../repositories';
+import { AggregatedObjectRepository, UserFavoritesRepository } from '../../repositories';
 import { ObjectProjectionService } from '../object-projection';
 import type { ProjectedObject } from '../object-projection/projected-object.types';
-import { FAVORITES_MAP_UPDATE_TYPES } from './favorites.constants';
+import { USER_FAVORITES_MAP_UPDATE_TYPES } from './favorites.constants';
 import type { UserFavoritesMapBody, UserFavoritesMapResponse } from './post-user-favorites-map.schema';
+import { UserFavoritesScopeResolver } from './user-favorites-scope.resolver';
 
 function orderAggregatedByIds(objects: AggregatedObject[], objectIds: string[]): AggregatedObject[] {
   const map = new Map(objects.map((o) => [o.core.object_id, o]));
   return objectIds.map((id) => map.get(id)).filter((o): o is AggregatedObject => o != null);
 }
 
+/** Requested map types ∩ `MAP_GEO_OBJECT_TYPES`; omitted → every map type. */
+export function resolveMapObjectTypes(requested: readonly string[] | undefined): string[] {
+  if (requested == null || requested.length === 0) {
+    return [...MAP_GEO_OBJECT_TYPES];
+  }
+  const allowed = new Set<string>(MAP_GEO_OBJECT_TYPES);
+  return requested.filter((type) => allowed.has(type));
+}
+
 @Injectable()
 export class PostUserFavoritesMapEndpoint {
   constructor(
-    private readonly userMetadataRepo: UserMetadataRepository,
-    private readonly shopDeselectRepo: UserShopDeselectRepository,
+    private readonly scopeResolver: UserFavoritesScopeResolver,
     private readonly favoritesRepo: UserFavoritesRepository,
     private readonly aggregatedObjectRepo: AggregatedObjectRepository,
     private readonly objectViewService: ObjectViewService,
@@ -40,22 +45,11 @@ export class PostUserFavoritesMapEndpoint {
       return null;
     }
 
-    const [flags, deselectIds] = await Promise.all([
-      this.userMetadataRepo.findShopVisibilityFlags(name),
-      this.shopDeselectRepo.findObjectIdsByAccount(name),
-    ]);
-
-    const scope = {
-      account: name,
-      hideFavoriteObjects: flags.hide_favorite_objects,
-      shopDeselectObjectIds: deselectIds,
-    };
-
+    const scope = await this.scopeResolver.resolve(name, resolveMapObjectTypes(body.objectTypes));
     const fetchLimit = body.limit + 1;
     const objectIds = await this.favoritesRepo.findMapObjectIdsByScope(
       scope,
       body.box,
-      body.objectTypes,
       body.skip,
       fetchLimit,
     );
@@ -74,7 +68,7 @@ export class PostUserFavoritesMapEndpoint {
     const ordered = orderAggregatedByIds(objects, pageIds);
 
     const views = this.objectViewService.resolve(ordered, voterWaivPowers, {
-      update_types: [...FAVORITES_MAP_UPDATE_TYPES],
+      update_types: [...USER_FAVORITES_MAP_UPDATE_TYPES],
       locale,
       include_rejected: false,
     });

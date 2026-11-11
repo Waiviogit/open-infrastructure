@@ -1,4 +1,4 @@
-import { filterRootDepartments } from './level1-filter';
+import { greedyRootDepartments } from './level1-filter';
 import type { CategoryNavigationRow } from './category-navigation.types';
 
 function row(
@@ -14,23 +14,22 @@ function row(
   };
 }
 
-describe('filterRootDepartments', () => {
+describe('greedyRootDepartments', () => {
   it('dedupes narrower names dominated by related set of earlier heavy row', () => {
-    const { items, show_other } = filterRootDepartments([
+    const items = greedyRootDepartments([
       row('Electronics', 100, ['Audio', 'Headphones']),
       row('Headphones', 50, ['Electronics']),
     ]);
     expect(items.map((i) => i.category_name)).toEqual(['Electronics']);
-    expect(show_other).toBe(false);
   });
 
-  it('caps at 20 rows and sets show_other when more than 20 accepted', () => {
+  it('orders by precomputed count and does not cap (caller caps after live counts)', () => {
     const many: CategoryNavigationRow[] = [];
     for (let i = 0; i < 25; i++) {
-      many.push(row(`Cat${i}`, 100 - i, []));
+      many.push(row(`Cat${i}`, i, []));
     }
-    const { items, show_other } = filterRootDepartments(many);
-    expect(items.length).toBe(20);
-    expect(show_other).toBe(true);
+    const items = greedyRootDepartments(many);
+    expect(items).toHaveLength(25);
+    expect(items[0]?.category_name).toBe('Cat24');
   });
 });

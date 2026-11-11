@@ -1,5 +1,5 @@
-import { ProfileObjectListSkeleton } from '@/modules/user-profile';
+import { ProfileFavoritesContentSkeleton } from '@/modules/user-profile';
 
 export default function ProfileFavoritesLoading() {
-  return <ProfileObjectListSkeleton />;
+  return <ProfileFavoritesContentSkeleton />;
 }

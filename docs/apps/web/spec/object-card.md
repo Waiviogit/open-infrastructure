@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, object-page, components]
-updated_at: 2026-10-22
+updated_at: 2026-11-11
 related:
   - docs/apps/web/spec/overview.md
 ---
@@ -24,13 +24,13 @@ Single component: [`apps/web/src/modules/feed/presentation/components/object-car
 | Discover object feed | `/discover?type=…` |
 | Discover and profile map pins | `layout="popup"` inside `AppPopup` |
 | Feed linked objects | Post body linked object chips |
-| User profile shop | Shop object lists |
+| User profile Favorites | Favorites lists and category section previews |
 
 ## Layout variants
 
 | `layout` | When | Mobile behavior |
 |----------|------|-----------------|
-| `default` | Discover feed, profile shop, post linked objects | Stacked hero image below 640px |
+| `default` | Discover feed, profile Favorites, post linked objects | Stacked hero image below 640px |
 | `catalog` | Object-page list feeds (embedded catalog, related/similar, category, books) | Horizontal row at all viewports; line-clamps in text column |
 | `editorRow` | Post editor linked-object row | Compact horizontal row |
 | `mapSidebar` | Profile map favorites sidebar | Compact horizontal row, single rating |

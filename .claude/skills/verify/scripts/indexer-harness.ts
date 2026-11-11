@@ -107,6 +107,8 @@ export type HeTxLike = {
 export type Harness = {
   /** Kysely on the test database (any table). */
   db: Kysely<OdlDatabase>;
+  /** Any provider from the harness Nest context (e.g. a worker class, to call `runBatch()` synchronously). */
+  get<T>(token: unknown): T;
   /** Wraps custom_json ops into one synthetic Hive block (one tx per op) and parses it. */
   hiveBlock(ops: CustomJsonOpLike[]): Promise<number>;
   /** Parses one synthetic Hive Engine block referencing the given Hive block number. */
@@ -146,6 +148,7 @@ async function main(): Promise<void> {
 
   const harness: Harness = {
     db: app.get(KYSELY),
+    get: <T>(token: unknown): T => app.get(token as never) as T,
     async hiveBlock(ops) {
       blockNum += 1;
       await hive.parseBlock({

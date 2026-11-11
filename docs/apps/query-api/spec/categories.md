@@ -1,62 +1,86 @@
 ---
 id: docs-apps-query-api-spec-categories
 title: Categories
-description: "Read **pre-aggregated** shop department data for a Hive account from `object_categories_related` (`scope_type = 'user'`, `scope_key = buildUserScopeKey(name, types)`)."
+description: "Category navigation for one Favorites type of a Hive account: precomputed `object_categories_related` rows (`scope_key = account:type`) choose candidates and order; every count is a live object count over the Favorites scope ∩ full lineage."
 type: spec
 status: active
 scope: query-api
-tags: [query-api, categories]
-updated_at: 2026-06-10
+tags: [query-api, categories, favorites]
+updated_at: 2026-11-11
 related:
   - docs/apps/query-api/spec/overview.md
+  - docs/apps/query-api/spec/users-favorites-endpoint.md
+  - docs/apps/query-api/spec/shop-feed-endpoints.md
   - docs/README.md
 ---
 
 # Categories (`GET /users/:name/categories`)
 
-**Back:** [Query API overview](../overview.md) · **Related:** [chain-indexer object-categories](../../chain-indexer/spec/object-categories.md)
+**Back:** [Query API overview](overview.md) · **Scope:** [users-favorites-endpoint.md](users-favorites-endpoint.md#favorites-scope) · **Related:** [chain-indexer object-categories](../../chain-indexer/spec/object-categories.md)
 
 ## Purpose
 
-Read **pre-aggregated** shop department data for a Hive account from `object_categories_related` (`scope_type = 'user'`, `scope_key = buildUserScopeKey(name, types)`).
+Category navigation (sidebar tree) for one category object type in an account's Favorites scope.
+
+- **Candidates:** precomputed `object_categories_related` rows (`scope_type = 'user'`, `scope_key = buildUserCategoryScopeKey(name, type)` = `name:type`) choose the candidate names and their order.
+- **Counts:** every number shown is computed live.
 
 ## Endpoint
 
 `GET /query/v1/users/{name}/categories`
 
-Query string (all optional except noted):
-
 | Param | Role |
 |-------|------|
-| `types` | Repeatable; object-type bucket for **`scope_key`** (default **`book`** + **`product`**); e.g. `recipe` for the recipe bucket. Must match indexer precomputations (`SHOP_TYPE_BUCKETS` in `@opden-data-layer/core`). |
+| `types` | **Required, exactly one** type from `CATEGORY_OBJECT_TYPES` (registry types whose `supported_updates` include `category`). Missing, several types, or a type without categories → **400**. There is no default. |
 | `name` | Parent category for level ≥ 2 (omit = root). |
 | `path` | Repeatable; ancestors before `name` when drilling down. |
 | `excluded` | Repeatable; names to hide from the sibling list. |
 
-Response: `items[]` with `name`, `objects_count`, `has_children`; `uncategorized_count`; root-only `show_other` when more than **20** greedy top rows exist.
+Response: `{ items: { name, objects_count, has_children }[], uncategorized_count, show_other }`.
 
-At **root** (no `name`), `uncategorized_count` is computed **live** from scoped objects with empty `category_names` via `countUncategorizedObjectIdsByScope` (not the stale `object_categories_related` `__uncategorized__` sentinel). Drill-down responses keep the sentinel value from the pre-aggregated nav row.
+## Live counts
 
-Implementation: [`GetUserCategoriesEndpoint`](../../../apps/query-api/src/domain/categories/get-user-categories.endpoint.ts), filters [`level1-filter.ts`](../../../apps/query-api/src/domain/categories/level1-filter.ts), [`level2-filter.ts`](../../../apps/query-api/src/domain/categories/level2-filter.ts).
+Let `lineage = [...path, name]` (empty at the root), and let the scope be the Favorites scope for `[type]`.
 
-## Root (no `name`)
+- **`objects_count`** = `COUNT(DISTINCT object_id)` of scope objects whose `object_categories.category_names` contain the whole `lineage` **and** the child name.
+  - This is the same set (and unit) that `shop-objects?categoryPath=[...lineage, child]` pages through.
+  - It is one grouped query per request: the lineage filter is `category_names @> lineage`, then names are counted from `unnest(category_names)`.
+- **Empty children are dropped:** a candidate whose intersection is empty is not returned. This holds even when it co-occurs pairwise with every ancestor (A∩X ≠ ∅ and B∩X ≠ ∅, but A∩B∩X = ∅).
+- **`has_children`** is true only when drilling into the child would list at least one item. Some grandchild candidate (same heuristics as the drill-down) must have a non-empty live intersection with `[...lineage, child, grandchild]`. This is one grouped pair-count query per request.
+- **`uncategorized_count`:**
+  - at the **root**, the live count of scope objects with no `object_categories` row or empty `category_names` (equals the `shop-objects?uncategorizedOnly=true` list length);
+  - **below the root, always `0`**. Uncategorized is a type-level node, not a child of a category. This closes the earlier spec/code divergence, where the spec said drill-down kept the precomputed sentinel value.
+- **No precomputed numbers:** the precomputed `objects_count` (product-group units, possibly stale) and the `__uncategorized__` sentinel row are never returned.
 
-1. Sort categories by **`objects_count`** descending.
-2. **Greedy dominance:** do not add name **B** if **B** appears in **`related_names`** of any already accepted row (breadth-first preference for stronger / earlier names).
-3. Cap at **20** (`ROOT_DEPARTMENTS_LIMIT`); **`show_other`** if more than **20** survived the greedy pass.
-4. **`has_children`:** `hasDescendantBeyondLineage(nav, [cat])` — exists another row whose **`related_names`** contains that single name (co-occurrence ladder).
+Implementation:
 
-## Levels ≥ 2 (`name` set)
+- [`GetUserCategoriesEndpoint`](../../../../apps/query-api/src/domain/categories/get-user-categories.endpoint.ts) and [`UserCategoryNavigationService`](../../../../apps/query-api/src/domain/categories/user-category-navigation.service.ts). `shop-sections` uses the same service.
+- Candidate selection: [`category-candidates.ts`](../../../../apps/query-api/src/domain/categories/category-candidates.ts), [`level1-filter.ts`](../../../../apps/query-api/src/domain/categories/level1-filter.ts), [`level2-filter.ts`](../../../../apps/query-api/src/domain/categories/level2-filter.ts).
 
-Let `ancestry = [...path, name]`.
+## Candidates: root (no `name`)
 
-1. Candidates **D** ≠ `name`, not `excluded`, and `ancestry.every(a => D.related_names.includes(a))`.
-2. **`total`** = sum of `objects_count` among candidates; keep **D** where `objects_count/total` is in **(1%, 30%)** and **`objects_count > 10`**.
-3. Sort by `objects_count` desc; drop **near-duplicate** pairs when both sides miss **< 10** group keys vs intersection (`GROUP_KEY_OVERLAP_TOLERANCE`, uses **`group_keys`**; empty **`group_keys`** skips dedup).
-4. **`has_children`:** some row passes `lineage = [...path, name, D]`.
+1. Sort precomputed rows by their `objects_count` descending.
+2. **Greedy dominance:** skip name **B** if **B** appears in the `related_names` of an already accepted row.
+3. Drop names whose live count is 0.
+4. Cap at **20** (`ROOT_DEPARTMENTS_LIMIT`). **`show_other`** is true when more than 20 non-empty names remain.
 
-Uncategorized is only counted at the **root** response using the live query above.
+## Candidates: levels ≥ 2 (`name` set)
+
+1. Candidates **D** ≠ `name`, not in `lineage`, not `excluded`, with every `lineage` name in `D.related_names` (pairwise co-occurrence; a candidate is not proof of a non-empty intersection).
+2. **`total`** = sum of precomputed `objects_count` among candidates. Keep **D** where `objects_count / total` is in **(1%, 30%)** and `objects_count > 10`.
+3. Sort by precomputed `objects_count` desc. Drop **near-duplicates** when both sides miss fewer than 10 group keys vs their intersection (`GROUP_KEY_OVERLAP_TOLERANCE`, on `group_keys`).
+4. Drop names whose live count is 0.
+
+## Performance
+
+A request runs at most three queries over the scope CTE:
+
+1. counts for the candidates;
+2. pair counts for `has_children`;
+3. the uncategorized count (root only).
+
+Each is grouped, not one query per candidate. The lineage filter uses `category_names @> …`, which the GIN index `idx_object_categories_category_names_gin` can serve. No Redis cache is used.
 
 ## Global scope
 
-Global object feeds by department name: [`category-objects.md`](category-objects.md) (`GET /query/v1/categories/objects`). User shop navigation remains on `GET /users/:name/categories`.
+Global object feeds by department name: [`category-objects.md`](category-objects.md) (`GET /query/v1/categories/objects`). User navigation stays on `GET /users/:name/categories`.

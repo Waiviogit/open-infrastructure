@@ -8,7 +8,7 @@ import {
 import { GovernanceResolverService } from '../governance';
 import { ListItemsRecursiveCountService } from '../object-projection/list-items-recursive-count.service';
 import { GetCategoryObjectsEndpoint } from './get-category-objects.endpoint';
-import { encodeCategoryObjectsCursor } from './category-objects-cursor';
+import { encodeWeightObjectCursor } from '../pagination/weight-object-cursor';
 
 jest.mock('../object-projection/object-ref-expansion', () => ({
   expandObjectRefs: jest.fn(),
@@ -90,7 +90,7 @@ describe('GetCategoryObjectsEndpoint', () => {
     expect(result.items.map((i) => i.object_id)).toEqual(['b', 'a']);
     expect(result.hasMore).toBe(true);
     expect(result.cursor).toBe(
-      encodeCategoryObjectsCursor({ weight: 10, object_id: 'a' }),
+      encodeWeightObjectCursor({ weight: 10, object_id: 'a' }),
     );
     expect(findObjectIdsByCategoryName).toHaveBeenCalledWith({
       categoryName: 'Active Skirts',

@@ -1,5 +1,5 @@
-import { ProfileFavoritesTypeNavSkeleton } from '@/modules/user-profile';
+import { ProfileFavoritesRailSkeleton } from '@/modules/user-profile';
 
 export default function ProfileLeftSidebarFavoritesLoading() {
-  return <ProfileFavoritesTypeNavSkeleton />;
+  return <ProfileFavoritesRailSkeleton />;
 }

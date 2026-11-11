@@ -1,7 +1,4 @@
-import {
-  filterSubDepartments,
-  hasDescendantBeyondLineage,
-} from './level2-filter';
+import { filterSubDepartments } from './level2-filter';
 import type { CategoryNavigationRow } from './category-navigation.types';
 
 function nav(
@@ -39,15 +36,5 @@ describe('filterSubDepartments', () => {
         excluded: [],
       }),
     ).toEqual([]);
-  });
-});
-
-describe('hasDescendantBeyondLineage', () => {
-  it('returns true when another row matches full lineage prefix on related_names', () => {
-    const all = [
-      nav('Electronics', 1, [], ['g1']),
-      nav('Deep', 1, ['Electronics', 'Audio'], ['g1']),
-    ];
-    expect(hasDescendantBeyondLineage(all, ['Electronics', 'Audio'])).toBe(true);
   });
 });

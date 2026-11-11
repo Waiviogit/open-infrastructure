@@ -34,7 +34,13 @@ export { PostObjectRelatedImagesRepository } from './post-object-related-images.
 export { UserFavoritesRepository } from './user-favorites.repository';
 export { UserObjectExpertiseRepository } from './user-object-expertise.repository';
 export type { UserExpertiseScope, UserExpertiseRow } from './user-object-expertise.repository';
-export type { FavoritesScopeParams } from './user-favorites.repository';
+export type { MapBoundingBox, UserFavoritesTypeCountRow } from './user-favorites.repository';
+export type {
+  UserFavoritesScope,
+  UserFavoritesTagCategoryRow,
+  UserFavoritesTagFilter,
+} from './user-favorites-scope.sql';
+export type { CategoryNamePair, ScopedObjectRow } from './object-categories.repository';
 export { UserDelegationsRepository } from './user-delegations.repository';
 export { UserRcDelegationsRepository } from './user-rc-delegations.repository';
 export { UserAccountAuthsRepository } from './user-account-auths.repository';

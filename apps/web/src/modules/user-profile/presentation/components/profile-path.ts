@@ -10,8 +10,6 @@ export const USER_PROFILE_RESERVED_FIRST_SEGMENTS: readonly string[] = [
   'mentions',
   'activity',
   'map',
-  'user-shop',
-  'recipe',
   'favorites',
   'transfers',
   'followers',

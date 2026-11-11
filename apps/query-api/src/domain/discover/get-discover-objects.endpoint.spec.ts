@@ -4,7 +4,7 @@ import type { AggregatedObjectRepository } from '../../repositories/aggregated-o
 import type { ObjectViewService } from '@opden-data-layer/objects-domain';
 import type { GovernanceResolverService } from '../governance/governance-resolver.service';
 import type { ObjectProjectionService } from '../object-projection/object-projection.service';
-import { SHOP_CARD_UPDATE_TYPES } from '../shop/shop.constants';
+import { USER_FAVORITES_CARD_UPDATE_TYPES } from '../favorites/favorites.constants';
 
 describe('parseTagFilters', () => {
   it('parses category:value and skips legacy value-only', () => {
@@ -119,7 +119,7 @@ describe('GetDiscoverObjectsEndpoint', () => {
       expect.any(Array),
       expect.any(Map),
       expect.objectContaining({
-        update_types: expect.arrayContaining([...SHOP_CARD_UPDATE_TYPES, 'geo']),
+        update_types: expect.arrayContaining([...USER_FAVORITES_CARD_UPDATE_TYPES, 'geo']),
       }),
     );
   });

@@ -5,11 +5,11 @@ import { AggregatedObjectRepository, DiscoverRepository } from '../../repositori
 import { AffiliateLinksEnricher, flattenAffiliateTargets } from '../affiliate';
 import { GovernanceResolverService } from '../governance';
 import { ObjectProjectionService } from '../object-projection/object-projection.service';
-import { SHOP_CARD_UPDATE_TYPES } from '../shop/shop.constants';
+import { USER_FAVORITES_CARD_UPDATE_TYPES } from '../favorites/favorites.constants';
 
 /** Shop card fields plus geo for discover map markers. */
 const DISCOVER_OBJECT_UPDATE_TYPES = [
-  ...SHOP_CARD_UPDATE_TYPES,
+  ...USER_FAVORITES_CARD_UPDATE_TYPES,
   'geo',
   'title',
   'address',

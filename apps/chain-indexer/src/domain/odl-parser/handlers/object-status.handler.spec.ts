@@ -13,6 +13,10 @@ import {
 
 import { ObjectStatusHandler } from './object-status.handler';
 import { ObjectStatusRecomputeEvent } from '../object-status-created.event';
+import {
+  OBJECT_ACTIVE_STATE_CHANGED_EVENT,
+  ObjectActiveStateChangedEvent,
+} from '../object-active-state-changed.event';
 
 const materializeMock = materializeObjectCoreStatus as jest.MockedFunction<
   typeof materializeObjectCoreStatus
@@ -39,6 +43,8 @@ describe('ObjectStatusHandler', () => {
     ownerships: [],
   };
 
+  const emit = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -62,6 +68,7 @@ describe('ObjectStatusHandler', () => {
       new ObjectViewService(),
       { update } as never,
       { enqueue } as never,
+      { emit } as never,
     );
 
     await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));
@@ -70,6 +77,10 @@ describe('ObjectStatusHandler', () => {
     expect(materializeMock).toHaveBeenCalledTimes(1);
     expect(update).toHaveBeenCalledWith('o1', { status: 'unavailable' });
     expect(enqueue).toHaveBeenCalledWith('o1', expect.any(Number));
+    expect(emit).toHaveBeenCalledWith(
+      OBJECT_ACTIVE_STATE_CHANGED_EVENT,
+      new ObjectActiveStateChangedEvent('o1', 'place', false),
+    );
   });
 
   it('sets core to active when protected wins materialization', async () => {
@@ -91,12 +102,17 @@ describe('ObjectStatusHandler', () => {
       new ObjectViewService(),
       { update } as never,
       { enqueue } as never,
+      { emit } as never,
     );
 
     await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));
 
     expect(update).toHaveBeenCalledWith('o1', { status: 'active' });
     expect(enqueue).toHaveBeenCalledWith('o1', expect.any(Number));
+    expect(emit).toHaveBeenCalledWith(
+      OBJECT_ACTIVE_STATE_CHANGED_EVENT,
+      new ObjectActiveStateChangedEvent('o1', 'place', true),
+    );
   });
 
   it('skips update when materialized status unchanged', async () => {
@@ -113,11 +129,13 @@ describe('ObjectStatusHandler', () => {
       new ObjectViewService(),
       { update } as never,
       { enqueue: jest.fn() } as never,
+      { emit } as never,
     );
 
     await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));
 
     expect(update).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
   });
 
   it('materializes for non-admin winning updates without admin gate', async () => {
@@ -134,6 +152,7 @@ describe('ObjectStatusHandler', () => {
       new ObjectViewService(),
       { update } as never,
       { enqueue: jest.fn().mockResolvedValue(undefined) } as never,
+      { emit } as never,
     );
 
     await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));

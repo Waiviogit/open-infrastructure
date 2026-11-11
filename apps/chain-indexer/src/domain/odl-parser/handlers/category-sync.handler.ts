@@ -1,12 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import {
-  buildUserScopeKey,
-  SHOP_TYPE_BUCKETS,
-} from '@opden-data-layer/core';
-import { ObjectFavoriteRepository } from '../../../repositories/object-favorite.repository';
-import { ObjectOwnershipRepository } from '../../../repositories/object-ownership.repository';
-import { PostsRepository } from '../../../repositories/posts.repository';
 import { ObjectCategoriesRelatedSyncQueueRepository } from '../../../repositories/object-categories-related-sync-queue.repository';
 import { ObjectCategoriesSyncQueueRepository } from '../../../repositories/object-categories-sync-queue.repository';
 import {
@@ -14,13 +7,13 @@ import {
   CATEGORY_MUTATED_EVENT,
 } from '../category-mutated.event';
 import {
+  ObjectActiveStateChangedEvent,
+  OBJECT_ACTIVE_STATE_CHANGED_EVENT,
+} from '../object-active-state-changed.event';
+import {
   ObjectFavoriteChangedEvent,
   OBJECT_FAVORITE_CHANGED_EVENT,
 } from '../object-favorite-changed.event';
-import {
-  OwnershipChangedEvent,
-  OWNERSHIP_CHANGED_EVENT,
-} from '../ownership-changed.event';
 import {
   UserMetadataChangedEvent,
   USER_METADATA_CHANGED_EVENT,
@@ -33,9 +26,17 @@ import {
   PostObjectChangedEvent,
   POST_OBJECT_CHANGED_EVENT,
 } from '../post-object-changed.event';
+import { UserCategoryScopeEnqueueService } from '../user-category-scope-enqueue.service';
+
+const GLOBAL_SCOPE_KEY = '_';
 
 /**
  * Enqueues per-object category recompute and dependent scope aggregation jobs.
+ *
+ * Category changes enqueue only the object recompute: `ObjectCategoriesWorker` enqueues the
+ * global and user scopes after it has written the new `category_names`, so scopes are never
+ * rebuilt from stale categories.
+ * @see docs/apps/chain-indexer/spec/object-categories.md
  */
 @Injectable()
 export class CategorySyncHandler {
@@ -44,24 +45,11 @@ export class CategorySyncHandler {
   constructor(
     private readonly objectCategoriesSyncQueueRepository: ObjectCategoriesSyncQueueRepository,
     private readonly objectCategoriesRelatedSyncQueueRepository: ObjectCategoriesRelatedSyncQueueRepository,
-    private readonly objectFavoriteRepository: ObjectFavoriteRepository,
-    private readonly objectOwnershipRepository: ObjectOwnershipRepository,
-    private readonly postsRepository: PostsRepository,
+    private readonly userCategoryScopeEnqueueService: UserCategoryScopeEnqueueService,
   ) {}
 
   private enqueuedAt(): number {
     return Math.floor(Date.now() / 1000);
-  }
-
-  private async enqueueUserShopBuckets(accountRaw: string, t: number): Promise<void> {
-    const account = accountRaw.trim();
-    if (account.length === 0) {
-      return;
-    }
-    for (const bucket of SHOP_TYPE_BUCKETS) {
-      const scopeKey = buildUserScopeKey(account, bucket);
-      await this.objectCategoriesRelatedSyncQueueRepository.enqueue('user', scopeKey, t);
-    }
   }
 
   @OnEvent(CATEGORY_MUTATED_EVENT)
@@ -71,31 +59,7 @@ export class CategorySyncHandler {
       return;
     }
     try {
-      const t = this.enqueuedAt();
-      await this.objectCategoriesSyncQueueRepository.enqueue(objectId, t);
-
-      await this.objectCategoriesRelatedSyncQueueRepository.enqueue('global', '_', t);
-
-      const seen = new Set<string>();
-      const [favorites, ownerships] = await Promise.all([
-        this.objectFavoriteRepository.findByObjectId(objectId),
-        this.objectOwnershipRepository.findByObjectId(objectId),
-      ]);
-      for (const row of favorites) {
-        seen.add(row.account);
-      }
-      for (const row of ownerships) {
-        seen.add(row.account);
-      }
-
-      const postAuthors = await this.postsRepository.findDistinctAuthorsByLinkedObject(objectId);
-      for (const a of postAuthors) {
-        seen.add(a);
-      }
-
-      for (const acc of seen) {
-        await this.enqueueUserShopBuckets(acc, t);
-      }
+      await this.objectCategoriesSyncQueueRepository.enqueue(objectId, this.enqueuedAt());
     } catch (error) {
       this.logger.error(
         `category sync enqueue failed for '${objectId}': ${
@@ -105,39 +69,53 @@ export class CategorySyncHandler {
     }
   }
 
-  @OnEvent(OBJECT_FAVORITE_CHANGED_EVENT)
-  async handleObjectFavoriteChanged(event: ObjectFavoriteChangedEvent): Promise<void> {
-    await this.enqueueUserShopAccount(event.account);
-  }
-
-  @OnEvent(USER_METADATA_CHANGED_EVENT)
-  async handleUserMetadataChanged(event: UserMetadataChangedEvent): Promise<void> {
-    await this.enqueueUserShopAccount(event.account);
-  }
-
-  @OnEvent(USER_SHOP_DESELECT_CHANGED_EVENT)
-  async handleShopDeselectChanged(event: UserShopDeselectChangedEvent): Promise<void> {
-    await this.enqueueUserShopAccount(event.account);
-  }
-
-  @OnEvent(POST_OBJECT_CHANGED_EVENT)
-  async handlePostObjectChanged(event: PostObjectChangedEvent): Promise<void> {
-    await this.enqueueUserShopAccount(event.postAuthor);
-  }
-
-  @OnEvent(OWNERSHIP_CHANGED_EVENT)
-  async handleOwnershipChanged(event: OwnershipChangedEvent): Promise<void> {
-    await this.enqueueUserShopAccount(event.account);
-  }
-
-  private async enqueueUserShopAccount(accountRaw: string): Promise<void> {
-    const account = accountRaw.trim();
-    if (account.length === 0) {
+  /** Scopes count only active objects, so an active ↔ inactive flip rebuilds them. */
+  @OnEvent(OBJECT_ACTIVE_STATE_CHANGED_EVENT)
+  async handleObjectActiveStateChanged(event: ObjectActiveStateChangedEvent): Promise<void> {
+    const objectId = event.objectId.trim();
+    if (objectId.length === 0) {
       return;
     }
     try {
       const t = this.enqueuedAt();
-      await this.enqueueUserShopBuckets(account, t);
+      await this.objectCategoriesRelatedSyncQueueRepository.enqueue('global', GLOBAL_SCOPE_KEY, t);
+      await this.userCategoryScopeEnqueueService.enqueueObjectAudience(
+        objectId,
+        event.objectType,
+        t,
+      );
+    } catch (error) {
+      this.logger.error(
+        `category scope enqueue after status change failed for '${objectId}': ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  @OnEvent(OBJECT_FAVORITE_CHANGED_EVENT)
+  async handleObjectFavoriteChanged(event: ObjectFavoriteChangedEvent): Promise<void> {
+    await this.enqueueAccountScopes(event.account);
+  }
+
+  @OnEvent(USER_METADATA_CHANGED_EVENT)
+  async handleUserMetadataChanged(event: UserMetadataChangedEvent): Promise<void> {
+    await this.enqueueAccountScopes(event.account);
+  }
+
+  @OnEvent(USER_SHOP_DESELECT_CHANGED_EVENT)
+  async handleShopDeselectChanged(event: UserShopDeselectChangedEvent): Promise<void> {
+    await this.enqueueAccountScopes(event.account);
+  }
+
+  @OnEvent(POST_OBJECT_CHANGED_EVENT)
+  async handlePostObjectChanged(event: PostObjectChangedEvent): Promise<void> {
+    await this.enqueueAccountScopes(event.postAuthor);
+  }
+
+  private async enqueueAccountScopes(account: string): Promise<void> {
+    try {
+      await this.userCategoryScopeEnqueueService.enqueueAccount(account, this.enqueuedAt());
     } catch (error) {
       this.logger.error(
         `category related scope enqueue failed for '${account}': ${

@@ -61,20 +61,3 @@ export function filterSubDepartments(params: {
 
   return kept;
 }
-
-/** True iff some category row exists deeper under `lineage` (every segment ∈ `related_names`). */
-export function hasDescendantBeyondLineage(
-  allRows: CategoryNavigationRow[],
-  lineage: string[],
-): boolean {
-  if (lineage.length === 0) {
-    return false;
-  }
-  const leaf = lineage[lineage.length - 1];
-  return allRows.some((row) => {
-    if (row.category_name === leaf) {
-      return false;
-    }
-    return lineage.every((a) => row.related_names.includes(a));
-  });
-}

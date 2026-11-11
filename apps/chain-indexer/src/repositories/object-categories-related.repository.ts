@@ -1,10 +1,12 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Kysely } from 'kysely';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import type { Kysely, Transaction } from 'kysely';
 import { sql } from 'kysely';
 import type { Database } from '../database';
 import { KYSELY } from '../database';
 import { UNCATEGORIZED_CATEGORY_SENTINEL } from '@opden-data-layer/core';
 import type { NewObjectCategoriesRelatedRow, ObjectCategoriesRelatedScopeType } from '@opden-data-layer/odl-db-types';
+
+type DbExecutor = Kysely<Database> | Transaction<Database>;
 
 type AggregationRowRaw = {
   category_name: string;
@@ -13,13 +15,14 @@ type AggregationRowRaw = {
   related_names: string[];
 };
 
-export type UserShopScopeAggOptions = {
+export type UserCategoryScopeAggOptions = {
   account: string;
-  types: readonly string[];
+  /** The single category object type of this scope (`objects_core.object_type`). */
+  objectType: string;
   /** When false, the post-linked branch contributes no rows. */
   includePostObjects: boolean;
-  /** Applies only to post-linked rows (not authority). */
-  shopDeselectObjectIds: readonly string[];
+  /** `user_shop_deselect` object ids; excluded from the post-linked branch only. */
+  deselectIds: readonly string[];
 };
 
 /**
@@ -27,121 +30,120 @@ export type UserShopScopeAggOptions = {
  */
 @Injectable()
 export class ObjectCategoriesRelatedRepository {
+  private readonly logger = new Logger(ObjectCategoriesRelatedRepository.name);
+
   constructor(@Inject(KYSELY) private readonly db: Kysely<Database>) {}
 
+  private executor(trx?: DbExecutor): DbExecutor {
+    return trx ?? this.db;
+  }
+
   /**
-   * User shop scope: `(ownership OR administrative)` union post-linked rows (minus deselect on link branch only).
+   * Replaces one user category scope (`account:objectType`) in a single transaction: deletes
+   * its rows, then inserts the aggregation over `object_favorite(account)` ∪
+   * `post_objects(author = account)`, restricted to active objects of `objectType`.
+   * An empty scope leaves no rows; the uncategorized sentinel is written only when its count > 0.
+   * @see docs/apps/query-api/spec/users-favorites-endpoint.md
    */
-  async replaceUserShopScope(scopeKeyFull: string, opts: UserShopScopeAggOptions): Promise<void> {
+  async replaceUserCategoryScope(
+    scopeKeyFull: string,
+    opts: UserCategoryScopeAggOptions,
+  ): Promise<void> {
     const key = scopeKeyFull.trim();
-    if (key.length === 0 || opts.account.trim().length === 0 || opts.types.length === 0) {
+    if (
+      key.length === 0 ||
+      opts.account.trim().length === 0 ||
+      opts.objectType.trim().length === 0
+    ) {
       return;
     }
-    await this.db.transaction().execute(async (trx) => {
-      await trx
+    try {
+      await this.db.transaction().execute(async (trx) => {
+        await this.deleteUserScope(key, trx);
+        const rows = await this.loadUserCategoryScopeRows(trx, key, opts);
+        if (rows.length > 0) {
+          await trx.insertInto('object_categories_related').values(rows).execute();
+        }
+      });
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
+  }
+
+  /** Deletes every row of one user scope (canonical or legacy key). */
+  async deleteUserScope(scopeKeyFull: string, trx?: DbExecutor): Promise<void> {
+    try {
+      await this.executor(trx)
         .deleteFrom('object_categories_related')
         .where('scope_type', '=', 'user')
-        .where('scope_key', '=', key)
+        .where('scope_key', '=', scopeKeyFull)
         .execute();
-
-      const rows = await this.loadUserShopScopeRows(trx, key, opts);
-      if (rows.length > 0) {
-        await trx.insertInto('object_categories_related').values(rows).execute();
-      }
-    });
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
   }
 
   /** Global catalogue scope (`group_keys` stored empty arrays). */
   async replaceGlobalScope(): Promise<void> {
-    await this.db.transaction().execute(async (trx) => {
-      await trx
-        .deleteFrom('object_categories_related')
-        .where('scope_type', '=', 'global')
-        .where('scope_key', '=', '_')
-        .execute();
+    try {
+      await this.db.transaction().execute(async (trx) => {
+        await trx
+          .deleteFrom('object_categories_related')
+          .where('scope_type', '=', 'global')
+          .where('scope_key', '=', '_')
+          .execute();
 
-      const rows = await this.loadGlobalScopeRows(trx);
-      if (rows.length > 0) {
-        await trx.insertInto('object_categories_related').values(rows).execute();
-      }
-    });
+        const rows = await this.loadGlobalScopeRows(trx);
+        if (rows.length > 0) {
+          await trx.insertInto('object_categories_related').values(rows).execute();
+        }
+      });
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
   }
 
-  private postLinkedPredicate(
-    account: string,
-    types: readonly string[],
-    includePostObjects: boolean,
-    shopDeselectIds: readonly string[],
-  ) {
-    if (!includePostObjects || types.length === 0) {
+  private postLinkedPredicate(opts: UserCategoryScopeAggOptions) {
+    if (!opts.includePostObjects) {
       return sql`FALSE`;
     }
-    const typeList = sql.join(types.map((t) => sql`${t}`), sql`, `);
-
-    const deselectClause =
-      shopDeselectIds.length === 0
-        ? sql`TRUE`
-        : sql`NOT (po.object_id IN (${sql.join(
-            shopDeselectIds.map((id) => sql`${id}`),
-            sql`, `,
-          )}))`;
-
-    return sql`po.author = ${account} AND po.object_type IN (${typeList}) AND (${deselectClause})`;
+    const deselectIds = [...opts.deselectIds];
+    return sql`po.author = ${opts.account.trim()} AND po.object_id <> ALL(${deselectIds}::text[])`;
   }
 
-  private async loadUserShopScopeRows(
-    trx: Kysely<Database>,
+  private async loadUserCategoryScopeRows(
+    trx: DbExecutor,
     scopeKeyFull: string,
-    opts: UserShopScopeAggOptions,
+    opts: UserCategoryScopeAggOptions,
   ): Promise<NewObjectCategoriesRelatedRow[]> {
-    const { account, types, includePostObjects, shopDeselectObjectIds } = opts;
+    const account = opts.account.trim();
+    const objectType = opts.objectType.trim();
     const sentinel = UNCATEGORIZED_CATEGORY_SENTINEL;
-
-    const authorityTypeFilter =
-      types.length === 0
-        ? sql`FALSE`
-        : sql`oc.object_type IN (${sql.join(types.map((t) => sql`${t}`), sql`, `)})`;
-
-    const postPred = this.postLinkedPredicate(
-      account.trim(),
-      types,
-      includePostObjects,
-      shopDeselectObjectIds,
-    );
+    const postPred = this.postLinkedPredicate(opts);
 
     const { rows } = await sql<AggregationRowRaw>`
-      WITH authority_objects AS (
-        SELECT DISTINCT oc.object_id
-        FROM objects_core oc
-        INNER JOIN object_favorite ofav ON ofav.object_id = oc.object_id
-          AND ofav.account = ${account.trim()}
-          AND (${authorityTypeFilter})
-          AND oc.status = 'active'
+      WITH scope_ids AS (
+        SELECT ofav.object_id
+        FROM object_favorite ofav
+        WHERE ofav.account = ${account}
         UNION
-        SELECT DISTINCT oc.object_id
-        FROM objects_core oc
-        INNER JOIN object_ownership oo ON oo.object_id = oc.object_id
-          AND oo.account = ${account.trim()}
-          AND (${authorityTypeFilter})
-          AND oc.status = 'active'
-      ),
-      post_linked_objects AS (
-        SELECT DISTINCT po.object_id
+        SELECT po.object_id
         FROM post_objects po
-        INNER JOIN objects_core oc ON oc.object_id = po.object_id AND oc.status = 'active'
         WHERE (${postPred})
       ),
       scoped_objects AS (
-        SELECT DISTINCT obj.object_id,
+        SELECT
+          oc.object_id,
           COALESCE(oc.meta_group_id, oc.object_id) AS group_key,
           cat.category_names AS category_names
-        FROM (
-          SELECT object_id FROM authority_objects
-          UNION
-          SELECT object_id FROM post_linked_objects
-        ) obj
-        INNER JOIN objects_core oc ON oc.object_id = obj.object_id AND oc.status = 'active'
-        LEFT JOIN object_categories cat ON cat.object_id = obj.object_id
+        FROM scope_ids s
+        INNER JOIN objects_core oc ON oc.object_id = s.object_id
+          AND oc.status = 'active'
+          AND oc.object_type = ${objectType}
+        LEFT JOIN object_categories cat ON cat.object_id = oc.object_id
       ),
       exploded AS (
         SELECT
@@ -189,6 +191,7 @@ export class ObjectCategoriesRelatedRepository {
         ARRAY[]::text[],
         ARRAY[]::text[]
       FROM uncategorized u
+      WHERE u.cnt > 0
     `.execute(trx);
 
     return rows.map((r) =>
@@ -204,7 +207,7 @@ export class ObjectCategoriesRelatedRepository {
   }
 
   private async loadGlobalScopeRows(
-    trx: Kysely<Database>,
+    trx: DbExecutor,
   ): Promise<NewObjectCategoriesRelatedRow[]> {
     const sentinel = UNCATEGORIZED_CATEGORY_SENTINEL;
     const { rows } = await sql<AggregationRowRaw>`

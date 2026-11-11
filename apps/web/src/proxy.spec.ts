@@ -64,6 +64,27 @@ describe('proxy profile account segment', () => {
       'https://waiviodev.com/user-profile/alice/threads',
     );
   });
+
+  it('rewrites a Favorites type and category path to the profile route', async () => {
+    const response = await proxy(
+      new NextRequest('https://waiviodev.com/@alice/favorites/recipe/German%20Cuisine'),
+    );
+
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'https://waiviodev.com/user-profile/alice/favorites/recipe/German%20Cuisine',
+    );
+  });
+
+  it.each(['recipe', 'user-shop'])(
+    'treats the removed /%s tab as a post permlink',
+    async (segment) => {
+      const response = await proxy(new NextRequest(`https://waiviodev.com/@alice/${segment}`));
+
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        `https://waiviodev.com/user-profile/alice/post/${segment}`,
+      );
+    },
+  );
 });
 
 describe('proxy bare /discover', () => {

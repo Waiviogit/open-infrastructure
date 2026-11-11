@@ -2,6 +2,12 @@
 
 jest.mock('server-only', () => ({}));
 
+const cacheTag = jest.fn();
+jest.mock('next/cache', () => ({
+  cacheLife: jest.fn(),
+  cacheTag: (...args: unknown[]) => cacheTag(...args),
+}));
+
 jest.mock('@/config/env', () => ({
   env: { QUERY_API_URL: 'http://query-api.test' },
 }));
@@ -10,38 +16,56 @@ jest.mock('next/headers', () => ({
   headers: jest.fn(),
 }));
 
-import { headers } from 'next/headers';
+import { fetchFavoritesTypes } from './favorites.client';
 
-import { fetchFavoritesObjects } from './favorites.client';
-
-const INCOMING_XFF = '6.6.6.6, 1.2.3.4';
-
-function outboundXff(): string | null {
-  const init = (global.fetch as jest.Mock).mock.calls[0]?.[1] as RequestInit | undefined;
-  return init ? new Headers(init.headers).get('x-forwarded-for') : null;
+function mockFetchJson(body: unknown): void {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => body,
+  }) as typeof fetch;
 }
 
-describe('favorites client IP forward', () => {
+describe('favorites types client', () => {
   const originalFetch = global.fetch;
-
-  beforeEach(() => {
-    (headers as jest.Mock).mockResolvedValue(
-      new Headers({ 'x-forwarded-for': INCOMING_XFF }),
-    );
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ items: [], total: 0, hasMore: false }),
-    }) as typeof fetch;
-  });
 
   afterEach(() => {
     global.fetch = originalFetch;
-    jest.clearAllMocks();
+    jest.restoreAllMocks();
+    cacheTag.mockReset();
   });
 
-  it('forwards the incoming X-Forwarded-For on favorites list', async () => {
-    await fetchFavoritesObjects('alice', {});
-    expect(outboundXff()).toBe(INCOMING_XFF);
+  it('parses counted items and tags the response', async () => {
+    mockFetchJson({
+      types: ['recipe', 'place'],
+      items: [
+        {
+          object_type: 'recipe',
+          objects_count: 12,
+          supports_categories: true,
+          has_categories: true,
+        },
+        {
+          object_type: 'place',
+          objects_count: 3,
+          supports_categories: false,
+          has_categories: false,
+        },
+      ],
+    });
+    const res = await fetchFavoritesTypes('alice');
+    expect(res?.items?.map((item) => item.object_type)).toEqual(['recipe', 'place']);
+    expect(cacheTag).toHaveBeenCalledWith('query-api:user:alice:favorites-types');
+  });
+
+  it('accepts a response without items', async () => {
+    mockFetchJson({ types: ['book'] });
+    await expect(fetchFavoritesTypes('alice')).resolves.toEqual({ types: ['book'] });
+  });
+
+  it('returns null for an unexpected shape', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockFetchJson({ types: 'book' });
+    await expect(fetchFavoritesTypes('alice')).resolves.toBeNull();
   });
 });

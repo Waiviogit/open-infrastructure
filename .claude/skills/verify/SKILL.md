@@ -41,7 +41,8 @@ for step in seed drive probe notifications; do
 done
 ```
 
-Scenario = `export default { [step]: async (h) => … }` with `h.db` (Kysely on the test DB), `h.hiveBlock(ops)`,
+Scenario = `export default { [step]: async (h) => … }` with `h.db` (Kysely on the test DB), `h.get(Token)` (any Nest
+provider, e.g. a worker to call `runBatch()` instead of waiting for its interval), `h.hiveBlock(ops)`,
 `h.heBlock(refBlock, txs)`, `h.heTokenTransfer({...})`, `h.notifications()` (decoded notification Redis stream),
 `h.log(label, rows)`. Steps run in separate processes; state lives in the DB. Need another Hive Engine
 sub-parser or module? Add it to `HarnessModule` in the harness.

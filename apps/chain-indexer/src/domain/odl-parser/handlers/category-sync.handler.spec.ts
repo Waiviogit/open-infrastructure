@@ -1,108 +1,155 @@
-import { buildUserScopeKey } from '@opden-data-layer/core';
+import { CATEGORY_OBJECT_TYPES } from '@opden-data-layer/core';
 import { CategorySyncHandler } from './category-sync.handler';
 import { CategoryMutatedEvent } from '../category-mutated.event';
+import { ObjectActiveStateChangedEvent } from '../object-active-state-changed.event';
 import { ObjectFavoriteChangedEvent } from '../object-favorite-changed.event';
-import { ObjectFavorite } from '@opden-data-layer/odl-db-types';
+import { PostObjectChangedEvent } from '../post-object-changed.event';
+import { UserCategoryScopeEnqueueService } from '../user-category-scope-enqueue.service';
+
+type Mocks = {
+  objectEnqueue: jest.Mock;
+  relatedEnqueue: jest.Mock;
+  relatedEnqueueMany: jest.Mock;
+  favoritesByObject: jest.Mock;
+  postAuthorsByObject: jest.Mock;
+};
+
+function setup(audience: { favoriters?: string[]; postAuthors?: string[] } = {}) {
+  const mocks: Mocks = {
+    objectEnqueue: jest.fn().mockResolvedValue(undefined),
+    relatedEnqueue: jest.fn().mockResolvedValue(undefined),
+    relatedEnqueueMany: jest.fn().mockResolvedValue(undefined),
+    favoritesByObject: jest
+      .fn()
+      .mockResolvedValue((audience.favoriters ?? []).map((account) => ({ account }))),
+    postAuthorsByObject: jest.fn().mockResolvedValue(audience.postAuthors ?? []),
+  };
+  const relatedQueue = { enqueue: mocks.relatedEnqueue, enqueueMany: mocks.relatedEnqueueMany };
+  const scopes = new UserCategoryScopeEnqueueService(
+    relatedQueue as never,
+    { findByObjectId: mocks.favoritesByObject } as never,
+    { findDistinctAuthorsByLinkedObject: mocks.postAuthorsByObject } as never,
+  );
+  const handler = new CategorySyncHandler(
+    { enqueue: mocks.objectEnqueue } as never,
+    relatedQueue as never,
+    scopes,
+  );
+  return { handler, mocks };
+}
+
+/** Every user scope key passed to `enqueueMany('user', …)`, across calls. */
+function enqueuedUserKeys(enqueueMany: jest.Mock): string[] {
+  return enqueueMany.mock.calls
+    .filter(([scopeType]) => scopeType === 'user')
+    .flatMap(([, keys]) => keys as string[])
+    .sort();
+}
 
 describe('CategorySyncHandler', () => {
-  it('enqueues object + global + user shop buckets + post authors on category mutated', async () => {
-    const objectEnqueue = jest.fn().mockResolvedValue(undefined);
-    const relatedEnqueue = jest.fn().mockResolvedValue(undefined);
-    const findFavoritesByObjectId = jest.fn(
-      async (): Promise<ObjectFavorite[]> => [
-        {
-          object_id: 'o1',
-          account: 'shop',
-          event_seq: BigInt(1),
-          created_at: new Date(),
-        },
-      ],
-    );
-    const findOwnershipsByObjectId = jest.fn(async () => []);
-    const findDistinctAuthorsByLinkedObject = jest.fn(async () => ['poster']);
+  describe('category mutated', () => {
+    it('enqueues only the object recompute; scopes wait for the recomputed categories', async () => {
+      const { handler, mocks } = setup({ favoriters: ['shop'], postAuthors: ['poster'] });
 
-    const handler = new CategorySyncHandler(
-      {
-        enqueue: objectEnqueue,
-      } as never,
-      {
-        enqueue: relatedEnqueue,
-      } as never,
-      {
-        findByObjectId: findFavoritesByObjectId,
-      } as never,
-      {
-        findByObjectId: findOwnershipsByObjectId,
-      } as never,
-      {
-        findDistinctAuthorsByLinkedObject,
-      } as never,
-    );
+      await handler.handleCategoryMutated(new CategoryMutatedEvent(' o1 '));
 
-    await handler.handleCategoryMutated(new CategoryMutatedEvent('o1'));
+      expect(mocks.objectEnqueue).toHaveBeenCalledWith('o1', expect.any(Number));
+      expect(mocks.relatedEnqueue).not.toHaveBeenCalled();
+      expect(mocks.relatedEnqueueMany).not.toHaveBeenCalled();
+    });
 
-    expect(objectEnqueue).toHaveBeenCalledWith(
-      'o1',
-      expect.any(Number),
-    );
-    expect(relatedEnqueue).toHaveBeenCalledWith('global', '_', expect.any(Number));
+    it('ignores a blank object id', async () => {
+      const { handler, mocks } = setup();
 
-    expect(relatedEnqueue).toHaveBeenCalledWith(
-      'user',
-      buildUserScopeKey('shop', ['book', 'product']),
-      expect.any(Number),
-    );
-    expect(relatedEnqueue).toHaveBeenCalledWith(
-      'user',
-      buildUserScopeKey('shop', ['recipe']),
-      expect.any(Number),
-    );
-    expect(relatedEnqueue).toHaveBeenCalledWith(
-      'user',
-      buildUserScopeKey('poster', ['book', 'product']),
-      expect.any(Number),
-    );
-    expect(relatedEnqueue).toHaveBeenCalledWith(
-      'user',
-      buildUserScopeKey('poster', ['recipe']),
-      expect.any(Number),
-    );
+      await handler.handleCategoryMutated(new CategoryMutatedEvent('  '));
 
-    expect(findDistinctAuthorsByLinkedObject).toHaveBeenCalledWith('o1');
+      expect(mocks.objectEnqueue).not.toHaveBeenCalled();
+    });
+
+    it('swallows a queue failure so the event bus is not broken', async () => {
+      const { handler, mocks } = setup();
+      mocks.objectEnqueue.mockRejectedValue(new Error('db down'));
+
+      await expect(
+        handler.handleCategoryMutated(new CategoryMutatedEvent('o1')),
+      ).resolves.toBeUndefined();
+    });
   });
 
-  it('enqueues shop buckets on object favorite change', async () => {
-    const objectEnqueue = jest.fn();
-    const relatedEnqueue = jest.fn().mockResolvedValue(undefined);
-    const findFavoritesByObjectId = jest.fn();
-    const findOwnershipsByObjectId = jest.fn();
-    const findDistinctAuthorsByLinkedObject = jest.fn();
+  describe('account events', () => {
+    it('enqueues one scope per category type for the account in a single insert', async () => {
+      const { handler, mocks } = setup();
 
-    const handler = new CategorySyncHandler(
-      { enqueue: objectEnqueue } as never,
-      {
-        enqueue: relatedEnqueue,
-      } as never,
-      { findByObjectId: findFavoritesByObjectId } as never,
-      { findByObjectId: findOwnershipsByObjectId } as never,
-      { findDistinctAuthorsByLinkedObject } as never,
-    );
+      await handler.handleObjectFavoriteChanged(new ObjectFavoriteChangedEvent(' merchant '));
 
-    await handler.handleObjectFavoriteChanged(
-      new ObjectFavoriteChangedEvent('merchant'),
-    );
+      expect(mocks.relatedEnqueueMany).toHaveBeenCalledTimes(1);
+      expect(mocks.relatedEnqueueMany).toHaveBeenCalledWith(
+        'user',
+        CATEGORY_OBJECT_TYPES.map((type) => `merchant:${type}`),
+        expect.any(Number),
+      );
+      expect(enqueuedUserKeys(mocks.relatedEnqueueMany)).toEqual(
+        expect.arrayContaining(['merchant:book', 'merchant:product', 'merchant:recipe']),
+      );
+      expect(mocks.objectEnqueue).not.toHaveBeenCalled();
+    });
 
-    expect(objectEnqueue).not.toHaveBeenCalled();
-    expect(relatedEnqueue).toHaveBeenCalledTimes(2);
-    expect(relatedEnqueue).toHaveBeenCalledWith(
-      'user',
-      buildUserScopeKey('merchant', ['book', 'product']),
-      expect.any(Number),
-    );
-    expect(relatedEnqueue).toHaveBeenCalledWith(
-      'user',
-      buildUserScopeKey('merchant', ['recipe']),
-      expect.any(Number),
-    );
+    it('enqueues the post author scopes on a post object change', async () => {
+      const { handler, mocks } = setup();
+
+      await handler.handlePostObjectChanged(new PostObjectChangedEvent('writer'));
+
+      expect(enqueuedUserKeys(mocks.relatedEnqueueMany)).toContain('writer:recipe');
+    });
+
+    it('does nothing for a blank account', async () => {
+      const { handler, mocks } = setup();
+
+      await handler.handleObjectFavoriteChanged(new ObjectFavoriteChangedEvent('  '));
+
+      expect(mocks.relatedEnqueueMany).not.toHaveBeenCalled();
+    });
+
+    it('never enqueues a legacy multi-type or bare-account key', async () => {
+      const { handler, mocks } = setup();
+
+      await handler.handleObjectFavoriteChanged(new ObjectFavoriteChangedEvent('merchant'));
+
+      for (const key of enqueuedUserKeys(mocks.relatedEnqueueMany)) {
+        expect(key).toMatch(/^merchant:[a-z_]+$/);
+      }
+    });
+  });
+
+  describe('object active state changed', () => {
+    it('enqueues global + the (account, type) scope of favoriters and post authors for a category type', async () => {
+      const { handler, mocks } = setup({
+        favoriters: ['fan', 'both'],
+        postAuthors: ['writer', 'both'],
+      });
+
+      await handler.handleObjectActiveStateChanged(
+        new ObjectActiveStateChangedEvent('o1', 'recipe', false),
+      );
+
+      expect(mocks.relatedEnqueue).toHaveBeenCalledWith('global', '_', expect.any(Number));
+      expect(enqueuedUserKeys(mocks.relatedEnqueueMany)).toEqual([
+        'both:recipe',
+        'fan:recipe',
+        'writer:recipe',
+      ]);
+    });
+
+    it('enqueues only the global scope for a type without categories', async () => {
+      const { handler, mocks } = setup({ favoriters: ['fan'] });
+
+      await handler.handleObjectActiveStateChanged(
+        new ObjectActiveStateChangedEvent('o1', 'place', true),
+      );
+
+      expect(mocks.relatedEnqueue).toHaveBeenCalledWith('global', '_', expect.any(Number));
+      expect(enqueuedUserKeys(mocks.relatedEnqueueMany)).toEqual([]);
+      expect(mocks.favoritesByObject).not.toHaveBeenCalled();
+    });
   });
 });

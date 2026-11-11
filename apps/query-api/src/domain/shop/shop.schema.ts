@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { qsArray, typesArray } from '../categories/categories-query.schema';
+import { qsArray } from '../categories/categories-query.schema';
+import { userFavoritesTypesParam } from '../favorites/favorites.schema';
+import { isValidWeightObjectCursor } from '../pagination/weight-object-cursor';
 import { countryQueryField } from '../../http/country-query.schema';
 import { SHOP_RATING_FILTER_THRESHOLDS } from './shop.constants';
 
@@ -32,19 +34,25 @@ const shopRatingQuery = z.preprocess(
     .optional(),
 );
 
+const uncategorizedOnlyQuery = z.preprocess(
+  (v) => v === 'true' || v === true || v === '1' || v === 1,
+  z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('When true, only objects with no category_names'),
+);
+
+const favoritesTypesQuery = userFavoritesTypesParam.describe(
+  'Repeatable; every entry must be in USER_FAVORITES_OBJECT_TYPES (Favorites scope)',
+);
+
 export const shopObjectsQuerySchema = z.object({
-  types: typesArray.describe('Object types in shop scope (default book, product)'),
+  types: favoritesTypesQuery,
   categoryPath: qsArray.describe(
     'AND filter on category_names path segments; empty = all in scope unless uncategorizedOnly',
   ),
-  uncategorizedOnly: z.preprocess(
-    (v) => v === 'true' || v === true || v === '1' || v === 1,
-    z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe('When true, only objects with no category_names'),
-  ),
+  uncategorizedOnly: uncategorizedOnlyQuery,
   tags: shopTagsQuery,
   rating: shopRatingQuery.describe('Minimum aggregate rating threshold (6, 8, or 10 legacy scale)'),
   limit: z.coerce
@@ -54,14 +62,20 @@ export const shopObjectsQuerySchema = z.object({
     .max(50)
     .default(20)
     .describe('Page size'),
-  cursor: z.string().optional().describe('Opaque cursor (object_id)'),
+  cursor: z
+    .string()
+    .optional()
+    .refine(isValidWeightObjectCursor, { message: 'cursor is invalid' })
+    .describe('Opaque keyset cursor from the previous page (weight + object_id)'),
   country: countryQueryField,
 });
 
 export type ShopObjectsQuery = z.infer<typeof shopObjectsQuerySchema>;
 
 export const shopSectionsQuerySchema = z.object({
-  types: typesArray.describe('Object types in shop scope'),
+  types: favoritesTypesQuery.describe(
+    'Repeatable; Favorites types. Sections need exactly one category type, otherwise empty',
+  ),
   name: z.string().optional().describe('Parent department name for drill-down (omit at root)'),
   path: qsArray.describe('Ancestor category names before name'),
   tags: shopTagsQuery,
@@ -83,16 +97,9 @@ export const shopSectionsQuerySchema = z.object({
 export type ShopSectionsQuery = z.infer<typeof shopSectionsQuerySchema>;
 
 export const shopFiltersQuerySchema = z.object({
-  types: typesArray.describe('Object types in shop scope (default book, product)'),
+  types: favoritesTypesQuery,
   categoryPath: qsArray.describe('Current department path segments'),
-  uncategorizedOnly: z.preprocess(
-    (v) => v === 'true' || v === true || v === '1' || v === 1,
-    z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe('When true, only objects with no category_names'),
-  ),
+  uncategorizedOnly: uncategorizedOnlyQuery,
   tags: shopTagsQuery.describe('Selected tags (AND) to narrow facet counts'),
   rating: shopRatingQuery.describe('Minimum aggregate rating threshold to narrow facet counts'),
 });

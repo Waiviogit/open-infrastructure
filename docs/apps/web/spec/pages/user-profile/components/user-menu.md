@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, page, user-profile, components]
-updated_at: 2026-09-23
+updated_at: 2026-11-11
 related:
   - docs/apps/web/spec/overview.md
   - docs/apps/web/spec/pages/user-profile/profile-shell.md
@@ -76,7 +76,7 @@ WAIV table page (`/@:name/transfers/waiv-table`) may use a separate `tab` query 
 
 ## rendering
 
-- **Primary links:** `/@name`, `/@name/map`, `/@name/user-shop`, `/@name/recipe`, `/@name/favorites`, `/@name/transfers?type=WAIV`, `/@name/followers`, `/@name/expertise-hashtags`, `/@name/about`.
+- **Primary links:** `/@name`, `/@name/map`, `/@name/favorites` (Shop and Recipe are merged into it — [favorites.md](../routes/favorites.md)), `/@name/transfers?type=WAIV`, `/@name/followers`, `/@name/expertise-hashtags`, `/@name/about`.
 - **Secondary row:** URLs in [Secondary subnav](#secondary-subnav). Feed secondary hidden on desktop when `getDesktopMenuKeys(shellMode)` restricts primary keys.
 
 ## emitted events

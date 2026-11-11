@@ -1,31 +1,28 @@
 import { GetUserShopFiltersEndpoint } from './get-user-shop-filters.endpoint';
 
+const scope = {
+  account: 'alice',
+  types: ['product'],
+  postLinkedTypes: [],
+  deselectObjectIds: ['d1'],
+};
+
 describe('GetUserShopFiltersEndpoint', () => {
-  it('returns static ratings and grouped categories', async () => {
+  it('returns static ratings and grouped categories for the resolved Favorites scope', async () => {
+    const resolver = { resolve: jest.fn().mockResolvedValue(scope) };
     const objectCategoriesRepo = {
-      getShopTagCategories: jest.fn().mockResolvedValue([
+      getTagCategoriesByScope: jest.fn().mockResolvedValue([
         { category: 'Pros', tag_value: 'coffee', object_count: 2 },
       ]),
     };
-    const userMetadataRepo = {
-      findShopVisibilityFlags: jest.fn().mockResolvedValue({
-        hide_linked_objects: false,
-        hide_recipe_objects: false,
-      }),
-    };
-    const shopDeselectRepo = {
-      findObjectIdsByAccount: jest.fn().mockResolvedValue([]),
-    };
-
     const endpoint = new GetUserShopFiltersEndpoint(
-      userMetadataRepo as never,
-      shopDeselectRepo as never,
+      resolver as never,
       objectCategoriesRepo as never,
     );
 
     const result = await endpoint.execute('alice', {
       types: ['product'],
-      categoryPath: [],
+      categoryPath: ['Kitchen'],
       uncategorizedOnly: false,
       tags: [],
     });
@@ -34,30 +31,30 @@ describe('GetUserShopFiltersEndpoint', () => {
       ratings: [10, 8, 6],
       categories: [{ category: 'Pros', items: [{ value: 'coffee', count: 2 }] }],
     });
+    expect(resolver.resolve).toHaveBeenCalledWith('alice', ['product']);
+    expect(objectCategoriesRepo.getTagCategoriesByScope).toHaveBeenCalledWith(
+      expect.objectContaining({ scope, categoryPath: ['Kitchen'], uncategorizedOnly: false }),
+    );
   });
 
   it('returns null for blank username', async () => {
-    const endpoint = new GetUserShopFiltersEndpoint({} as never, {} as never, {} as never);
-    expect(await endpoint.execute('  ', { types: ['product'], categoryPath: [], uncategorizedOnly: false, tags: [] })).toBeNull();
+    const endpoint = new GetUserShopFiltersEndpoint({} as never, {} as never);
+    expect(
+      await endpoint.execute('  ', {
+        types: ['product'],
+        categoryPath: [],
+        uncategorizedOnly: false,
+        tags: [],
+      }),
+    ).toBeNull();
   });
 
-  it('passes rating to tag facet query', async () => {
+  it('passes parsed tags and rating to the tag facet query', async () => {
     const objectCategoriesRepo = {
-      getShopTagCategories: jest.fn().mockResolvedValue([]),
+      getTagCategoriesByScope: jest.fn().mockResolvedValue([]),
     };
-    const userMetadataRepo = {
-      findShopVisibilityFlags: jest.fn().mockResolvedValue({
-        hide_linked_objects: false,
-        hide_recipe_objects: false,
-      }),
-    };
-    const shopDeselectRepo = {
-      findObjectIdsByAccount: jest.fn().mockResolvedValue([]),
-    };
-
     const endpoint = new GetUserShopFiltersEndpoint(
-      userMetadataRepo as never,
-      shopDeselectRepo as never,
+      { resolve: jest.fn().mockResolvedValue(scope) } as never,
       objectCategoriesRepo as never,
     );
 
@@ -65,14 +62,15 @@ describe('GetUserShopFiltersEndpoint', () => {
       types: ['recipe'],
       categoryPath: [],
       uncategorizedOnly: false,
-      tags: [],
+      tags: ['Cuisine:german'],
       rating: 10,
     });
 
-    expect(objectCategoriesRepo.getShopTagCategories).toHaveBeenCalledWith(
-      expect.objectContaining({ account: 'alice' }),
-      [],
-      10,
+    expect(objectCategoriesRepo.getTagCategoriesByScope).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tags: [{ category: 'Cuisine', value: 'german' }],
+        rating: 10,
+      }),
     );
   });
 });

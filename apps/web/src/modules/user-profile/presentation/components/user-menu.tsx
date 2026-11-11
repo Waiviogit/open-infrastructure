@@ -46,12 +46,15 @@ function HorizontalTabNavShell({
   rowClass,
   bleed = 'gutter',
   className,
+  centerWhenNoOverflow = false,
 }: {
   children: ReactNode;
   ariaLabel: string;
   rowClass: string;
   bleed?: HorizontalNavBleed;
   className?: string;
+  /** Center the row while it fits (hero menu over the center column). */
+  centerWhenNoOverflow?: boolean;
 }) {
   const { t } = useI18n();
   return (
@@ -59,6 +62,7 @@ function HorizontalTabNavShell({
       ariaLabel={ariaLabel}
       rowClass={[rowClass, className].filter(Boolean).join(' ')}
       bleed={bleed}
+      centerWhenNoOverflow={centerWhenNoOverflow}
       activeItemSelector="nav a.text-accent"
       scrollPrevAriaLabel={t('previous')}
       scrollNextAriaLabel={t('next')}
@@ -73,8 +77,6 @@ function isActive(
   key:
     | 'feed'
     | 'map'
-    | 'user-shop'
-    | 'recipe'
     | 'favorites'
     | 'transfers'
     | 'followers'
@@ -87,10 +89,6 @@ function isActive(
       return isFeedSectionActive(rest);
     case 'map':
       return head === 'map';
-    case 'user-shop':
-      return head === 'user-shop';
-    case 'recipe':
-      return head === 'recipe';
     case 'favorites':
       return head === 'favorites';
     case 'transfers':
@@ -297,18 +295,6 @@ function UserMenuInner({
         active: isActive(rest, 'map'),
       },
       {
-        key: 'user-shop',
-        href: `${base}/user-shop`,
-        label: t('shop'),
-        active: isActive(rest, 'user-shop'),
-      },
-      {
-        key: 'recipe',
-        href: `${base}/recipe`,
-        label: t('user_profile_recipe'),
-        active: isActive(rest, 'recipe'),
-      },
-      {
         key: 'favorites',
         href: `${base}/favorites`,
         label: t('favorites'),
@@ -478,6 +464,7 @@ function UserMenuInner({
         ariaLabel={t('user_profile_nav_aria')}
         rowClass={HORIZONTAL_TAB_NAV_PRIMARY_ROW_CLASS}
         bleed="gutter"
+        centerWhenNoOverflow
       >
         {primaryItems.map((item) => (
           <UserProfileNavLink

@@ -15,12 +15,30 @@ const favoritesViewerHeader = z.string().optional().openapi({
     'Hive account name of the authenticated viewer. Populates per-object viewer fields on projected objects.',
 });
 
+const userFavoritesTypeItemSchema = registry.register(
+  'UserFavoritesTypeItem',
+  z.object({
+    object_type: z.string(),
+    objects_count: z.number().int().positive(),
+    supports_categories: z.boolean().openapi({
+      description: 'True when the type supports the `category` update.',
+    }),
+    has_categories: z.boolean().openapi({
+      description:
+        'True when `supports_categories` and the category root (`GET /query/v1/users/:name/categories?types=<type>`) lists at least one category. Clients show category navigation only then; otherwise a flat list.',
+    }),
+  }),
+);
+
 const userFavoritesTypesResponseSchema = registry.register(
   'UserFavoritesTypesResponse',
   z.object({
-    types: z
-      .array(z.string())
-      .openapi({ description: 'Object types present in favorites, sorted by count descending.' }),
+    types: z.array(z.string()).openapi({
+      description: 'Object types in the Favorites scope, count DESC then type ASC.',
+    }),
+    items: z.array(userFavoritesTypeItemSchema).openapi({
+      description: 'Same order as `types`, with live counts and category support.',
+    }),
   }),
 );
 
@@ -38,7 +56,7 @@ registry.registerPath({
   tags: [queryApiOpenApiTags.users],
   summary: 'List object types in user favorites',
   description:
-    'Distinct `object_type` values from favorites scope (administrative authority ∪ post-linked), sorted by count descending. Returns `{ types: [] }` for unknown or blank account names (no 404).',
+    'Object types in the unified Favorites scope (`object_favorite` ∪ authored `post_objects` − `user_shop_deselect`, per-type hide flags, `USER_FAVORITES_OBJECT_TYPES`; no ownership), sorted by count DESC then type ASC. `items` adds `objects_count`, `supports_categories` and `has_categories`. Returns `{ types: [], items: [] }` for unknown or blank account names (no 404).',
   request: {
     params: z.object({ name: accountNameParam }),
     headers: z.object({
@@ -61,7 +79,7 @@ registry.registerPath({
   tags: [queryApiOpenApiTags.users],
   summary: 'List user favorite objects',
   description:
-    'Paginated favorites: `object_favorite` ∪ optional `post_objects`, filtered by `FAVORITES_OBJECT_TYPES`, `user_shop_deselect`, and `hide_favorite_objects`. Unknown account names return an empty page (`items: []`, `total: 0`) rather than 404. Blank `name` returns `null` body.',
+    'Paginated objects from the unified Favorites scope (`object_favorite` ∪ authored `post_objects` − `user_shop_deselect`, per-type hide flags, `USER_FAVORITES_OBJECT_TYPES`; no ownership), ordered by `weight DESC NULLS LAST, object_id ASC`. Unknown account names or types outside the whitelist return an empty page (`items: []`, `total: 0`) rather than 404. Blank `name` returns `null` body.',
   request: {
     params: z.object({ name: accountNameParam }),
     headers: z.object({
@@ -71,7 +89,7 @@ registry.registerPath({
     }),
     query: z.object({
       objectType: z.string().min(1).optional().openapi({
-        description: 'Filter to one object type (must be in favorites types list).',
+        description: 'Filter to one object type; types outside USER_FAVORITES_OBJECT_TYPES return an empty page.',
       }),
       skip: z.coerce.number().int().min(0).optional().openapi({ description: 'Pagination offset.' }),
       limit: z.coerce
@@ -100,7 +118,7 @@ registry.registerPath({
   tags: [queryApiOpenApiTags.users],
   summary: 'Geo-filtered user favorites for profile map',
   description:
-    'Favorites scope intersected with `MAP_GEO_OBJECT_TYPES` and objects whose latest `geo` update falls inside `box`. Returns projected objects with `fields.geo` when available. Unknown users get `{ items: [], hasMore: false }`.',
+    'Unified Favorites scope intersected with `MAP_GEO_OBJECT_TYPES` and objects whose latest `geo` update falls inside `box`. Returns projected objects with `fields.geo` when available. Unknown users get `{ items: [], hasMore: false }`.',
   request: {
     params: z.object({ name: accountNameParam }),
     headers: z.object({

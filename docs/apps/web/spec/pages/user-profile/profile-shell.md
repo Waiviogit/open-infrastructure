@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, page, user-profile, routing, layout]
-updated_at: 2026-09-23
+updated_at: 2026-11-11
 related:
   - docs/apps/web/spec/overview.md
   - docs/apps/web/spec/pages/index.md
@@ -40,7 +40,7 @@ Describe the App Router layout tree, public URLs, and persistent regions for eve
 user-profile/[name]/layout.tsx          validate name + load profile (404 if missing)
   (profile)/layout.tsx                  UserProfileHeroClient + social counts provider
     (main)/layout.tsx                   three-column shell (left parallel route + main + right rail)
-      @leftSidebar/*                    category nav for shop/recipe (parallel route)
+      @leftSidebar/*                    account panel; Favorites type accordion (parallel route)
       page.tsx, threads/, followers/, transfers/, permissions/, …
     about/layout.tsx                    main + right rail only
     map/layout.tsx                      single column
@@ -62,7 +62,7 @@ user-profile/[name]/layout.tsx          validate name + load profile (404 if mis
 |--------|-----------|-------------|
 | Hero | `UserProfileHeroClient`. A cover fills the identity band down to the primary nav (min 240px) with a bottom scrim. | `(profile)/layout.tsx` only — not on `(article)/post/*` |
 | Primary nav | `UserMenu` in hero | See [user-menu.md](components/user-menu.md) |
-| Left rail | `@leftSidebar` → `ProfileAccountSidebar` on default routes; category nav on shop/recipe; `FavoritesTypeNav` on favorites; vertical `UserMenu` in twitter mode | Hidden below `lg` |
+| Left rail | `@leftSidebar` → `ProfileAccountSidebar` on default routes; `FavoritesRail` (types + category nav) on favorites; vertical `UserMenu` in twitter mode | Hidden below `lg` |
 | Center | Route `page.tsx` children | — |
 | Right rail | `RightSidebar` | Hidden on `map`, `waiv-table`; hidden below `lg` on `(main)`. Wallet actions and the market panel also show on `/permissions`. |
 
@@ -70,7 +70,7 @@ user-profile/[name]/layout.tsx          validate name + load profile (404 if mis
 
 | Module | Role |
 |--------|------|
-| `@/modules/user-profile` | Shell queries, hero, menu, sidebars, shop/recipe main content |
+| `@/modules/user-profile` | Shell queries, hero, menu, sidebars, Favorites tab |
 | `@/modules/user-social` | Followers/following/following-objects lists |
 | `@/modules/feed` | Profile feed tabs (posts, threads, comments, mentions, activity) |
 
@@ -84,10 +84,9 @@ Shell profile fetch: [data-loading.md](data-loading.md). `(profile)/layout.tsx` 
 |------|------|
 | Feed tabs | [routes/feed.md](routes/feed.md) |
 | Social lists | [routes/social-graph.md](routes/social-graph.md) |
-| Shop / recipe | [routes/user-shop.md](routes/user-shop.md) |
 | About | [routes/about.md](routes/about.md) |
 | Map | [routes/map.md](routes/map.md) |
-| Favorites | [routes/favorites.md](routes/favorites.md) |
+| Favorites (former Shop / Recipe) | [routes/favorites.md](routes/favorites.md) |
 | Expertise | [routes/expertise.md](routes/expertise.md) |
 | Account sidebar | [components/account-sidebar.md](components/account-sidebar.md) |
 | Reblogs | [routes/reblogs.md](routes/reblogs.md) |
@@ -100,7 +99,7 @@ Shell profile fetch: [data-loading.md](data-loading.md). `(profile)/layout.tsx` 
 | Command | Purpose |
 |---------|---------|
 | `pnpm nx run web:typecheck` | Layout and parallel-route types |
-| Manual | Open `/@alice`, `/@alice/followers`, `/@alice/user-shop` — address bar stays `/@…` |
+| Manual | Open `/@alice`, `/@alice/followers`, `/@alice/favorites/recipe` — address bar stays `/@…` |
 
 ## Related code paths
 

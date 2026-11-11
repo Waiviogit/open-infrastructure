@@ -1,24 +1,39 @@
 import 'server-only';
 
+import { queryApiCacheTags } from '@/shared/infrastructure/query/query-api-cache-tags';
+
 import type { ShopObjectsPage, ShopSectionsPage } from '../../domain/types/shop-objects';
 import { shopObjectsPageSchema, shopSectionsPageSchema } from '../../domain/types/shop-objects';
 import { queryApiFetch } from './query-api.client';
 
-export type FetchShopObjectsParams = {
-  types: readonly string[];
-  categoryPath: string[];
-  /** When true, only objects with no category tags (query-api `uncategorizedOnly`). */
-  uncategorizedOnly?: boolean;
+/** Filters shared by the Favorites list and section endpoints. */
+type FavoritesListFilterParams = {
   tags?: readonly string[];
   rating?: number | null;
+};
+
+export type FetchShopObjectsParams = FavoritesListFilterParams & {
+  /** One Favorites object type (query-api `types`, exactly one value). */
+  objectType: string;
+  categoryPath: readonly string[];
+  /** When true, only objects with no category tags (query-api `uncategorizedOnly`). */
+  uncategorizedOnly?: boolean;
   limit?: number;
   cursor?: string | null;
 };
 
-function appendShopFilterParams(
-  sp: URLSearchParams,
-  params: { tags?: readonly string[]; rating?: number | null },
-): void {
+export type FetchShopSectionsParams = FavoritesListFilterParams & {
+  /** One category object type (query-api `types`, exactly one value). */
+  objectType: string;
+  /** Parent department (drill-down); omit at root. */
+  name?: string;
+  /** Ancestors before `name`. */
+  path?: readonly string[];
+  cursor?: string | null;
+  sectionLimit?: number;
+};
+
+function appendFilterParams(sp: URLSearchParams, params: FavoritesListFilterParams): void {
   for (const tag of params.tags ?? []) {
     const trimmed = tag.trim();
     if (trimmed) {
@@ -30,65 +45,50 @@ function appendShopFilterParams(
   }
 }
 
-function buildShopObjectsSearchParams(params: FetchShopObjectsParams): string {
-  const sp = new URLSearchParams();
-  for (const t of params.types) {
-    sp.append('types', t);
-  }
-  for (const segment of params.categoryPath) {
-    if (segment.trim().length > 0) {
-      sp.append('categoryPath', segment);
+function appendNonEmpty(sp: URLSearchParams, key: string, values: readonly string[]): void {
+  for (const value of values) {
+    if (value.trim().length > 0) {
+      sp.append(key, value);
     }
   }
+}
+
+function appendCursor(sp: URLSearchParams, cursor: string | null | undefined): void {
+  const trimmed = cursor?.trim();
+  if (trimmed) {
+    sp.set('cursor', trimmed);
+  }
+}
+
+function buildShopObjectsSearchParams(params: FetchShopObjectsParams): string {
+  const sp = new URLSearchParams();
+  sp.append('types', params.objectType.trim());
+  appendNonEmpty(sp, 'categoryPath', params.categoryPath);
   if (params.uncategorizedOnly === true) {
     sp.set('uncategorizedOnly', 'true');
   }
-  appendShopFilterParams(sp, params);
+  appendFilterParams(sp, params);
   if (params.limit != null) {
     sp.set('limit', String(params.limit));
   }
-  if (params.cursor != null && params.cursor.trim().length > 0) {
-    sp.set('cursor', params.cursor.trim());
-  }
-  const q = sp.toString();
-  return q.length > 0 ? `?${q}` : '';
+  appendCursor(sp, params.cursor);
+  return `?${sp.toString()}`;
 }
-
-export type FetchShopSectionsParams = {
-  types: readonly string[];
-  /** Parent department (drill-down); omit at root. */
-  name?: string;
-  /** Ancestors before `name`. */
-  path?: string[];
-  tags?: readonly string[];
-  rating?: number | null;
-  cursor?: string | null;
-  sectionLimit?: number;
-};
 
 function buildShopSectionsSearchParams(params: FetchShopSectionsParams): string {
   const sp = new URLSearchParams();
-  for (const t of params.types) {
-    sp.append('types', t);
-  }
+  sp.append('types', params.objectType.trim());
   const parent = params.name?.trim();
   if (parent && parent.length > 0) {
     sp.set('name', parent);
   }
-  for (const segment of params.path ?? []) {
-    if (segment.trim().length > 0) {
-      sp.append('path', segment);
-    }
-  }
-  appendShopFilterParams(sp, params);
+  appendNonEmpty(sp, 'path', params.path ?? []);
+  appendFilterParams(sp, params);
   if (params.sectionLimit != null) {
     sp.set('sectionLimit', String(params.sectionLimit));
   }
-  if (params.cursor != null && params.cursor.trim().length > 0) {
-    sp.set('cursor', params.cursor.trim());
-  }
-  const q = sp.toString();
-  return q.length > 0 ? `?${q}` : '';
+  appendCursor(sp, params.cursor);
+  return `?${sp.toString()}`;
 }
 
 function viewerHeaders(viewer?: string | null): Record<string, string> | undefined {
@@ -99,13 +99,14 @@ function viewerHeaders(viewer?: string | null): Record<string, string> | undefin
   return { 'X-Viewer': v };
 }
 
+/** Favorites objects of one type (weight order, opaque cursor). */
 export async function fetchShopObjects(
   username: string,
   params: FetchShopObjectsParams,
   init?: { viewer?: string | null },
 ): Promise<ShopObjectsPage | null> {
   const name = username.trim();
-  if (name.length === 0) {
+  if (name.length === 0 || params.objectType.trim().length === 0) {
     return null;
   }
   const qs = buildShopObjectsSearchParams(params);
@@ -113,6 +114,7 @@ export async function fetchShopObjects(
   const headers = viewerHeaders(init?.viewer ?? null);
   const raw = await queryApiFetch<unknown>(path, {
     ...(headers ? { headers } : {}),
+    cacheTags: [queryApiCacheTags.userFavorites(name)],
     forwardClientIp: true,
   });
   if (raw == null) {
@@ -126,13 +128,14 @@ export async function fetchShopObjects(
   return parsed.data;
 }
 
+/** Child categories of one category type with preview objects. */
 export async function fetchShopSections(
   username: string,
   params: FetchShopSectionsParams,
   init?: { viewer?: string | null },
 ): Promise<ShopSectionsPage | null> {
   const name = username.trim();
-  if (name.length === 0) {
+  if (name.length === 0 || params.objectType.trim().length === 0) {
     return null;
   }
   const qs = buildShopSectionsSearchParams(params);
@@ -140,6 +143,7 @@ export async function fetchShopSections(
   const headers = viewerHeaders(init?.viewer ?? null);
   const raw = await queryApiFetch<unknown>(path, {
     ...(headers ? { headers } : {}),
+    cacheTags: [queryApiCacheTags.userFavorites(name)],
     forwardClientIp: true,
   });
   if (raw == null) {

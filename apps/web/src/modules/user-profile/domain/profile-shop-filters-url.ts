@@ -91,28 +91,21 @@ export function setProfileShopRatingFilter(
   return rating;
 }
 
-export function isUserProfileShopTab(pathname: string): boolean {
-  return getSegmentsAfterAccount(pathname)[0] === 'user-shop';
-}
-
-export function isUserProfileRecipeTab(pathname: string): boolean {
-  return getSegmentsAfterAccount(pathname)[0] === 'recipe';
-}
-
-export function isUserProfileShopOrRecipeTab(pathname: string): boolean {
-  return isUserProfileShopTab(pathname) || isUserProfileRecipeTab(pathname);
+export function isUserProfileFavoritesTab(pathname: string): boolean {
+  return getSegmentsAfterAccount(pathname)[0] === 'favorites';
 }
 
 export function profileShopFiltersActive(filters: ProfileShopFiltersState): boolean {
   return filters.tags.length > 0 || filters.rating != null;
 }
 
-/** Stable React `key` for shop list remount when scope or filters change. */
+/** Stable React `key` for a favorites list remount when type, scope or filters change. */
 export function buildShopListScopeKey(
+  objectType: string,
   lineageSegments: readonly string[],
   uncategorizedOnly: boolean,
   filters: ProfileShopFiltersState,
 ): string {
   const pathPart = uncategorizedOnly ? '__uncategorized__' : lineageSegments.join('/');
-  return `${pathPart}::${filters.tags.join('|')}::${filters.rating ?? ''}`;
+  return `${objectType}::${pathPart}::${filters.tags.join('|')}::${filters.rating ?? ''}`;
 }

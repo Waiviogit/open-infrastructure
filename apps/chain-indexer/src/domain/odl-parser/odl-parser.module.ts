@@ -22,6 +22,7 @@ import { MetaGroupSyncHandler } from './handlers/meta-group-sync.handler';
 import { CategorySyncHandler } from './handlers/category-sync.handler';
 import { TagCategoryItemSyncHandler } from './handlers/tag-category-item-sync.handler';
 import { ObjectCategoriesWorker } from './object-categories.worker';
+import { UserCategoryScopeEnqueueService } from './user-category-scope-enqueue.service';
 import { ObjectCategoriesRelatedWorker } from './object-categories-related.worker';
 import { ObjectTagCategoriesWorker } from './object-tag-categories.worker';
 import { RankScoreModule } from '../rank-score/rank-score.module';
@@ -68,6 +69,7 @@ import {
     BatchImportWorker,
     OdlCustomJsonParser,
     MetaGroupSyncHandler,
+    UserCategoryScopeEnqueueService,
     CategorySyncHandler,
     TagCategoryItemSyncHandler,
     ObjectCategoriesWorker,

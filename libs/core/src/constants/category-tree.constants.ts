@@ -1,39 +1,34 @@
+import { objectTypeSupportsCategories } from '../object-type-registry/category-object-types';
+
 /** Sentinel `category_name` row in `object_categories_related` for uncategorized group count. */
 export const UNCATEGORIZED_CATEGORY_SENTINEL = '__uncategorized__';
 
-/**
- * Precomputed shop category scopes: book+product vs recipe.
- * `scope_key` for `object_categories_related` is `buildUserScopeKey(account, bucket)`.
- */
-export const SHOP_TYPE_BUCKETS: readonly string[][] = [
-  ['book', 'product'],
-  ['recipe'],
-] as const;
+const SCOPE_KEY_SEPARATOR = ':';
 
-/** Builds canonical `scope_key` from account + sorted types (comma-separated). */
-export function buildUserScopeKey(account: string, types: readonly string[]): string {
-  const sorted = [...types].map((t) => t.trim()).filter(Boolean).sort();
-  return `${account.trim()}:${sorted.join(',')}`;
+/**
+ * Canonical user `scope_key` for `object_categories_related`: one scope per account and
+ * category object type (`alice:recipe`).
+ */
+export function buildUserCategoryScopeKey(account: string, objectType: string): string {
+  return `${account.trim()}${SCOPE_KEY_SEPARATOR}${objectType.trim()}`;
 }
 
 /**
- * Parses `scope_key` into account and type list.
- * Legacy keys without `:` are treated as the first bucket (book, product).
+ * Parses a user `scope_key`. Returns `null` for legacy keys (no separator, multi-type
+ * `alice:book,product`) and for types that no longer support `category`.
  */
-export function parseUserScopeKey(scopeKey: string): { account: string; types: string[] } {
+export function parseUserCategoryScopeKey(
+  scopeKey: string,
+): { account: string; objectType: string } | null {
   const trimmed = scopeKey.trim();
-  const colonIdx = trimmed.indexOf(':');
-  if (colonIdx === -1) {
-    return { account: trimmed, types: [...SHOP_TYPE_BUCKETS[0]] };
+  const separatorIdx = trimmed.lastIndexOf(SCOPE_KEY_SEPARATOR);
+  if (separatorIdx <= 0) {
+    return null;
   }
-  const account = trimmed.slice(0, colonIdx).trim();
-  const rest = trimmed.slice(colonIdx + 1);
-  const types = rest
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean);
-  if (types.length === 0) {
-    return { account, types: [...SHOP_TYPE_BUCKETS[0]] };
+  const account = trimmed.slice(0, separatorIdx).trim();
+  const objectType = trimmed.slice(separatorIdx + 1).trim();
+  if (account.length === 0 || !objectTypeSupportsCategories(objectType)) {
+    return null;
   }
-  return { account, types };
+  return { account, objectType };
 }

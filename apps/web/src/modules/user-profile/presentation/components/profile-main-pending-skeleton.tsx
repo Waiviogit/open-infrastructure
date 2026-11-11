@@ -1,11 +1,20 @@
 'use client';
 
+import { objectTypeSupportsCategories } from '@opden-data-layer/core/object-type-registry';
+
 import { FeedPostsLoadingSkeleton } from '@/modules/feed/presentation/components/feed-posts-loading-skeleton';
 import { FeedListSkeleton } from '@/modules/feed/presentation/components/feed-skeletons';
 import { TransfersWalletLoadingSkeleton } from '@/modules/user-wallet/presentation/components/wallet/transfers-wallet-loading-skeleton';
 import { FeedColumn } from '@/shared/presentation/layout';
 
+import { parseFavoritesPath, type FavoritesPath } from '../../domain/favorites-path';
+import {
+  parseProfileShopFilters,
+  profileShopFiltersActive,
+} from '../../domain/profile-shop-filters-url';
+import { FavoritesBreadcrumbs } from './favorites-breadcrumbs';
 import { getSegmentsAfterAccount } from './profile-path';
+import { getAccountFromPathname } from './user-profile-pending-nav';
 import { useEffectiveProfileNav } from './user-profile-pending-nav-context';
 import { getSubmenuVariant } from './user-profile-subnav';
 
@@ -49,37 +58,76 @@ function ProfileSectionPendingSkeleton() {
   );
 }
 
-function ProfileShopPendingSkeleton() {
+const FAVORITES_PENDING_SECTION_COUNT = 2;
+
+/** Same shell as a loaded section card (`FavoritesSections`): heading row inside the card. */
+function FavoritesSectionsPendingSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading shop">
-      <div className="mb-card-padding flex flex-wrap gap-2">
-        {Array.from({ length: 3 }, (_, i) => (
-          <div
-            key={i}
-            className="h-8 w-20 animate-pulse rounded-pill bg-surface-control"
-          />
-        ))}
-      </div>
-      <FeedColumn>
-        <FeedListSkeleton count={4} />
-      </FeedColumn>
+    <div className="flex flex-col gap-8">
+      {Array.from({ length: FAVORITES_PENDING_SECTION_COUNT }, (_, section) => (
+        <section
+          key={section}
+          className="rounded-card border border-border bg-surface/60 p-card-padding"
+        >
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="h-6 max-w-[10rem] flex-1 animate-pulse rounded-btn bg-surface-control" />
+            <div className="h-4 w-16 animate-pulse rounded-btn bg-surface-control" />
+          </div>
+          <div className="mt-4">
+            <FeedListSkeleton count={2} />
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
 
-function ProfileObjectListPendingSkeleton() {
+/**
+ * Favorites tab while the next location loads: breadcrumbs from the pending URL (instant), then
+ * category sections for a category type without filters, or a flat object list otherwise.
+ */
+function ProfileFavoritesPendingSkeleton({
+  pathname,
+  search,
+  favoritesPath,
+}: {
+  pathname: string;
+  search: string;
+  favoritesPath: FavoritesPath;
+}) {
+  const accountName = getAccountFromPathname(pathname);
+  const filters = parseProfileShopFilters(new URLSearchParams(search));
+  const { objectType, lineage, uncategorizedOnly } = favoritesPath;
+  const showSections =
+    objectType !== null &&
+    objectTypeSupportsCategories(objectType) &&
+    !uncategorizedOnly &&
+    !profileShopFiltersActive(filters);
+
   return (
-    <div aria-busy="true" aria-label="Loading objects">
-      <FeedColumn>
-        <FeedListSkeleton count={6} />
-      </FeedColumn>
+    <div aria-busy="true" aria-label="Loading favorites">
+      {accountName && objectType ? (
+        <FavoritesBreadcrumbs
+          accountName={accountName}
+          objectType={objectType}
+          lineage={lineage}
+          filters={filters}
+        />
+      ) : null}
+      {showSections ? (
+        <FavoritesSectionsPendingSkeleton />
+      ) : (
+        <FeedColumn>
+          <FeedListSkeleton count={6} />
+        </FeedColumn>
+      )}
     </div>
   );
 }
 
 /** Client-safe pending overlay skeletons (no server route `loading.tsx` imports). */
 export function ProfileMainPendingSkeleton() {
-  const { pathname } = useEffectiveProfileNav();
+  const { pathname, search } = useEffectiveProfileNav();
   const variant = getSubmenuVariant(pathname);
   const head = getSegmentsAfterAccount(pathname)[0] ?? '';
 
@@ -99,11 +147,15 @@ export function ProfileMainPendingSkeleton() {
     return <ProfileSectionPendingSkeleton />;
   }
 
-  if (head === 'user-shop' || head === 'recipe') {
-    return <ProfileShopPendingSkeleton />;
-  }
-  if (head === 'favorites') {
-    return <ProfileObjectListPendingSkeleton />;
+  const favoritesPath = parseFavoritesPath(pathname);
+  if (favoritesPath) {
+    return (
+      <ProfileFavoritesPendingSkeleton
+        pathname={pathname}
+        search={search}
+        favoritesPath={favoritesPath}
+      />
+    );
   }
 
   return <FeedPostsLoadingSkeleton />;

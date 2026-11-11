@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: chain-indexer
 tags: [chain-indexer, object-status]
-updated_at: 2026-08-25
+updated_at: 2026-11-11
 related:
   - docs/apps/chain-indexer/spec/overview.md
   - docs/apps/query-api/spec/objects-resolve.md
@@ -71,7 +71,7 @@ Object removed or redacted because it may contain personal or business-identifyi
 1. ODL **`update_create`** with `update_type: 'status'` and `value_json: { title: '...', link?: '...' }` — row appended to **`object_updates`** (append-only history).
 2. **`UpdateCreateHandler`** persists the update, emits **`OBJECT_STATUS_RECOMPUTE_EVENT`** (`ObjectStatusRecomputeEvent` with `objectId` only), and may emit **`object_status_change`** notification (payload title may be `protected`).
 3. **`UpdateVoteHandler`** on status rows (`for` / `against` / `remove`) also emits **`OBJECT_STATUS_RECOMPUTE_EVENT`**.
-4. **`ObjectStatusHandler`** loads aggregated object data, resolves the winning status via `ObjectViewService` + `materializeObjectCoreStatus()`, and updates **`objects_core.status`** only when the value changes. Tag-category sync may enqueue when crossing the active boundary.
+4. **`ObjectStatusHandler`** loads aggregated object data, resolves the winning status via `ObjectViewService` + `materializeObjectCoreStatus()`, and updates **`objects_core.status`** only when the value changes. When the status crosses the active boundary it enqueues tag-category sync and emits **`ObjectActiveStateChangedEvent`** (`odl.object.active_state_changed`), which rebuilds the category scopes that contain the object ([object-categories.md](object-categories.md#triggers)).
 
 Shared helper: `materializeObjectCoreStatus()` in `@opden-data-layer/objects-domain`.
 

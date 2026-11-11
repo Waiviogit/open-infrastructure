@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, page, user-profile, sidebar]
-updated_at: 2026-09-01
+updated_at: 2026-11-11
 related:
   - docs/apps/web/spec/pages/user-profile/profile-shell.md
   - docs/apps/web/spec/pages/user-profile/data-loading.md
@@ -23,7 +23,7 @@ related:
 
 **Mobile (below `lg`):** left rail hidden. A compact subset of sidebar fields is rendered in the profile hero via `UserProfileMobileHeroMeta` and `UserProfileMobileHeroDetails` (rank, vote value, bio, location, website, active). Full sidebar data still comes from `getUserAccountSidebarQuery` (React `cache()` dedupes hero + `@leftSidebar` fetches).
 
-**Not** shown on shop/recipe/favorites left-rail pages (those keep `CategoryNav` / `FavoritesTypeNav`).
+**Not** shown on Favorites left-rail pages (those render `FavoritesRail` — [favorites.md](../routes/favorites.md)).
 
 ## Component
 

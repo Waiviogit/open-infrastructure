@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { ObjectCategoriesRelatedSyncQueueRow } from '@opden-data-layer/odl-db-types';
 
-import { parseUserScopeKey, SHOP_TYPE_BUCKETS } from '@opden-data-layer/core';
+import {
+  parseUserCategoryScopeKey,
+  resolvePostLinkedObjectTypes,
+} from '@opden-data-layer/core';
 import { ObjectCategoriesRelatedRepository } from '../../repositories/object-categories-related.repository';
 import { ObjectCategoriesRelatedSyncQueueRepository } from '../../repositories/object-categories-related-sync-queue.repository';
 import { UserMetadataRepository } from '../../repositories/user-metadata.repository';
@@ -17,16 +20,11 @@ import {
 const DEFAULT_INTERVAL_MS = 5_000;
 const DEFAULT_MAX_ATTEMPTS = 10;
 
-/** True when types match the recipe bucket (`['recipe']`). */
-function isRecipeBucket(types: readonly string[]): boolean {
-  const b = SHOP_TYPE_BUCKETS[1];
-  if (!b || types.length !== b.length) {
-    return false;
-  }
-  const s = [...types].sort().join(',');
-  return [...b].sort().join(',') === s;
-}
-
+/**
+ * Drains `object_categories_related_sync_queue`: rebuilds the global scope or one per-type user
+ * scope (`account:objectType`).
+ * @see docs/apps/chain-indexer/spec/object-categories.md
+ */
 @Injectable()
 export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ObjectCategoriesRelatedWorker.name);
@@ -81,33 +79,17 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
     }
   }
 
-  private async processTask(task: ObjectCategoriesRelatedSyncQueueRow, maxAttempts: number): Promise<void> {
+  private async processTask(
+    task: ObjectCategoriesRelatedSyncQueueRow,
+    maxAttempts: number,
+  ): Promise<void> {
     try {
       if (task.scope_type === 'global') {
         await this.objectCategoriesRelatedRepository.replaceGlobalScope();
       } else {
-        const { account, types } = parseUserScopeKey(task.scope_key);
-
-        const meta = await this.userMetadataRepository.findByAccount(account);
-
-        const includePostObjects =
-          meta === undefined
-            ? true
-            : isRecipeBucket(types)
-              ? !meta.hide_recipe_objects
-              : !meta.hide_linked_objects;
-
-        const shopDeselectObjectIds =
-          await this.userShopDeselectRepository.findObjectIdsByAccount(account);
-
-        await this.objectCategoriesRelatedRepository.replaceUserShopScope(task.scope_key, {
-          account,
-          types,
-          includePostObjects,
-          shopDeselectObjectIds,
-        });
+        await this.rebuildUserScope(task.scope_key);
       }
-      await this.relatedSyncQueueRepository.deleteOne(task.scope_type, task.scope_key);
+      await this.finishTask(task);
     } catch (error: unknown) {
       this.logger.error(
         `object_categories_related scope '${task.scope_type}/${task.scope_key}': ${
@@ -115,10 +97,50 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
         }`,
       );
       if (task.attempts >= maxAttempts) {
-        await this.relatedSyncQueueRepository.deleteOne(task.scope_type, task.scope_key);
+        await this.finishTask(task);
       } else {
         await this.relatedSyncQueueRepository.resetAttempt(task.scope_type, task.scope_key);
       }
+    }
+  }
+
+  private async rebuildUserScope(scopeKey: string): Promise<void> {
+    const parsed = parseUserCategoryScopeKey(scopeKey);
+    if (!parsed) {
+      this.logger.warn(
+        `object_categories_related: legacy or non-category user scope '${scopeKey}'; deleting its rows`,
+      );
+      await this.objectCategoriesRelatedRepository.deleteUserScope(scopeKey);
+      return;
+    }
+    const { account, objectType } = parsed;
+
+    const [meta, deselectIds] = await Promise.all([
+      this.userMetadataRepository.findByAccount(account),
+      this.userShopDeselectRepository.findObjectIdsByAccount(account),
+    ]);
+    const includePostObjects = resolvePostLinkedObjectTypes([objectType], meta).length > 0;
+
+    await this.objectCategoriesRelatedRepository.replaceUserCategoryScope(scopeKey, {
+      account,
+      objectType,
+      includePostObjects,
+      deselectIds,
+    });
+  }
+
+  /**
+   * Removes the claimed queue row unless it was re-enqueued while being processed; a re-enqueued
+   * row is released for the next batch instead.
+   */
+  private async finishTask(task: ObjectCategoriesRelatedSyncQueueRow): Promise<void> {
+    const removed = await this.relatedSyncQueueRepository.deleteClaimed(
+      task.scope_type,
+      task.scope_key,
+      task.enqueued_at,
+    );
+    if (!removed) {
+      await this.relatedSyncQueueRepository.resetAttempt(task.scope_type, task.scope_key);
     }
   }
 }

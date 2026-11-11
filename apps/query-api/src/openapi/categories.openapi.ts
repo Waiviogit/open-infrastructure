@@ -8,8 +8,12 @@ const itemSchema = registry.register(
   'CategoryNavItem',
   z.object({
     name: z.string(),
-    objects_count: z.number().int().nonnegative(),
-    has_children: z.boolean(),
+    objects_count: z.number().int().positive().openapi({
+      description: 'Live object count in the Favorites scope ∩ lineage + name (same set as the leaf list).',
+    }),
+    has_children: z.boolean().openapi({
+      description: 'True when drilling into this name lists at least one non-empty child.',
+    }),
   }),
 );
 
@@ -17,7 +21,9 @@ const categoriesResponseSchema = registry.register(
   'UserCategoriesResponse',
   z.object({
     items: z.array(itemSchema),
-    uncategorized_count: z.number().int().nonnegative(),
+    uncategorized_count: z.number().int().nonnegative().openapi({
+      description: 'Live count of scope objects without categories at the root; always 0 below the root.',
+    }),
     show_other: z.boolean(),
   }),
 );
@@ -31,9 +37,9 @@ registry.registerPath({
   method: 'get',
   path: '/query/v1/users/{name}/categories',
   tags: [queryApiOpenApiTags.users],
-  summary: 'Shop departments for a user (authority + optional post-linked scope)',
+  summary: 'Category navigation for one Favorites type of a user',
   description:
-    'Returns pre-aggregated categories from `object_categories_related` (`scope_type=user`) keyed by `scope_key=buildUserScopeKey(name, types)` (default types `book`,`product`). Root list when `name` query is omitted; drill-down when `name` and optional `path` are set.',
+    '`types` must be exactly one category object type (`CATEGORY_OBJECT_TYPES`), otherwise 400; there is no default. Precomputed `object_categories_related` rows (`scope_key = account:type`) only choose candidate names and their order. Every `objects_count` is a live `COUNT(DISTINCT object_id)` over the Favorites scope (favorites ∪ authored post links − deselect, per-type hide flags) intersected with the full lineage (`path` + `name` + child); children with an empty intersection are omitted and `has_children` is true only when a grandchild intersection is non-empty. `uncategorized_count` is live at the root and 0 below it. Root list when `name` is omitted; drill-down when `name` and optional `path` are set.',
   request: {
     params: z.object({
       name: z
@@ -45,7 +51,7 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: 'Shop category navigation slice.',
+      description: 'Category navigation slice.',
       content: {
         'application/json': {
           schema: categoriesResponseSchema,
@@ -53,7 +59,8 @@ registry.registerPath({
       },
     },
     400: {
-      description: 'Query validation failed (Zod).',
+      description:
+        'Query validation failed (Zod): `types` missing, several types, or a type without categories.',
       content: {
         'application/json': {
           schema: badRequestSchema,

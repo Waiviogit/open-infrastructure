@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import {
   materializeObjectCoreStatus,
   ObjectViewService,
@@ -14,6 +14,10 @@ import {
   OBJECT_STATUS_RECOMPUTE_EVENT,
   ObjectStatusRecomputeEvent,
 } from '../object-status-created.event';
+import {
+  OBJECT_ACTIVE_STATE_CHANGED_EVENT,
+  ObjectActiveStateChangedEvent,
+} from '../object-active-state-changed.event';
 
 @Injectable()
 export class ObjectStatusHandler {
@@ -25,6 +29,7 @@ export class ObjectStatusHandler {
     private readonly objectViewService: ObjectViewService,
     private readonly objectsCoreRepository: ObjectsCoreRepository,
     private readonly objectTagCategoriesSyncQueueRepository: ObjectTagCategoriesSyncQueueRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @OnEvent(OBJECT_STATUS_RECOMPUTE_EVENT)
@@ -62,6 +67,10 @@ export class ObjectStatusHandler {
     const wasActive = previousStatus === 'active';
     const isActive = nextStatus === 'active';
     if (wasActive !== isActive) {
+      this.eventEmitter.emit(
+        OBJECT_ACTIVE_STATE_CHANGED_EVENT,
+        new ObjectActiveStateChangedEvent(objectId, aggregated.core.object_type, isActive),
+      );
       try {
         await this.objectTagCategoriesSyncQueueRepository.enqueue(
           objectId,

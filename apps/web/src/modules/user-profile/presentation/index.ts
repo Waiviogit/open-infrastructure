@@ -1,24 +1,13 @@
 export { PROFILE_LAYOUT_PRESETS } from './layout-presets';
-export { CategoryNav } from './components/category-nav';
-export type { CategoryNavProps } from './components/category-nav';
-export { decodeCategoryPathSegment, UNCATEGORIZED_SHOP_PATH_SEGMENT } from './components/category-nav-path';
+export { decodeCategoryPathSegment } from '../domain/category-nav-path';
 export { ProfileRouteStub } from './components/profile-route-stub';
-export { ProfileShopMainContent } from './components/profile-shop-main-content';
-export type { ProfileShopMainContentProps } from './components/profile-shop-main-content';
-export { ShopObjectList } from './components/shop-object-list';
-export type { ShopObjectListProps } from './components/shop-object-list';
-export { ShopSections } from './components/shop-sections';
-export type { ShopSectionsProps } from './components/shop-sections';
-export { FavoritesTypeNav } from './components/favorites-type-nav';
-export type { FavoritesTypeNavProps } from './components/favorites-type-nav';
-export { FavoritesObjectList } from './components/favorites-object-list';
-export type { FavoritesObjectListProps } from './components/favorites-object-list';
+export { FavoritesRail } from './components/favorites-rail';
+export type { FavoritesRailProps } from './components/favorites-rail';
 export { ProfileFavoritesMainContent } from './components/profile-favorites-main-content';
 export type { ProfileFavoritesMainContentProps } from './components/profile-favorites-main-content';
 export { ProfileMapEmpty } from './components/profile-map-empty';
 export { ProfileMapView } from './components/profile-map-view';
 export type { ProfileMapViewProps } from './components/profile-map-view';
-export { getFavoritesTypesQuery, getFavoritesObjectsPageQuery } from '../application/queries/get-favorites.query';
 export { UserProfileHeroClient } from './components/user-profile-hero-client';
 export type { UserProfileHeroClientProps } from './components/user-profile-hero-client';
 export {
@@ -38,14 +27,12 @@ export {
 } from './components/user-profile-pending-nav-context';
 export { UserProfileNavLink } from './components/user-profile-nav-link';
 export {
-  ProfileCategoryNavSkeleton,
-  ProfileFavoritesTypeNavSkeleton,
+  ProfileFavoritesContentSkeleton,
+  ProfileFavoritesRailSkeleton,
   ProfileLeftRailSkeleton,
   ProfileMapSkeleton,
-  ProfileObjectListSkeleton,
   ProfileReblogsFeedSkeleton,
   ProfileSectionSkeleton,
-  ProfileShopContentSkeleton,
   ProfileSocialListSkeleton,
 } from './components/profile-content-skeletons';
 export { ProfileMapSidebarListSkeleton } from './components/profile-map-sidebar-list-skeleton';

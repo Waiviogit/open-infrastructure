@@ -1,13 +1,20 @@
-import { getFavoritesTypesQuery, FavoritesTypeNav } from '@/modules/user-profile';
+import { Suspense } from 'react';
+
+import { FavoritesRail, ProfileFavoritesRailSkeleton } from '@/modules/user-profile';
 
 type PageProps = {
   params: Promise<{ name: string }>;
 };
 
-export default async function UserFavoritesLeftSidebarPage({ params }: PageProps) {
+async function FavoritesLeftSidebarContent({ params }: PageProps) {
   const { name } = await params;
-  const accountName = decodeURIComponent(name);
-  const { types } = await getFavoritesTypesQuery(accountName);
+  return <FavoritesRail accountName={decodeURIComponent(name)} />;
+}
 
-  return <FavoritesTypeNav accountName={accountName} types={types} />;
+export default function UserFavoritesLeftSidebarPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<ProfileFavoritesRailSkeleton />}>
+      <FavoritesLeftSidebarContent params={params} />
+    </Suspense>
+  );
 }

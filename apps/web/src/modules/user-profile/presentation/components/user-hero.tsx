@@ -69,7 +69,8 @@ export function UserHero(props: UserHeroProps) {
         <ShellInset className="pt-0">
           <div
             className={[
-              'shell-profile-grid grid grid-cols-1',
+              // Same column gap as the (main) content grid so column 2 lines up with the cards.
+              'shell-profile-grid grid grid-cols-1 gap-x-card-padding',
               'lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)_minmax(0,var(--shell-right-width))]',
             ].join(' ')}
           >

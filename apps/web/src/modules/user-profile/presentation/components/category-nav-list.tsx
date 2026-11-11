@@ -1,40 +1,49 @@
 'use client';
 
+import { buildFavoritesPath } from '../../domain/favorites-path';
+import {
+  buildProfileShopHref,
+  type ProfileShopFiltersState,
+} from '../../domain/profile-shop-filters-url';
 import type { CategoryNavItem } from '../../domain/types/category-nav';
-import type { ProfileShopFiltersState } from '../../domain/profile-shop-filters-url';
-import { buildProfileShopHref } from '../../domain/profile-shop-filters-url';
-import { getCategoryLineageFromPathname } from './category-nav-path';
-import { useEffectiveProfileNav } from './user-profile-pending-nav-context';
 import { UserProfileNavLink } from './user-profile-nav-link';
 
 type CategoryNavListProps = {
   items: CategoryNavItem[];
-  /** e.g. `/@alice/user-shop` */
-  basePath: string;
-  /** `'user-shop'` or `'recipe'` */
-  sectionKey: 'user-shop' | 'recipe';
+  accountName: string;
+  objectType: string;
+  /** Lineage whose children `items` are (links append the item name to it). */
+  parentLineage: readonly string[];
+  /** Last segment of the effective (optimistic) lineage; highlights that item. */
+  activeName: string | null;
   filters: ProfileShopFiltersState;
 };
 
-export function CategoryNavList({ items, basePath, sectionKey, filters }: CategoryNavListProps) {
-  const { pathname } = useEffectiveProfileNav();
-  const lineage = getCategoryLineageFromPathname(pathname, sectionKey);
-  const prefix =
-    lineage.length > 0 ? `${lineage.map((s) => encodeURIComponent(s)).join('/')}/` : '';
-
+export function CategoryNavList({
+  items,
+  accountName,
+  objectType,
+  parentLineage,
+  activeName,
+  filters,
+}: CategoryNavListProps) {
   return (
-    <ul className="mt-2 list-none space-y-0.5 p-0" role="list">
+    <ul className="mt-1 list-none space-y-0.5 p-0" role="list">
       {items.map((item) => {
-        const path = `${basePath}/${prefix}${encodeURIComponent(item.name)}`;
-        const href = buildProfileShopHref(path, filters);
-        const isActive = lineage.length > 0 && lineage[lineage.length - 1] === item.name;
+        const href = buildProfileShopHref(
+          buildFavoritesPath(accountName, objectType, [...parentLineage, item.name]),
+          filters,
+        );
+        const isActive = activeName === item.name;
         return (
           <li key={item.name}>
             <UserProfileNavLink
               href={href}
               className={[
                 'flex items-center justify-between gap-2 rounded-btn px-2 py-1.5 text-body-sm transition-colors',
-                isActive ? 'bg-surface font-weight-label text-fg' : 'text-muted hover:bg-surface/80 hover:text-fg',
+                isActive
+                  ? 'bg-surface font-weight-label text-fg'
+                  : 'text-muted hover:bg-surface/80 hover:text-fg',
               ].join(' ')}
               aria-current={isActive ? 'page' : undefined}
             >

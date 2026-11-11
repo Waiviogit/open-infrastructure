@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, pages, index]
-updated_at: 2026-10-22
+updated_at: 2026-11-11
 related:
   - docs/apps/web/spec/overview.md
 ---
@@ -62,10 +62,9 @@ Cross-cutting: [object-card.md](../object-card.md), [object-follow.md](../object
 | Profile fetch | [data-loading.md](user-profile/data-loading.md) | query-api |
 | `/@:name` feed tabs | [routes/feed.md](user-profile/routes/feed.md) | posts, threads, comments, mentions, activity |
 | `/@:name/followers`, `/following`, `/following-objects` | [routes/social-graph.md](user-profile/routes/social-graph.md) | |
-| `/@:name/user-shop`, `/recipe` | [routes/user-shop.md](user-profile/routes/user-shop.md) | `@leftSidebar` parallel routes |
 | `/@:name/about` | [routes/about.md](user-profile/routes/about.md) | |
 | `/@:name/map` | [routes/map.md](user-profile/routes/map.md) | |
-| `/@:name/favorites` | [routes/favorites.md](user-profile/routes/favorites.md) | |
+| `/@:name/favorites[/:type/...category]` | [routes/favorites.md](user-profile/routes/favorites.md) | Merged Shop / Recipe / Favorites; `@leftSidebar` type accordion |
 | `/@:name/expertise-*` | [routes/expertise.md](user-profile/routes/expertise.md) | |
 | `/@:name/reblogs` | [routes/reblogs.md](user-profile/routes/reblogs.md) | |
 | `/@:name/transfers/...` | [routes/transfers.md](user-profile/routes/transfers.md) | wallet tabs `?type=` |

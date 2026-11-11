@@ -34,10 +34,10 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [User social lists](user-social-lists.md) | `GET .../:name/followers`, `/following`, `/following-objects` |
 | [OSL messaging](osl-messaging.md) | Channels, object activity, `POST .../:name/following-objects/messages` |
 | [User account authority lists](user-account-auths-endpoint.md) | `GET .../:name/authority-grantors`, `/authority-grantees` |
-| [Shop categories](categories.md) | `GET /query/v1/users/:name/categories` |
+| [Favorites categories](categories.md) | `GET /query/v1/users/:name/categories` (one category type, live counts) |
 | [Category objects feed](category-objects.md) | `GET /query/v1/categories/objects` |
-| [Shop / recipe object feeds](shop-feed-endpoints.md) | `GET .../shop-objects`, `GET .../shop-sections`, `GET .../shop/filters` |
-| [User favorites](users-favorites-endpoint.md) | `GET .../favorites/types`, `GET .../favorites`, `POST .../favorites/map` |
+| [Favorites lists, sections, filters](shop-feed-endpoints.md) | `GET .../shop-objects`, `GET .../shop-sections`, `GET .../shop/filters` |
+| [User favorites + Favorites scope](users-favorites-endpoint.md) | `GET .../favorites/types`, `GET .../favorites`, `POST .../favorites/map` |
 | [User expertise](user-expertise.md) | `GET .../expertise/counters`, `GET .../expertise/objects` |
 | [Object experts](object-experts.md) | `GET .../objects/:id/experts` |
 | [User blog feed endpoint](user-blog-feed-endpoint.md) | `POST /query/v1/users/:name/blog` |

@@ -57,6 +57,7 @@
     "check:web-tsconfig-paths": "node scripts/check-web-tsconfig-paths.cjs",
     "lint:changed": "node scripts/lint-changed.cjs",
     "i18n:add-keys": "node scripts/i18n-add-keys.cjs",
+    "i18n:remove-keys": "node scripts/i18n-remove-keys.cjs",
     "fix:unused-imports": "node scripts/fix-unused-imports.mjs",
     "clean:cache": "node scripts/clean-cache.cjs",
     "typecheck:web": "pnpm nx run web:typecheck",

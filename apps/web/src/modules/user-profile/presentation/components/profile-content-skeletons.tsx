@@ -7,6 +7,10 @@ import { FeedColumn } from '@/shared/presentation/layout';
 import { FeedListSkeleton } from '@/modules/feed/presentation/components/feed-skeletons';
 
 import { ProfileMapSidebarListSkeleton } from './profile-map-sidebar-list-skeleton';
+import {
+  FAVORITES_CRUMBS_ROW_CLASS,
+  FAVORITES_SIDE_RAIL_OFFSET_CLASS,
+} from './favorites-layout-classes';
 
 export function ProfileSocialListSkeleton() {
   return (
@@ -45,47 +49,28 @@ function ProfileObjectCardRowSkeleton() {
   );
 }
 
-export function ProfileObjectListSkeleton({ count = 6 }: { count?: number }) {
+/** Breadcrumb trail placeholder shared by the Favorites content skeletons. */
+function ProfileFavoritesBreadcrumbSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading objects">
-      <FeedColumn>
-        <ul className="flex list-none flex-col gap-card-padding p-0">
-          {Array.from({ length: count }, (_, i) => (
-            <li key={i}>
-              <ProfileObjectCardRowSkeleton />
-            </li>
-          ))}
-        </ul>
-      </FeedColumn>
+    <div className={`${FAVORITES_CRUMBS_ROW_CLASS} gap-2`}>
+      <div className="h-4 w-16 animate-pulse rounded-btn bg-surface-control" />
+      <div className="h-4 w-24 animate-pulse rounded-btn bg-surface-control" />
     </div>
   );
 }
 
-export function ProfileShopContentSkeleton() {
+/** Favorites route skeleton (`loading.tsx` has no pathname): breadcrumbs + object rows. */
+export function ProfileFavoritesContentSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading shop">
-      <div className="mb-card-padding flex flex-wrap gap-2">
-        {Array.from({ length: 3 }, (_, i) => (
-          <div
-            key={i}
-            className="h-8 w-20 animate-pulse rounded-pill bg-surface-control"
-          />
+    <div aria-busy="true" aria-label="Loading favorites">
+      <ProfileFavoritesBreadcrumbSkeleton />
+      <ul className="flex list-none flex-col gap-card-padding p-0">
+        {Array.from({ length: 4 }, (_, i) => (
+          <li key={i}>
+            <ProfileObjectCardRowSkeleton />
+          </li>
         ))}
-      </div>
-      <div className="space-y-section-y">
-        {Array.from({ length: 2 }, (_, section) => (
-          <section key={section} className="space-y-3">
-            <div className="h-5 max-w-[10rem] animate-pulse rounded-btn bg-surface-control" />
-            <ul className="flex list-none flex-col gap-card-padding p-0">
-              {Array.from({ length: 2 }, (_, i) => (
-                <li key={i}>
-                  <ProfileObjectCardRowSkeleton />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -119,25 +104,6 @@ export function ProfileMapSkeleton() {
       </aside>
       <div className="h-full min-h-0 flex-1 animate-pulse bg-surface-control max-lg:min-h-[240px]" />
     </div>
-  );
-}
-
-export function ProfileCategoryNavSkeleton() {
-  return (
-    <nav
-      className="rounded-card border border-border bg-surface/60 p-card-padding"
-      aria-busy="true"
-      aria-label="Loading categories"
-    >
-      <div className="mb-3 h-4 max-w-[6rem] animate-pulse rounded-btn bg-surface-control" />
-      <ul className="list-none space-y-1 p-0">
-        {Array.from({ length: 6 }, (_, i) => (
-          <li key={i}>
-            <div className="h-9 w-full animate-pulse rounded-btn bg-surface-control" />
-          </li>
-        ))}
-      </ul>
-    </nav>
   );
 }
 
@@ -188,14 +154,14 @@ export function ProfileLeftRailSkeleton() {
   );
 }
 
-export function ProfileFavoritesTypeNavSkeleton() {
+/** Favorites left rail (type accordion) placeholder. */
+export function ProfileFavoritesRailSkeleton() {
   return (
     <nav
-      className="rounded-card border border-border bg-surface/60 p-card-padding"
+      className={`${FAVORITES_SIDE_RAIL_OFFSET_CLASS} rounded-card border border-border bg-surface/60 p-card-padding`}
       aria-busy="true"
       aria-label="Loading favorites types"
     >
-      <div className="mb-3 h-4 max-w-[5rem] animate-pulse rounded-btn bg-surface-control" />
       <ul className="list-none space-y-1 p-0">
         {Array.from({ length: 4 }, (_, i) => (
           <li key={i}>

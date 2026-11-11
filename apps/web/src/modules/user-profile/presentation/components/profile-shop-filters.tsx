@@ -10,10 +10,12 @@ import { ChevronDownIcon, FilterIcon } from '@/icons';
 import { useInstantNavigation } from '@/shared/presentation';
 import { PROFILE_FILTER_RAIL_STICKY_CLASS } from '@/shared/presentation/layout';
 
+import { objectTypeSupportsCategories } from '@opden-data-layer/core/object-type-registry';
+
+import { parseFavoritesPath } from '../../domain/favorites-path';
 import type { ProfileShopFiltersResponse } from '../../domain/profile-shop-filters-response.schema';
 import {
   buildProfileShopHref,
-  isUserProfileRecipeTab,
   parseProfileShopFilters,
   setProfileShopRatingFilter,
   toggleProfileShopTagFilter,
@@ -25,16 +27,16 @@ import {
   shopTypesHaveRatingFilters,
   shopTypesHaveTagFilters,
 } from '../../domain/profile-shop-registry';
+import { fetchProfileFavoritesTypes } from '../../infrastructure/profile-favorites-types.client';
 import { fetchProfileShopFilters } from '../../infrastructure/profile-shop-filters.client';
-import {
-  getCategoryLineageFromPathname,
-  UNCATEGORIZED_SHOP_PATH_SEGMENT,
-} from './category-nav-path';
+import { FAVORITES_SIDE_RAIL_OFFSET_CLASS } from './favorites-layout-classes';
 
 const FILTER_DEBOUNCE_MS = 300;
 const DEFAULT_OPEN_CATEGORIES = 2;
 const INITIAL_VISIBLE_COUNT = 10;
 const CATEGORY_LIST_MAX_HEIGHT = 'max-h-72';
+/** Joins lineage segments into a memo key; category names never contain this control char. */
+const LINEAGE_KEY_SEPARATOR = '\u001f';
 
 type TagCategorySection = ProfileShopFiltersResponse['categories'][number];
 
@@ -236,10 +238,6 @@ export function ProfileShopFilters({
     });
   }, []);
 
-  const filterAriaLabel = isUserProfileRecipeTab(pathname)
-    ? t('profile_filter_recipe')
-    : t('profile_filter_shop');
-
   if (!showTagFilters && !showRatingFilters) {
     return null;
   }
@@ -255,9 +253,10 @@ export function ProfileShopFilters({
     <aside
       className={[
         PROFILE_FILTER_RAIL_STICKY_CLASS,
+        FAVORITES_SIDE_RAIL_OFFSET_CLASS,
         'rounded-card border border-border bg-surface/60 p-card-padding',
       ].join(' ')}
-      aria-label={filterAriaLabel}
+      aria-label={t('discover_filters_title')}
       aria-busy={loading}
     >
       <h2 className="mb-3 flex items-center gap-2 text-caption font-weight-label uppercase tracking-loose text-fg-tertiary">
@@ -417,19 +416,55 @@ export function ProfileShopFilters({
   );
 }
 
-export function ProfileShopFiltersFromUrl({ accountName }: { accountName: string }) {
+/**
+ * First Favorites type for bare `/@name/favorites` (the URL names no type), read through the BFF.
+ * Undefined while loading; null when the user has no types or the read failed.
+ */
+function useFirstFavoritesType(accountName: string, enabled: boolean): string | null | undefined {
+  const [firstType, setFirstType] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    const ac = new AbortController();
+    setFirstType(undefined);
+    void fetchProfileFavoritesTypes(accountName, ac.signal).then((view) => {
+      if (!ac.signal.aborted) {
+        setFirstType(view?.types[0] ?? null);
+      }
+    });
+    return () => ac.abort();
+  }, [accountName, enabled]);
+
+  return firstType;
+}
+
+/** Right rail of the Favorites tab: rating + tag facets of the type (and category) in the URL. */
+export function ProfileFavoritesFiltersFromUrl({ accountName }: { accountName: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const filters = useMemo(() => parseProfileShopFilters(searchParams), [searchParams]);
-  const sectionKey = isUserProfileRecipeTab(pathname) ? 'recipe' : 'user-shop';
-  const types = useMemo(
-    () => (sectionKey === 'recipe' ? (['recipe'] as const) : (['book', 'product'] as const)),
-    [sectionKey],
+  const favoritesPath = parseFavoritesPath(pathname);
+  const routeType = favoritesPath?.objectType ?? null;
+  const firstType = useFirstFavoritesType(accountName, favoritesPath !== null && routeType === null);
+  const objectType = routeType ?? firstType ?? null;
+  const withCategories = objectType !== null && objectTypeSupportsCategories(objectType);
+  const uncategorizedOnly = withCategories && (favoritesPath?.uncategorizedOnly ?? false);
+  const lineageKey =
+    withCategories && !uncategorizedOnly
+      ? (favoritesPath?.lineage ?? []).join(LINEAGE_KEY_SEPARATOR)
+      : '';
+
+  const types = useMemo(() => (objectType ? [objectType] : []), [objectType]);
+  const categoryPath = useMemo(
+    () => (lineageKey.length > 0 ? lineageKey.split(LINEAGE_KEY_SEPARATOR) : []),
+    [lineageKey],
   );
-  const lineage = getCategoryLineageFromPathname(pathname, sectionKey);
-  const uncategorizedOnly =
-    lineage.length === 1 && lineage[0] === UNCATEGORIZED_SHOP_PATH_SEGMENT;
-  const categoryPath = uncategorizedOnly ? [] : lineage;
+
+  if (objectType === null) {
+    return null;
+  }
 
   return (
     <ProfileShopFilters

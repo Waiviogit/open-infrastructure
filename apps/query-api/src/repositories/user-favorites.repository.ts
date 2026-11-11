@@ -1,15 +1,13 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { FAVORITES_OBJECT_TYPES, MAP_GEO_OBJECT_TYPES } from '@opden-data-layer/core';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import type { Database } from '../database';
 import { KYSELY } from '../database';
-
-export type FavoritesScopeParams = {
-  account: string;
-  hideFavoriteObjects: boolean;
-  shopDeselectObjectIds: readonly string[];
-};
+import {
+  isEmptyUserFavoritesScope,
+  userFavoritesScopeCte,
+  type UserFavoritesScope,
+} from './user-favorites-scope.sql';
 
 /** Legacy map bbox: `[longitude, latitude]` pairs. */
 export type MapBoundingBox = {
@@ -17,179 +15,104 @@ export type MapBoundingBox = {
   bottomPoint: [number, number];
 };
 
-function favoritesTypeListSql() {
-  return sql.join(
-    FAVORITES_OBJECT_TYPES.map((t) => sql`${t}`),
-    sql`, `,
-  );
+export type UserFavoritesTypeCountRow = {
+  object_type: string;
+  objects_count: number;
+  /** Scope objects of this type with at least one materialized category. */
+  categorized_count: number;
+};
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
-function mapGeoTypeListSql(types: readonly string[]) {
-  return sql.join(
-    types.map((t) => sql`${t}`),
-    sql`, `,
-  );
-}
-
-function resolveMapObjectTypes(requestTypes?: readonly string[]): readonly string[] {
-  const allowed = new Set<string>(MAP_GEO_OBJECT_TYPES);
-  if (requestTypes == null || requestTypes.length === 0) {
-    return MAP_GEO_OBJECT_TYPES;
-  }
-  return requestTypes.filter((t) => allowed.has(t));
-}
-
-function postLinkedPredicate(
-  account: string,
-  includePostObjects: boolean,
-  shopDeselectIds: readonly string[],
-) {
-  if (!includePostObjects) {
-    return sql`FALSE`;
-  }
-  const deselectClause =
-    shopDeselectIds.length === 0
-      ? sql`TRUE`
-      : sql`NOT (po.object_id IN (${sql.join(
-          shopDeselectIds.map((id) => sql`${id}`),
-          sql`, `,
-        )}))`;
-  return sql`po.author = ${account.trim()} AND po.object_type IN (${favoritesTypeListSql()}) AND (${deselectClause})`;
-}
-
+/** Read access to the unified profile Favorites scope (see `user-favorites-scope.sql.ts`). */
 @Injectable()
 export class UserFavoritesRepository {
   private readonly logger = new Logger(UserFavoritesRepository.name);
 
   constructor(@Inject(KYSELY) private readonly db: Kysely<Database>) {}
 
-  private scopedObjectsCte(scope: FavoritesScopeParams, objectTypeFilter?: string) {
-    const account = scope.account.trim();
-    const includePost = !scope.hideFavoriteObjects;
-    const postPred = postLinkedPredicate(account, includePost, scope.shopDeselectObjectIds);
-    const typeFilter =
-      objectTypeFilter != null && objectTypeFilter.trim().length > 0
-        ? sql`AND oc.object_type = ${objectTypeFilter.trim()}`
-        : sql``;
-
-    return sql`
-      WITH favorite_objects AS (
-        SELECT DISTINCT oc.object_id, oc.object_type, oc.weight
-        FROM objects_core oc
-        INNER JOIN object_favorite of ON of.object_id = oc.object_id
-          AND of.account = ${account}
-          AND oc.object_type IN (${favoritesTypeListSql()})
-          AND oc.status = 'active'
-          ${typeFilter}
-      ),
-      post_linked_objects AS (
-        SELECT DISTINCT oc.object_id, oc.object_type, oc.weight
-        FROM post_objects po
-        INNER JOIN objects_core oc ON oc.object_id = po.object_id
-          AND oc.status = 'active'
-          AND oc.object_type IN (${favoritesTypeListSql()})
-          ${typeFilter}
-        WHERE (${postPred})
-      ),
-      scoped_objects AS (
-        SELECT object_id, object_type, weight FROM favorite_objects
-        UNION
-        SELECT object_id, object_type, weight FROM post_linked_objects
-      ),
-      distinct_objects AS (
-        SELECT object_id, MAX(weight) AS weight, MIN(object_type) AS object_type
-        FROM scoped_objects
-        GROUP BY object_id
-      )
-    `;
-  }
-
-  async countByScope(scope: FavoritesScopeParams, objectType?: string): Promise<number> {
-    const account = scope.account.trim();
-    if (account.length === 0) {
+  async countByScope(scope: UserFavoritesScope): Promise<number> {
+    if (isEmptyUserFavoritesScope(scope)) {
       return 0;
     }
     try {
-      const cte = this.scopedObjectsCte(scope, objectType);
       const row = await sql<{ c: number }>`
-        ${cte}
-        SELECT count(*)::int AS c FROM distinct_objects
+        WITH ${userFavoritesScopeCte(scope)}
+        SELECT count(*)::int AS c FROM user_favorites_scope
       `.execute(this.db);
       return Number(row.rows[0]?.c ?? 0);
     } catch (error) {
-      this.logger.error(
-        `countByScope failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.logger.error(`countByScope failed: ${errorMessage(error)}`);
       return 0;
     }
   }
 
   async findObjectIdsByScope(
-    scope: FavoritesScopeParams,
-    objectType: string | undefined,
+    scope: UserFavoritesScope,
     skip: number,
     limit: number,
   ): Promise<string[]> {
-    const account = scope.account.trim();
-    if (account.length === 0 || limit <= 0) {
+    if (isEmptyUserFavoritesScope(scope) || limit <= 0) {
       return [];
     }
     try {
-      const cte = this.scopedObjectsCte(scope, objectType);
       const rows = await sql<{ object_id: string }>`
-        ${cte}
+        WITH ${userFavoritesScopeCte(scope)}
         SELECT object_id
-        FROM distinct_objects
+        FROM user_favorites_scope
         ORDER BY weight DESC NULLS LAST, object_id ASC
         OFFSET ${skip}
         LIMIT ${limit}
       `.execute(this.db);
       return rows.rows.map((r) => r.object_id);
     } catch (error) {
-      this.logger.error(
-        `findObjectIdsByScope failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.logger.error(`findObjectIdsByScope failed: ${errorMessage(error)}`);
       return [];
     }
   }
 
-  async findTypesByScope(scope: FavoritesScopeParams): Promise<string[]> {
-    const account = scope.account.trim();
-    if (account.length === 0) {
+  /** Object types present in scope with their object counts (count DESC, type ASC). */
+  async findTypesByScope(scope: UserFavoritesScope): Promise<UserFavoritesTypeCountRow[]> {
+    if (isEmptyUserFavoritesScope(scope)) {
       return [];
     }
     try {
-      const cte = this.scopedObjectsCte(scope);
-      const rows = await sql<{ object_type: string }>`
-        ${cte}
-        SELECT object_type
-        FROM distinct_objects
-        GROUP BY object_type
-        ORDER BY count(*) DESC, object_type ASC
+      const rows = await sql<{
+        object_type: string;
+        objects_count: number | string;
+        categorized_count: number | string;
+      }>`
+        WITH ${userFavoritesScopeCte(scope)}
+        SELECT
+          s.object_type,
+          count(*)::int AS objects_count,
+          count(*) FILTER (WHERE cardinality(ocat.category_names) > 0)::int AS categorized_count
+        FROM user_favorites_scope s
+        LEFT JOIN object_categories ocat ON ocat.object_id = s.object_id
+        GROUP BY s.object_type
+        ORDER BY count(*) DESC, s.object_type ASC
       `.execute(this.db);
-      return rows.rows.map((r) => r.object_type);
+      return rows.rows.map((r) => ({
+        object_type: r.object_type,
+        objects_count: Number(r.objects_count),
+        categorized_count: Number(r.categorized_count),
+      }));
     } catch (error) {
-      this.logger.error(
-        `findTypesByScope failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.logger.error(`findTypesByScope failed: ${errorMessage(error)}`);
       return [];
     }
   }
 
+  /** Scope objects whose latest `geo` update lies inside `box` (scope types decide map types). */
   async findMapObjectIdsByScope(
-    scope: FavoritesScopeParams,
+    scope: UserFavoritesScope,
     box: MapBoundingBox,
-    objectTypes: readonly string[] | undefined,
     skip: number,
     limit: number,
   ): Promise<string[]> {
-    const account = scope.account.trim();
-    if (account.length === 0 || limit <= 0) {
-      return [];
-    }
-
-    const mapTypes = resolveMapObjectTypes(objectTypes);
-    if (mapTypes.length === 0) {
+    if (isEmptyUserFavoritesScope(scope) || limit <= 0) {
       return [];
     }
 
@@ -197,26 +120,24 @@ export class UserFavoritesRepository {
     const [neLng, neLat] = box.topPoint;
 
     try {
-      const cte = this.scopedObjectsCte(scope);
       const rows = await sql<{ object_id: string }>`
-        ${cte},
+        WITH ${userFavoritesScopeCte(scope)},
         geo_objects AS (
-          SELECT d.object_id, d.weight
-          FROM distinct_objects d
+          SELECT s.object_id, s.weight
+          FROM user_favorites_scope s
           INNER JOIN LATERAL (
             SELECT ou.value_geo
             FROM object_updates ou
-            WHERE ou.object_id = d.object_id
+            WHERE ou.object_id = s.object_id
               AND ou.update_type = 'geo'
               AND ou.value_geo IS NOT NULL
             ORDER BY ou.rank_score DESC NULLS LAST, ou.created_at_unix DESC
             LIMIT 1
           ) geo ON TRUE
-          WHERE d.object_type IN (${mapGeoTypeListSql(mapTypes)})
-            AND ST_Intersects(
-              geo.value_geo::geometry,
-              ST_MakeEnvelope(${swLng}, ${swLat}, ${neLng}, ${neLat}, 4326)
-            )
+          WHERE ST_Intersects(
+            geo.value_geo::geometry,
+            ST_MakeEnvelope(${swLng}, ${swLat}, ${neLng}, ${neLat}, 4326)
+          )
         )
         SELECT object_id
         FROM geo_objects
@@ -226,9 +147,7 @@ export class UserFavoritesRepository {
       `.execute(this.db);
       return rows.rows.map((r) => r.object_id);
     } catch (error) {
-      this.logger.error(
-        `findMapObjectIdsByScope failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.logger.error(`findMapObjectIdsByScope failed: ${errorMessage(error)}`);
       return [];
     }
   }

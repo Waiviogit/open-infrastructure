@@ -90,9 +90,10 @@ export function UserMenuSkeleton({ rows = 'all' }: { rows?: UserMenuRows }) {
   }
 
   if (rows === 'primary') {
+    // Centered like the loaded hero menu (`centerWhenNoOverflow`) so the row does not jump.
     return (
       <NavSkeletonShell
-        rowClass={HORIZONTAL_TAB_NAV_PRIMARY_ROW_CLASS}
+        rowClass={`${HORIZONTAL_TAB_NAV_PRIMARY_ROW_CLASS} mx-auto w-max`}
         bleed="gutter"
         count={9}
         ariaLabel={t('user_profile_nav_aria')}

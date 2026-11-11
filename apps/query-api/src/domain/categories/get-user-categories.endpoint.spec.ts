@@ -1,77 +1,87 @@
-jest.mock('./build-user-categories-response', () => ({
-  buildUserCategoriesResponse: jest.fn(),
-}));
-
-import { buildUserCategoriesResponse } from './build-user-categories-response';
+import type { UserFavoritesScope } from '../../repositories';
 import { GetUserCategoriesEndpoint } from './get-user-categories.endpoint';
 
-const mockedBuild = buildUserCategoriesResponse as jest.MockedFunction<
-  typeof buildUserCategoriesResponse
->;
+const scope: UserFavoritesScope = {
+  account: 'alice',
+  types: ['recipe'],
+  postLinkedTypes: ['recipe'],
+  deselectObjectIds: [],
+};
+
+function createEndpoint(resolvedScope: UserFavoritesScope = scope) {
+  const resolver = { resolve: jest.fn().mockResolvedValue(resolvedScope) };
+  const navigation = {
+    build: jest.fn().mockResolvedValue({
+      items: [{ name: 'Desserts', objects_count: 2, has_children: true }],
+      show_other: false,
+    }),
+  };
+  const objectCategoriesRepo = {
+    countUncategorizedObjectIdsByScope: jest.fn().mockResolvedValue(3),
+  };
+  const endpoint = new GetUserCategoriesEndpoint(
+    resolver as never,
+    navigation as never,
+    objectCategoriesRepo as never,
+  );
+  return { endpoint, resolver, navigation, objectCategoriesRepo };
+}
 
 describe('GetUserCategoriesEndpoint', () => {
-  beforeEach(() => {
-    mockedBuild.mockReturnValue({
-      items: [{ name: 'Desserts', objects_count: 2, has_children: false }],
-      uncategorized_count: 99,
+  it('builds root navigation with has_children and a live uncategorized count for the one type', async () => {
+    const { endpoint, resolver, navigation, objectCategoriesRepo } = createEndpoint();
+
+    const result = await endpoint.execute('alice', { types: ['recipe'], path: [], excluded: [] });
+
+    expect(result).toEqual({
+      items: [{ name: 'Desserts', objects_count: 2, has_children: true }],
+      uncategorized_count: 3,
       show_other: false,
     });
+    expect(resolver.resolve).toHaveBeenCalledWith('alice', ['recipe']);
+    expect(navigation.build).toHaveBeenCalledWith({
+      scope,
+      objectType: 'recipe',
+      lineage: [],
+      excluded: [],
+      includeHasChildren: true,
+    });
+    expect(objectCategoriesRepo.countUncategorizedObjectIdsByScope).toHaveBeenCalledWith({ scope });
   });
 
-  it('replaces root uncategorized_count with live scoped count', async () => {
-    const objectCategoriesRelatedRepository = {
-      findByUserScope: jest.fn().mockResolvedValue([]),
-    };
-    const objectCategoriesRepo = {
-      countUncategorizedObjectIdsByScope: jest.fn().mockResolvedValue(3),
-    };
-    const userMetadataRepo = {
-      findShopVisibilityFlags: jest.fn().mockResolvedValue({
-        hide_linked_objects: false,
-        hide_recipe_objects: false,
+  it('drills down with the full lineage and reports uncategorized_count 0 below the root', async () => {
+    const { endpoint, navigation, objectCategoriesRepo } = createEndpoint();
+
+    const result = await endpoint.execute('alice', {
+      types: ['recipe'],
+      name: 'Comfort Food',
+      path: ['German Cuisine'],
+      excluded: ['Soups'],
+    });
+
+    expect(result.uncategorized_count).toBe(0);
+    expect(navigation.build).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lineage: ['German Cuisine', 'Comfort Food'],
+        excluded: ['Soups'],
       }),
-    };
-    const shopDeselectRepo = {
-      findObjectIdsByAccount: jest.fn().mockResolvedValue([]),
-    };
-
-    const endpoint = new GetUserCategoriesEndpoint(
-      objectCategoriesRelatedRepository as never,
-      objectCategoriesRepo as never,
-      userMetadataRepo as never,
-      shopDeselectRepo as never,
     );
-
-    const result = await endpoint.execute('alice', {
-      types: ['recipe'],
-      path: [],
-      excluded: [],
-    });
-
-    expect(result.uncategorized_count).toBe(3);
-    expect(objectCategoriesRepo.countUncategorizedObjectIdsByScope).toHaveBeenCalled();
+    expect(objectCategoriesRepo.countUncategorizedObjectIdsByScope).not.toHaveBeenCalled();
   });
 
-  it('keeps sentinel uncategorized_count when drilling into a department', async () => {
-    const objectCategoriesRepo = {
-      countUncategorizedObjectIdsByScope: jest.fn(),
-    };
+  it('returns an empty response for a blank account', async () => {
+    const { endpoint, resolver } = createEndpoint();
+    await expect(
+      endpoint.execute('  ', { types: ['recipe'], path: [], excluded: [] }),
+    ).resolves.toEqual({ items: [], uncategorized_count: 0, show_other: false });
+    expect(resolver.resolve).not.toHaveBeenCalled();
+  });
 
-    const endpoint = new GetUserCategoriesEndpoint(
-      { findByUserScope: jest.fn().mockResolvedValue([]) } as never,
-      objectCategoriesRepo as never,
-      {} as never,
-      {} as never,
-    );
-
-    const result = await endpoint.execute('alice', {
-      types: ['recipe'],
-      name: 'Desserts',
-      path: [],
-      excluded: [],
-    });
-
-    expect(result.uncategorized_count).toBe(99);
-    expect(objectCategoriesRepo.countUncategorizedObjectIdsByScope).not.toHaveBeenCalled();
+  it('returns an empty response when the type is outside the Favorites whitelist', async () => {
+    const { endpoint, navigation } = createEndpoint({ ...scope, types: [] });
+    await expect(
+      endpoint.execute('alice', { types: ['recipe'], path: [], excluded: [] }),
+    ).resolves.toEqual({ items: [], uncategorized_count: 0, show_other: false });
+    expect(navigation.build).not.toHaveBeenCalled();
   });
 });

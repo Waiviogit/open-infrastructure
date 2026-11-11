@@ -12,9 +12,9 @@ import { isUserProfileWalletSection } from '../../domain/profile-transfers-url';
 import { PROFILE_FILTER_RAIL_STICKY_CLASS } from '@/shared/presentation/layout';
 import { isUserProfileMessagesTab } from './profile-path';
 import { isUserProfilePostsTab } from '../../domain/profile-post-filters-url';
-import { isUserProfileShopOrRecipeTab } from '../../domain/profile-shop-filters-url';
+import { isUserProfileFavoritesTab } from '../../domain/profile-shop-filters-url';
 import { ProfilePostFiltersFromUrl } from './profile-post-filters';
-import { ProfileShopFiltersFromUrl } from './profile-shop-filters';
+import { ProfileFavoritesFiltersFromUrl } from './profile-shop-filters';
 import {
   WalletActionsSidebarBottom,
   WalletActionsSidebarTop,
@@ -66,10 +66,10 @@ function RightSidebarContent({ accountName, viewerUsername }: RightSidebarProps)
     );
   }
 
-  if (isUserProfileShopOrRecipeTab(pathname)) {
+  if (isUserProfileFavoritesTab(pathname)) {
     return (
       <Suspense fallback={<FiltersFallback />}>
-        <ProfileShopFiltersFromUrl accountName={accountName} />
+        <ProfileFavoritesFiltersFromUrl accountName={accountName} />
       </Suspense>
     );
   }

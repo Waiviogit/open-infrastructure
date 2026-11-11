@@ -7,3 +7,4 @@ export * from './waiv-token.constants';
 export * from './voting-mana.constants';
 export * from './user.constants';
 export * from './osl-messaging.constants';
+export * from './user-favorites.constants';
