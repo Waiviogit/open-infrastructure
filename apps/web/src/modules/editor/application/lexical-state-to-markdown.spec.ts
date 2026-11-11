@@ -91,3 +91,43 @@ describe('lexicalStateToMarkdown', () => {
     );
   });
 });
+
+describe('lexicalStateToMarkdown heading line breaks', () => {
+  it('turns each line of a heading with soft line breaks into its own heading', () => {
+    const br = { type: 'linebreak' };
+    const json = JSON.stringify({
+      root: {
+        children: [
+          {
+            type: 'heading',
+            tag: 'h2',
+            children: [
+              {
+                type: 'link',
+                url: 'https://google.com/',
+                children: [{ type: 'text', text: 'some text', format: 0 }],
+              },
+              br,
+              br,
+              br,
+              { type: 'text', text: 'Head 1', format: 0 },
+              br,
+              br,
+              br,
+              { type: 'text', text: 'head 2', format: 0 },
+            ],
+          },
+          { type: 'paragraph', children: [] },
+          {
+            type: 'heading',
+            tag: 'h3',
+            children: [{ type: 'text', text: 'head 3', format: 0 }],
+          },
+        ],
+      },
+    });
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe(
+      '## [some text](https://google.com/)\n\n## Head 1\n\n## head 2\n\n### head 3',
+    );
+  });
+});

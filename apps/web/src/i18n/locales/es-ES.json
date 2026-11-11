@@ -1160,6 +1160,7 @@
   "editor_format_link": "Link",
   "editor_format_link_apply": "Apply",
   "editor_format_link_url": "Enter URL",
+  "editor_format_link_invalid": "Introduce un enlace válido: una dirección web o mailto:",
   "editor_format_mention": "Mention",
   "editor_format_more": "More formatting",
   "editor_format_quote": "Quote",

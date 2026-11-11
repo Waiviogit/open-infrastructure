@@ -121,3 +121,28 @@ describe('BlogPostScreen author links', () => {
     expect(nameLink).toHaveAttribute('href', '/@foodster');
   });
 });
+
+describe('BlogPostScreen time label', () => {
+  it('shows the relative post time by default', () => {
+    const { container } = renderScreen('modal');
+
+    expect(screen.getByText('1h')).toBeInTheDocument();
+    expect(container.querySelector('time')).not.toBeNull();
+  });
+
+  it('shows the override label instead of the post time (editor preview)', () => {
+    const { container } = render(
+      <BlogPostScreen
+        variant="modal"
+        story={story}
+        bodyHtmlSafe="<p>Sauce.</p>"
+        currentUsername="foodster"
+        timeLabelOverride="Preview"
+      />,
+    );
+
+    expect(screen.getByText('Preview')).toBeInTheDocument();
+    expect(screen.queryByText('1h')).toBeNull();
+    expect(container.querySelector('time')).toBeNull();
+  });
+});

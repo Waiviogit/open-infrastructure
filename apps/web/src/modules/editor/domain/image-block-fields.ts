@@ -1,9 +1,8 @@
-import { safeHttpUrl } from '@/shared/domain';
+import { normalizeWebLinkUrl } from './link-url';
 
 /** Longest alt text kept on an image block (legacy editor caption had no limit; Hive bodies stay readable). */
 export const IMAGE_ALT_TEXT_MAX_LENGTH = 300;
 
-const HAS_URL_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 /** `[` / `]` would end the markdown alt early; line breaks would split the image line. */
 const ALT_TEXT_UNSAFE_CHARS = /[[\]\r\n\t]+/g;
 const WHITESPACE_RUN = /\s{2,}/g;
@@ -18,23 +17,10 @@ export function normalizeImageAltText(input: string): string {
     .trim();
 }
 
-/**
- * Image link target: `waivio.com` → `https://waivio.com/`. Only http(s) is accepted
- * (no `javascript:` / `data:`); returns null for anything else.
- */
-export function normalizeImageLinkUrl(input: string): string | null {
-  const trimmed = input.trim();
-  if (!trimmed) {
-    return null;
-  }
-  const withScheme = HAS_URL_SCHEME.test(trimmed) ? trimmed : `https://${trimmed}`;
-  return safeHttpUrl(withScheme);
-}
-
 /** Markdown for an image block: `![alt](src)`, wrapped as `[![alt](src)](href)` when linked. */
 export function imageBlockMarkdown(src: string, altText: string, linkUrl: string): string {
   const image = `![${normalizeImageAltText(altText)}](${src})`;
-  const href = linkUrl ? normalizeImageLinkUrl(linkUrl) : null;
+  const href = linkUrl ? normalizeWebLinkUrl(linkUrl) : null;
   return href ? `[${image}](${encodeMarkdownUrl(href)})` : image;
 }
 

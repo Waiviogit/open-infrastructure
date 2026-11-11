@@ -24,7 +24,7 @@ import {
 
 import { extractCidFromContentGatewayUrl } from '@/config/ipfs-content-url';
 
-import { normalizeImageLinkUrl } from '../domain/image-block-fields';
+import { normalizeWebLinkUrl } from '../domain/link-url';
 import { $createImageNode, ImageNode } from '../domain/nodes/image-node';
 import { $createLineNode, $isLineNode, LineNode } from '../domain/nodes/line-node';
 import { $createVideoNodeForUrl, VideoNode } from '../domain/nodes/video-node';
@@ -78,7 +78,7 @@ const LINKED_IMAGE_LINE: ElementTransformer = {
   export: () => null,
   regExp: LINKED_IMAGE_LINE_REGEX,
   replace: (parentNode, _children, match) => {
-    const linkUrl = normalizeImageLinkUrl(match[3] ?? '') ?? '';
+    const linkUrl = normalizeWebLinkUrl(match[3] ?? '') ?? '';
     parentNode.replace(imageNodeForUrl(match[2] ?? '', match[1] ?? '', linkUrl));
     return true;
   },

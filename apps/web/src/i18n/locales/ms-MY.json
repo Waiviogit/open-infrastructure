@@ -938,6 +938,7 @@
   "editor_format_link": "Link",
   "editor_format_link_apply": "Apply",
   "editor_format_link_url": "Enter URL",
+  "editor_format_link_invalid": "Masukkan pautan yang sah: alamat web atau mailto:",
   "editor_format_mention": "Mention",
   "editor_format_more": "More formatting",
   "editor_format_quote": "Quote",

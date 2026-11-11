@@ -58,6 +58,17 @@ function toggleSpoiler(): void {
   $wrapNodes(selection, () => $createSpoilerNode());
 }
 
+function $collapseSelectionToEnd(): void {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+    return;
+  }
+  const end = selection.isBackward() ? selection.anchor : selection.focus;
+  const { key, offset, type } = end;
+  selection.anchor.set(key, offset, type);
+  selection.focus.set(key, offset, type);
+}
+
 function applyBlockHeading(tag: 'h1' | 'h2' | 'h3'): void {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
@@ -87,6 +98,8 @@ export function applyFormatAction(
       return;
     }
     editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
+    // Caret after the link: a still-selected link text would be replaced by the next keystroke.
+    editor.update($collapseSelectionToEnd);
     return;
   }
 

@@ -14,6 +14,11 @@ import { StoryRewardBadge } from './story-reward-badge';
 import { useLoginModal } from '@/modules/auth';
 
 import { LinkedObjectsSection } from './linked-objects-section';
+import {
+  POST_BODY_BLOCK_CLASSES,
+  POST_BODY_EDITORIAL_CLASSES,
+  POST_MODAL_TITLE_CLASSES,
+} from './post-body-typography';
 import { StoryCommentsSection } from './story-comments-section';
 import { StoryOverflowMenu } from './story-overflow-menu';
 import { StoryReblogButton } from './story-reblog-button';
@@ -28,6 +33,8 @@ type BlogPostScreenProps = {
   story: FeedStoryView;
   bodyHtmlSafe: string;
   currentUsername: string | null;
+  /** Shown in place of the relative post time (e.g. "Preview" for an unpublished draft). */
+  timeLabelOverride?: string;
 };
 
 function viewerIsAuthor(viewer: string | null, author: string): boolean {
@@ -42,6 +49,7 @@ export function BlogPostScreen({
   story,
   bodyHtmlSafe,
   currentUsername,
+  timeLabelOverride,
 }: BlogPostScreenProps) {
   const { t, locale } = useI18n();
   const displayAuthor = story.authorDisplayName ?? story.authorName;
@@ -84,9 +92,7 @@ export function BlogPostScreen({
           <h1
             id={`post-title-${story.id}`}
             className={
-              isModal
-                ? 'text-section font-weight-strong leading-compressed text-heading'
-                : 'text-display font-display text-heading'
+              isModal ? POST_MODAL_TITLE_CLASSES : 'text-display font-display text-heading'
             }
           >
             {story.title}
@@ -136,9 +142,13 @@ export function BlogPostScreen({
                 </StatHoverTooltip>
               ) : null}
               <span className="text-caption text-muted">·</span>
-              <time className="text-caption text-fg-tertiary" dateTime={displayTimeIso}>
-                {relativeLabel}
-              </time>
+              {timeLabelOverride ? (
+                <span className="text-caption text-fg-tertiary">{timeLabelOverride}</span>
+              ) : (
+                <time className="text-caption text-fg-tertiary" dateTime={displayTimeIso}>
+                  {relativeLabel}
+                </time>
+              )}
               {story.category ? (
                 <>
                   <span className="text-caption text-muted">·</span>
@@ -163,18 +173,12 @@ export function BlogPostScreen({
           html={bodyHtmlSafe}
           className={[
             'blog-post-body min-w-0 text-fg leading-body',
-            isModal ? 'mt-5 text-body font-editorial leading-editorial' : 'mt-6 text-body',
-            '[&_a]:break-words [&_a]:text-link',
-            '[&_blockquote]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:text-fg-secondary',
-            '[&_h1]:mb-2 [&_h1]:mt-5 [&_h1]:text-section [&_h1]:font-weight-strong [&_h1]:font-display',
-            '[&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-body-lg [&_h2]:font-weight-strong [&_h2]:font-display',
-            '[&_h3]:mb-1.5 [&_h3]:mt-4 [&_h3]:font-weight-strong',
+            isModal ? `mt-5 ${POST_BODY_EDITORIAL_CLASSES}` : 'mt-6 text-body',
+            POST_BODY_BLOCK_CLASSES,
             '[&_img]:h-auto [&_img]:max-w-full [&_img]:my-3',
-            '[&_p]:mb-4 [&_p]:empty:hidden',
+            '[&_p]:empty:hidden',
             '[&_br]:block [&_br]:content-[""] [&_br]:mt-3',
             '[&_pre]:overflow-x-auto [&_pre]:rounded-btn [&_pre]:bg-code-bg [&_pre]:p-3',
-            '[&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5',
-            '[&_li]:mb-1',
           ].join(' ')}
         />
 

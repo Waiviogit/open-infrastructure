@@ -22,6 +22,10 @@ import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
 import { imageContentUrlForCid } from '@/config/ipfs-content-url';
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
+import {
+  POST_BODY_BLOCK_CLASSES,
+  POST_BODY_EDITORIAL_CLASSES,
+} from '@/modules/feed/presentation/components/post-body-typography';
 
 import {
   isLexicalDraftJson,
@@ -31,6 +35,7 @@ import {
 } from '../../application/editor-body-serialization';
 import { $importPostMarkdown } from '../../application/post-markdown-import';
 import { POST_EDITOR_NODES } from '../../domain/editor-lexical-nodes';
+import { EditorBlankDocumentResetPlugin } from './editor-blank-document-reset-plugin';
 import { EditorFormatToolbar } from './editor-format-toolbar';
 import { EditorHashObjectSearchPlugin } from './editor-hash-object-search-plugin';
 import { EditorImageDropOverlay } from './editor-image-drop-overlay';
@@ -96,6 +101,36 @@ const lexicalTheme = {
   },
 };
 
+/**
+ * Full post editor: paragraphs, quotes, H1–H3 and lists take their look from the content area
+ * (`POST_BODY_BLOCK_CLASSES`, same as the published post / preview), so these node classes stay minimal.
+ */
+const postLexicalTheme = {
+  ...lexicalTheme,
+  paragraph: undefined,
+  quote: undefined,
+  heading: {
+    ...lexicalTheme.heading,
+    h1: undefined,
+    h2: undefined,
+    h3: undefined,
+  },
+  list: {
+    ...lexicalTheme.list,
+    ul: 'list-disc',
+    ol: 'list-decimal',
+  },
+};
+
+/** Content area of the full post editor: the post modal / preview typography. */
+const POST_EDITOR_CONTENT_CLASSES = [
+  'relative resize-y text-fg outline-none',
+  POST_BODY_EDITORIAL_CLASSES,
+  POST_BODY_BLOCK_CLASSES,
+  // In the post the body's top margin collapses with the first heading; here it would add a gap.
+  '[&>:first-child]:mt-0',
+].join(' ');
+
 function Placeholder({
   text,
   compact,
@@ -115,7 +150,7 @@ function Placeholder({
           ? `${PILL_COMPOSE_PLACEHOLDER_START} top-1/2 -translate-y-1/2 leading-body`
           : compact
               ? 'start-8 top-2'
-              : 'start-8 top-3',
+              : 'start-8 top-3 font-editorial leading-editorial',
       ].join(' ')}
     >
       {text}
@@ -285,7 +320,9 @@ function EditorInner({
         contentEditable={
           <ContentEditable
             className={[
-              'relative resize-y text-body leading-body text-fg outline-none',
+              compact || messagingCompact
+                ? 'relative resize-y text-body leading-body text-fg outline-none'
+                : POST_EDITOR_CONTENT_CLASSES,
               padHorizontalClass,
               verticalPadClass,
               minHeightClass,
@@ -310,6 +347,7 @@ function EditorInner({
       {showFormatToolbar ? (
         <>
           <EditorFormatToolbar />
+          <EditorBlankDocumentResetPlugin />
           <TablePlugin hasCellMerge={false} hasCellBackgroundColor={false} />
           <EditorBlockToolbarPlugin />
           <EditorBlockGapsPlugin />
@@ -409,6 +447,8 @@ export function LexicalPostEditor({
   const pillChrome = Boolean(
     (resolvedCompact || resolvedMessagingCompact) && resolvedCompactBottomInset,
   );
+  /** Same condition as `EditorInner`'s non-compact content area: the full post editor on `/editor`. */
+  const isPostEditor = !resolvedCompact && !resolvedMessagingCompact;
   const pinInsertCenterVertical = pillChrome;
   const enableImages = composeField
     ? resolvedMessagingCompact
@@ -419,18 +459,20 @@ export function LexicalPostEditor({
   const initialConfig = useMemo(
     () => ({
       namespace: 'PostEditor',
-      theme: {
-        ...lexicalTheme,
-        paragraph: pillChrome
-          ? 'mb-0 text-body text-fg font-weight-body leading-body'
-          : lexicalTheme.paragraph,
-      },
+      theme: isPostEditor
+        ? postLexicalTheme
+        : {
+            ...lexicalTheme,
+            paragraph: pillChrome
+              ? 'mb-0 text-body text-fg font-weight-body leading-body'
+              : lexicalTheme.paragraph,
+          },
       onError: (error: Error) => {
         console.error(error);
       },
       nodes: [...POST_EDITOR_NODES],
     }),
-    [pillChrome],
+    [isPostEditor, pillChrome],
   );
 
   const shellMinClass = pillChrome

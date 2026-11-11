@@ -20,11 +20,8 @@ import { useI18n } from '@/i18n/providers/i18n-provider';
 import { $openLineBeside, type BlockSide } from '../../application/block-gaps';
 import { $removeMediaBlocksAndPlaceCaret } from '../../application/image-selection';
 import { $appendTableColumn, $appendTableRow, $removeTable } from '../../application/table-actions';
-import {
-  IMAGE_ALT_TEXT_MAX_LENGTH,
-  normalizeImageAltText,
-  normalizeImageLinkUrl,
-} from '../../domain/image-block-fields';
+import { IMAGE_ALT_TEXT_MAX_LENGTH, normalizeImageAltText } from '../../domain/image-block-fields';
+import { normalizeWebLinkUrl } from '../../domain/link-url';
 import { $isImageNode, type ImageNode } from '../../domain/nodes/image-node';
 import { $isMediaBlockNode } from '../../domain/nodes/media-block';
 
@@ -235,7 +232,7 @@ export function EditorBlockToolbarPlugin() {
       writeImageField('link', '');
       return null;
     }
-    const url = normalizeImageLinkUrl(raw);
+    const url = normalizeWebLinkUrl(raw);
     if (!url) {
       return t('editor_image_link_invalid');
     }

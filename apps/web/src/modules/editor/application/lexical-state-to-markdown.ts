@@ -161,7 +161,13 @@ function blockMarkdown(
       const parsedLevel = Number((node.tag ?? '').replace(/^h/, ''));
       const level = parsedLevel >= 1 && parsedLevel <= 6 ? parsedLevel : 2;
       const prefix = '#'.repeat(level);
-      return childMd ? `${prefix} ${childMd}\n\n` : '';
+      // A markdown heading is one line: text after a soft line break (Shift+Enter, paste) would
+      // otherwise publish as a plain paragraph, so each line becomes a heading of the same level.
+      const lines = childMd
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      return lines.map((line) => `${prefix} ${line}\n\n`).join('');
     }
     case 'quote':
       return childMd

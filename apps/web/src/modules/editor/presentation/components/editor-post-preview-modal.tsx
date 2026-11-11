@@ -2,6 +2,7 @@
 
 import { imageContentUrlForCid } from '@/config/ipfs-content-url';
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
+import { useI18n } from '@/i18n/providers/i18n-provider';
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
 import { BlogPostScreen, PostInterceptModalShell } from '@/modules/feed/presentation';
 import { FeedColumn } from '@/shared/presentation/layout';
@@ -28,6 +29,7 @@ export function EditorPostPreviewModal({
   linkedObjects,
   searchResultsById,
 }: EditorPostPreviewModalProps) {
+  const { t } = useI18n();
   const contentBaseUrl = useIpfsContentBaseUrl();
 
   if (!open) {
@@ -56,6 +58,7 @@ export function EditorPostPreviewModal({
           story={payload.story}
           bodyHtmlSafe={payload.bodyHtmlSafe}
           currentUsername={username}
+          timeLabelOverride={t('preview')}
         />
       </FeedColumn>
     </PostInterceptModalShell>

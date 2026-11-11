@@ -35,6 +35,7 @@ import {
   type SelectedBlockType,
 } from '../../application/apply-format-action';
 import { MORE_ACTIONS, type FormatActionId } from '../../domain/format-actions';
+import { normalizeTextLinkUrl } from '../../domain/link-url';
 
 const TOOLBAR_GAP_PX = 8;
 const VIEWPORT_EDGE_PX = 8;
@@ -171,6 +172,7 @@ export function EditorFormatToolbar() {
   const linkInputRef = useRef<HTMLInputElement>(null);
   const toolbarId = useId();
   const moreMenuId = useId();
+  const linkErrorId = useId();
 
   const [portalReady, setPortalReady] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -184,6 +186,7 @@ export function EditorFormatToolbar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [linkMode, setLinkMode] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [linkError, setLinkError] = useState(false);
   /**
    * Set while the URL input is open. A ref (not state) so DOM/Lexical listeners and rAF callbacks
    * never read a stale value from an older render.
@@ -243,6 +246,7 @@ export function EditorFormatToolbar() {
     clearLinkTargetHighlight();
     setLinkMode(false);
     setLinkUrl('');
+    setLinkError(false);
   }, []);
 
   useEffect(() => {
@@ -357,11 +361,17 @@ export function EditorFormatToolbar() {
     }
   }, [editor, exitLinkMode]);
 
+  /** Bare domains get `https://` (a relative href would open on our own host); invalid input keeps the form open. */
   const submitLink = useCallback(() => {
-    const url = linkUrl.trim();
     const target = linkTargetRef.current;
-    if (!url || !target) {
+    if (!linkUrl.trim() || !target) {
       cancelLinkMode();
+      return;
+    }
+    const url = normalizeTextLinkUrl(linkUrl);
+    if (!url) {
+      setLinkError(true);
+      linkInputRef.current?.focus({ preventScroll: true });
       return;
     }
     exitLinkMode();
@@ -391,34 +401,49 @@ export function EditorFormatToolbar() {
       onMouseDown={preventToolbarMouseDown}
     >
       {linkMode ? (
-        <>
-          <input
-            ref={linkInputRef}
-            type="url"
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            placeholder={t('editor_format_link_url')}
-            className="h-8 min-w-[12rem] max-w-[20rem] rounded-btn border border-border bg-bg px-2 text-body text-fg outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            onMouseDown={(e) => e.stopPropagation()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                submitLink();
-              }
-              if (e.key === 'Escape') {
-                e.preventDefault();
-                cancelLinkMode();
-              }
-            }}
-          />
-          <button
-            type="button"
-            className="h-8 shrink-0 rounded-btn bg-accent px-3 text-body-sm font-weight-label text-accent-fg hover:opacity-90"
-            onClick={submitLink}
-          >
-            {t('editor_format_link_apply')}
-          </button>
-        </>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-0.5">
+            <input
+              ref={linkInputRef}
+              type="url"
+              value={linkUrl}
+              onChange={(e) => {
+                setLinkUrl(e.target.value);
+                setLinkError(false);
+              }}
+              placeholder={t('editor_format_link_url')}
+              aria-invalid={linkError}
+              aria-describedby={linkError ? linkErrorId : undefined}
+              className={[
+                'h-8 min-w-[12rem] max-w-[20rem] rounded-btn border bg-bg px-2 text-body text-fg outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                linkError ? 'border-error' : 'border-border',
+              ].join(' ')}
+              onMouseDown={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  submitLink();
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  cancelLinkMode();
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="h-8 shrink-0 rounded-btn bg-accent px-3 text-body-sm font-weight-label text-accent-fg hover:opacity-90"
+              onClick={submitLink}
+            >
+              {t('editor_format_link_apply')}
+            </button>
+          </div>
+          {linkError ? (
+            <p id={linkErrorId} role="alert" className="max-w-[20rem] px-1 text-caption text-error">
+              {t('editor_format_link_invalid')}
+            </p>
+          ) : null}
+        </div>
       ) : (
         <>
           <button

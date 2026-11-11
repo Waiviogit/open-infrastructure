@@ -939,6 +939,7 @@
   "editor_format_link": "Link",
   "editor_format_link_apply": "Apply",
   "editor_format_link_url": "Enter URL",
+  "editor_format_link_invalid": "أدخل رابطًا صالحًا: عنوان ويب أو mailto:",
   "editor_format_mention": "Mention",
   "editor_format_more": "More formatting",
   "editor_format_quote": "Quote",

@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
+import { POST_MODAL_TITLE_CLASSES } from '@/modules/feed/presentation/components/post-body-typography';
 import {
   fetchSearchObjectById,
   fetchSearchObjectsByIds,
@@ -608,7 +609,8 @@ export function EditorScreen({
               placeholder={t('title_placeholder')}
               className={[
                 'w-full rounded-btn border border-border bg-surface-control px-3 py-2',
-                'font-display text-body-lg text-fg placeholder:text-fg-tertiary',
+                POST_MODAL_TITLE_CLASSES,
+                'placeholder:text-fg-tertiary',
                 'outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus',
               ].join(' ')}
               autoComplete="off"
