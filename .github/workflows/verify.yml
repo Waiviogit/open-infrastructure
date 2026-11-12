@@ -361,7 +361,9 @@ jobs:
 
   web-instant-e2e:
     name: Web — instant navigation e2e (production build)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, which Playwright 1.59 cannot install browsers for.
+    # Return to ubuntu-latest after upgrading Playwright to a release that supports it.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
