@@ -8,6 +8,7 @@ import { useI18n } from '@/i18n/providers/i18n-provider';
 import { SocialEmbedHtml, StatHoverTooltip, UserAvatar } from '@/shared/presentation';
 
 import type { FeedStoryView } from '../../application/dto/feed-story.dto';
+import { isReplyFeedItem, viewerIsAuthor } from '../../domain/feed-item-kind';
 
 import { formatRelativeFeedTime, formatReputation } from './story-utils';
 import { StoryRewardBadge } from './story-reward-badge';
@@ -37,13 +38,6 @@ type BlogPostScreenProps = {
   timeLabelOverride?: string;
 };
 
-function viewerIsAuthor(viewer: string | null, author: string): boolean {
-  if (viewer == null || viewer === '') {
-    return false;
-  }
-  return viewer.trim().toLowerCase() === author.trim().toLowerCase();
-}
-
 export function BlogPostScreen({
   variant = 'page',
   story,
@@ -63,7 +57,10 @@ export function BlogPostScreen({
     author: story.authorName,
     permlink: story.permlink,
   });
-  const editHref = `/editor?${editorSearch.toString()}`;
+  /** `/editor` edits root posts only; a comment opened at its permalink has no "Edit post". */
+  const editHref = isReplyFeedItem(story.parentAuthor, undefined)
+    ? null
+    : `/editor?${editorSearch.toString()}`;
   const authorProfileHref = `/@${encodeURIComponent(story.authorName)}`;
 
   const isModal = variant === 'modal';
@@ -178,7 +175,7 @@ export function BlogPostScreen({
             '[&_img]:h-auto [&_img]:max-w-full [&_img]:my-3',
             '[&_p]:empty:hidden',
             '[&_br]:block [&_br]:content-[""] [&_br]:mt-3',
-            '[&_pre]:overflow-x-auto [&_pre]:rounded-btn [&_pre]:bg-code-bg [&_pre]:p-3',
+            '[&_pre]:overflow-x-auto [&_pre]:bg-code-bg [&_pre]:p-3',
           ].join(' ')}
         />
 

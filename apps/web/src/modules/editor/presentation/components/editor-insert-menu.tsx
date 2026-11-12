@@ -36,6 +36,7 @@ import {
 import type { IconProps } from '@/icons';
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { MODAL_Z_INDEX_EDITOR_OVERLAY } from '@/shared/presentation';
 
 import {
   $convertCaretBlockToCode,
@@ -277,10 +278,6 @@ function computeInsertOverlayTop(
 export type EditorInsertCaretOverlayProps = {
   /** Single-line bar (e.g. comment): pin (+) to vertical center instead of caret line. */
   pinInsertCenterVertical?: boolean;
-  /** Pill field: keep (+) inside the border (avoids FeedColumn clip). */
-  insetInsertButton?: boolean;
-  /** Left gutter column in feed compose — (+) centered in gutter, text never overlaps. */
-  composeGutter?: boolean;
   /** When user picks an object from inline search (Insert → Object). */
   onObjectLinkedFromEditor?: (result: SearchObjectResult) => void;
   /** Object activity: show Date insert item and original publish picker. */
@@ -291,8 +288,6 @@ export type EditorInsertCaretOverlayProps = {
   renderOriginalDatePicker?: (props: { onSelect: (unix: number) => void }) => ReactNode;
   /** Fired when user picks an original publish date+time (unix seconds). */
   onOriginalCreatedAtSelected?: (unix: number) => void;
-  /** Line / Code / Table (needs the horizontal-rule, code and table nodes + plugins). */
-  enableBlockInserts?: boolean;
 };
 
 /**
@@ -301,14 +296,11 @@ export type EditorInsertCaretOverlayProps = {
  */
 export function EditorInsertCaretOverlay({
   pinInsertCenterVertical = false,
-  insetInsertButton = false,
-  composeGutter = false,
   onObjectLinkedFromEditor,
   enableOriginalCreatedAt = false,
   insertPanelPreferBelow = false,
   renderOriginalDatePicker,
   onOriginalCreatedAtSelected,
-  enableBlockInserts = false,
 }: EditorInsertCaretOverlayProps = {}) {
   const [editor] = useLexicalComposerContext();
   const { t } = useI18n();
@@ -333,7 +325,6 @@ export function EditorInsertCaretOverlay({
   const insertPanelRef = useRef<HTMLDivElement>(null);
   const insertTitleId = useId();
   const insertPanelId = useId();
-  const comingSoon = t('app_header_coming_soon');
   const savedSelectionRef = useRef<BaseSelection | null>(null);
 
   const handleObjectSelect = useCallback(
@@ -605,6 +596,17 @@ export function EditorInsertCaretOverlay({
     };
   }, [open, inlineInputOpen]);
 
+  const insertActions: Record<InsertLabelKey, () => void> = {
+    editor_insert_photo: () => setInsertView('photo'),
+    editor_insert_video: () => openInlineInput('video'),
+    editor_insert_object: () => openInlineInput('object'),
+    editor_insert_date: () => setInsertView('date'),
+    editor_insert_line: insertHorizontalRule,
+    editor_insert_code: insertCodeBlock,
+    editor_insert_table: insertTable,
+    editor_insert_emoji: openEmojiPanel,
+  };
+
   return (
     <>
       <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[5] overflow-visible">
@@ -612,12 +614,8 @@ export function EditorInsertCaretOverlay({
         ref={shellRef}
         className={[
           'pointer-events-auto absolute z-[70]',
-          composeGutter
-            ? 'left-1/2 -translate-x-1/2'
-            : insetInsertButton
-              ? 'start-2'
-              : // Phones: the 16px page gutter is narrower than half the (+); keep it on screen.
-                'start-0 -translate-x-[40%] sm:-translate-x-1/2',
+          // Phones: the 16px page gutter is narrower than half the (+); keep it on screen.
+          'start-0 -translate-x-[40%] sm:-translate-x-1/2',
           pinInsertCenterVertical ? 'top-1/2 -translate-y-1/2' : '',
         ].join(' ')}
         style={pinInsertCenterVertical ? undefined : { top: buttonTop }}
@@ -703,14 +701,18 @@ export function EditorInsertCaretOverlay({
             ref={insertPanelRef}
             id={insertPanelId}
             className={[
-              'fixed z-[80] w-[min(100vw-2rem,20rem)] -translate-x-1/2 rounded-card border border-border',
+              'fixed w-[min(100vw-2rem,20rem)] -translate-x-1/2 rounded-card border border-border',
               'bg-surface p-3 shadow-card',
               insertPanelCoords.placement === 'above' ? '-translate-y-full' : '',
               insertPanelPreferBelow
                 ? 'max-h-[min(70dvh,calc(100dvh-2rem))] overflow-y-auto overscroll-contain'
                 : '',
             ].join(' ')}
-            style={{ top: insertPanelCoords.top, left: insertPanelCoords.left }}
+            style={{
+              top: insertPanelCoords.top,
+              left: insertPanelCoords.left,
+              zIndex: MODAL_Z_INDEX_EDITOR_OVERLAY,
+            }}
             role="dialog"
             aria-modal="true"
             aria-labelledby={insertTitleId}
@@ -754,56 +756,15 @@ export function EditorInsertCaretOverlay({
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 {INSERT_ITEMS.map(({ labelKey, Icon }) => {
-                  const isPhoto = labelKey === 'editor_insert_photo';
-                  const isVideo = labelKey === 'editor_insert_video';
-                  const isObject = labelKey === 'editor_insert_object';
-                  const isDate = labelKey === 'editor_insert_date';
-                  if (isDate && !enableOriginalCreatedAt) {
+                  if (labelKey === 'editor_insert_date' && !enableOriginalCreatedAt) {
                     return null;
                   }
-                  const blockAction =
-                    !enableBlockInserts
-                      ? undefined
-                      : labelKey === 'editor_insert_line'
-                        ? insertHorizontalRule
-                        : labelKey === 'editor_insert_code'
-                          ? insertCodeBlock
-                          : labelKey === 'editor_insert_table'
-                            ? insertTable
-                            : undefined;
-                  const isEmoji = labelKey === 'editor_insert_emoji';
-                  const enabled =
-                    isPhoto ||
-                    isVideo ||
-                    isObject ||
-                    isDate ||
-                    isEmoji ||
-                    Boolean(blockAction);
                   return (
                     <button
                       key={labelKey}
                       type="button"
-                      disabled={!enabled}
-                      title={enabled ? undefined : comingSoon}
-                      className={[
-                        'flex flex-col items-center gap-1.5 rounded-btn px-2 py-3 text-body-sm',
-                        enabled
-                          ? 'bg-secondary text-secondary-fg hover:bg-surface-muted'
-                          : 'bg-secondary text-secondary-fg opacity-70',
-                      ].join(' ')}
-                      onClick={
-                        isPhoto
-                          ? () => setInsertView('photo')
-                          : isVideo
-                            ? () => openInlineInput('video')
-                            : isObject
-                              ? () => openInlineInput('object')
-                              : isDate
-                                ? () => setInsertView('date')
-                                : isEmoji
-                                    ? () => openEmojiPanel()
-                                    : blockAction
-                      }
+                      className="flex flex-col items-center gap-1.5 rounded-btn bg-secondary px-2 py-3 text-body-sm text-secondary-fg hover:bg-surface-muted"
+                      onClick={insertActions[labelKey]}
                     >
                       <Icon className="text-fg-secondary" size={22} />
                       <span className="text-center leading-compressed">

@@ -149,7 +149,7 @@ Portaled `role="dialog"` UI **must** use **`ModalShell`** or **`AppModal`** from
 |-----|--------|
 | Tall/wide/custom overlays (post intercept, login, add-update, gallery, geo map) | **`ModalShell`** |
 | Compact centered dialogs (vote list, reward breakdown) | **`AppModal`** (wraps `ModalShell`) |
-| Z-index tiers | **`MODAL_Z_INDEX_*`** from `@/shared/presentation` (or `Z_INDEX_MODAL_ABOVE_MAP` in `@/modules/map` for map stack docs) |
+| Z-index tiers | **`MODAL_Z_INDEX_*`** from `@/shared/presentation` (or `Z_INDEX_MODAL_ABOVE_MAP` in `@/modules/map` for map stack docs); editor portals use `MODAL_Z_INDEX_EDITOR_OVERLAY` (120, above the default 110) |
 
 ### Required scroll architecture
 
@@ -184,6 +184,19 @@ Use **`header`** / **`footer`** slots on `ModalShell` for chrome that must stay 
 | Search / typeahead dropdowns | **`search-dropdown.tsx`**, editor object search fields |
 | Floating toolbars / insert menus | **`editor-format-toolbar.tsx`**, **`editor-insert-menu.tsx`** |
 | Notification / header dropdowns | **`notification-bell.tsx`**, **`logged-in-header-actions.tsx`** |
+
+## Editor
+
+One editor everywhere: post editor, drafts, Hive comments, Leo threads, object Activity, DMs and activity notes all use `LexicalPostEditor` (`@/modules/editor`; `CompactComposeEditor` wraps it). Spec: [One editor](../../docs/apps/web/spec/pages/editor/page.md#implementation).
+
+| Do | Don't |
+|----|--------|
+| Add a formatting / editing feature **once**, in `EditorInner` (`lexical-editor.tsx`) — every instance gets it | Gate a plugin, Insert item or toolbar by surface, mode or a feature flag prop (`compact`, `messagingCompact`, …) |
+| Vary only layout chrome with `variant: 'document' \| 'compose'`, and the destination in the consumer | Add a second output format or a plain-text path — `onBodyChange` always emits Lexical JSON |
+| Build every body with **`editorBodyToMarkdown`** (`@/modules/editor`) | Call `lexicalStateToMarkdown` with a local image resolver, or `getTextContent()` |
+| Keep conditional only what needs consumer context: `hashObjectSearch` (signed-in author), `onObjectLinkedFromEditor` (post linked objects), `enableOriginalCreatedAt` (Activity Date) | Hide a feature because "this surface does not need it" |
+| Portaled editor overlays use **`MODAL_Z_INDEX_EDITOR_OVERLAY`** from `@/shared/presentation` | Literal `z-[80]` / `z-[100]` on editor portals — they end up under `ModalShell` |
+| Render markdown bodies with `blog-post-body` + `POST_BODY_BLOCK_CLASSES` (post) or `COMPACT_BODY_BLOCK_CLASSES` (comments, messages, notes) | Per-surface ad-hoc prose classes that drop lists, headings or tables |
 
 ## Icons
 

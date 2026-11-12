@@ -3,22 +3,23 @@
 import type { ReactNode } from 'react';
 
 import { ChevronRightIcon, SendHorizontalIcon } from '@/icons';
-import { LexicalPostEditor } from './lexical-editor';
+import { LexicalPostEditor, type HashObjectSearchConfig } from './lexical-editor';
 
 export type CompactComposeEditorProps = {
   bodyPlaceholder: string;
-  onBodyChange: (body: string) => void;
+  /** Lexical JSON; build the body with `editorBodyToMarkdown`. */
+  onBodyChange: (bodyLexicalJson: string) => void;
   onSend: () => void | Promise<void>;
   canSend: boolean;
   sendAriaLabel: string;
   /** Orange send (activity/messaging) vs neutral chevron (comments). */
   sendVariant?: 'accent' | 'neutral';
   editorKey?: number;
-  /** Plain text for Hive comments; lexical JSON for OSL/messaging markdown. */
-  outputMode?: 'plain' | 'lexical';
   className?: string;
   footer?: ReactNode;
   initialBody?: string;
+  /** `#` object search; pass it whenever a viewer is signed in. */
+  hashObjectSearch?: HashObjectSearchConfig;
   enableOriginalCreatedAt?: boolean;
   insertPanelPreferBelow?: boolean;
   renderOriginalDatePicker?: (props: { onSelect: (unix: number) => void }) => ReactNode;
@@ -38,10 +39,10 @@ export function CompactComposeEditor({
   sendAriaLabel,
   sendVariant = 'neutral',
   editorKey = 0,
-  outputMode = 'plain',
   className = '',
   footer,
   initialBody,
+  hashObjectSearch,
   enableOriginalCreatedAt,
   insertPanelPreferBelow,
   renderOriginalDatePicker,
@@ -54,12 +55,11 @@ export function CompactComposeEditor({
       <div className="relative pl-5">
         <LexicalPostEditor
           key={editorKey}
-          compact
-          compactBottomInset
-          messagingCompact={outputMode === 'lexical'}
+          variant="compose"
           initialBody={initialBody}
           bodyPlaceholder={bodyPlaceholder}
           onBodyChange={onBodyChange}
+          hashObjectSearch={hashObjectSearch}
           enableOriginalCreatedAt={enableOriginalCreatedAt}
           insertPanelPreferBelow={insertPanelPreferBelow}
           renderOriginalDatePicker={renderOriginalDatePicker}

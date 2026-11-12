@@ -70,7 +70,9 @@ Do **not** duplicate page-route detail in this file — link the site map or the
 | [editor/publish-metadata.md](editor/publish-metadata.md) | Hive `json_metadata` written on publish |
 | [editor/rich-paste.md](editor/rich-paste.md) | Paste a copied post / web page with its blocks and formatting |
 | [feed.md](feed.md) | Feed story list, Lexical comment under story when logged in |
+| [comment-edit.md](comment-edit.md) | Inline edit of own comments and threads (feed cards, post modal rows); `/editor` is root posts only |
 | [messaging.md](messaging.md) | Profile inbox + object channel chat (OSL messaging UI) |
+| [activity-notes.md](activity-notes.md) | Private notes under an activity message permalink + agent import link (`#note=…`) |
 | [pages/user-profile/routes/activity.md](pages/user-profile/routes/activity.md) | Profile activity tab — Hive account history cards |
 | [object-card.md](object-card.md) | Shared `ObjectCard` (discover, feed links, shop): rating grid, admin heart |
 | [object-create-broadcast.md](object-create-broadcast.md) | Object create: `custom_json` chunking, IPFS path, publish dock size |
@@ -85,8 +87,9 @@ Do **not** duplicate page-route detail in this file — link the site map or the
 | Doc | Description |
 |-----|-------------|
 | [components/story-container.md](components/story-container.md) | Feed row (`StoryContainer` / `Story`), DTO, demo mocks |
-| [components/story-overflow-menu.md](components/story-overflow-menu.md) | ⋯ menu on story cards, edit → editor + draft load |
+| [components/story-overflow-menu.md](components/story-overflow-menu.md) | ⋯ menu on story cards: root post edit → editor + draft load, comment / thread edit inline |
 | [components/avatar.md](components/avatar.md) | Shared `UserAvatar`, `resolveAvatarUrl` (profile + feed) |
+| [components/code-block-copy.md](components/code-block-copy.md) | Copy button on every code block rendered through `SocialEmbedHtml` |
 
 ## Verification
 

@@ -1,9 +1,17 @@
 /**
  * @jest-environment jsdom
  */
+import { TextEncoder } from 'node:util';
+
 import { renderHook, act } from '@testing-library/react';
 
 import { useSendObjectChannelMessage } from './use-send-object-channel-message';
+
+// jsdom has no TextEncoder; the custom_json size check measures UTF-8 bytes with it.
+Object.assign(globalThis, { TextEncoder });
+
+/** Past the 8192-byte Hive `custom_json` cap on its own. */
+const OVERSIZED_BODY_LENGTH = 9_000;
 
 const mockBroadcast = jest.fn();
 const mockAwaitTrx = jest.fn();
@@ -137,5 +145,33 @@ describe('useSendObjectChannelMessage', () => {
     });
 
     expect(result.current.channelExists).toBe(false);
+  });
+
+  it('refuses a body over the custom_json size cap without broadcasting', async () => {
+    const { result } = renderHook(() =>
+      useSendObjectChannelMessage({
+        viewerUsername: 'alice',
+        objectId: 'obj-1',
+        objectName: 'Shop',
+        channelId: 'obj-ch-obj-1',
+        channelExists: true,
+      }),
+    );
+
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.sendMessage('x'.repeat(OVERSIZED_BODY_LENGTH));
+    });
+
+    expect(ok).toBe(false);
+    expect(mockBroadcast).not.toHaveBeenCalled();
+    expect(result.current.bodyTooLong).toBe(true);
+
+    await act(async () => {
+      ok = await result.current.sendMessage('hello');
+    });
+
+    expect(ok).toBe(true);
+    expect(result.current.bodyTooLong).toBe(false);
   });
 });

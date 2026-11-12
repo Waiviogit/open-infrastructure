@@ -2,13 +2,14 @@
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { sanitizePostBodyHtml } from '@/shared/infrastructure/post-body-html-pipeline';
+import { COMPACT_BODY_BLOCK_CLASSES } from '@/modules/feed/presentation/components/post-body-typography';
 import { SocialEmbedHtml } from '@/shared/presentation';
 import { OptimisticNavLink } from '@/shared/presentation/navigation';
 
 import { resolveMessagePresentation } from '../domain/messaging.helpers';
 import type { MessageItem } from '../domain/messaging.types';
 
-const BODY_CLASS = 'blog-post-body break-words [&_a]:text-link [&_a]:underline';
+const BODY_CLASS = `blog-post-body break-words ${COMPACT_BODY_BLOCK_CLASSES}`;
 
 /** Activity message body: markdown → sanitized HTML with social embeds (Instagram, YouTube, …). */
 export function ActivityMessageBody({

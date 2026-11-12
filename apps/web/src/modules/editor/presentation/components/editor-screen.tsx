@@ -618,6 +618,7 @@ export function EditorScreen({
           </div>
 
           <LexicalPostEditor
+            variant="document"
             bodyPlaceholder={t('story_placeholder')}
             initialBody={initialBody || undefined}
             onBodyChange={(serialized) => {

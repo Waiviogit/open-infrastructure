@@ -21,5 +21,5 @@ export const OBJECT_PAGE_CONTENT_BODY_CLASS = [
   '[&_li]:mb-1',
   '[&_img]:my-3 [&_img]:h-auto [&_img]:max-w-full',
   '[&_iframe]:aspect-video [&_iframe]:my-4 [&_iframe]:w-full',
-  '[&_pre]:overflow-x-auto [&_pre]:rounded-btn [&_pre]:bg-code-bg [&_pre]:p-3',
+  '[&_pre]:overflow-x-auto [&_pre]:bg-code-bg [&_pre]:p-3',
 ].join(' ');

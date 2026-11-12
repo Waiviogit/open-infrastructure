@@ -20,7 +20,10 @@ import { useI18n } from '@/i18n/providers/i18n-provider';
 
 export type StoryOverflowMenuProps = {
   authorName: string;
-  editHref: string;
+  /** Root posts: "Edit post" opens `/editor`. `null` when the item is not a root post. */
+  editHref: string | null;
+  /** Comments and threads: "Edit" opens the inline editor in place. */
+  onEditInline?: () => void;
   /** Logged-in viewer username, or null when logged out. */
   currentUsername: string | null;
   isOwnPost: boolean;
@@ -84,6 +87,7 @@ function MenuLinkRow({ icon, label, href, onNavigate }: MenuLinkRowProps) {
 export function StoryOverflowMenu({
   authorName,
   editHref,
+  onEditInline,
   currentUsername,
   isOwnPost,
 }: StoryOverflowMenuProps) {
@@ -159,12 +163,23 @@ export function StoryOverflowMenu({
         >
           {showOwnVariant ? (
             <>
-              <MenuLinkRow
-                icon={<PencilIcon size={18} className="shrink-0" />}
-                label={t('feed_story_menu_edit')}
-                href={editHref}
-                onNavigate={closeMenu}
-              />
+              {editHref ? (
+                <MenuLinkRow
+                  icon={<PencilIcon size={18} className="shrink-0" />}
+                  label={t('feed_story_menu_edit')}
+                  href={editHref}
+                  onNavigate={closeMenu}
+                />
+              ) : onEditInline ? (
+                <MenuRow
+                  icon={<PencilIcon size={18} className="shrink-0" />}
+                  label={t('edit')}
+                  onActivate={() => {
+                    closeMenu();
+                    onEditInline();
+                  }}
+                />
+              ) : null}
               <MenuRow
                 icon={<PinIcon size={18} className="shrink-0" />}
                 label={t('feed_story_menu_pin')}

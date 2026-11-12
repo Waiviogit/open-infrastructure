@@ -16,7 +16,7 @@ related:
 
 **Back:** [Post editor](../pages/editor/page.md)
 
-Post editor only (not comments or messaging). A selection copied from a post — full page or the post modal — pastes into `/editor` with the same blocks and formatting it shows. Any other clipboard HTML (Hive fronts, Google Docs, web pages) goes through the same rules.
+Every editor instance (post, comment, thread, Activity, DM, note). A selection copied from a post — full page or the post modal — pastes with the same blocks and formatting it shows. Any other clipboard HTML (Hive fronts, Google Docs, web pages) goes through the same rules.
 
 ## Paste order
 

@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { getHiveJsonMetadataDefaults } from '@/config/hive-json-metadata-public';
+import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { CompactComposeEditor } from '@/modules/editor';
+import { CompactComposeEditor, editorBodyToMarkdown } from '@/modules/editor';
 import { buildCommentOp, getWalletFacade, useHydrateWalletProvider } from '@/modules/auth';
 import { awaitTrxConfirmation } from '@/modules/notifications';
 import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-after-broadcast';
@@ -32,14 +33,19 @@ export function ObjectThreadComposeBar({
   useHydrateWalletProvider();
   const router = useRouter();
   const { t } = useI18n();
-  const [bodyPlain, setBodyPlain] = useState('');
+  const contentBaseUrl = useIpfsContentBaseUrl();
+  const [bodyLexicalJson, setBodyLexicalJson] = useState('');
   const [pending, setPending] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editorKey, setEditorKey] = useState(0);
+  const body = useMemo(
+    () => editorBodyToMarkdown(bodyLexicalJson, contentBaseUrl),
+    [bodyLexicalJson, contentBaseUrl],
+  );
+  const viewer = viewerUsername?.trim() ?? '';
 
   const onSubmit = useCallback(async () => {
-    const body = bodyPlain.trim();
     if (!body || pending) {
       return;
     }
@@ -84,7 +90,7 @@ export function ObjectThreadComposeBar({
         operations: [op],
       });
 
-      setBodyPlain('');
+      setBodyLexicalJson('');
       setEditorKey((k) => k + 1);
       setPending(false);
       setConfirming(true);
@@ -100,9 +106,9 @@ export function ObjectThreadComposeBar({
       setError(err instanceof Error ? err.message : t('object_thread_publish_failed'));
       setPending(false);
     }
-  }, [bodyPlain, objectId, onRequireLogin, pending, router, t, viewerUsername]);
+  }, [body, objectId, onRequireLogin, pending, router, t, viewerUsername]);
 
-  const canSubmit = bodyPlain.trim().length > 0 && !pending;
+  const canSubmit = body.length > 0 && !pending;
 
   return (
     <div className="mb-2">
@@ -111,12 +117,12 @@ export function ObjectThreadComposeBar({
         className="rounded-card border border-border bg-surface/60 p-card-padding pt-3"
         editorKey={editorKey}
         bodyPlaceholder={t('object_thread_compose_placeholder')}
-        onBodyChange={setBodyPlain}
+        onBodyChange={setBodyLexicalJson}
+        hashObjectSearch={viewer ? { username: viewer, googlePlaces: false } : undefined}
         onSend={onSubmit}
         canSend={canSubmit}
         sendAriaLabel={t('object_thread_send')}
         sendVariant="neutral"
-        outputMode="plain"
         footer={
           <>
             {confirming ? (

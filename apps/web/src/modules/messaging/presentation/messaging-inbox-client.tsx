@@ -133,14 +133,14 @@ export function MessagingInboxClient({
     router.refresh();
   }, [router]);
 
-  const { sendMessage, pending } = useSendMessage({
+  const { sendMessage, pending, bodyTooLong: sendBodyTooLong } = useSendMessage({
     viewerUsername,
     onRequireLogin: openLogin,
     revalidateAccountName: viewerUsername,
     onSent: refreshAfterSend,
   });
 
-  const { sendEncryptedMessage, pendingEncrypted } = useSendEncryptedMessage({
+  const { sendEncryptedMessage, pendingEncrypted, encryptedBodyTooLong } = useSendEncryptedMessage({
     viewerUsername,
     onRequireLogin: openLogin,
     revalidateAccountName: viewerUsername,
@@ -148,7 +148,11 @@ export function MessagingInboxClient({
     onSent: refreshAfterSend,
   });
 
-  const { updateMessage, pending: messageUpdatePending } = useUpdateMessage({
+  const {
+    updateMessage,
+    pending: messageUpdatePending,
+    bodyTooLong: updateBodyTooLong,
+  } = useUpdateMessage({
     viewerUsername,
     onRequireLogin: openLogin,
     revalidateAccountName: viewerUsername,
@@ -672,6 +676,7 @@ export function MessagingInboxClient({
                 hasPriorMessages={hasPriorMessages}
                 pending={pending || messageUpdatePending}
                 pendingEncrypted={pendingEncrypted}
+                bodyTooLong={sendBodyTooLong || encryptedBodyTooLong || updateBodyTooLong}
                 composeIntent={composeIntent}
                 onDismissComposeIntent={() => {
                   setComposeIntent(null);

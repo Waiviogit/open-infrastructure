@@ -31,18 +31,72 @@ export type LexicalToMarkdownOptions = {
   resolveImageUrl: (cid: string, src: string) => string;
 };
 
+/** Always literal: backslash, inline code and link brackets. */
+const ALWAYS_ESCAPED = /[\\`[\]]/;
+const WORD_CHAR = /[\p{L}\p{N}]/u;
+const WHITESPACE_CHAR = /\s/;
+/** A line that would start an ATX heading (`#` … `######` + space or end of line). */
+const LINE_START_HEADING = /^( {0,3})(#{1,6})(?=[ \t]|$)/gm;
+
+/**
+ * `_` / `*` stay literal where they cannot open or close emphasis, so hashtags (`#my_tag`),
+ * snake_case words and URLs survive: `_` between two word characters, either marker between two
+ * spaces. At a text-node edge the neighbour is unknown, so the marker is escaped.
+ */
+function isLiteralEmphasisMarker(text: string, index: number): boolean {
+  const before = text[index - 1];
+  const after = text[index + 1];
+  if (before === undefined || after === undefined) {
+    return false;
+  }
+  if (WHITESPACE_CHAR.test(before) && WHITESPACE_CHAR.test(after)) {
+    return true;
+  }
+  return text[index] === '_' && WORD_CHAR.test(before) && WORD_CHAR.test(after);
+}
+
 function escapeMarkdownText(text: string): string {
-  return text.replace(/([\\`*_[\]#])/g, '\\$1');
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const isEmphasisMarker = ch === '_' || ch === '*';
+    if (ALWAYS_ESCAPED.test(ch) || (isEmphasisMarker && !isLiteralEmphasisMarker(text, i))) {
+      out += '\\';
+    }
+    out += ch;
+  }
+  return out;
+}
+
+/** `#` is escaped only where it would turn a line into a heading; `#hashtag` stays as typed. */
+function escapeLineStartHeadings(markdown: string): string {
+  return markdown.replace(LINE_START_HEADING, '$1\\$2');
+}
+
+/** Inline markdown of a block's children, with line-start heading markers made literal. */
+function inlineBlockMarkdown(
+  nodes: LexicalJsonNode[] | undefined,
+  options: LexicalToMarkdownOptions,
+): string {
+  return escapeLineStartHeadings(serializeChildren(nodes, options));
+}
+
+/**
+ * Inline code is literal in markdown (a backslash would show), so the text stays raw inside a
+ * backtick fence one longer than its longest backtick run; a space pads text that touches a fence.
+ */
+function inlineCodeSpan(text: string): string {
+  const longestRun = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
+  const fence = '`'.repeat(longestRun + 1);
+  const pad = text.startsWith('`') || text.endsWith('`') ? ' ' : '';
+  return `${fence}${pad}${text}${pad}${fence}`;
 }
 
 function formatInlineText(text: string, format: number): string {
   if (!text) {
     return '';
   }
-  let out = escapeMarkdownText(text);
-  if (format & FORMAT_CODE) {
-    out = `\`${out.replace(/`/g, '\\`')}\``;
-  }
+  let out = format & FORMAT_CODE ? inlineCodeSpan(text) : escapeMarkdownText(text);
   if (format & FORMAT_STRIKETHROUGH) {
     out = `~~${out}~~`;
   }
@@ -78,10 +132,15 @@ function serializeNode(node: LexicalJsonNode, options: LexicalToMarkdownOptions)
     }
     case 'linebreak':
       return '\n';
-    case 'link': {
+    case 'link':
+    case 'autolink': {
       const inner = serializeChildren(node.children, options);
       const url = (node.url ?? '').trim();
       return url ? `[${inner}](${url})` : inner;
+    }
+    case 'spoiler': {
+      const inner = serializeChildren(node.children, options);
+      return inner.trim() ? `||${inner}||` : '';
     }
     case 'paragraph':
       return serializeChildren(node.children, options);
@@ -154,7 +213,7 @@ function blockMarkdown(
   options: LexicalToMarkdownOptions,
 ): string {
   const type = node.type ?? '';
-  const childMd = serializeChildren(node.children, options).trimEnd();
+  const childMd = inlineBlockMarkdown(node.children, options).trimEnd();
 
   switch (type) {
     case 'heading': {
@@ -192,7 +251,7 @@ function blockMarkdown(
       const items = node.children ?? [];
       const ordered = node.listType === 'number';
       const lines = items.map((item, index) => {
-        const text = serializeChildren(item.children, options).trim();
+        const text = escapeLineStartHeadings(serializeChildren(item.children, options).trim());
         const marker = ordered ? `${index + 1}.` : '-';
         return `${marker} ${text}`;
       });
@@ -246,7 +305,7 @@ function walkRootBlocks(
     if (BLOCK_NODE_TYPES.has(type)) {
       parts.push(blockMarkdown(node, options));
     } else {
-      const inline = serializeChildren(node.children, options);
+      const inline = inlineBlockMarkdown(node.children, options);
       if (inline.trim()) {
         parts.push(`${inline.trim()}\n\n`);
       }

@@ -16,7 +16,7 @@ related:
 
 **Back:** [Post editor](../pages/editor/page.md)
 
-The legacy editor (Slate, markdown storage, Redux) is replaced by one Lexical component, `LexicalPostEditor`. Post-only features are enabled by props from `EditorScreen`; compact editors (comments, messaging) reuse the same component.
+The legacy editor (Slate, markdown storage, Redux) is replaced by one Lexical component, `LexicalPostEditor`. Every instance (post, draft, comment, thread, Activity, DM, note) has the same formatting and editing features; `variant` (`document` / `compose`) changes only the layout — see [One editor](../pages/editor/page.md#implementation).
 
 | Legacy feature | New editor |
 |----------------|------------|

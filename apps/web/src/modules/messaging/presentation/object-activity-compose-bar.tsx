@@ -2,12 +2,14 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { CompactComposeEditor } from '@/modules/editor';
+import { CompactComposeEditor, editorBodyToMarkdown } from '@/modules/editor';
 import { CloseIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 
-import { buildMessagingMarkdownFromLexical } from '../application/build-messaging-markdown';
-import { canSendMessageBody, formatOriginalCreatedAtLabel } from '../domain/messaging.helpers';
+import {
+  canSendMessageBody,
+  formatOriginalCreatedAtLabel,
+} from '../domain/messaging.helpers';
 import type { MessagingComposeIntent } from '../domain/messaging.types';
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
 import { ActivityOriginalDatePicker } from './activity-original-date-picker';
@@ -22,6 +24,11 @@ export type ObjectActivityComposeBarProps = {
   onDismissComposeIntent?: () => void;
   initialBody?: string;
   sendAriaLabel?: string;
+  /**
+   * The last send was refused before broadcast: its op is over the Hive `custom_json` size cap.
+   * Shown until the body changes.
+   */
+  bodyTooLong?: boolean;
   onSend: (
     body: string,
     originalCreatedAtUnix: number | null,
@@ -38,32 +45,39 @@ export function ObjectActivityComposeBar({
   onDismissComposeIntent,
   initialBody,
   sendAriaLabel,
+  bodyTooLong = false,
   onSend,
   onRequireLogin,
 }: ObjectActivityComposeBarProps) {
   const { t, locale } = useI18n();
   const contentBaseUrl = useIpfsContentBaseUrl();
+  const viewer = viewerUsername?.trim() ?? '';
   const [bodyLexicalJson, setBodyLexicalJson] = useState('');
-  const [originalCreatedAtUnix, setOriginalCreatedAtUnix] = useState<number | null>(null);
+  const [originalCreatedAtUnix, setOriginalCreatedAtUnix] = useState<
+    number | null
+  >(null);
+  const [attemptedBody, setAttemptedBody] = useState<string | null>(null);
   const originalCreatedAtUnixRef = useRef(originalCreatedAtUnix);
   originalCreatedAtUnixRef.current = originalCreatedAtUnix;
 
   const markdownBody = useMemo(
-    () => buildMessagingMarkdownFromLexical(bodyLexicalJson, contentBaseUrl),
+    () => editorBodyToMarkdown(bodyLexicalJson, contentBaseUrl),
     [bodyLexicalJson, contentBaseUrl],
   );
 
   const canSubmit = canSendMessageBody(markdownBody) && !pending;
+  const showBodyTooLong = bodyTooLong && attemptedBody === markdownBody;
 
   const handleSubmit = useCallback(async () => {
     if (!canSendMessageBody(markdownBody) || pending) {
       return;
     }
-    if (!viewerUsername?.trim()) {
+    if (!viewer) {
       onRequireLogin?.();
       return;
     }
     const value = markdownBody;
+    setAttemptedBody(value);
     const stamp = composeIntent ? null : originalCreatedAtUnix;
     const ok = await onSend(value, stamp);
     if (ok !== false) {
@@ -77,7 +91,7 @@ export function ObjectActivityComposeBar({
     onSend,
     originalCreatedAtUnix,
     pending,
-    viewerUsername,
+    viewer,
   ]);
 
   const placeholder = t('object_activity_compose_placeholder').replace(
@@ -118,29 +132,41 @@ export function ObjectActivityComposeBar({
         canSend={canSubmit}
         sendAriaLabel={sendAriaLabel ?? t('messaging_send')}
         sendVariant="accent"
-        outputMode="lexical"
+        hashObjectSearch={
+          viewer ? { username: viewer, googlePlaces: false } : undefined
+        }
         enableOriginalCreatedAt={composeIntent == null}
-      insertPanelPreferBelow
-      renderOriginalDatePicker={renderOriginalDatePicker}
-      onOriginalCreatedAtSelected={setOriginalCreatedAtUnix}
-      footer={
-        chipLabel ? (
-          <div className="mt-2 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-pill bg-surface-control px-3 py-1 text-caption text-muted">
-              {t('object_activity_original_date_chip').replace('{datetime}', chipLabel)}
-              <button
-                type="button"
-                className="text-fg-secondary hover:text-fg"
-                aria-label={t('object_activity_original_date_clear_aria')}
-                onClick={() => setOriginalCreatedAtUnix(null)}
-              >
-                <CloseIcon size={14} />
-              </button>
-            </span>
-          </div>
-        ) : null
-      }
-    />
+        insertPanelPreferBelow
+        renderOriginalDatePicker={renderOriginalDatePicker}
+        onOriginalCreatedAtSelected={setOriginalCreatedAtUnix}
+        footer={
+          <>
+            {showBodyTooLong ? (
+              <p role="alert" className="mt-2 text-body-sm text-error">
+                {t('messaging_body_too_long')}
+              </p>
+            ) : null}
+            {chipLabel ? (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-pill bg-surface-control px-3 py-1 text-caption text-muted">
+                  {t('object_activity_original_date_chip').replace(
+                    '{datetime}',
+                    chipLabel,
+                  )}
+                  <button
+                    type="button"
+                    className="text-fg-secondary hover:text-fg"
+                    aria-label={t('object_activity_original_date_clear_aria')}
+                    onClick={() => setOriginalCreatedAtUnix(null)}
+                  >
+                    <CloseIcon size={14} />
+                  </button>
+                </span>
+              </div>
+            ) : null}
+          </>
+        }
+      />
     </div>
   );
 }

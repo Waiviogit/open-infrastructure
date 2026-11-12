@@ -7,12 +7,12 @@ import { formatObjectTypeLabel } from '@/modules/app-header/domain/search-nav-li
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
 import { fetchObjectSearchResults } from '@/modules/app-header/infrastructure/search.client';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { MODAL_Z_INDEX_EDITOR_OVERLAY } from '@/shared/presentation';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const DROPDOWN_MAX_HEIGHT_PX = 192;
 const DROPDOWN_MIN_HEIGHT_PX = 80;
 const DROPDOWN_GAP_PX = 4;
-const DROPDOWN_Z_INDEX = 80;
 
 type DropdownRect = {
   top: number;
@@ -139,7 +139,7 @@ export function EditorInlineObjectSearch({
               left: dropdownRect.left,
               width: dropdownRect.width,
               maxHeight: dropdownRect.maxHeight,
-              zIndex: DROPDOWN_Z_INDEX,
+              zIndex: MODAL_Z_INDEX_EDITOR_OVERLAY,
             }}
           >
             {searchResults.map((result) => {

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   buildMessageUpdatePayload,
   buildOslMessageUpdateOp,
+  exceedsHiveCustomJsonLimit,
 } from '@opden-data-layer/hive-broadcast';
 
 import { useOslCustomJsonId } from '@/config/odl-network-provider';
@@ -29,6 +30,8 @@ export function useUpdateMessage(options: {
   const oslCustomJsonId = useOslCustomJsonId();
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  /** The last send was refused before broadcast: its op is over the Hive `custom_json` size cap. */
+  const [bodyTooLong, setBodyTooLong] = useState(false);
 
   const updateMessage = useCallback(
     async (input: { channelId: string; messageId: string; body: string }) => {
@@ -42,6 +45,7 @@ export function useUpdateMessage(options: {
         return false;
       }
       setPending(true);
+      setBodyTooLong(false);
       try {
         const payload = buildMessageUpdatePayload({
           channelId: input.channelId,
@@ -53,6 +57,10 @@ export function useUpdateMessage(options: {
           creator: account,
           payload,
         });
+        if (exceedsHiveCustomJsonLimit(op.json)) {
+          setBodyTooLong(true);
+          return false;
+        }
         const { transactionId } = await getWalletFacade().broadcast({
           operations: [op],
         });
@@ -81,5 +89,5 @@ export function useUpdateMessage(options: {
     [oslCustomJsonId, options, pending, router],
   );
 
-  return { updateMessage, pending };
+  return { updateMessage, pending, bodyTooLong };
 }

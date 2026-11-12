@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   buildOslChannelCreateOp,
   buildOslMessageCreateOp,
+  exceedsHiveCustomJsonLimit,
 } from '@opden-data-layer/hive-broadcast';
 import { extractObjectPathSlugsFromBody } from '@opden-data-layer/core/post-objects/comment-post-object-candidates';
 
@@ -35,6 +36,8 @@ export function useSendObjectChannelMessage(options: {
   const oslCustomJsonId = useOslCustomJsonId();
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  /** The last send was refused before broadcast: its op is over the Hive `custom_json` size cap. */
+  const [bodyTooLong, setBodyTooLong] = useState(false);
   const [channelExists, setChannelExists] = useState(options.channelExists);
 
   const sendMessage = useCallback(
@@ -53,6 +56,7 @@ export function useSendObjectChannelMessage(options: {
         return false;
       }
       setPending(true);
+      setBodyTooLong(false);
       try {
         const messagePayload = buildMessageCreatePayload({
           channelId: options.channelId,
@@ -66,6 +70,10 @@ export function useSendObjectChannelMessage(options: {
           creator: account,
           payload: messagePayload,
         });
+        if (exceedsHiveCustomJsonLimit(messageOp.json)) {
+          setBodyTooLong(true);
+          return false;
+        }
         const operations = channelExists
           ? [messageOp]
           : [
@@ -113,6 +121,7 @@ export function useSendObjectChannelMessage(options: {
         return false;
       }
       setPending(true);
+      setBodyTooLong(false);
       try {
         const messagePayload = buildEncryptedMessageCreatePayload({
           channelId: options.channelId,
@@ -125,6 +134,10 @@ export function useSendObjectChannelMessage(options: {
           creator: account,
           payload: messagePayload,
         });
+        if (exceedsHiveCustomJsonLimit(messageOp.json)) {
+          setBodyTooLong(true);
+          return false;
+        }
         const operations = channelExists
           ? [messageOp]
           : [
@@ -159,5 +172,5 @@ export function useSendObjectChannelMessage(options: {
     [channelExists, oslCustomJsonId, options, pending, router],
   );
 
-  return { sendMessage, sendEncryptedMessage, pending, channelExists };
+  return { sendMessage, sendEncryptedMessage, pending, channelExists, bodyTooLong };
 }

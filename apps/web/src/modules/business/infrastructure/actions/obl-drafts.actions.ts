@@ -1,7 +1,10 @@
 'use server';
 
-import { queryApiDraftsFetch } from '@/modules/editor/infrastructure/query-api-drafts.server';
 import type { Result } from '@/shared/domain/result';
+import {
+  queryApiAuthedFetch,
+  type QueryApiAuthedError,
+} from '@/shared/infrastructure/http/query-api-authed-fetch.server';
 
 import type { OblOfferDraftView } from '../clients/obl-drafts.server';
 
@@ -11,8 +14,8 @@ function oblDraftsBase(author: string) {
 
 export async function listOblDraftsAction(
   author: string,
-): Promise<Result<OblOfferDraftView[], import('@/modules/editor/infrastructure/query-api-drafts.server').QueryApiDraftError>> {
-  return queryApiDraftsFetch<OblOfferDraftView[]>(oblDraftsBase(author), {
+): Promise<Result<OblOfferDraftView[], QueryApiAuthedError>> {
+  return queryApiAuthedFetch<OblOfferDraftView[]>(oblDraftsBase(author), {
     method: 'GET',
   });
 }
@@ -25,8 +28,8 @@ export async function createOblDraftAction(
     fields?: Record<string, unknown>;
     legalText?: string | null;
   },
-): Promise<Result<OblOfferDraftView, import('@/modules/editor/infrastructure/query-api-drafts.server').QueryApiDraftError>> {
-  return queryApiDraftsFetch<OblOfferDraftView>(oblDraftsBase(author), {
+): Promise<Result<OblOfferDraftView, QueryApiAuthedError>> {
+  return queryApiAuthedFetch<OblOfferDraftView>(oblDraftsBase(author), {
     method: 'POST',
     body: JSON.stringify(body),
   });
@@ -40,8 +43,8 @@ export async function patchOblDraftAction(
     fields?: Record<string, unknown>;
     legalText?: string | null;
   },
-): Promise<Result<OblOfferDraftView, import('@/modules/editor/infrastructure/query-api-drafts.server').QueryApiDraftError>> {
-  return queryApiDraftsFetch<OblOfferDraftView>(
+): Promise<Result<OblOfferDraftView, QueryApiAuthedError>> {
+  return queryApiAuthedFetch<OblOfferDraftView>(
     `${oblDraftsBase(author)}?draftId=${encodeURIComponent(draftId)}`,
     { method: 'PATCH', body: JSON.stringify(body) },
   );
@@ -50,8 +53,8 @@ export async function patchOblDraftAction(
 export async function deleteOblDraftAction(
   author: string,
   draftId: string,
-): Promise<Result<void, import('@/modules/editor/infrastructure/query-api-drafts.server').QueryApiDraftError>> {
-  return queryApiDraftsFetch<void>(
+): Promise<Result<void, QueryApiAuthedError>> {
+  return queryApiAuthedFetch<void>(
     `${oblDraftsBase(author)}?draftId=${encodeURIComponent(draftId)}`,
     { method: 'DELETE' },
   );

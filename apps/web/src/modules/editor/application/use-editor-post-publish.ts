@@ -21,7 +21,7 @@ import {
   hasLexicalDraftBodyContent,
 } from './editor-body-serialization';
 import { buildHivePostImageMetadata } from './build-hive-post-image-metadata';
-import { lexicalStateToMarkdown } from './lexical-state-to-markdown';
+import { editorBodyToMarkdown } from './editor-body-to-markdown';
 import { buildPostPublishOperations, mergeEditedPostJsonMetadata } from './post-publish-operations';
 import {
   buildPublishTags,
@@ -95,13 +95,7 @@ export function useEditorPostPublish({
     try {
       await flushSave();
 
-      const resolveImageUrl = (cid: string, src: string) => {
-        if (cid && contentBaseUrl) {
-          return imageContentUrlForCid(contentBaseUrl, cid);
-        }
-        return src.trim();
-      };
-      const markdown = lexicalStateToMarkdown(body, { resolveImageUrl });
+      const markdown = editorBodyToMarkdown(body, contentBaseUrl);
       if (!title.trim() || !hasLexicalDraftBodyContent(body)) {
         throw new Error('empty_post');
       }

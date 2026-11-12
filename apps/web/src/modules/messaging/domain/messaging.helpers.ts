@@ -1,3 +1,4 @@
+import { markdownToPlainText } from '@opden-data-layer/common';
 import { MAX_GROUP_CHANNEL_MEMBERS } from '@opden-data-layer/core/constants';
 import { buildObjectChannelId } from '@opden-data-layer/core/utils/osl-messaging';
 import {
@@ -564,18 +565,11 @@ export function extractFirstImageUrlFromMessageBody(body: string): string | null
   return null;
 }
 
-export function stripImageMarkupFromMessageBody(body: string): string {
-  return body
-    .replace(MARKDOWN_IMAGE_RE, '')
-    .replace(HTML_IMG_SRC_RE, '')
-    .trim();
-}
-
+/** Quote preview: first image as a thumbnail, the rest of the body as plain text. */
 function buildQuotePreviewBody(rawBody: string): { body: string; imageUrl?: string } {
   const imageUrl = extractFirstImageUrlFromMessageBody(rawBody) ?? undefined;
-  const stripped = stripImageMarkupFromMessageBody(rawBody);
   return {
-    body: truncateQuoteBody(stripped),
+    body: truncateQuoteBody(markdownToPlainText(rawBody)),
     ...(imageUrl ? { imageUrl } : {}),
   };
 }

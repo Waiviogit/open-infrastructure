@@ -1,6 +1,5 @@
 'use client';
 
-import { imageContentUrlForCid } from '@/config/ipfs-content-url';
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
@@ -42,12 +41,7 @@ export function EditorPostPreviewModal({
     bodyLexicalJson,
     linkedObjects,
     searchResultsById,
-    resolveImageUrl: (cid, src) => {
-      if (cid && contentBaseUrl) {
-        return imageContentUrlForCid(contentBaseUrl, cid);
-      }
-      return src.trim();
-    },
+    contentBaseUrl,
   });
 
   return (

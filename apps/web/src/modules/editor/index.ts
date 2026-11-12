@@ -4,4 +4,6 @@ export type {
   LastDraftSidebarItem,
   LexicalEditorProps,
   CompactComposeEditorProps,
+  HashObjectSearchConfig,
 } from './presentation';
+export { editorBodyToMarkdown } from './application/editor-body-to-markdown';

@@ -179,7 +179,9 @@ function stripVideoLinksFromExcerpt(raw: string): string {
 }
 
 /**
- * Turn feed excerpt text (often Markdown) into safe HTML for `dangerouslySetInnerHTML`.
+ * Turn a feed excerpt into safe HTML for `dangerouslySetInnerHTML`. query-api sends plain text
+ * (`markdownToPlainText`), so `marked` only linkifies URLs and mentions; older Markdown / HTML
+ * excerpts still render through the same path.
  * Client-safe — use in `Story` and other client components (unlike `sanitize-post-html`).
  */
 export function feedExcerptToSafeHtml(

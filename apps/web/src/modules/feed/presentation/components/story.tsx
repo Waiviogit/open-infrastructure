@@ -19,8 +19,10 @@ import { objectPagePath } from '@/shared/routes/object-page-path';
 
 import { objectFields } from '../../application/dto/object-fields';
 import type { FeedStoryView } from '../../application/dto/feed-story.dto';
+import { isReplyFeedItem, viewerIsAuthor } from '../../domain/feed-item-kind';
 import type { FeedTab } from '../../domain/feed-tab';
 
+import { useCommentEditTarget } from '../hooks/use-comment-edit-target';
 import { useStoryPreviewMediaUrl } from '../hooks/use-story-preview-media-url';
 import {
   FEED_STORY_TAGGED_OBJECT_MAX,
@@ -31,6 +33,7 @@ import { StoryRewardBadge } from './story-reward-badge';
 import { ObjectPageLink } from './object-page-link';
 import { StoryCommentEditor } from './story-comment-editor';
 import { StoryCommentsSection } from './story-comments-section';
+import { StoryInlineCommentEdit } from './story-inline-comment-edit';
 import { StoryOverflowMenu } from './story-overflow-menu';
 import { StoryReblogButton } from './story-reblog-button';
 import { StoryStatButton } from './story-stat-button';
@@ -42,16 +45,6 @@ type StoryProps = {
   currentUsername: string | null;
   onBroadcastRevalidate?: () => Promise<void>;
 };
-
-function viewerIsAuthor(
-  viewer: string | null,
-  author: string,
-): boolean {
-  if (viewer == null || viewer === '') {
-    return false;
-  }
-  return viewer.trim().toLowerCase() === author.trim().toLowerCase();
-}
 
 export function Story({
   story,
@@ -85,11 +78,15 @@ export function Story({
   const isPostVideoActive = videoPlaying || isNativeFeedVideo;
 
   const isOwnPost = viewerIsAuthor(currentUsername, story.authorName);
+  /** `/editor` edits root posts only; comments and threads are edited inline, in place of the excerpt. */
+  const isReply = isReplyFeedItem(story.parentAuthor, feedTab);
   const editorSearch = new URLSearchParams({
     author: story.authorName,
     permlink: story.permlink,
   });
-  const editHref = `/editor?${editorSearch.toString()}`;
+  const editHref = isReply ? null : `/editor?${editorSearch.toString()}`;
+  const commentEdit = useCommentEditTarget(story.authorName, story.permlink);
+  const editingInline = isReply && isOwnPost && currentUsername != null && commentEdit.state.status !== 'idle';
   const authorProfileHref = `/@${encodeURIComponent(story.authorName)}`;
 
   return (
@@ -183,133 +180,149 @@ export function Story({
         ) : null}
       </header>
 
-      <div className="relative mt-3 min-w-0 overflow-x-clip">
-        {story.permalinkPath != null && !isPostVideoActive ? (
-          <Link
-            href={story.permalinkPath}
-            suppressHydrationWarning
-            className="absolute inset-0 z-[5] cursor-pointer rounded-btn"
-            aria-label={
-              story.title?.trim()
-                ? `View post: ${story.title.trim()}`
-                : `View post by @${story.authorName}`
-            }
-          >
-            <span className="sr-only">
-              {story.title?.trim() ? story.title.trim() : `Post by @${story.authorName}`}
-            </span>
-          </Link>
-        ) : null}
-
-        <div
-          className={[
-            'relative z-10 space-y-3',
-            story.permalinkPath != null && !isPostVideoActive ? 'pointer-events-none' : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          {story.title ? (
-            feedTab === 'comments' ? (
-              <h2
-                id={`story-title-${story.id}`}
-                className="flex min-w-0 items-center gap-2 leading-body"
-              >
-                <span
-                  className="inline-flex shrink-0 items-center justify-center rounded-btn bg-code-bg px-1.5 py-0.5 font-mono text-nano font-weight-strong uppercase leading-none tracking-loose text-code-fg"
-                  aria-hidden
-                >
-                  RE
-                </span>
-                <span className="min-w-0 flex-1 text-body font-weight-label text-fg-secondary">
-                  {story.title}
-                </span>
-              </h2>
-            ) : story.permalinkPath && isPostVideoActive ? (
-              <h2
-                id={`story-title-${story.id}`}
-                className="text-body-lg font-weight-strong leading-snug"
-              >
-                <Link
-                  href={story.permalinkPath}
-                  suppressHydrationWarning
-                  className="feed-story-title-link relative z-20 block line-clamp-2 pointer-events-auto"
-                >
-                  {story.title}
-                </Link>
-              </h2>
-            ) : (
-              <h2
-                id={`story-title-${story.id}`}
-                className={[
-                  'line-clamp-2 text-body-lg font-weight-strong leading-snug',
-                  story.permalinkPath ? 'feed-story-title-link' : 'text-heading',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                {story.title}
-              </h2>
-            )
-          ) : (
-            <h2 id={`story-title-${story.id}`} className="sr-only">
-              Post by {displayAuthor}
-            </h2>
-          )}
-
-          {showPreviewBlock ? (
-            story.videoEmbedUrl ? (
-              <VideoPreviewPlayer
-                source={story.videoEmbedUrl}
-                staticThumbnailUrl={story.videoThumbnailUrl}
-                title={story.title ?? undefined}
-                variant="feed"
-                playing={videoPlaying}
-                onPlayingChange={setVideoPlaying}
-              />
-            ) : previewMediaDisplayUrl ? (
-              <div className="rounded-btn border border-border bg-surface-control">
-                <div className="relative w-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={previewMediaDisplayUrl}
-                    alt=""
-                    className="block h-auto w-full"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-              </div>
-            ) : null
+      {editingInline && currentUsername != null ? (
+        <div className="relative z-20 mt-3 min-w-0">
+          <h2 id={`story-title-${story.id}`} className="sr-only">
+            {story.title?.trim() ? story.title.trim() : `Post by ${displayAuthor}`}
+          </h2>
+          <StoryInlineCommentEdit
+            state={commentEdit.state}
+            story={story}
+            currentUsername={currentUsername}
+            onClose={commentEdit.close}
+            onSaved={commentEdit.close}
+            onBroadcastRevalidate={onBroadcastRevalidate}
+          />
+        </div>
+      ) : (
+        <div className="relative mt-3 min-w-0 overflow-x-clip">
+          {story.permalinkPath != null && !isPostVideoActive ? (
+            <Link
+              href={story.permalinkPath}
+              suppressHydrationWarning
+              className="absolute inset-0 z-[5] cursor-pointer rounded-btn"
+              aria-label={
+                story.title?.trim()
+                  ? `View post: ${story.title.trim()}`
+                  : `View post by @${story.authorName}`
+              }
+            >
+              <span className="sr-only">
+                {story.title?.trim() ? story.title.trim() : `Post by @${story.authorName}`}
+              </span>
+            </Link>
           ) : null}
 
           <div
-            suppressHydrationWarning
-            className="feed-story-excerpt pointer-events-none min-h-[1.5em] text-body text-fg line-clamp-6 [&_a]:pointer-events-auto [&_a]:break-words [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2 [&_img]:pointer-events-auto [&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full [&_p]:m-0 [&_p]:text-fg [&_p+p]:mt-2"
-            dangerouslySetInnerHTML={{
-              __html: feedExcerptToSafeHtml(story.excerpt, isThreeSpeakVideo
-                ? {
-                    omitImageUrls: [
-                      previewMediaUrl,
-                      story.thumbnailUrl,
-                      story.videoThumbnailUrl,
-                    ],
-                    stripThreeSpeakLinks: true,
-                    stripVideoLinks: true,
-                  }
-                : {
-                    omitImageUrl: previewMediaUrl,
-                    stripVideoLinks: Boolean(story.videoEmbedUrl),
-                  }),
-            }}
-          />
-          {story.isNsfw ? (
-            <p className="text-caption text-muted" role="status">
-              NSFW
-            </p>
-          ) : null}
+            className={[
+              'relative z-10 space-y-3',
+              story.permalinkPath != null && !isPostVideoActive ? 'pointer-events-none' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            {story.title ? (
+              feedTab === 'comments' ? (
+                <h2
+                  id={`story-title-${story.id}`}
+                  className="flex min-w-0 items-center gap-2 leading-body"
+                >
+                  <span
+                    className="inline-flex shrink-0 items-center justify-center rounded-btn bg-code-bg px-1.5 py-0.5 font-mono text-nano font-weight-strong uppercase leading-none tracking-loose text-code-fg"
+                    aria-hidden
+                  >
+                    RE
+                  </span>
+                  <span className="min-w-0 flex-1 text-body font-weight-label text-fg-secondary">
+                    {story.title}
+                  </span>
+                </h2>
+              ) : story.permalinkPath && isPostVideoActive ? (
+                <h2
+                  id={`story-title-${story.id}`}
+                  className="text-body-lg font-weight-strong leading-snug"
+                >
+                  <Link
+                    href={story.permalinkPath}
+                    suppressHydrationWarning
+                    className="feed-story-title-link relative z-20 block line-clamp-2 pointer-events-auto"
+                  >
+                    {story.title}
+                  </Link>
+                </h2>
+              ) : (
+                <h2
+                  id={`story-title-${story.id}`}
+                  className={[
+                    'line-clamp-2 text-body-lg font-weight-strong leading-snug',
+                    story.permalinkPath ? 'feed-story-title-link' : 'text-heading',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  {story.title}
+                </h2>
+              )
+            ) : (
+              <h2 id={`story-title-${story.id}`} className="sr-only">
+                Post by {displayAuthor}
+              </h2>
+            )}
+
+            {showPreviewBlock ? (
+              story.videoEmbedUrl ? (
+                <VideoPreviewPlayer
+                  source={story.videoEmbedUrl}
+                  staticThumbnailUrl={story.videoThumbnailUrl}
+                  title={story.title ?? undefined}
+                  variant="feed"
+                  playing={videoPlaying}
+                  onPlayingChange={setVideoPlaying}
+                />
+              ) : previewMediaDisplayUrl ? (
+                <div className="rounded-btn border border-border bg-surface-control">
+                  <div className="relative w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewMediaDisplayUrl}
+                      alt=""
+                      className="block h-auto w-full"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                </div>
+              ) : null
+            ) : null}
+
+            <div
+              suppressHydrationWarning
+              className="feed-story-excerpt pointer-events-none min-h-[1.5em] text-body text-fg line-clamp-6 [&_a]:pointer-events-auto [&_a]:break-words [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2 [&_img]:pointer-events-auto [&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full [&_p]:m-0 [&_p]:text-fg [&_p+p]:mt-2"
+              dangerouslySetInnerHTML={{
+                __html: feedExcerptToSafeHtml(story.excerpt, isThreeSpeakVideo
+                  ? {
+                      omitImageUrls: [
+                        previewMediaUrl,
+                        story.thumbnailUrl,
+                        story.videoThumbnailUrl,
+                      ],
+                      stripThreeSpeakLinks: true,
+                      stripVideoLinks: true,
+                    }
+                  : {
+                      omitImageUrl: previewMediaUrl,
+                      stripVideoLinks: Boolean(story.videoEmbedUrl),
+                    }),
+              }}
+            />
+            {story.isNsfw ? (
+              <p className="text-caption text-muted" role="status">
+                NSFW
+              </p>
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
 
       <footer className="relative z-20 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
         <div className="flex flex-wrap items-center gap-1">
@@ -344,6 +357,7 @@ export function Story({
           <StoryOverflowMenu
             authorName={story.authorName}
             editHref={editHref}
+            onEditInline={isReply ? () => void commentEdit.open() : undefined}
             currentUsername={currentUsername}
             isOwnPost={isOwnPost}
           />

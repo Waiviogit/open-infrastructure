@@ -131,3 +131,74 @@ describe('lexicalStateToMarkdown heading line breaks', () => {
     );
   });
 });
+
+function paragraphs(...children: unknown[][]): string {
+  return JSON.stringify({
+    root: { children: children.map((c) => ({ type: 'paragraph', children: c })) },
+  });
+}
+
+const text = (value: string, format = 0) => ({ type: 'text', text: value, format });
+
+describe('lexicalStateToMarkdown escaping', () => {
+  it('keeps an autolinked URL with `_` and `#` working', () => {
+    const url = 'https://x.com/a_b#c';
+    const json = paragraphs([
+      text('see '),
+      { type: 'autolink', url, children: [text(url)] },
+    ]);
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe(
+      `see [${url}](${url})`,
+    );
+  });
+
+  it('leaves hashtags and snake_case words unescaped', () => {
+    const json = paragraphs([text('tags #my_tag #objectid and snake_case')]);
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe(
+      'tags #my_tag #objectid and snake_case',
+    );
+  });
+
+  it('keeps a hashtag that starts a line', () => {
+    const json = paragraphs([text('#objectid')]);
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe('#objectid');
+  });
+
+  it('escapes a line-start `#` that would make a heading', () => {
+    const json = paragraphs([text('# not a heading'), { type: 'linebreak' }, text('## nor this')]);
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe(
+      '\\# not a heading\n\\## nor this',
+    );
+  });
+
+  it('escapes `_` and `*` that would open emphasis', () => {
+    const json = paragraphs([text('_lead_ a*b* 2 * 3')]);
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe(
+      '\\_lead\\_ a\\*b\\* 2 * 3',
+    );
+  });
+
+  it('keeps inline code raw, fenced past its own backticks', () => {
+    const FORMAT_CODE = 16;
+    const json = paragraphs([
+      text('run '),
+      text('my_var * 2', FORMAT_CODE),
+      text(' or '),
+      text('a`b', FORMAT_CODE),
+    ]);
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe(
+      'run `my_var * 2` or ``a`b``',
+    );
+  });
+
+  it('emits an inline spoiler as ||…||', () => {
+    const json = paragraphs([
+      text('the end: '),
+      { type: 'spoiler', children: [text('he lives')] },
+      text('!'),
+    ]);
+    expect(lexicalStateToMarkdown(json, { resolveImageUrl })).toBe(
+      'the end: ||he lives||!',
+    );
+  });
+});

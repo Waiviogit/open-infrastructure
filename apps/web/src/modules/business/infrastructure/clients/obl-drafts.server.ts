@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { queryApiDraftsFetch } from '@/modules/editor/infrastructure/query-api-drafts.server';
+import { queryApiAuthedFetch } from '@/shared/infrastructure/http/query-api-authed-fetch.server';
 
 import type { OblOffsetPage } from '../../domain/obl-pagination.types';
 
@@ -35,7 +35,7 @@ export async function fetchOblDraftList(
   if (pagination?.offset !== undefined) {
     query.offset = String(pagination.offset);
   }
-  const result = await queryApiDraftsFetch<OblOffsetPage<OblOfferDraftView>>(
+  const result = await queryApiAuthedFetch<OblOffsetPage<OblOfferDraftView>>(
     oblDraftsPath(author, query),
     { method: 'GET' },
   );
@@ -46,7 +46,7 @@ export async function fetchOblDraftOne(
   author: string,
   draftId: string,
 ): Promise<OblOfferDraftView | null> {
-  const result = await queryApiDraftsFetch<OblOfferDraftView>(
+  const result = await queryApiAuthedFetch<OblOfferDraftView>(
     `/query/v1/users/${encodeURIComponent(author)}/obl-drafts/one?draftId=${encodeURIComponent(draftId)}`,
     { method: 'GET' },
   );

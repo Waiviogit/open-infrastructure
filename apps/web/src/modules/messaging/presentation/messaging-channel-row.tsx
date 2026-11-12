@@ -1,5 +1,7 @@
 'use client';
 
+import { markdownToPlainText } from '@opden-data-layer/common';
+
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { UserAvatar } from '@/shared/presentation';
@@ -49,7 +51,7 @@ export function MessagingChannelRow({
   const { t } = useI18n();
   const contentBaseUrl = useIpfsContentBaseUrl();
   const title = channel.display_title ?? channel.list_title ?? channel.channel_id;
-  const preview = channel.last_message_preview ?? '';
+  const preview = markdownToPlainText(channel.last_message_preview ?? '');
   const encryptedPreview = channel.last_message_encrypted === true;
 
   return (

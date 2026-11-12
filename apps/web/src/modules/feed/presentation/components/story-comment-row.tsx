@@ -5,14 +5,18 @@ import { useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { sanitizePostBodyHtml } from '@/shared/infrastructure/post-body-html-pipeline';
-import { UserAvatar } from '@/shared/presentation';
+import { SocialEmbedHtml, UserAvatar } from '@/shared/presentation';
 
 import type { DiscussionCommentView } from '../../application/mappers/feed-story-from-api.mapper';
 import type { FeedStoryView } from '../../application/dto/feed-story.dto';
 import type { PostDiscussionView } from '../../application/dto/post-discussion.dto';
+import { viewerIsAuthor } from '../../domain/feed-item-kind';
 
+import { useCommentEditTarget } from '../hooks/use-comment-edit-target';
 import { StoryCommentEditor } from './story-comment-editor';
+import { StoryInlineCommentEdit } from './story-inline-comment-edit';
 import { StoryRewardBadge } from './story-reward-badge';
+import { COMPACT_BODY_BLOCK_CLASSES } from './post-body-typography';
 import { formatRelativeFeedTime } from './story-utils';
 import { StoryVoteButton } from './story-vote-button';
 
@@ -33,8 +37,11 @@ export function StoryCommentRow({
   depth = 0,
   onDiscussionRefresh,
 }: StoryCommentRowProps) {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const [replyOpen, setReplyOpen] = useState(false);
+  const commentEdit = useCommentEditTarget(comment.authorName, comment.permlink);
+  const isOwnComment = viewerIsAuthor(currentUsername, comment.authorName);
+  const editing = isOwnComment && commentEdit.state.status !== 'idle';
   const childIds = discussion.childrenById[comment.id] ?? [];
   const displayAuthor = comment.authorDisplayName ?? comment.authorName;
   const profileHref = `/@${encodeURIComponent(comment.authorName)}`;
@@ -71,10 +78,23 @@ export function StoryCommentRow({
                 {formatRelativeFeedTime(comment.createdAt, locale)}
               </time>
             </div>
-            <div
-              className="mt-1 text-body-sm text-fg [&_a]:break-words [&_a]:text-accent [&_a]:underline [&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full [&_p]:m-0"
-              dangerouslySetInnerHTML={{ __html: sanitizePostBodyHtml(comment.body) }}
-            />
+            {editing && currentUsername ? (
+              <StoryInlineCommentEdit
+                state={commentEdit.state}
+                story={rootStory}
+                currentUsername={currentUsername}
+                onClose={commentEdit.close}
+                onSaved={() => {
+                  commentEdit.close();
+                  onDiscussionRefresh();
+                }}
+              />
+            ) : (
+              <SocialEmbedHtml
+                className={`blog-post-body mt-1 min-w-0 break-words text-body-sm text-fg ${COMPACT_BODY_BLOCK_CLASSES}`}
+                html={sanitizePostBodyHtml(comment.body)}
+              />
+            )}
           </div>
         </header>
         <footer className="relative z-20 mt-2 flex flex-wrap items-center justify-between gap-2">
@@ -93,6 +113,18 @@ export function StoryCommentRow({
             >
               Reply
             </button>
+            ) : null}
+            {isOwnComment && !editing ? (
+              <button
+                type="button"
+                className="rounded-btn px-2 py-0.5 text-caption text-muted hover:bg-surface-control hover:text-fg-secondary"
+                onClick={() => {
+                  setReplyOpen(false);
+                  void commentEdit.open();
+                }}
+              >
+                {t('edit')}
+              </button>
             ) : null}
           </div>
           <StoryRewardBadge

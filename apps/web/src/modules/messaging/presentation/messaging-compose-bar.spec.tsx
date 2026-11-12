@@ -39,7 +39,11 @@ jest.mock('@/config/ipfs-content-base-provider', () => ({
 
 jest.mock('@/modules/editor', () => {
   const React = require('react') as typeof import('react');
+  const { editorBodyToMarkdown } = jest.requireActual<
+    typeof import('@/modules/editor/application/editor-body-to-markdown')
+  >('@/modules/editor/application/editor-body-to-markdown');
   return {
+    editorBodyToMarkdown,
     LexicalPostEditor: ({
       initialBody,
       onBodyChange,
@@ -105,6 +109,7 @@ jest.mock('@/shared/presentation', () => ({
 const messages = {
   messaging_write_message: 'Write your message...',
   messaging_send: 'Send',
+  messaging_body_too_long: 'This message is too long to send.',
   messaging_sending: 'Sending…',
   messaging_encrypt_toggle_encrypted: 'Send encrypted message',
   messaging_encrypt_toggle_public: 'Send public message',
@@ -271,6 +276,23 @@ describe('MessagingComposeBar', () => {
     });
     expect(onSendPlain).toHaveBeenCalledTimes(1);
     expect(onSendPlain).toHaveBeenCalledWith('hello');
+  });
+
+  it('shows the too-long alert for the refused body until it is edited', async () => {
+    localStorage.setItem(PLAIN_SEND_DISCLAIMER_STORAGE_KEY, '1');
+    const { onSendPlain, rerenderBar } = renderBar();
+    onSendPlain.mockResolvedValue(false);
+    typeDraft('hello');
+
+    fireEvent.click(buttonNamed('Send'));
+    await waitFor(() => expect(onSendPlain).toHaveBeenCalledWith('hello'));
+    rerenderBar({ bodyTooLong: true });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('This message is too long to send.');
+    expect(draftField()).toHaveValue('hello');
+
+    typeDraft('hell');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('clears the draft after a successful send from the encrypt modal', async () => {

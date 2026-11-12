@@ -26,6 +26,7 @@ import { createPortal } from 'react-dom';
 
 import { BoldIcon, ItalicIcon, LinkIcon, MoreHorizontalIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { MODAL_Z_INDEX_EDITOR_OVERLAY } from '@/shared/presentation';
 
 import {
   applyFormatAction,
@@ -392,11 +393,12 @@ export function EditorFormatToolbar() {
       id={toolbarId}
       role="toolbar"
       aria-label={t('editor_format_toolbar_aria')}
-      className="fixed z-[100] flex items-center gap-0.5 rounded-btn border border-border bg-surface p-1 shadow-card"
+      className="fixed flex items-center gap-0.5 rounded-btn border border-border bg-surface p-1 shadow-card"
       style={{
         top: position.top,
         left: position.left,
         transform: 'translateX(-50%)',
+        zIndex: MODAL_Z_INDEX_EDITOR_OVERLAY,
       }}
       onMouseDown={preventToolbarMouseDown}
     >

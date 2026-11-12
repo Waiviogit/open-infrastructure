@@ -16,6 +16,7 @@ import { createPortal } from 'react-dom';
 
 import { LinkIcon, PencilIcon, TrashIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { MODAL_Z_INDEX_EDITOR_OVERLAY } from '@/shared/presentation';
 
 import { $openLineBeside, type BlockSide } from '../../application/block-gaps';
 import { $removeMediaBlocksAndPlaceCaret } from '../../application/image-selection';
@@ -134,12 +135,20 @@ export function EditorBlockToolbarPlugin() {
       return;
     }
     const rect = blockEl.getBoundingClientRect();
+    // A compose pill scrolls its content: anchor to the block's visible part, hide when none is.
+    const scrollBox = editor.getRootElement()?.getBoundingClientRect();
+    const visibleTop = scrollBox ? Math.max(rect.top, scrollBox.top) : rect.top;
+    const visibleBottom = scrollBox ? Math.min(rect.bottom, scrollBox.bottom) : rect.bottom;
+    if (visibleBottom <= visibleTop) {
+      setPosition(null);
+      return;
+    }
     const height = toolbarEl?.offsetHeight ?? TOOLBAR_FALLBACK_HEIGHT_PX;
     const width = toolbarEl?.offsetWidth ?? 0;
-    const above = rect.top - height - TOOLBAR_GAP_PX;
+    const above = visibleTop - height - TOOLBAR_GAP_PX;
     const maxLeft = window.innerWidth - width - VIEWPORT_MARGIN_PX;
     setPosition({
-      top: above >= MIN_TOOLBAR_TOP_PX ? above : rect.bottom + TOOLBAR_GAP_PX,
+      top: above >= MIN_TOOLBAR_TOP_PX ? above : visibleBottom + TOOLBAR_GAP_PX,
       left: Math.max(VIEWPORT_MARGIN_PX, Math.min(rect.left, maxLeft)),
     });
   }, [active, editor, toolbarEl]);
@@ -251,8 +260,8 @@ export function EditorBlockToolbarPlugin() {
       ref={setToolbarEl}
       role="toolbar"
       aria-label={t('editor_block_toolbar_aria')}
-      className="fixed z-[100] flex max-w-[calc(100vw-1rem)] items-center gap-0.5 overflow-x-auto rounded-btn border border-border bg-surface p-1 shadow-card"
-      style={{ top: position.top, left: position.left }}
+      className="fixed flex max-w-[calc(100vw-1rem)] items-center gap-0.5 overflow-x-auto rounded-btn border border-border bg-surface p-1 shadow-card"
+      style={{ top: position.top, left: position.left, zIndex: MODAL_Z_INDEX_EDITOR_OVERLAY }}
       onMouseDown={preventToolbarMouseDown}
     >
       {fieldEdit ? (

@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { getWalletFacade, useHydrateWalletProvider, useLoginModal } from '@/modules/auth';
+import { COMPACT_BODY_BLOCK_CLASSES } from '@/modules/feed/presentation/components/post-body-typography';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation';
 import { sanitizePostBodyHtml } from '@/shared/infrastructure/post-body-html-pipeline';
 import { SocialEmbedHtml } from '@/shared/presentation';
@@ -136,7 +137,7 @@ export function MessagingMessageList({
                   bodyNode = (
                     <SocialEmbedHtml
                       html={sanitizePostBodyHtml(presentation.text)}
-                      className="blog-post-body break-words text-body-sm [&_a]:text-link [&_a]:underline"
+                      className={`blog-post-body break-words text-body-sm ${COMPACT_BODY_BLOCK_CLASSES}`}
                     />
                   );
                 } else if (presentation.kind === 'one-way') {

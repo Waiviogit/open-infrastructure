@@ -12,11 +12,6 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { AutoLinkPlugin } from '@lexical/react/LexicalAutoLinkPlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import {
-  $createParagraphNode,
-  $createTextNode,
-  $getRoot,
-} from 'lexical';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
@@ -77,7 +72,7 @@ const lexicalTheme = {
     },
   },
   link: 'text-link underline underline-offset-2 hover:text-accent-alt',
-  code: 'mb-2 block overflow-x-auto whitespace-pre rounded-card bg-code-bg p-card-padding font-mono text-body-sm text-code-fg',
+  code: 'mb-2 block overflow-x-auto whitespace-pre bg-code-bg p-card-padding font-mono text-body-sm text-code-fg',
   hr: 'my-4 border-0 border-t border-border',
   /**
    * Legacy parity: equal fixed columns, long text wraps and grows the row, rows
@@ -99,6 +94,12 @@ const lexicalTheme = {
     spoiler:
       'cursor-pointer rounded-btn bg-surface-muted px-0.5 text-fg hover:bg-accent/20',
   },
+};
+
+/** Compose pill: no paragraph margin, so a single line sits centred in the field. */
+const composeLexicalTheme = {
+  ...lexicalTheme,
+  paragraph: 'mb-0 text-body text-fg font-weight-body leading-body',
 };
 
 /**
@@ -131,54 +132,46 @@ const POST_EDITOR_CONTENT_CLASSES = [
   '[&>:first-child]:mt-0',
 ].join(' ');
 
-function Placeholder({
-  text,
-  compact,
-  pillChrome,
-  composeField,
-}: {
-  text: string;
-  compact?: boolean;
-  pillChrome?: boolean;
-  composeField?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        'pointer-events-none absolute text-body text-fg-tertiary select-none',
-        pillChrome
-          ? `${PILL_COMPOSE_PLACEHOLDER_START} top-1/2 -translate-y-1/2 leading-body`
-          : compact
-              ? 'start-8 top-2'
-              : 'start-8 top-3 font-editorial leading-editorial',
-      ].join(' ')}
-    >
-      {text}
-    </div>
-  );
+/**
+ * Layout chrome only. Every variant mounts the same formatting and editing plugins:
+ * - `document`: the full post page (`/editor`, drafts) with the published-post typography;
+ * - `compose`: the pill field of comments, threads, object activity, DMs and activity notes.
+ */
+export type EditorVariant = 'document' | 'compose';
+
+type VariantChrome = {
+  theme: typeof lexicalTheme | typeof postLexicalTheme;
+  shellClass: string;
+  contentClass: string;
+  placeholderClass: string;
+  /** (+) pinned to the vertical centre of the field instead of following the caret line. */
+  pinInsertCenterVertical: boolean;
+};
+
+const DOCUMENT_CHROME: VariantChrome = {
+  theme: postLexicalTheme,
+  shellClass: 'min-h-[12rem]',
+  contentClass: `${POST_EDITOR_CONTENT_CLASSES} px-4 ps-8 py-3 min-h-[12rem]`,
+  placeholderClass: 'start-8 top-3 font-editorial leading-editorial',
+  pinInsertCenterVertical: false,
+};
+
+function composeChrome(composeTrailingInset: boolean): VariantChrome {
+  return {
+    theme: composeLexicalTheme,
+    shellClass: 'min-h-11 max-h-32',
+    contentClass: [
+      'relative text-body leading-body text-fg outline-none',
+      PILL_COMPOSE_TEXT_INSET,
+      composeTrailingInset ? 'pe-24' : 'pe-4',
+      'py-[calc((2.75rem-1.43em)/2)] min-h-11 max-h-32 resize-y overflow-y-auto',
+    ].join(' '),
+    placeholderClass: `${PILL_COMPOSE_PLACEHOLDER_START} top-1/2 -translate-y-1/2 leading-body`,
+    pinInsertCenterVertical: true,
+  };
 }
 
-function seedPlainTextBody(editor: import('lexical').LexicalEditor, text: string) {
-  editor.update(() => {
-    const root = $getRoot();
-    root.clear();
-    const lines = text.split('\n');
-    for (const line of lines) {
-      const p = $createParagraphNode();
-      p.append($createTextNode(line));
-      root.append(p);
-    }
-  });
-}
-
-function InitialBodyPlugin({
-  body,
-  importMarkdown,
-}: {
-  body?: string;
-  /** Post editor: a non-Lexical body is a published Hive markdown post (edit mode, legacy drafts). */
-  importMarkdown?: boolean;
-}) {
+function InitialBodyPlugin({ body }: { body: string }) {
   const [editor] = useLexicalComposerContext();
   const contentBaseUrl = useIpfsContentBaseUrl();
   const applied = useRef(false);
@@ -187,35 +180,26 @@ function InitialBodyPlugin({
     if (applied.current) {
       return;
     }
-    const trimmed = body?.trim() ?? '';
+    applied.current = true;
+    const trimmed = body.trim();
     if (!trimmed) {
-      applied.current = true;
       return;
     }
-    applied.current = true;
 
     if (isLexicalDraftJson(trimmed)) {
       const migrated = migrateLegacyImageNodeTypes(trimmed);
-      const state = editor.parseEditorState(migrated);
-      editor.setEditorState(state);
+      editor.setEditorState(editor.parseEditorState(migrated));
       if (contentBaseUrl) {
-        normalizeImageNodeSrcFromCid(
-          editor,
-          contentBaseUrl,
-          imageContentUrlForCid,
-        );
+        normalizeImageNodeSrcFromCid(editor, contentBaseUrl, imageContentUrlForCid);
       }
       return;
     }
 
-    if (importMarkdown) {
-      editor.update(() => {
-        $importPostMarkdown(trimmed);
-      });
-      return;
-    }
-    seedPlainTextBody(editor, trimmed);
-  }, [body, contentBaseUrl, editor, importMarkdown]);
+    // Any other body is published markdown (post, comment, thread, message, note) being edited.
+    editor.update(() => {
+      $importPostMarkdown(trimmed);
+    });
+  }, [body, contentBaseUrl, editor]);
 
   return null;
 }
@@ -228,115 +212,56 @@ function LexicalAutoLinkConfigured() {
   return <AutoLinkPlugin matchers={matchers} />;
 }
 
-function EditorBodyOnChangePlugin({
-  onBodyChange,
-  plainTextOnly,
-  lexicalJson,
-}: {
-  onBodyChange?: (body: string) => void;
-  plainTextOnly?: boolean;
-  lexicalJson?: boolean;
-}) {
+function EditorBodyOnChangePlugin({ onBodyChange }: { onBodyChange: (body: string) => void }) {
   const [editor] = useLexicalComposerContext();
 
   return (
     <OnChangePlugin
       ignoreSelectionChange
-      onChange={(editorState) => {
-        if (!onBodyChange) {
-          return;
-        }
-        if (plainTextOnly && !lexicalJson) {
-          editorState.read(() => {
-            onBodyChange($getRoot().getTextContent());
-          });
-          return;
-        }
+      onChange={() => {
         onBodyChange(serializeEditorState(editor));
       }}
     />
   );
 }
 
+/**
+ * The single plugin set of every editor instance. Add a formatting or editing feature here, once:
+ * never gate it by variant or surface. Only context the consumer supplies stays conditional
+ * (`#` search needs the author, pasted object links need the post's linked-object list).
+ */
 function EditorInner({
+  chrome,
   bodyPlaceholder,
   initialBody,
   onBodyChange,
-  compact,
-  compactBottomInset,
-  messagingCompact,
-  composeTrailingInset,
-  showFormatToolbar,
-  enableImages,
-  composeField,
   onObjectLinkedFromEditor,
   hashObjectSearch,
 }: {
+  chrome: VariantChrome;
   bodyPlaceholder: string;
   initialBody?: string;
   onBodyChange?: (body: string) => void;
-  compact?: boolean;
-  compactBottomInset?: boolean;
-  messagingCompact?: boolean;
-  composeTrailingInset?: boolean;
-  showFormatToolbar?: boolean;
-  enableImages?: boolean;
-  composeField?: boolean;
   onObjectLinkedFromEditor?: (result: SearchObjectResult) => void;
   hashObjectSearch?: HashObjectSearchConfig;
 }) {
-  const pillChrome = Boolean((compact || messagingCompact) && compactBottomInset);
-
-  const minHeightClass = pillChrome
-    ? 'min-h-11 max-h-32 resize-y overflow-y-auto'
-    : compact || messagingCompact
-      ? 'min-h-[2rem]'
-      : 'min-h-[12rem]';
-  const verticalPadClass = pillChrome
-    ? 'py-[calc((2.75rem-1.43em)/2)]'
-    : compact || messagingCompact
-      ? 'py-2'
-      : 'py-3';
-  const padHorizontalClass = pillChrome
-    ? composeTrailingInset
-      ? `${PILL_COMPOSE_TEXT_INSET} pe-24`
-      : `${PILL_COMPOSE_TEXT_INSET} pe-4`
-    : 'px-4 ps-8';
-
   return (
     <>
-      {initialBody ? (
-        <InitialBodyPlugin
-          body={initialBody}
-          importMarkdown={showFormatToolbar}
-        />
-      ) : null}
-      <EditorBodyOnChangePlugin
-        onBodyChange={onBodyChange}
-        plainTextOnly={compact && !messagingCompact}
-        lexicalJson={messagingCompact}
-      />
+      {initialBody ? <InitialBodyPlugin body={initialBody} /> : null}
+      {onBodyChange ? <EditorBodyOnChangePlugin onBodyChange={onBodyChange} /> : null}
       <RichTextPlugin
         contentEditable={
-          <ContentEditable
-            className={[
-              compact || messagingCompact
-                ? 'relative resize-y text-body leading-body text-fg outline-none'
-                : POST_EDITOR_CONTENT_CLASSES,
-              padHorizontalClass,
-              verticalPadClass,
-              minHeightClass,
-              'focus-visible:outline-none',
-            ].join(' ')}
-          />
+          <ContentEditable className={`${chrome.contentClass} focus-visible:outline-none`} />
         }
         placeholder={
-          <Placeholder
-            text={bodyPlaceholder}
-            compact={compact || messagingCompact}
-            pillChrome={pillChrome}
-            composeField={composeField}
-          />
+          <div
+            className={[
+              'pointer-events-none absolute text-body text-fg-tertiary select-none',
+              chrome.placeholderClass,
+            ].join(' ')}
+          >
+            {bodyPlaceholder}
+          </div>
         }
         ErrorBoundary={LexicalErrorBoundary}
       />
@@ -344,19 +269,18 @@ function EditorInner({
       <ListPlugin />
       <LinkPlugin />
       <LexicalAutoLinkConfigured />
-      {showFormatToolbar ? (
-        <>
-          <EditorFormatToolbar />
-          <EditorBlankDocumentResetPlugin />
-          <TablePlugin hasCellMerge={false} hasCellBackgroundColor={false} />
-          <EditorBlockToolbarPlugin />
-          <EditorBlockGapsPlugin />
-          <EditorPasteVideoUrlPlugin />
-          <EditorPasteRichHtmlPlugin />
-          {onObjectLinkedFromEditor ? (
-            <EditorPasteObjectLinksPlugin onObjectLinkedFromEditor={onObjectLinkedFromEditor} />
-          ) : null}
-        </>
+      <EditorFormatToolbar />
+      <EditorBlankDocumentResetPlugin />
+      <TablePlugin hasCellMerge={false} hasCellBackgroundColor={false} />
+      <EditorBlockToolbarPlugin />
+      <EditorBlockGapsPlugin />
+      <EditorPasteVideoUrlPlugin />
+      <EditorPasteRichHtmlPlugin />
+      <EditorRegisterImagePlugin />
+      <EditorPasteImagePlugin />
+      <EditorImageKeyboardPlugin />
+      {onObjectLinkedFromEditor ? (
+        <EditorPasteObjectLinksPlugin onObjectLinkedFromEditor={onObjectLinkedFromEditor} />
       ) : null}
       {hashObjectSearch ? (
         <EditorHashObjectSearchPlugin
@@ -365,18 +289,11 @@ function EditorInner({
           onObjectLinkedFromEditor={onObjectLinkedFromEditor}
         />
       ) : null}
-      {enableImages ? (
-        <>
-          <EditorRegisterImagePlugin />
-          <EditorPasteImagePlugin />
-          <EditorImageKeyboardPlugin />
-        </>
-      ) : null}
     </>
   );
 }
 
-/** `#` object + Google Maps place search (post editor only). */
+/** `#` object search for this author; Google Maps places too when `googlePlaces` (post editor flag). */
 export type HashObjectSearchConfig = {
   username: string;
   /** Also search Google Maps places (off: our objects only). */
@@ -384,118 +301,55 @@ export type HashObjectSearchConfig = {
 };
 
 export type LexicalEditorProps = {
+  /** Layout chrome; the formatting and editing features are the same for every variant. */
+  variant: EditorVariant;
   bodyPlaceholder: string;
-  /** Lexical JSON or legacy plain-text seed (e.g. draft body). */
+  /** Lexical JSON (draft) or a published markdown body (edit), imported as markdown. */
   initialBody?: string;
-  /** Fired when body changes (Lexical JSON for post editor, plain text when `compact`). */
-  onBodyChange?: (body: string) => void;
-  /** Insert → Object: add to linked metadata when not already attached. */
+  /** Lexical JSON on every change; the consumer turns it into markdown with `editorBodyToMarkdown`. */
+  onBodyChange?: (bodyLexicalJson: string) => void;
+  /** Post editor: add an object linked in the body (Insert → Object, `#`, paste) to the post metadata. */
   onObjectLinkedFromEditor?: (result: SearchObjectResult) => void;
-  /** Enables `#` search (objects, then Google Maps places) for this author. */
+  /** Enables `#` object search; pass it wherever there is a signed-in author. */
   hashObjectSearch?: HashObjectSearchConfig;
-  /** @deprecated Use `initialBody`. */
-  initialPlainText?: string;
-  /** @deprecated Use `onBodyChange`. */
-  onPlainTextChange?: (text: string) => void;
-  compact?: boolean;
-  compactBottomInset?: boolean;
-  /** Compact pill editor for messaging: images + object insert, Lexical JSON output. */
-  messagingCompact?: boolean;
-  /** Extra right padding for in-field lock + send controls (messaging compose bar). */
+  /** `compose`: room on the right for in-field controls (lock + send in the DM bar). */
   composeTrailingInset?: boolean;
-  /**
-   * Feed compose (comments, object activity): pill field, (+) on the left edge,
-   * trailing send inside — same layout as story comments.
-   */
-  composeField?: boolean;
-  /** @deprecated Use {@link composeField} — ignored when composeField is set. */
-  insertFollowsCaret?: boolean;
-  /** Send control overlaid inside the field on the right when {@link composeField} is set. */
-  composeTrailingAction?: ReactNode;
-  /** Object activity: show Date in insert menu. */
+  /** Object activity metadata: show Date in the insert menu. */
   enableOriginalCreatedAt?: boolean;
-  /** Object activity: open insert panel below (+). */
+  /** Object activity: open the insert panel below (+). */
   insertPanelPreferBelow?: boolean;
   renderOriginalDatePicker?: (props: { onSelect: (unix: number) => void }) => ReactNode;
   onOriginalCreatedAtSelected?: (unix: number) => void;
 };
 
 export function LexicalPostEditor({
+  variant,
   bodyPlaceholder,
   initialBody,
   onBodyChange,
   onObjectLinkedFromEditor,
   hashObjectSearch,
-  initialPlainText,
-  onPlainTextChange,
-  compact,
-  compactBottomInset,
-  messagingCompact,
-  composeTrailingInset,
-  composeField = false,
-  insertFollowsCaret: _insertFollowsCaret = false,
-  composeTrailingAction,
+  composeTrailingInset = false,
   enableOriginalCreatedAt,
   insertPanelPreferBelow,
   renderOriginalDatePicker,
   onOriginalCreatedAtSelected,
 }: LexicalEditorProps) {
-  const resolvedCompact = composeField ? true : compact;
-  const resolvedCompactBottomInset = composeField ? true : compactBottomInset;
-  const resolvedComposeTrailingInset = composeField ? true : composeTrailingInset;
-  const resolvedMessagingCompact = messagingCompact;
-  const pillChrome = Boolean(
-    (resolvedCompact || resolvedMessagingCompact) && resolvedCompactBottomInset,
+  const chrome = useMemo(
+    () => (variant === 'document' ? DOCUMENT_CHROME : composeChrome(composeTrailingInset)),
+    [composeTrailingInset, variant],
   );
-  /** Same condition as `EditorInner`'s non-compact content area: the full post editor on `/editor`. */
-  const isPostEditor = !resolvedCompact && !resolvedMessagingCompact;
-  const pinInsertCenterVertical = pillChrome;
-  const enableImages = composeField
-    ? resolvedMessagingCompact
-    : !resolvedCompact || Boolean(resolvedMessagingCompact);
-  const resolvedInitialBody = initialBody ?? initialPlainText;
-  const resolvedOnBodyChange = onBodyChange ?? onPlainTextChange;
 
   const initialConfig = useMemo(
     () => ({
       namespace: 'PostEditor',
-      theme: isPostEditor
-        ? postLexicalTheme
-        : {
-            ...lexicalTheme,
-            paragraph: pillChrome
-              ? 'mb-0 text-body text-fg font-weight-body leading-body'
-              : lexicalTheme.paragraph,
-          },
+      theme: chrome.theme,
       onError: (error: Error) => {
         console.error(error);
       },
       nodes: [...POST_EDITOR_NODES],
     }),
-    [isPostEditor, pillChrome],
-  );
-
-  const shellMinClass = pillChrome
-    ? 'min-h-11 max-h-32'
-    : compact || messagingCompact
-      ? 'min-h-[2rem]'
-      : 'min-h-[12rem]';
-
-  const editorInner = (
-    <EditorInner
-      bodyPlaceholder={bodyPlaceholder}
-      initialBody={resolvedInitialBody}
-      onBodyChange={resolvedOnBodyChange}
-      compact={resolvedCompact}
-      compactBottomInset={resolvedCompactBottomInset}
-      messagingCompact={resolvedMessagingCompact}
-      composeTrailingInset={resolvedComposeTrailingInset}
-      composeField={composeField}
-      showFormatToolbar={enableImages && !resolvedMessagingCompact}
-      enableImages={enableImages}
-      onObjectLinkedFromEditor={onObjectLinkedFromEditor}
-      hashObjectSearch={hashObjectSearch}
-    />
+    [chrome.theme],
   );
 
   return (
@@ -503,25 +357,26 @@ export function LexicalPostEditor({
       <div
         className={[
           'relative w-full overflow-visible rounded-card border border-border bg-surface shadow-card',
-          shellMinClass,
+          chrome.shellClass,
         ].join(' ')}
       >
-        {editorInner}
-        {enableImages ? <EditorImageDropOverlay /> : null}
-        <EditorInsertCaretOverlay
-          pinInsertCenterVertical={pinInsertCenterVertical}
+        <EditorInner
+          chrome={chrome}
+          bodyPlaceholder={bodyPlaceholder}
+          initialBody={initialBody}
+          onBodyChange={onBodyChange}
           onObjectLinkedFromEditor={onObjectLinkedFromEditor}
-          enableBlockInserts={enableImages && !resolvedMessagingCompact}
+          hashObjectSearch={hashObjectSearch}
+        />
+        <EditorImageDropOverlay />
+        <EditorInsertCaretOverlay
+          pinInsertCenterVertical={chrome.pinInsertCenterVertical}
+          onObjectLinkedFromEditor={onObjectLinkedFromEditor}
           enableOriginalCreatedAt={enableOriginalCreatedAt}
           insertPanelPreferBelow={insertPanelPreferBelow}
           renderOriginalDatePicker={renderOriginalDatePicker}
           onOriginalCreatedAtSelected={onOriginalCreatedAtSelected}
         />
-        {composeTrailingAction ? (
-          <div className="pointer-events-none absolute inset-y-0 end-2 z-[70] flex items-center">
-            <div className="pointer-events-auto">{composeTrailingAction}</div>
-          </div>
-        ) : null}
       </div>
     </LexicalComposer>
   );

@@ -48,6 +48,7 @@ export {
 export type { ModalShellProps, ModalShellVariant, ModalShellCloseButtonProps } from './components/modal-shell';
 export {
   MODAL_Z_INDEX_DEFAULT,
+  MODAL_Z_INDEX_EDITOR_OVERLAY,
   MODAL_Z_INDEX_ABOVE_MAP,
   MODAL_Z_INDEX_GALLERY,
   MODAL_Z_INDEX_GEO_FULLSCREEN,

@@ -3,11 +3,10 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
-import { LexicalPostEditor } from '@/modules/editor';
+import { editorBodyToMarkdown, LexicalPostEditor } from '@/modules/editor';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation';
 
-import { buildMessagingMarkdownFromLexical } from '../application/build-messaging-markdown';
 import { useMessagingEncryptSend } from '../application/use-messaging-encrypt-send';
 import type { SendEncryptedMessageInput } from '../domain/messaging.types';
 import {
@@ -43,6 +42,11 @@ export type MessagingComposeBarProps = {
   editorKey?: number;
   /** SSR cookie hint so the lock icon matches localStorage before hydration. */
   initialEncryptEnabled?: boolean;
+  /**
+   * The last send was refused before broadcast: its op is over the Hive `custom_json` size cap.
+   * Shown until the body changes.
+   */
+  bodyTooLong?: boolean;
   onSendPlain: (body: string) => boolean | void | Promise<boolean | void>;
   onSendEncrypted: (input: SendEncryptedMessageInput) => boolean | void | Promise<boolean | void>;
   onRequireLogin?: () => void;
@@ -63,6 +67,7 @@ export function MessagingComposeBar({
   sendAriaLabel: sendAriaLabelOverride,
   editorKey: editorKeyProp,
   initialEncryptEnabled = false,
+  bodyTooLong = false,
   onSendPlain,
   onSendEncrypted,
   onRequireLogin,
@@ -80,6 +85,7 @@ export function MessagingComposeBar({
   const [keychainGateOpen, setKeychainGateOpen] = useState(false);
   const [pendingPlainBody, setPendingPlainBody] = useState<string | null>(null);
   const [encryptRecipient, setEncryptRecipient] = useState('');
+  const [attemptedBody, setAttemptedBody] = useState<string | null>(null);
   const {
     keychainMemoAvailable,
     probePending,
@@ -117,7 +123,7 @@ export function MessagingComposeBar({
   }, [members, viewer]);
 
   const markdownBody = useMemo(
-    () => buildMessagingMarkdownFromLexical(bodyLexicalJson, contentBaseUrl),
+    () => editorBodyToMarkdown(bodyLexicalJson, contentBaseUrl),
     [bodyLexicalJson, contentBaseUrl],
   );
 
@@ -130,6 +136,7 @@ export function MessagingComposeBar({
 
   const sending = pending || pendingEncrypted || submitPending;
   const canSend = canSendMessageBody(markdownBody) && !sending;
+  const showBodyTooLong = bodyTooLong && attemptedBody === markdownBody;
   const lockDisabled = sending || probePending || disabled;
   const hideEncryptToggle = composeIntent?.mode === 'reply' || composeIntent?.mode === 'edit';
   const idleSendLabel = sendAriaLabelOverride ?? t('messaging_send');
@@ -223,6 +230,7 @@ export function MessagingComposeBar({
       onRequireLogin?.();
       return;
     }
+    setAttemptedBody(markdownBody);
 
     if (encryptEnabled && !hideEncryptToggle) {
       const recipient = resolvedEncryptRecipient;
@@ -324,10 +332,10 @@ export function MessagingComposeBar({
         <div className="relative w-full min-w-0 pl-5">
           <LexicalPostEditor
             key={editorKey}
-            messagingCompact
-            compactBottomInset
+            variant="compose"
             composeTrailingInset
             initialBody={initialBody}
+            hashObjectSearch={viewer ? { username: viewer, googlePlaces: false } : undefined}
             bodyPlaceholder={t('messaging_write_message')}
             onBodyChange={setBodyLexicalJson}
           />
@@ -394,6 +402,11 @@ export function MessagingComposeBar({
             </button>
           </div>
         </div>
+        {showBodyTooLong ? (
+          <p role="alert" className="mt-2 text-body-sm text-error">
+            {t('messaging_body_too_long')}
+          </p>
+        ) : null}
       </div>
 
       <PlainSendDisclaimerModal

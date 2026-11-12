@@ -1,6 +1,13 @@
 /** Above app header dropdowns (z-60) and feed overlays; below map fullscreen modals. */
 export const MODAL_Z_INDEX_DEFAULT = 110;
 
+/**
+ * Editor overlays portaled to `body` (format / block toolbars, insert panel, `#` and object search
+ * menus): above a default modal, because comments are composed inside the post modal; below the
+ * gallery, geo fullscreen and map-tier modals the editor itself opens (create object / place).
+ */
+export const MODAL_Z_INDEX_EDITOR_OVERLAY = 120;
+
 /** Modals that must paint above embedded Leaflet maps on the same page. */
 export const MODAL_Z_INDEX_ABOVE_MAP = 1_100;
 

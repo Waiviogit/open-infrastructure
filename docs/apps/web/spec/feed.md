@@ -54,8 +54,10 @@ Post bodies and discover use shared **`ObjectCard`** — see [object-card.md](ob
 
 When the viewer is logged in (`currentUsername` set), each story card shows **`StoryCommentEditor`** below the comment thread (`apps/web/src/modules/feed/presentation/components/story-comment-editor.tsx`).
 
-- Uses **`LexicalPostEditor`** from `@/modules/editor` (compact layout) — same Lexical surface as the main post editor, without title or draft autosave.
+- Uses **`CompactComposeEditor`** (`LexicalPostEditor variant="compose"`) from `@/modules/editor` — the same formatting and editing features as the post editor, without title or draft autosave. The body is `editorBodyToMarkdown(lexicalJson)` (bold, links, images, code, tables, lists survive); Send is enabled only for a non-empty markdown body.
+- Rendered comments use `blog-post-body` + `COMPACT_BODY_BLOCK_CLASSES` (`post-body-typography.ts`): lists, headings, quotes, rules, tables and code look like the post at body-sm scale.
 - Submit builds a Hive **`comment`** operation (`buildCommentOp`) and broadcasts via **`getWalletFacade().broadcast`** (`@/modules/auth`).
+- **Edit** of the viewer's own comment or thread happens inline in the same editor: [comment-edit.md](comment-edit.md).
 - After a full page reload, **`useHydrateWalletProvider`** restores Keychain as the active wallet provider from `sessionStorage` (set on Keychain login) so broadcast works without signing in again.
 
 ## Likes (Hive vote)

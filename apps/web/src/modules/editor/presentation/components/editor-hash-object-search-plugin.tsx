@@ -14,13 +14,22 @@ import {
   type BaseSelection,
   type TextNode,
 } from 'lexical';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { formatObjectTypeLabel } from '@/modules/app-header/domain/search-nav-list';
 import type { SearchObjectResult } from '@/modules/app-header/domain/search-response.schema';
 import { fetchObjectSearchResults } from '@/modules/app-header/infrastructure/search.client';
+import { MODAL_Z_INDEX_EDITOR_OVERLAY } from '@/shared/presentation';
 
 import {
   buildHashSearchEntries,
@@ -37,8 +46,79 @@ import type { PlaceSearchItem } from '../../domain/place.schema';
 import { fetchPlacesSearch } from '../../infrastructure/places.client';
 import { EditorPlaceCreateModal } from './editor-place-create-modal';
 
-const MENU_Z_INDEX = 80;
-const MENU_MAX_HEIGHT_CLASS = 'max-h-[20rem]';
+const MENU_MAX_HEIGHT_PX = 320;
+/** Under this much room below the caret, the menu opens above it when there is more room there. */
+const MENU_MIN_ROOM_BELOW_PX = 160;
+const MENU_VIEWPORT_MARGIN_PX = 8;
+const MENU_CARET_GAP_PX = 4;
+
+/** Caret rect in the viewport; the typeahead anchor when the selection has no measurable rect. */
+function caretViewportRect(fallback: HTMLElement): DOMRect {
+  const selection = window.getSelection();
+  if (selection && selection.rangeCount > 0) {
+    const rect = selection.getRangeAt(0).getBoundingClientRect();
+    if (rect.height > 0) {
+      return rect;
+    }
+  }
+  return fallback.getBoundingClientRect();
+}
+
+/**
+ * Places the menu by viewport room, not by the editor's own height: a compose pill is far
+ * shorter than the menu, and a bottom-docked bar (DMs) has no room below the caret.
+ */
+function placeMenuInViewport(menu: HTMLElement, caret: DOMRect): void {
+  const viewportHeight = window.innerHeight;
+  const roomBelow = viewportHeight - caret.bottom - MENU_CARET_GAP_PX - MENU_VIEWPORT_MARGIN_PX;
+  const roomAbove = caret.top - MENU_CARET_GAP_PX - MENU_VIEWPORT_MARGIN_PX;
+  const openBelow = roomBelow >= MENU_MIN_ROOM_BELOW_PX || roomBelow >= roomAbove;
+  const maxLeft = window.innerWidth - menu.offsetWidth - MENU_VIEWPORT_MARGIN_PX;
+  menu.style.left = `${Math.max(MENU_VIEWPORT_MARGIN_PX, Math.min(caret.left, maxLeft))}px`;
+  menu.style.maxHeight = `${Math.max(0, Math.min(MENU_MAX_HEIGHT_PX, openBelow ? roomBelow : roomAbove))}px`;
+  menu.style.top = openBelow ? `${caret.bottom + MENU_CARET_GAP_PX}px` : '';
+  menu.style.bottom = openBelow ? '' : `${viewportHeight - caret.top + MENU_CARET_GAP_PX}px`;
+  menu.style.visibility = 'visible';
+}
+
+function HashSearchMenuSurface({
+  anchor,
+  query,
+  children,
+}: {
+  anchor: HTMLElement;
+  /** Re-place while typing: the caret moves with the query. */
+  query: string;
+  children: ReactNode;
+}) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const place = () => {
+      const menu = menuRef.current;
+      if (menu) {
+        placeMenuInViewport(menu, caretViewportRect(anchor));
+      }
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [anchor, query]);
+
+  return (
+    <div
+      ref={menuRef}
+      className="fixed w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-btn border border-border bg-surface shadow-card-float"
+      style={{ zIndex: MODAL_Z_INDEX_EDITOR_OVERLAY, visibility: 'hidden' }}
+    >
+      {children}
+    </div>
+  );
+}
 
 class HashSearchOption extends MenuOption {
   readonly entry: HashSearchEntry;
@@ -246,13 +326,7 @@ export function EditorHashObjectSearchPlugin({
             return null;
           }
           return createPortal(
-            <div
-              className={[
-                'w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-btn border border-border bg-surface shadow-card-float',
-                MENU_MAX_HEIGHT_CLASS,
-              ].join(' ')}
-              style={{ zIndex: MENU_Z_INDEX, position: 'relative' }}
-            >
+            <HashSearchMenuSurface anchor={anchor} query={query ?? ''}>
               {options.length === 0 ? (
                 <p className="px-3 py-2 text-body-sm text-muted" role="status">
                   {statusText}
@@ -307,7 +381,7 @@ export function EditorHashObjectSearchPlugin({
                   ) : null}
                 </ul>
               )}
-            </div>,
+            </HashSearchMenuSurface>,
             anchor,
           );
         }}

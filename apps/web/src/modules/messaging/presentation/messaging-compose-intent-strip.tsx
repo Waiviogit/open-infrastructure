@@ -1,9 +1,14 @@
 'use client';
 
+import { markdownToPlainText } from '@opden-data-layer/common';
+
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { CloseIcon } from '@/icons';
 
-import { buildReplyQuoteJson, messageDisplayBody } from '../domain/messaging.helpers';
+import {
+  messageDisplayBody,
+  truncateQuoteBody,
+} from '../domain/messaging.helpers';
 import type { MessagingComposeIntent } from '../domain/messaging.types';
 
 export type MessagingComposeIntentStripProps = {
@@ -37,7 +42,9 @@ export function MessagingComposeIntentStrip({
     );
   }
 
-  const snippet = buildReplyQuoteJson(intent.message).body || messageDisplayBody(intent.message);
+  const snippet = truncateQuoteBody(
+    markdownToPlainText(messageDisplayBody(intent.message)),
+  );
   const label = t('messaging_replying_to')
     .replace('{author}', intent.message.author)
     .replace('{snippet}', snippet);

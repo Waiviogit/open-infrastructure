@@ -46,7 +46,7 @@ export function ObjectActivityFeedClient({
     [objectId],
   );
 
-  const { sendMessage, pending } = useSendObjectChannelMessage({
+  const { sendMessage, pending, bodyTooLong: sendBodyTooLong } = useSendObjectChannelMessage({
     viewerUsername,
     objectId,
     objectName,
@@ -55,7 +55,11 @@ export function ObjectActivityFeedClient({
     onRequireLogin: openLogin,
   });
 
-  const { updateMessage, pending: updatePending } = useUpdateMessage({
+  const {
+    updateMessage,
+    pending: updatePending,
+    bodyTooLong: updateBodyTooLong,
+  } = useUpdateMessage({
     viewerUsername,
     onRequireLogin: openLogin,
     revalidateAfterBroadcast: revalidateObject,
@@ -156,6 +160,7 @@ export function ObjectActivityFeedClient({
         objectName={objectName}
         viewerUsername={viewerUsername}
         pending={pending || updatePending}
+        bodyTooLong={sendBodyTooLong || updateBodyTooLong}
         editorKey={composeEditorKey}
         composeIntent={composeIntent}
         onDismissComposeIntent={() => {

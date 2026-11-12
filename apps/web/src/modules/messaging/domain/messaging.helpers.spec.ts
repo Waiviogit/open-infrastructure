@@ -11,7 +11,6 @@ import {
   messageCopyText,
   resolveMessagePresentation,
   resolveMessageQuotePreview,
-  stripImageMarkupFromMessageBody,
 } from './messaging.helpers';
 import type { MessageItem } from './messaging.types';
 
@@ -132,16 +131,6 @@ describe('extractFirstImageUrlFromMessageBody', () => {
         '<img src="https://example.com/a.jpg" alt="">',
       ),
     ).toBe('https://example.com/a.jpg');
-  });
-});
-
-describe('stripImageMarkupFromMessageBody', () => {
-  it('removes markdown image leaving text', () => {
-    expect(
-      stripImageMarkupFromMessageBody(
-        '![](https://example.com/a.jpg)\nMerry Christmas!',
-      ),
-    ).toBe('Merry Christmas!');
   });
 });
 
@@ -352,6 +341,25 @@ describe('resolveMessageQuotePreview', () => {
       body: '',
       deleted: false,
       imageUrl: 'https://example.com/holiday.png',
+    });
+  });
+
+  it('shows the parent quote as plain text without markdown or spoiler content', () => {
+    const markdownParent: MessageItem = {
+      ...parent,
+      body: '![](https://example.com/a.jpg)\nMerry **Christmas**!\n- [gift](https://example.com/g) ||surprise||',
+    };
+    const messagesById = new Map([[markdownParent.message_id, markdownParent]]);
+    expect(
+      resolveMessageQuotePreview(
+        { reply_to: 'parent-0-0-0', quote_json: null },
+        messagesById,
+      ),
+    ).toEqual({
+      author: 'bob',
+      body: 'Merry Christmas! gift …',
+      deleted: false,
+      imageUrl: 'https://example.com/a.jpg',
     });
   });
 

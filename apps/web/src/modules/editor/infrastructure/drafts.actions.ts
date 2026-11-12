@@ -4,12 +4,12 @@ import type {
   BulkDeleteDraftsApiResponse,
   UserPostDraftApiView,
 } from './user-post-draft-api.types';
-import {
-  fetchUserDraftListServer,
-  queryApiDraftsFetch,
-  type QueryApiDraftError,
-} from './query-api-drafts.server';
+import { fetchUserDraftListServer } from './query-api-drafts.server';
 import type { Result } from '@/shared/domain/result';
+import {
+  queryApiAuthedFetch,
+  type QueryApiAuthedError,
+} from '@/shared/infrastructure/http/query-api-authed-fetch.server';
 
 function draftsPath(author: string, query: Record<string, string | number | undefined>) {
   const q = new URLSearchParams();
@@ -40,8 +40,8 @@ export async function createUserDraftAction(
     permlink?: string | null;
     beneficiaries?: unknown;
   },
-): Promise<Result<UserPostDraftApiView, QueryApiDraftError>> {
-  return queryApiDraftsFetch<UserPostDraftApiView>(
+): Promise<Result<UserPostDraftApiView, QueryApiAuthedError>> {
+  return queryApiAuthedFetch<UserPostDraftApiView>(
     draftsPath(author, {}),
     { method: 'POST', body: JSON.stringify(body) },
   );
@@ -59,12 +59,12 @@ export async function patchUserDraftAction(
     permlink?: string | null;
     beneficiaries?: unknown;
   },
-): Promise<Result<UserPostDraftApiView, QueryApiDraftError>> {
+): Promise<Result<UserPostDraftApiView, QueryApiAuthedError>> {
   const q =
     'draftId' in query
       ? { draftId: query.draftId }
       : { permlink: query.permlink };
-  return queryApiDraftsFetch<UserPostDraftApiView>(
+  return queryApiAuthedFetch<UserPostDraftApiView>(
     draftsPath(author, q),
     { method: 'PATCH', body: JSON.stringify(body) },
   );
@@ -73,12 +73,12 @@ export async function patchUserDraftAction(
 export async function deleteUserDraftAction(
   author: string,
   query: { draftId: string } | { permlink: string },
-): Promise<Result<void, QueryApiDraftError>> {
+): Promise<Result<void, QueryApiAuthedError>> {
   const q =
     'draftId' in query
       ? { draftId: query.draftId }
       : { permlink: query.permlink };
-  return queryApiDraftsFetch<void>(
+  return queryApiAuthedFetch<void>(
     draftsPath(author, q),
     { method: 'DELETE' },
   );
@@ -87,8 +87,8 @@ export async function deleteUserDraftAction(
 export async function bulkDeleteUserDraftsAction(
   author: string,
   draftIds: string[],
-): Promise<Result<BulkDeleteDraftsApiResponse, QueryApiDraftError>> {
-  return queryApiDraftsFetch<BulkDeleteDraftsApiResponse>(
+): Promise<Result<BulkDeleteDraftsApiResponse, QueryApiAuthedError>> {
+  return queryApiAuthedFetch<BulkDeleteDraftsApiResponse>(
     `/query/v1/users/${encodeURIComponent(author)}/drafts/bulk-delete`,
     { method: 'POST', body: JSON.stringify({ draftIds }) },
   );

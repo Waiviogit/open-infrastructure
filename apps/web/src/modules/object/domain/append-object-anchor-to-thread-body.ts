@@ -47,3 +47,30 @@ export function appendObjectAnchorToThreadBody(
 
   return `${trimmed}\n\n${anchor}`;
 }
+
+const TRAILING_HASHTAG_ANCHOR = /^#([\w-]+)$/;
+const TRAILING_PATH_ANCHOR = /^\/object\/([^\s/]+)$/;
+
+function decodeObjectPathSegment(segment: string): string | null {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Object id of the anchor {@link appendObjectAnchorToThreadBody} put on its own last paragraph
+ * (`#object_id` or `/object/{id}`), or `null`. An edit re-applies it so the thread stays on
+ * the object's feed.
+ */
+export function extractTrailingObjectAnchorId(body: string): string | null {
+  const paragraphs = body.trim().split(/\n\s*\n/);
+  const last = paragraphs[paragraphs.length - 1]?.trim() ?? '';
+  const hashtag = TRAILING_HASHTAG_ANCHOR.exec(last);
+  if (hashtag) {
+    return hashtag[1];
+  }
+  const path = TRAILING_PATH_ANCHOR.exec(last);
+  return path ? decodeObjectPathSegment(path[1]) : null;
+}

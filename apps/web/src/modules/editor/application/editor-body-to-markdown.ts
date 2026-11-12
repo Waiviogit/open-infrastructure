@@ -1,7 +1,13 @@
 import { imageContentUrlForCid } from '@/config/ipfs-content-url';
-import { lexicalStateToMarkdown } from '@/modules/editor/application/lexical-state-to-markdown';
 
-export function buildMessagingMarkdownFromLexical(
+import { lexicalStateToMarkdown } from './lexical-state-to-markdown';
+
+/**
+ * The one markdown body every editor instance produces (post, draft preview, comment, thread,
+ * activity message, DM, note): Lexical JSON → markdown, uploaded images resolved through the
+ * IPFS content gateway, pasted image URLs kept as typed.
+ */
+export function editorBodyToMarkdown(
   bodyLexicalJson: string,
   contentBaseUrl: string | null,
 ): string {

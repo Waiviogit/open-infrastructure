@@ -44,6 +44,8 @@ DM rows, the open-thread header, and the About roster all read the same query-ap
 
 Outgoing message bubbles use `bg-accent-soft` + `text-fg` (see [theme.md](./theme.md)).
 
+Message bodies render through `SocialEmbedHtml`, so every code block in an activity message or DM gets a **Copy** button ([components/code-block-copy.md](./components/code-block-copy.md)). Private notes under an activity message permalink: [activity-notes.md](./activity-notes.md).
+
 ## API mapping
 
 | UI action | query-api |
@@ -101,7 +103,9 @@ Object **Activity** always renders compose + feed, even when query-api has no ch
 
 After send, the web client invalidates Activity cache tags for `/object/` slugs in the markdown body (not only the page object).
 
-**Media embeds:** Activity bodies use the same `sanitizePostBodyHtml` pipeline as full posts. Naked **YouTube** (watch / youtu.be / shorts), **TikTok** (`/@user/video/{id}`), **Instagram** (`/p/` `/reel/` `/tv/`), **Facebook** (watch / videos / reel / `fb.watch`), **X** (`{user}/status/{id}`), and **LinkedIn** (`urn:li:activity:{id}`) URLs become iframes after the surrounding text. Profile Instagram URLs stay links. Compose **Insert → Video** pastes a URL into the markdown body (no in-composer player). Instagram / Facebook iframes may show a login wall when the viewer is logged out of those hosts.
+**Media embeds:** Activity bodies use the same `sanitizePostBodyHtml` pipeline as full posts. Naked **YouTube** (watch / youtu.be / shorts), **TikTok** (`/@user/video/{id}`), **Instagram** (`/p/` `/reel/` `/tv/`), **Facebook** (watch / videos / reel / `fb.watch`), **X** (`{user}/status/{id}`), and **LinkedIn** (`urn:li:activity:{id}`) URLs become iframes after the surrounding text. Profile Instagram URLs stay links. Compose **Insert → Video** shows the same player as the post editor and publishes the bare URL on its own line. Instagram / Facebook iframes may show a login wall when the viewer is logged out of those hosts.
+
+**Compose:** Activity and DM compose are the shared editor (`LexicalPostEditor variant="compose"`, same features as the post editor — [One editor](pages/editor/page.md#implementation)); the body is `editorBodyToMarkdown`. Before broadcast the send / edit hooks check the built `message_create` / `message_update` op against the Hive `custom_json` cap (8192 bytes, `exceedsHiveCustomJsonLimit`); an oversized body is not broadcast and the compose bar shows `messaging_body_too_long` (`role="alert"`) until the body changes. Bodies render with `blog-post-body` + `COMPACT_BODY_BLOCK_CLASSES` (lists, headings, quotes, rules, tables, code at body-sm scale).
 
 **Original publish date:** Activity compose (+) menu includes **Date** (object Activity only — not inbox DMs; disabled while replying/editing). User picks date+time via air-datepicker; a chip shows the selection until send or clear. Optional `original_created_at_unix` is included on `message_create`. Feed bubbles show “Originally {datetime}” when stamped; otherwise time-only from `created_at_unix`. Activity **sort order** and **day grouping** use `COALESCE(original_created_at_unix, created_at_unix)` (local calendar day chips). Unstamped replies sort by publication time. Reply quotes to image-only parents show a left thumbnail at the image's own aspect ratio (no corner radius, no crop) instead of raw `![](url)` markdown.
 

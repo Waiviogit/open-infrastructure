@@ -1,7 +1,7 @@
 ---
 id: web-editor-hash-object-search
 title: Editor — `#` object and Google Maps place search
-description: "Typing `#` in the post editor searches our objects first, then Google Maps places near the user; a new place is created as an object signed by the author, with dedup by Google place id."
+description: "Typing `#` in any editor with a signed-in author searches our objects; the post editor (server flag) then also searches Google Maps places near the user, and a new place is created as an object signed by the author, with dedup by Google place id."
 type: spec
 status: active
 scope: web
@@ -23,9 +23,9 @@ Google Maps places are **off by default**: `POST_EDITOR_GOOGLE_PLACES_ENABLED=tr
 
 ## Flow
 
-1. Typing `#` at the start of text or after a space / `(` opens a menu at the caret (`EditorHashObjectSearchPlugin`, Lexical `LexicalTypeaheadMenuPlugin`). The query may contain single spaces (place names) and stops at a second `#`, a line break, a double space or sentence punctuation (`matchHashObjectQuery`).
+1. Typing `#` at the start of text or after a space / `(` opens a menu at the caret (`EditorHashObjectSearchPlugin`, Lexical `LexicalTypeaheadMenuPlugin`) in every editor with a signed-in author (post, comment, thread, Activity, DM, note). The menu is placed by viewport room — below the caret, or above it when there is more room there (a bottom-docked DM bar) — with its height capped to that room, at `MODAL_Z_INDEX_EDITOR_OVERLAY` so it shows above the post modal. The query may contain single spaces (place names) and stops at a second `#`, a line break, a double space or sentence punctuation (`matchHashObjectQuery`).
 2. **Objects** section — our search (`/api/search`, ≥ 2 chars, 300 ms debounce).
-3. **Google Maps nearby** section — `/api/places/search` (≥ 3 chars, 500 ms debounce; signed-in users only). Places are biased to the user's IP location by query-api.
+3. **Google Maps nearby** section (post editor only, `googlePlaces`) — `/api/places/search` (≥ 3 chars, 500 ms debounce; signed-in users only). Places are biased to the user's IP location by query-api.
 4. Order and dedup (`buildHashSearchEntries`): objects first; a place that already has an object (`existing_object_id`) is never offered for creation — it is listed once as that object, or dropped when the object is already in the first section.
 5. Picking an object (or a linked place) replaces `#query` with an object link and attaches the object (`jsonMetadata.objects`, hashtag objects also add a tag). The link text is the object name without the typed `#`, except for an object of type `hashtag`: it keeps a leading `#` (`india` → `#india`, never `##`; `objectLinkDisplayLabel`, also used by Insert → Object).
 6. Picking a new place removes `#query` and opens **`EditorPlaceCreateModal`** (confirmation): name, address, phone, website, photo, object type (`restaurant` / `place` / `business`, preselected from Google types).

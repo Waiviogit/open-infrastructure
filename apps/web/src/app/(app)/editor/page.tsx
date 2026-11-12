@@ -15,6 +15,7 @@ import {
 import { editorJsonMetadataFromPublishedPost } from '@/modules/editor/application/post-publish-operations';
 import type { PostEditTarget } from '@/modules/editor/domain/post-edit-target';
 import { fetchPublishedPostForEdit } from '@/modules/editor/infrastructure/fetch-published-post-for-edit.server';
+import { EditorNotAPostNotice } from '@/modules/editor/presentation/components/editor-not-a-post-notice';
 import { fetchUserPostDraftForEditor } from '@/modules/editor/infrastructure/fetch-user-post-draft.server';
 import { fetchUserDraftListServer } from '@/modules/editor/infrastructure/query-api-drafts.server';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
@@ -69,8 +70,13 @@ export default async function EditorPage({
   }
 
   /** `?author=<me>&permlink=<p>` without a saved edit draft → start from the published post. */
-  const publishedPost =
+  const publishedResult =
     !initialDraft && permlink ? await fetchPublishedPostForEdit(user.username, permlink) : null;
+  if (publishedResult && !publishedResult.ok && publishedResult.error === 'not_a_post') {
+    const messages = await loadMessages(await getRequestLocale());
+    return <EditorNotAPostNotice message={messages.editor_not_a_post_notice} />;
+  }
+  const publishedPost = publishedResult?.ok ? publishedResult.value : null;
 
   const editTarget: PostEditTarget | null = initialDraft?.permlink
     ? initialDraft.parentPermlink

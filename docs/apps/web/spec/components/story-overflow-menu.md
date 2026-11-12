@@ -26,7 +26,7 @@ Context menu on each feed **story card** (`Story`) opened from the footer **more
 |--------|------|---------|
 | Logged out | “Other” set | Any item opens the **Sign in** modal (`LoginModalProvider` / `LoginDialog`). |
 | Logged in, not author | “Other” set | Items are **disabled** (placeholders). |
-| Logged in, author | “Own” set | **Edit post** is a link to the editor; other items disabled. |
+| Logged in, author | “Own” set | Root post: **Edit post** links to the editor. Comment or thread (`parentAuthor` set, or the `comments` / `threads` tab): **Edit** opens the inline editor in place of the excerpt ([comment-edit.md](../comment-edit.md)). Other items disabled. |
 
 The editor page loads **title** and **body** from query-api `GET /query/v1/users/:author/drafts?permlink=…` using the session access cookie as `Authorization: Bearer` (see `fetch-user-post-draft.server.ts`).
 

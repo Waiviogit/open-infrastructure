@@ -70,6 +70,8 @@ export const feedStoryViewSchema = z.object({
   authorName: z.string().min(1),
   /** Hive post permlink (chain id segment). */
   permlink: z.string().min(1),
+  /** Hive `parent_author`: `''` for a root post, the replied-to account for a comment or thread. */
+  parentAuthor: z.string().optional(),
   authorDisplayName: z.string().optional(),
   /** Optional explicit avatar URL from API; when absent, UI falls back to Hive default by author name. */
   authorAvatarUrl: z.string().nullable().optional(),

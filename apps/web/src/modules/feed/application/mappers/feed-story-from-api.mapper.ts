@@ -18,6 +18,8 @@ export const feedStoryItemApiSchema = z.object({
   id: z.string(),
   author: z.string(),
   permlink: z.string(),
+  /** Hive `parent_author`: `''` for a root post. */
+  parentAuthor: z.string().optional().default(''),
   title: z.string(),
   excerpt: z.string(),
   createdAt: z.string(),
@@ -80,6 +82,7 @@ export function mapFeedStoryItemApiToView(item: FeedStoryItemApi): FeedStoryView
     id: item.id,
     authorName: item.author,
     permlink: item.permlink,
+    parentAuthor: item.parentAuthor,
     authorDisplayName: item.authorProfile.displayName ?? undefined,
     authorAvatarUrl: item.authorProfile.avatarUrl ?? undefined,
     authorReputation: item.authorProfile.reputation,
