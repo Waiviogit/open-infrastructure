@@ -41,6 +41,7 @@ import { ProfileFeedReadCursorRepository } from './profile-feed-read-cursor.repo
 import { PostRepliesRepository } from './post-replies.repository';
 import { ThreadRepliesRepository } from './thread-replies.repository';
 import { AffiliateObjectsRepository } from './affiliate-objects.repository';
+import { ActivityMessageNotesRepository } from './activity-message-notes.repository';
 
 @Module({
   providers: [
@@ -87,6 +88,7 @@ import { AffiliateObjectsRepository } from './affiliate-objects.repository';
     PostRepliesRepository,
     ThreadRepliesRepository,
     AffiliateObjectsRepository,
+    ActivityMessageNotesRepository,
   ],
   exports: [
     ObjectsCoreRepository,
@@ -132,6 +134,7 @@ import { AffiliateObjectsRepository } from './affiliate-objects.repository';
     PostRepliesRepository,
     ThreadRepliesRepository,
     AffiliateObjectsRepository,
+    ActivityMessageNotesRepository,
   ],
 })
 export class RepositoriesModule {}

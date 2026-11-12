@@ -43,6 +43,7 @@ function feedItem(author: string, permlink: string): FeedStoryItemDto {
     id: `${author}/${permlink}`,
     author,
     permlink,
+    parentAuthor: '',
     title: 'Title',
     excerpt: 'Excerpt',
     createdAt: '2024-01-01T00:00:00.000Z',

@@ -13,8 +13,8 @@ function threadRow(
   return {
     author,
     permlink,
-    parent_author: '',
-    parent_permlink: '',
+    parent_author: 'ecency.waves',
+    parent_permlink: 'waves-2024-01-01',
     body: 'Hello thread',
     created: '',
     replies: [],
@@ -45,6 +45,7 @@ function feedItem(author: string, permlink: string): FeedStoryItemDto {
     id: `${author}/${permlink}`,
     author,
     permlink,
+    parentAuthor: 'ecency.waves',
     title: '',
     excerpt: 'Hello thread',
     createdAt: '2024-01-01T00:00:00.000Z',
@@ -110,6 +111,7 @@ describe('hydrateThreadFeedPage', () => {
     );
     expect(r.items).toHaveLength(1);
     expect(r.items[0].author).toBe('alice');
+    expect(r.items[0].parentAuthor).toBe('ecency.waves');
     expect(r.hasMore).toBe(true);
     expect(r.cursor).toBe(
       encodeFeedCursor({ feedAt: 100, author: 'alice', permlink: 't-1' }),

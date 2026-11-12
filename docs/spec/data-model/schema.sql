@@ -815,3 +815,17 @@ CREATE INDEX idx_waiv_generated_report_rows_report_ts
   ON waiv_generated_report_rows (report_id, timestamp DESC, id DESC);
 
 -- Object-activity sort index idx_messages_channel_activity_time: see docs/spec/data-model/messages.md
+
+-- Private per-account notes on activity messages (query-api, JWT subject only).
+-- Removed with the message (ON DELETE CASCADE). See docs/spec/data-model/messages.md
+CREATE TABLE activity_message_notes (
+  note_id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author     TEXT NOT NULL,
+  message_id TEXT NOT NULL REFERENCES messages (message_id) ON DELETE CASCADE,
+  body       TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX activity_message_notes_author_message_idx
+  ON activity_message_notes (author, message_id, created_at);

@@ -1,16 +1,19 @@
+import { markdownToPlainText } from '@opden-data-layer/common';
+
 import { FEED_EXCERPT_MAX_LENGTH } from './feed.constants';
 
 /**
- * Strips HTML-like tags and collapses whitespace for a feed excerpt.
+ * Plain text of a post / comment / description body for a feed excerpt or SEO description:
+ * markdown and HTML markup removed, spoilers hidden, whitespace collapsed to single spaces.
  */
 export function stripHtmlForExcerpt(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return markdownToPlainText(html);
 }
 
-export function truncateExcerpt(text: string, maxLen = FEED_EXCERPT_MAX_LENGTH): string {
+export function truncateExcerpt(
+  text: string,
+  maxLen = FEED_EXCERPT_MAX_LENGTH,
+): string {
   if (text.length <= maxLen) {
     return text;
   }

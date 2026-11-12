@@ -228,6 +228,7 @@ export class GetPostByKeyEndpoint {
       id: `${post.author}/${post.permlink}`,
       author: post.author,
       permlink: post.permlink,
+      parentAuthor: post.parent_author ?? '',
       title: post.title ?? '',
       excerpt,
       body: post.body ?? '',

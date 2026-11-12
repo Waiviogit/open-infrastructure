@@ -157,6 +157,7 @@ export async function buildFeedStoryItemsFromPostPage(
       id: `${row.author}/${row.permlink}`,
       author: row.author,
       permlink: row.permlink,
+      parentAuthor: post.parent_author ?? '',
       title: post.title ?? '',
       excerpt,
       createdAt: new Date(post.created_unix * 1000).toISOString(),

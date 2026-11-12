@@ -57,7 +57,7 @@ src/
 - **Catalog:** `src/mcp/mcp-tool-catalog.ts` — single source of truth for tool metadata; add an entry before `registerTool`.
 - **Resources:** `register-query-mcp-resources.ts` — `odl-query://routing`, `odl-query://catalog/tools`, prompt `first_visit`.
 - Every new HTTP controller **must** be mirrored as MCP tools in `src/mcp/tools/<resource>.tools.ts` and registered via `register-all-tools.ts`.
-- **Exception:** `UserPostDraftsController` (JWT-authenticated writes) — do **not** expose via MCP.
+- **Exception:** `UserPostDraftsController` and `ActivityMessageNotesController` (JWT-authenticated, owner-private data) — do **not** expose via MCP.
 - MCP tools must **not** contain business logic — delegate to the same `*Endpoint.execute()` methods used by HTTP controllers.
 - Register context params as optional tool arguments where HTTP routes use headers:
   - `locale` (default `en-US`) — replaces `Accept-Language` / `X-Locale`

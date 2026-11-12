@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import { Channel, ChannelMember, Message } from '@opden-data-layer/odl-db-types';
@@ -25,9 +25,32 @@ export type ActivityDedupCandidateRow = {
   body: string | null;
 };
 
+type DbExecutor = Kysely<Database>;
+
 @Injectable()
 export class MessagingRepository {
+  private readonly logger = new Logger(MessagingRepository.name);
+
   constructor(@Inject(KYSELY) private readonly db: Kysely<Database>) {}
+
+  executor(trx?: DbExecutor): DbExecutor {
+    return trx ?? this.db;
+  }
+
+  /** Whether a `messages` row exists. Re-throws on DB errors (used on write paths). */
+  async messageExists(messageId: string, trx?: DbExecutor): Promise<boolean> {
+    try {
+      const row = await this.executor(trx)
+        .selectFrom('messages')
+        .select('message_id')
+        .where('message_id', '=', messageId)
+        .executeTakeFirst();
+      return row !== undefined;
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
+  }
 
   async listViewerChannels(
     viewer: string,

@@ -49,6 +49,7 @@ export function mapHiveContentToFeedStoryItemDto(
     id: `${author}/${permlink}`,
     author,
     permlink,
+    parentAuthor: content.parent_author ?? '',
     title: hiveCommentFeedTitle(content),
     excerpt,
     createdAt,

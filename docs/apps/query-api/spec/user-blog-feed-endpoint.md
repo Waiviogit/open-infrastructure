@@ -56,8 +56,9 @@ JSON object (Zod-validated):
 | `id` | string | `author/permlink` |
 | `author` | string | Post author (`posts.author`) |
 | `permlink` | string | `posts.permlink` |
+| `parentAuthor` | string | Hive `parent_author`: `''` for a root post, the replied-to account for a comment or thread (same field on every `FeedStoryItem`: posts, comments, mentions, threads, discussion, single post). Web decides root vs reply with it (edit in `/editor` vs inline). |
 | `title` | string | `posts.title` |
-| `excerpt` | string | HTML-stripped, truncated `posts.body` |
+| `excerpt` | string | Plain text of `posts.body` (`markdownToPlainText` from `@opden-data-layer/common`: markdown and HTML removed, spoilers shown as `…`), truncated |
 | `createdAt` | string (ISO 8601) | Original post time: `posts.created_unix` |
 | `feedAt` | string (ISO 8601) | Row sort time: `created_unix` for own posts, `reblogged_at_unix` for reblog rows |
 | `rebloggedBy` | string \| null | Reblogger account from `post_reblogged_users.account`, or `null` for own posts |

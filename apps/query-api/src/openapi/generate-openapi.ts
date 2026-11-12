@@ -16,6 +16,7 @@ import './user-waiv-advanced-report.openapi';
 import './user-waiv-generated-report.openapi';
 import './posts.openapi';
 import './user-post-drafts.openapi';
+import './activity-message-notes.openapi';
 import './categories.openapi';
 import './currency.openapi';
 import './search.openapi';

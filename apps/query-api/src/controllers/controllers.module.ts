@@ -36,6 +36,8 @@ import { OblController } from './obl.controller';
 import { ChannelsController } from './channels.controller';
 import { PlacesController } from './places.controller';
 import { PlacesModule } from '../domain/places';
+import { ActivityNotesModule } from '../domain/activity-notes';
+import { ActivityMessageNotesController } from './activity-message-notes.controller';
 
 @Module({
   imports: [
@@ -58,6 +60,7 @@ import { PlacesModule } from '../domain/places';
     OblModule,
     MessagingModule,
     PlacesModule,
+    ActivityNotesModule,
   ],
   controllers: [
     ObjectsController,
@@ -78,6 +81,7 @@ import { PlacesModule } from '../domain/places';
     OblController,
     ChannelsController,
     PlacesController,
+    ActivityMessageNotesController,
   ],
 })
 export class ControllersModule {}

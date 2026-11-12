@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, mcp, agent]
-updated_at: 2026-10-16
+updated_at: 2026-11-12
 related:
   - docs/apps/query-api/spec/overview.md
   - docs/apps/query-api/spec/geoip.md
@@ -49,6 +49,7 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 ## Excluded
 
 - **User post drafts** — JWT writes; not mirrored to MCP (see [user-post-drafts-endpoint.md](user-post-drafts-endpoint.md)).
+- **Activity message notes** — JWT-private reads and writes; not mirrored to MCP (see [activity-message-notes.md](activity-message-notes.md)).
 
 ## Tool inventory
 

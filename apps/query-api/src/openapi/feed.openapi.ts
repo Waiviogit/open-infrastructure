@@ -89,6 +89,10 @@ export const feedStoryItemSchema = registry.register(
     id: z.string(),
     author: z.string(),
     permlink: z.string(),
+    parentAuthor: z.string().openapi({
+      description:
+        'Hive `parent_author`: empty for a root post, the replied-to account for a comment or thread.',
+    }),
     title: z.string(),
     excerpt: z.string(),
     createdAt: z.string().datetime({ offset: true }),

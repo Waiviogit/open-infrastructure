@@ -9,6 +9,7 @@ export const queryApiOpenApiTags = {
   hiveWalletAdvanced: 'Wallet / Hive advanced',
   waivWalletAdvanced: 'Wallet / WAIV advanced',
   userPostDrafts: 'User post drafts',
+  activityMessageNotes: 'Activity message notes',
   posts: 'Posts',
   search: 'Search',
   places: 'Places',
@@ -54,6 +55,10 @@ export const queryApiOpenApiTagDefinitions = [
   {
     name: queryApiOpenApiTags.userPostDrafts,
     description: 'JWT-authenticated post draft CRUD.',
+  },
+  {
+    name: queryApiOpenApiTags.activityMessageNotes,
+    description: 'JWT-authenticated private notes on activity messages (owner only).',
   },
   {
     name: queryApiOpenApiTags.posts,

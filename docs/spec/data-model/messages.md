@@ -14,7 +14,7 @@ related:
 
 Migration: `00052_osl_channels_messages.ts`, encryption columns: `00055_osl_messages_encryption.ts`
 
-Tables: `channels`, `channel_members`, `channel_aliases`, `messages`, `message_tombstones`, `message_context_exclusions`.
+Tables: `channels`, `channel_members`, `channel_aliases`, `messages`, `message_tombstones`, `message_context_exclusions`, `activity_message_notes`.
 
 ## `messages` encryption columns (v1)
 
@@ -83,3 +83,19 @@ Indexes:
 - `idx_messages_dup_group` on `(dup_group_id)`
 
 Deleting a cluster root promotes the earliest remaining member to root and repoints members in the same transaction.
+
+## Activity message notes (private, per account)
+
+Migration: `00074_activity_message_notes.ts`. Written and read only by query-api ([activity message notes](../../apps/query-api/spec/activity-message-notes.md)); not on chain.
+
+| Column | Type |
+|--------|------|
+| `note_id` | `UUID` PK, `gen_random_uuid()` |
+| `author` | `TEXT NOT NULL` — normalized JWT subject (owner) |
+| `message_id` | `TEXT NOT NULL` → `messages(message_id) ON DELETE CASCADE` |
+| `body` | `TEXT NOT NULL` — markdown, 1..20 000 chars (validated in query-api) |
+| `created_at` / `updated_at` | `TIMESTAMPTZ NOT NULL DEFAULT now()` |
+
+Index `activity_message_notes_author_message_idx` on `(author, message_id, created_at)`.
+
+Notes are keyed by `message_id`, not by object, so a cross-posted message shows the same notes on every object. When chain-indexer deletes a message row (tombstone), the cascade removes its notes.

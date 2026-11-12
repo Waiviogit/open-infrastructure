@@ -78,6 +78,7 @@ export async function hydrateThreadFeedPage(
       id: `${thread.author}/${thread.permlink}`,
       author: thread.author,
       permlink: thread.permlink,
+      parentAuthor: thread.parent_author,
       title: '',
       excerpt,
       createdAt: createdAtFromChain,

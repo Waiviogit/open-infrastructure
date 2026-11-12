@@ -92,7 +92,7 @@ A new core subpath alias goes into **both** `tsconfig.base.json` and `apps/web/t
 ### Domain Constants
 
 - Domain-specific constants (object types, field names, supposed updates, translations) belong in `@opden-data-layer/domain-constants` when it exists.
-- `@opden-data-layer/common` (`libs/common`, `scope:shared`) holds generic, dependency-free helpers: no internal libs, no dhive, no `node:*`, safe in `apps/web` client code. Today: `isHiveAccountName` / `normalizeHiveAccountInput` (one Hive account grammar for user input and UI) and `buildRedisKey`. Keep it generic (non-domain); do not add a second copy of these helpers elsewhere.
+- `@opden-data-layer/common` (`libs/common`, `scope:shared`) holds generic, dependency-free helpers: no internal libs, no dhive, no `node:*`, safe in `apps/web` client code. Today: `isHiveAccountName` / `normalizeHiveAccountInput` (one Hive account grammar for user input and UI), `buildRedisKey`, and `markdownToPlainText` (the one markdown → plain-text helper for every preview: feed excerpts, SEO descriptions, DM previews and quotes). Keep it generic (non-domain); do not add a second copy of these helpers elsewhere.
 - Keep `@opden-data-layer/clients` free of domain business rules.
 
 ### Account avatars

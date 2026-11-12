@@ -156,6 +156,8 @@ describe('GetPostByKeyEndpoint', () => {
     const hivePost = {
       author: 'alice',
       permlink: 'hive-only',
+      parent_author: 'bob',
+      parent_permlink: 'bob-post',
       title: 'From chain',
       body: '<p>Hive body</p>',
       json_metadata: '{}',
@@ -200,6 +202,8 @@ describe('GetPostByKeyEndpoint', () => {
     }
     expect(r.body).toBe('<p>Hive body</p>');
     expect(r.title).toBe('From chain');
+    expect(r.parentAuthor).toBe('bob');
+    expect(r.parentPermlink).toBe('bob-post');
     expect(r.objects).toEqual([]);
     expect(r.rebloggedBy).toBe('reblogger');
     expect(r.votes.totalCount).toBe(2);
@@ -254,6 +258,7 @@ describe('GetPostByKeyEndpoint', () => {
     expect(r.body).toBe('<p>Hi</p>');
     expect(r.author).toBe('alice');
     expect(r.permlink).toBe('my-post');
+    expect(r.parentAuthor).toBe('');
     expect(r.objects).toEqual([]);
     expect(r.rebloggedBy).toBeNull();
     expect(r.feedAt).toBe(r.createdAt);

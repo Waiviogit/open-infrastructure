@@ -24,6 +24,9 @@ const singlePostViewSchema = registry.register(
     jsonMetadata: z.string().openapi({
       description: 'Raw Hive `json_metadata` (string). Editors merge into it to keep foreign keys.',
     }),
+    parentAuthor: z.string().openapi({
+      description: 'Hive `parent_author`: empty for a root post, the replied-to account for a comment or thread.',
+    }),
     parentPermlink: z.string().openapi({
       description: 'Hive `parent_permlink`; for root posts the category. Needed to broadcast an edit.',
     }),

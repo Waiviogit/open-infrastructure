@@ -76,6 +76,7 @@ export function mapHiveContentToSinglePostView(
     id: `${author}/${permlink}`,
     author,
     permlink,
+    parentAuthor: content.parent_author ?? '',
     title: content.title ?? '',
     excerpt,
     body,

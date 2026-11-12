@@ -6,7 +6,7 @@ type: overview
 status: active
 scope: query-api
 tags: [query-api, overview]
-updated_at: 2026-10-16
+updated_at: 2026-11-12
 related:
   - docs/README.md
   - docs/spec/objects-domain.md
@@ -60,6 +60,7 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [Post voters endpoint](post-voters-endpoint.md) | `GET /query/v1/posts/:author/:permlink/voters` |
 | [Post reward](post-reward.md) | `reward` + `waivRewardEligible` on post payloads |
 | [User post drafts](user-post-drafts-endpoint.md) | Draft CRUD (Bearer JWT, same `JWT_SECRET` as auth-api) |
+| [Activity message notes](activity-message-notes.md) | `GET/POST/DELETE /query/v1/messages/:messageId/notes`, `PATCH/DELETE …/notes/:noteId` (Bearer JWT, owner only, 10 per message) |
 | [Search](search.md) | `GET /query/v1/search`, `GET /query/v1/search/counts` |
 | [Google Maps places](places.md) | `GET /query/v1/places/search`, `/places/:place_id`, `/places/:place_id/object` (IP-biased, dedup by `identifier googleMaps`) |
 | [Objects resolve](objects-resolve.md) | `POST /query/v1/objects/resolve` (`aggregateRating` semantics) |

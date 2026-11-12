@@ -55,6 +55,7 @@ describe('GetUserMentionsFeedEndpoint', () => {
         id: 'bob/p1',
         author: 'bob',
         permlink: 'p1',
+        parentAuthor: '',
         title: '',
         excerpt: '',
         createdAt: new Date(0).toISOString(),

@@ -103,6 +103,7 @@ export interface OdlDatabase {
   messages: MessagesTable;
   message_tombstones: MessageTombstonesTable;
   message_context_exclusions: MessageContextExclusionsTable;
+  activity_message_notes: ActivityMessageNotesTable;
 }
 
 // ---------------------------------------------------------------------------
@@ -1615,3 +1616,17 @@ export interface MessageContextExclusionsTable {
 
 export type MessageContextExclusion = Selectable<MessageContextExclusionsTable>;
 export type NewMessageContextExclusion = Insertable<MessageContextExclusionsTable>;
+
+/** Private per-account notes on an activity message (query-api, JWT subject only). */
+export interface ActivityMessageNotesTable {
+  note_id: Generated<string>;
+  author: string;
+  message_id: string;
+  body: string;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+export type ActivityMessageNote = Selectable<ActivityMessageNotesTable>;
+export type NewActivityMessageNote = Insertable<ActivityMessageNotesTable>;
+export type ActivityMessageNoteUpdate = Updateable<ActivityMessageNotesTable>;

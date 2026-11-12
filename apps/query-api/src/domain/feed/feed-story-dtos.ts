@@ -70,6 +70,8 @@ export interface FeedStoryItemDto {
   id: string;
   author: string;
   permlink: string;
+  /** Hive `parent_author`: `''` for a root post, the replied-to account for a comment or thread. */
+  parentAuthor: string;
   title: string;
   excerpt: string;
   createdAt: string;

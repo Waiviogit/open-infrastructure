@@ -12,6 +12,7 @@ describe('enrichDiscussionCommentsRewards', () => {
         id: 'bob/c1',
         author: 'bob',
         permlink: 'c1',
+        parentAuthor: 'alice',
         title: '',
         excerpt: 'hi',
         body: 'hello',
