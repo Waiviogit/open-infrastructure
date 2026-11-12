@@ -10,6 +10,11 @@ export function buildWaivioAuthBaseUrl(origin: string): string {
   return `${normalizeApiOrigin(origin)}/auth/v1`;
 }
 
+/** `{origin}/query/v1` — query-api REST base. */
+export function buildQueryApiV1BaseUrl(origin: string): string {
+  return `${normalizeApiOrigin(origin)}/query/v1`;
+}
+
 export function buildWaivioIpfsGatewayBaseUrl(origin: string): string {
   return `${normalizeApiOrigin(origin)}/ipfs-gateway`;
 }

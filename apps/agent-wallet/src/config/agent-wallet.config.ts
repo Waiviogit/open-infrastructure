@@ -18,6 +18,10 @@ export type AgentWalletConfig = {
   hasAppName: string;
   hasWebLinkBase: string;
   waivioApiOrigin: string;
+  /** Origin serving query-api under `/query/v1` (agent's own activity notes). */
+  queryApiOrigin: string;
+  /** Origin of the Waivio web app (activity note import links). */
+  webOrigin: string;
   notificationsWsUrl: string;
   signingMode: SigningMode;
   accounts: WalletAccount[];
@@ -51,6 +55,8 @@ export default (): AgentWalletConfig => {
     hasAppName: env.HAS_APP_NAME ?? 'ODL Agent',
     hasWebLinkBase: env.HAS_WEB_LINK_BASE ?? 'https://waiviodev.com',
     waivioApiOrigin,
+    queryApiOrigin: env.QUERY_API_ORIGIN?.trim() || waivioApiOrigin,
+    webOrigin: env.WAIVIO_WEB_ORIGIN?.trim() || waivioApiOrigin,
     notificationsWsUrl:
       env.NOTIFICATIONS_WS_URL?.trim() ||
       defaultNotificationsWsUrl(waivioApiOrigin),

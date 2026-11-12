@@ -1,4 +1,5 @@
 import {
+  buildQueryApiV1BaseUrl,
   buildWaivioAuthBaseUrl,
   buildWaivioIpfsGatewayBaseUrl,
   imageContentUrlForCid,
@@ -21,6 +22,12 @@ describe('waivio-api-urls', () => {
     );
     expect(imageContentUrlForCid('https://example.test/', 'QmAbc')).toBe(
       'https://example.test/ipfs-gateway/content/image/QmAbc',
+    );
+  });
+
+  it('builds the query-api v1 base from an origin', () => {
+    expect(buildQueryApiV1BaseUrl('https://example.test/')).toBe(
+      'https://example.test/query/v1',
     );
   });
 });

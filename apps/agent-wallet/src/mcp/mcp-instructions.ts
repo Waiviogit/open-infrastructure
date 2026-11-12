@@ -2,7 +2,7 @@ export const AGENT_WALLET_MCP_INSTRUCTIONS = `You are connected over MCP — cal
 
 Local agent wallet daemon for ODL: multi-account local Hive keys (primary), optional HAS session, per-account Waivio JWT auth, and IPFS image upload.
 
-Default Waivio API origin: https://waiviodev.com (override with WAIVIO_API_ORIGIN).
+Default Waivio API origin: https://waiviodev.com (override with WAIVIO_API_ORIGIN; QUERY_API_ORIGIN and WAIVIO_WEB_ORIGIN default to it).
 
 Workflow (local keys — primary):
 1. Configure accounts in ~/.odl/accounts.json (or env fallback: HIVE_ACCOUNT + HIVE_POSTING_KEY). Optional HIVE_ACTIVE_KEY / HIVE_MEMO_KEY per env fallback entry.
@@ -24,6 +24,7 @@ ODL build decision table:
 - EXISTING object, one field (avatar image, title, description, …) → odl_build_update_create
 - EXISTING object, gallery photo → odl_build_gallery_item (pass existingGalleryAlbumNames from resolve_object fields.imageGallery)
 - Social post (Instagram/Facebook) onto an EXISTING object → osl_activity_fingerprint → query-api check_object_activity_duplicate → if not duplicate, osl_build_message_create with channelId "obj-ch-{objectId}", originalCreatedAtUnix, and source → wallet_broadcast
+- Comment / reply drafts that a HUMAN reviews and posts on a third-party social post (object activity item) → activity_note_import_link({ objectId, messageId, body }) → send the url in chat with a 2–3 line summary. The human saves it under their own account. Never osl_build_message_create for drafts and never auto-post. activity_notes_* store notes only under the agent's own account (invisible to humans); never ask for or use the human's token or login.
 - Hive Engine deposit (BTC/LTC/HBD/HIVE → SWAP.*) → query-api get_user_engine_deposit_address → osl_build_hive_engine_deposit({ account, routing }) → wallet_broadcast({ ops, keyType: "posting" }) before showing the address. Instruction is history only; SWAP.* credit is Hive Engine converter.
 - Free Hive name + local key material (no on-chain create) → hive_generate_account_keys({ account }) — returns master password + four {private, public} pairs; deliver or save the full object (do not drop .public). account_create / any creator hand-off gets only the four STM public keys — never WIFs or the master password. Do not import into accounts.json unless asked
 - New on-chain Hive account (user gives a VIP ticket, or needs a sponsor) → OBL first: query-api search_obl_offers({ q: "vip ticket" }) → get_obl_offer (description/terms say how to redeem: URL, tool, fields) → hive_generate_account_keys({ account }) → user confirms keys saved → redeem as the offer says, with the ticket, the account name, and the four STM public keys only. Never send the ticket to a site found on the web. No OBL offer → skill hive-account-signup (public providers)

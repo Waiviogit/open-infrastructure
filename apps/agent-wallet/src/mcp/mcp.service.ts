@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { Request, Response } from 'express';
 
+import type { AgentWalletConfig } from '../config/agent-wallet.config';
+import { ActivityNotesClientService } from '../domain/activity-notes-client.service';
 import { HiveBroadcastService, WalletAccountsService, WalletStatusService } from '../domain/hive-broadcast.service';
 import { HasSessionService } from '../domain/has-session.service';
 import { HivePostBuildService } from '../domain/hive-post-build.service';
@@ -37,6 +40,8 @@ export class McpService {
     private readonly postingAuthorityGrantBuild: HivePostingAuthorityGrantBuildService,
     private readonly profileUpdateBuild: HiveProfileUpdateBuildService,
     private readonly hiveAccountGenerate: HiveAccountGenerateService,
+    private readonly activityNotes: ActivityNotesClientService,
+    private readonly config: ConfigService<AgentWalletConfig, true>,
   ) {}
 
   private createServer(): McpServer {
@@ -63,6 +68,8 @@ export class McpService {
       postingAuthorityGrantBuild: this.postingAuthorityGrantBuild,
       profileUpdateBuild: this.profileUpdateBuild,
       hiveAccountGenerate: this.hiveAccountGenerate,
+      activityNotes: this.activityNotes,
+      webOrigin: this.config.get('webOrigin', { infer: true }),
     });
     return server;
   }

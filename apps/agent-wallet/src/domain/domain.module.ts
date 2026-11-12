@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
+import { ActivityNotesClientService } from './activity-notes-client.service';
 import {
   HiveBroadcastService,
   WalletAccountsService,
@@ -47,6 +48,7 @@ import { WalletSignerResolverService } from './wallet-signer-resolver.service';
     HiveProfileUpdateBuildService,
     HiveAccountGenerateService,
     IpfsUploadService,
+    ActivityNotesClientService,
   ],
   exports: [
     HasSessionService,
@@ -62,6 +64,7 @@ import { WalletSignerResolverService } from './wallet-signer-resolver.service';
     WalletStatusService,
     WalletAccountsService,
     IpfsUploadService,
+    ActivityNotesClientService,
     LocalKeysService,
     OslMessagingService,
     NotificationsSocketService,

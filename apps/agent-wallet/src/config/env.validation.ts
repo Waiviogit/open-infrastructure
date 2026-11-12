@@ -12,6 +12,12 @@ const signingModeEnv = z
   .optional()
   .default(DEFAULT_SIGNING_MODE);
 
+/** Optional origin override: trimmed, trailing slash removed, empty → unset. */
+const optionalOriginEnv = z
+  .string()
+  .optional()
+  .transform((v) => v?.trim().replace(/\/$/, '') || undefined);
+
 export const agentWalletConfigSchema = z.object({
   PORT: z.coerce.number().optional().default(7500),
   HOST: z.string().min(1).optional().default('127.0.0.1'),
@@ -42,6 +48,8 @@ export const agentWalletConfigSchema = z.object({
       const trimmed = (v ?? 'https://waiviodev.com').trim();
       return trimmed.replace(/\/$/, '') || 'https://waiviodev.com';
     }),
+  QUERY_API_ORIGIN: optionalOriginEnv,
+  WAIVIO_WEB_ORIGIN: optionalOriginEnv,
   AGENT_WALLET_SIGNING_MODE: signingModeEnv,
   AGENT_WALLET_ACCOUNTS_FILE: z.string().optional(),
   HIVE_ACCOUNT: z.string().optional(),

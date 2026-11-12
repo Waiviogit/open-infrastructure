@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
+import { ActivityNotesClientService } from '../domain/activity-notes-client.service';
 import { HiveBroadcastService, WalletAccountsService, WalletStatusService } from '../domain/hive-broadcast.service';
 import { HasSessionService } from '../domain/has-session.service';
 import { HivePostBuildService } from '../domain/hive-post-build.service';
@@ -15,6 +16,7 @@ import { HiveEngineDepositBuildService } from '../domain/hive-engine-deposit-bui
 import { WalletDelegationBuildService } from '../domain/wallet-delegation-build.service';
 import { HIVE_PROFILE_TEXT_MAX_LENGTH } from '../constants/hive-profile';
 import { jsonToolResult, toolError } from './mcp-tool.helpers';
+import { registerActivityNotesTools } from './register-activity-notes-tools';
 
 export function registerAgentWalletTools(
   server: McpServer,
@@ -33,6 +35,8 @@ export function registerAgentWalletTools(
     postingAuthorityGrantBuild: HivePostingAuthorityGrantBuildService;
     profileUpdateBuild: HiveProfileUpdateBuildService;
     hiveAccountGenerate: HiveAccountGenerateService;
+    activityNotes: ActivityNotesClientService;
+    webOrigin: string;
   },
 ): void {
   server.registerTool(
@@ -901,4 +905,9 @@ export function registerAgentWalletTools(
       }
     },
   );
+
+  registerActivityNotesTools(server, {
+    activityNotes: deps.activityNotes,
+    webOrigin: deps.webOrigin,
+  });
 }

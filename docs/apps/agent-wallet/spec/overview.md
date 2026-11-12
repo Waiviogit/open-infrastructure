@@ -6,7 +6,7 @@ type: overview
 status: active
 scope: agent-wallet
 tags: [agent-wallet, has, mcp, overview]
-updated_at: 2026-11-10
+updated_at: 2026-11-12
 related:
   - docs/apps/knowledge-api/spec/overview.md
 ---
@@ -55,6 +55,7 @@ CI publishes a **portable archive** (`agent-wallet-portable.tar.gz`: `main.js`, 
 | Hive posting authority / act-as grantor | skill `hive-account-authority-for-agents` |
 | Hive account key generation (free name) | [hive-account-keys.md](hive-account-keys.md) |
 | Hive account profile (avatar, cover, name, bio) | [hive-profile-update.md](hive-profile-update.md) |
+| Activity notes: import link for a human, agent's own private notes | [activity-notes.md](activity-notes.md) · skill `activity-comment-drafts` |
 | HAS login from chat (Telegram, Slack) | skill `has-login-from-chat` |
 | IPFS image upload + avatar/gallery policy | skill `ipfs-image-upload` |
 | IPFS file upload + ODL batch import | skill `ipfs-file-upload` |
@@ -98,6 +99,8 @@ Leo object threads (Social > Threads) are **not** built by agent-wallet — see 
 | `hive_build_rc_delegation` | `ops`, `keyType: posting`, `warnings` — RC delegate/remove (`maxRc: 0`) |
 | `engine_build_token_delegation` | `ops`, `keyType: active`, `warnings` — WAIV/Engine delegate/undelegate |
 | `osl_build_hive_engine_deposit` | `ops`, `keyType: posting`, `warnings` — OSL `hive_engine_deposit` from query-api deposit routing |
+| `activity_note_import_link` | `{ url, urlLength, bodyLength }` — `#note=` link that hands a markdown note to a human (no auth, no network) |
+| `activity_notes_list` / `_create` / `_update` / `_delete` / `_delete_all` | agent's **own** private notes on an activity item via query-api (optional `account`) — [activity-notes.md](activity-notes.md) |
 
 ## Environment
 
@@ -110,6 +113,8 @@ Leo object threads (Social > Threads) are **not** built by agent-wallet — see 
 | `HAS_APP_NAME` | `ODL Agent` | Shown in Keychain auth prompt |
 | `HAS_WEB_LINK_BASE` | `https://waiviodev.com` | Origin for clickable `webLink` (`/has#<compact fragment>`); empty disables |
 | `WAIVIO_API_ORIGIN` | `https://waiviodev.com` | Base for `/auth/v1` and `/ipfs-gateway` |
+| `QUERY_API_ORIGIN` | `WAIVIO_API_ORIGIN` | Base for query-api REST `/query/v1` (agent's own activity notes) |
+| `WAIVIO_WEB_ORIGIN` | `WAIVIO_API_ORIGIN` | Web origin for `activity_note_import_link` |
 | `AGENT_WALLET_SIGNING_MODE` | `has` | `has` \| `local` — tie-break when `wallet_broadcast` has no `account` |
 | `AGENT_WALLET_ACCOUNTS_FILE` | `<dataDir>/accounts.json` | JSON registry of local signing accounts |
 | `HIVE_ACCOUNT` | — | **Fallback** when accounts file missing/unreadable |

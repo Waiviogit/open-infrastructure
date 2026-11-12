@@ -39,4 +39,14 @@ describe('AGENT_WALLET_MCP_INSTRUCTIONS', () => {
     expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('check_object_activity_duplicate');
     expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('obj-ch-{objectId}');
   });
+
+  it('routes comment drafts for humans to the import link, never to auto-post', () => {
+    expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain('activity_note_import_link');
+    expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain(
+      'Never osl_build_message_create for drafts and never auto-post',
+    );
+    expect(AGENT_WALLET_MCP_INSTRUCTIONS).toContain(
+      "never ask for or use the human's token or login",
+    );
+  });
 });
