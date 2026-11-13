@@ -68,9 +68,12 @@ test.describe('instant navigation', () => {
     await expect(page).toHaveURL(/\/feed\/activity\?filter=hot$/);
     await expect(page.getByRole('status')).toContainText('is not available on this tab');
     // Each tab shows only its own sorts: Activity has New (and My feed), no Trending / Hot.
+    // Role queries only: the previous tab's rail (with Hot) stays in the DOM as a hidden
+    // `<Activity>` for instant Back, and text queries would count it.
     const rail = page.locator('aside nav[aria-label="Feed filters"]');
     await expect(rail.getByRole('link', { name: 'New' })).toBeVisible();
-    await expect(rail.getByText('Hot')).toHaveCount(0);
+    await expect(rail.getByRole('link', { name: 'Hot' })).toHaveCount(0);
+    await expect(rail.getByRole('link', { name: 'Trending' })).toHaveCount(0);
   });
 
   // Hub section tabs prefetch their shells (`prefetchShell`). Bare `/discover` is redirected to
