@@ -221,7 +221,7 @@ const followedObjectsMessageSchema = registry.register(
   }),
 );
 
-const followedObjectsMessagesResponseSchema = registry.register(
+export const followedObjectsMessagesResponseSchema = registry.register(
   'FollowedObjectsMessagesResponse',
   z.object({
     items: z.array(followedObjectsMessageSchema),
@@ -328,7 +328,7 @@ registry.registerPath({
   },
 });
 
-const followedObjectUpdateFeedItemSchema = registry.register(
+export const followedObjectUpdateFeedItemSchema = registry.register(
   'FollowedObjectUpdateFeedItem',
   objectUpdateFeedItemSchema.extend({
     object: projectedObjectOpenApiSchema.nullable().openapi({

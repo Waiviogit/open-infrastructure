@@ -19,6 +19,32 @@ related:
 
 The hub start page has four tabs (Posts, Threads, Activity, Updates). The left rail picks exactly one filter, and the same filter applies to every tab.
 
+## HTTP
+
+| Method | Path | Response |
+|--------|------|----------|
+| `POST` | `/query/v1/feed/posts` | `UserBlogFeedResponse` (same as [home feed](home-feed.md)) |
+| `POST` | `/query/v1/feed/threads` | `UserBlogFeedResponse`; each item's `objects` lists active objects named in the hashtags (max 4) |
+| `POST` | `/query/v1/feed/activity` | `FollowedObjectsMessagesResponse` (same as `following-objects/messages`) |
+| `POST` | `/query/v1/feed/updates` | `HubUpdatesFeedResponse` (items as `following-objects/updates`) |
+
+Headers: `X-Viewer` (required for `my`; viewer mutes and vote state), `Accept-Language` / `X-Locale`, `X-Governance-Object-Id`.
+
+Body (all optional; empty body = site-wide `new`):
+
+| Field | Type | Default | Notes |
+|-------|------|---------|-------|
+| `limit` | int 1–50 | `20` | |
+| `cursor` | string ≤ 1024 | — | From the previous page of the **same** filter; a cursor of another filter returns an empty page |
+| `filter` | object | `{ "kind": "new" }` | `{kind:"trending"\|"hot"\|"new"\|"my"}`, `{kind:"author", account}`, `{kind:"object", object_id}` |
+| `currency` | enum | `USD` | Posts only (reward display) |
+
+Errors: 400 for an invalid body, a sort the tab does not support (Activity: `trending`, `hot`; Updates: `hot`), or `my` without `X-Viewer`.
+
+Cursors are base64url JSON `{ v: 1, f: <filter key>, p: <position> }`. Ranked cursors carry the window start of their first page, so later pages keep the same 3-day window.
+
+MCP: `get_hub_feed_posts`, `get_hub_feed_threads`, `get_hub_feed_activity`, `get_hub_feed_updates` take the same body plus `viewer`, `locale`, `governance_object_id` ([mcp.md](mcp.md)).
+
 ## Filters
 
 | Filter | Meaning | Order |
@@ -56,12 +82,14 @@ Indexes added for these shapes: migration `00075_hub_feed_filters.ts` (see [thre
 
 ## Implementation
 
-| Tab | Repository |
-|-----|------------|
-| Posts | `HubPostsFeedRepository` |
-| Threads | `HubThreadsFeedRepository` |
-| Activity | `HubActivityFeedRepository` (object filter: `MessagingRepository.listObjectActivityMessages`) |
-| Updates | `HubUpdatesFeedRepository` |
+| Tab | Endpoint | Repository |
+|-----|----------|------------|
+| Posts | `GetHubPostsFeedEndpoint` | `HubPostsFeedRepository` |
+| Threads | `GetHubThreadsFeedEndpoint` | `HubThreadsFeedRepository` |
+| Activity | `GetHubActivityFeedEndpoint` | `HubActivityFeedRepository` (object filter: `MessagingRepository.listObjectActivityMessages`) |
+| Updates | `GetHubUpdatesFeedEndpoint` | `HubUpdatesFeedRepository` |
+
+Module `apps/query-api/src/domain/hub-feed/` (schemas, cursor codec, window), controller `HubFeedController`, OpenAPI `openapi/hub-feed.openapi.ts`, MCP `mcp/tools/hub-feed.tools.ts`.
 
 Shared SQL fragments (viewer object set, author exclusion, keyset predicates): `apps/query-api/src/repositories/hub-feed-scope.sql.ts`.
 

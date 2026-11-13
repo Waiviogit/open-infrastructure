@@ -11,23 +11,18 @@ import {
   decodeMessageCursor,
   encodeMessageCursor,
 } from './message-feed-cursor';
-import { mapMessageToDto, type MessageDto } from './message-projection';
+import {
+  buildObjectActivityFeedItems,
+  nextObjectActivityCursor,
+  type FollowedObjectsMessagesResponseDto,
+} from './build-object-activity-feed-items';
 import { resolveActivityExcludedAuthors } from './resolve-activity-excluded-authors';
 
-export type FollowedObjectRefDto = {
-  object_id: string;
-  name: string;
-};
-
-export type FollowedObjectsMessageDto = MessageDto & {
-  object: FollowedObjectRefDto;
-};
-
-export type FollowedObjectsMessagesResponseDto = {
-  items: FollowedObjectsMessageDto[];
-  cursor: string | null;
-  hasMore: boolean;
-};
+export type {
+  FollowedObjectRefDto,
+  FollowedObjectsMessageDto,
+  FollowedObjectsMessagesResponseDto,
+} from './build-object-activity-feed-items';
 
 @Injectable()
 export class GetFollowedObjectsMessagesEndpoint {
@@ -94,38 +89,9 @@ export class GetFollowedObjectsMessagesEndpoint {
 
     const hasMore = rows.length > limit;
     const page = hasMore ? rows.slice(0, limit) : rows;
-    const channelObjectIds = [
-      ...new Set(
-        page
-          .map((row) => row.channel_object_id?.trim())
-          .filter((id): id is string => Boolean(id)),
-      ),
-    ];
-    const nameByObjectId = await this.messagingRepo.findObjectChannelTitles(channelObjectIds);
-
-    const items = page.map((row) => {
-      const objectId = row.channel_object_id?.trim() ?? '';
-      const nameFromTitle = nameByObjectId.get(objectId)?.trim();
-      return {
-        ...mapMessageToDto(row, { duplicateCount: row.duplicate_count }),
-        object: {
-          object_id: objectId,
-          name: nameFromTitle && nameFromTitle.length > 0 ? nameFromTitle : objectId,
-        },
-      };
-    });
-
-    const last = page[page.length - 1];
-    const effectiveUnix = last
-      ? Number(last.original_created_at_unix ?? last.created_at_unix)
-      : null;
-    const nextCursor =
-      hasMore && last && effectiveUnix != null && Number.isFinite(effectiveUnix)
-        ? encodeMessageCursor({
-            createdAtUnix: effectiveUnix,
-            eventSeq: BigInt(last.event_seq),
-          })
-        : null;
+    const items = await buildObjectActivityFeedItems(this.messagingRepo, page);
+    const nextPosition = hasMore ? nextObjectActivityCursor(page) : null;
+    const nextCursor = nextPosition ? encodeMessageCursor(nextPosition) : null;
 
     return {
       items,

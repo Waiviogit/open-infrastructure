@@ -4,6 +4,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { Request, Response } from 'express';
 import { GetUserCategoriesEndpoint } from '../domain/categories/get-user-categories.endpoint';
+import {
+  GetHubActivityFeedEndpoint,
+  GetHubPostsFeedEndpoint,
+  GetHubThreadsFeedEndpoint,
+  GetHubUpdatesFeedEndpoint,
+} from '../domain/hub-feed';
 import { GetCategoryObjectsEndpoint } from '../domain/categories/get-category-objects.endpoint';
 import {
   GetDiscoverObjectsEndpoint,
@@ -194,6 +200,10 @@ export class McpService {
     private readonly getPostDiscussion: GetPostDiscussionEndpoint,
     private readonly getPostVoters: GetPostVotersEndpoint,
     private readonly getHomeFeed: GetHomeFeedEndpoint,
+    private readonly getHubPostsFeed: GetHubPostsFeedEndpoint,
+    private readonly getHubThreadsFeed: GetHubThreadsFeedEndpoint,
+    private readonly getHubActivityFeed: GetHubActivityFeedEndpoint,
+    private readonly getHubUpdatesFeed: GetHubUpdatesFeedEndpoint,
     private readonly currencyQueries: CurrencyQueryService,
     private readonly oblOffers: OblOffersService,
     private readonly oblLedger: OblLedgerService,
@@ -290,6 +300,10 @@ export class McpService {
       getPostDiscussion: this.getPostDiscussion,
       getPostVoters: this.getPostVoters,
       getHomeFeed: this.getHomeFeed,
+      getHubPostsFeed: this.getHubPostsFeed,
+      getHubThreadsFeed: this.getHubThreadsFeed,
+      getHubActivityFeed: this.getHubActivityFeed,
+      getHubUpdatesFeed: this.getHubUpdatesFeed,
       currencyQueries: this.currencyQueries,
       oblOffers: this.oblOffers,
       oblLedger: this.oblLedger,

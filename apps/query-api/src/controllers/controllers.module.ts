@@ -38,6 +38,8 @@ import { PlacesController } from './places.controller';
 import { PlacesModule } from '../domain/places';
 import { ActivityNotesModule } from '../domain/activity-notes';
 import { ActivityMessageNotesController } from './activity-message-notes.controller';
+import { HubFeedModule } from '../domain/hub-feed';
+import { HubFeedController } from './hub-feed.controller';
 
 @Module({
   imports: [
@@ -61,6 +63,7 @@ import { ActivityMessageNotesController } from './activity-message-notes.control
     MessagingModule,
     PlacesModule,
     ActivityNotesModule,
+    HubFeedModule,
   ],
   controllers: [
     ObjectsController,
@@ -72,6 +75,7 @@ import { ActivityMessageNotesController } from './activity-message-notes.control
     WaivWalletAdvancedReportController,
     WaivWalletGeneratedReportController,
     PostsController,
+    HubFeedController,
     UserPostDraftsController,
     CurrencyController,
     SearchController,

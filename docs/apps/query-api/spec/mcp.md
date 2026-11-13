@@ -131,6 +131,10 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 | `get_followed_objects_messages` | `POST /query/v1/users/:name/following-objects/messages` | [osl-messaging.md](osl-messaging.md) |
 | `get_followed_objects_threads` | `POST /query/v1/users/:name/following-objects/threads` | [followed-objects-feeds.md](followed-objects-feeds.md) |
 | `get_followed_objects_updates` | `POST /query/v1/users/:name/following-objects/updates` | [followed-objects-feeds.md](followed-objects-feeds.md) |
+| `get_hub_feed_posts` | `POST /query/v1/feed/posts` | [hub-feed.md](hub-feed.md) |
+| `get_hub_feed_threads` | `POST /query/v1/feed/threads` | [hub-feed.md](hub-feed.md) |
+| `get_hub_feed_activity` | `POST /query/v1/feed/activity` | [hub-feed.md](hub-feed.md) |
+| `get_hub_feed_updates` | `POST /query/v1/feed/updates` | [hub-feed.md](hub-feed.md) |
 | `check_object_activity_duplicate` | `POST /query/v1/objects/:object_id/channel/activity/dedup-check` | [osl-messaging.md](osl-messaging.md) |
 | `get_memo_public_key` | `GET /query/v1/users/:account/memo-public-key` | [osl-messaging.md](osl-messaging.md) |
 

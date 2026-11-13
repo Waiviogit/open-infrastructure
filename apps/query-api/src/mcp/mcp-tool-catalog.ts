@@ -462,6 +462,34 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/home-feed.md',
   },
   {
+    name: 'get_hub_feed_posts',
+    description:
+      'Hub Posts tab for one rail filter: trending / hot (3-day window), new, my (needs viewer), author, object.',
+    httpEquivalent: 'POST /query/v1/feed/posts',
+    specPath: 'docs/apps/query-api/spec/hub-feed.md',
+  },
+  {
+    name: 'get_hub_feed_threads',
+    description:
+      'Hub Threads tab for one rail filter: trending / hot (3-day window), new, my (needs viewer), author, object.',
+    httpEquivalent: 'POST /query/v1/feed/threads',
+    specPath: 'docs/apps/query-api/spec/hub-feed.md',
+  },
+  {
+    name: 'get_hub_feed_activity',
+    description:
+      'Hub Activity tab (object-channel messages) for one rail filter: new, my (needs viewer), author, object.',
+    httpEquivalent: 'POST /query/v1/feed/activity',
+    specPath: 'docs/apps/query-api/spec/hub-feed.md',
+  },
+  {
+    name: 'get_hub_feed_updates',
+    description:
+      'Hub Updates tab (object updates) for one rail filter: trending by rank (3-day window), new, my (needs viewer), author, object.',
+    httpEquivalent: 'POST /query/v1/feed/updates',
+    specPath: 'docs/apps/query-api/spec/hub-feed.md',
+  },
+  {
     name: 'get_post',
     description:
       'Single post by author/permlink with rewards (currency affects reward label). See single-post-endpoint.md.',

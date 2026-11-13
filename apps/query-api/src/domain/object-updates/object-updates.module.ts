@@ -17,6 +17,7 @@ import { ObjectUpdateFeedItemsBuilder } from './object-update-feed-items.builder
     GetUpdateVotersEndpoint,
   ],
   exports: [
+    ObjectUpdateFeedItemsBuilder,
     GetObjectUpdatesFeedEndpoint,
     GetFollowedObjectsUpdatesFeedEndpoint,
     GetUpdateVotersEndpoint,

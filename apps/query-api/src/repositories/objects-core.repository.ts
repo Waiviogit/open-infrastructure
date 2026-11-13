@@ -133,6 +133,26 @@ export class ObjectsCoreRepository {
     }
   }
 
+  /** Subset of `candidateObjectIds` that exist with status `active`. */
+  async findActiveObjectIdsAmong(candidateObjectIds: readonly string[]): Promise<string[]> {
+    const candidates = [...new Set(candidateObjectIds.map((id) => id.trim()).filter(Boolean))];
+    if (candidates.length === 0) {
+      return [];
+    }
+    try {
+      const rows = await this.db
+        .selectFrom('objects_core')
+        .where('object_id', 'in', candidates)
+        .where('status', '=', 'active')
+        .select('object_id')
+        .execute();
+      return rows.map((row) => row.object_id);
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      return [];
+    }
+  }
+
   /** Objects that relisted `targetObjectId` via `status` update `{ title: relisted, link }`. */
   async findRelistingObjectIds(targetObjectId: string): Promise<string[]> {
     const target = targetObjectId.trim();

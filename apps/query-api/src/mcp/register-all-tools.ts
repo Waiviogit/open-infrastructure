@@ -6,6 +6,7 @@ import { registerCurrencyTools } from './tools/currency.tools';
 import { registerDiscoverTools } from './tools/discover.tools';
 import { registerObjectTools } from './tools/objects.tools';
 import { registerPostTools } from './tools/posts.tools';
+import { registerHubFeedTools } from './tools/hub-feed.tools';
 import { registerSearchTools } from './tools/search.tools';
 import { registerUserTools } from './tools/users.tools';
 import { registerOblTools } from './tools/obl.tools';
@@ -25,6 +26,7 @@ export function registerAllMcpTools(
   registerChannelTools(server, deps);
   registerCategoryTools(server, deps);
   registerPostTools(server, deps);
+  registerHubFeedTools(server, deps);
   registerCurrencyTools(server, deps);
   registerOblTools(server, deps);
   registerPlacesTools(server, deps);

@@ -11,6 +11,7 @@ export const queryApiOpenApiTags = {
   userPostDrafts: 'User post drafts',
   activityMessageNotes: 'Activity message notes',
   posts: 'Posts',
+  hubFeed: 'Hub feed',
   search: 'Search',
   places: 'Places',
   discover: 'Discover',
@@ -63,6 +64,10 @@ export const queryApiOpenApiTagDefinitions = [
   {
     name: queryApiOpenApiTags.posts,
     description: 'Single post, voters, and discussion reads.',
+  },
+  {
+    name: queryApiOpenApiTags.hubFeed,
+    description: 'Hub start page tabs filtered by the left rail (sort, My feed, author, object).',
   },
   {
     name: queryApiOpenApiTags.places,

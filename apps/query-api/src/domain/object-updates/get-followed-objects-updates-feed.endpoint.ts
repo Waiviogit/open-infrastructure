@@ -8,31 +8,17 @@ import {
   UpdatesFeedRepository,
   type UpdatesFeedJoinRow,
 } from '../../repositories';
-import { projectFeedObjectsById } from '../feed/project-feed-objects';
 import { GovernanceResolverService } from '../governance';
 import { ObjectProjectionService } from '../object-projection';
 import { ObjectUpdateFeedItemsBuilder } from './object-update-feed-items.builder';
-import type { ObjectUpdateFeedItemDto } from './schemas/object-updates-feed.schema';
+import { hydrateObjectUpdatesFeedPage } from './hydrate-object-updates-feed-page';
 import type {
   FollowedObjectsUpdatesFeedBody,
   FollowedObjectsUpdatesFeedResponseDto,
 } from './schemas/followed-objects-updates-feed.schema';
 import { decodeUpdatesCursor, encodeUpdatesCursor } from './updates-cursor';
 
-export function groupJoinRowsByObjectId(
-  rows: readonly UpdatesFeedJoinRow[],
-): Map<string, UpdatesFeedJoinRow[]> {
-  const byObject = new Map<string, UpdatesFeedJoinRow[]>();
-  for (const jr of rows) {
-    const list = byObject.get(jr.row.object_id);
-    if (list) {
-      list.push(jr);
-    } else {
-      byObject.set(jr.row.object_id, [jr]);
-    }
-  }
-  return byObject;
-}
+export { groupJoinRowsByObjectId } from './hydrate-object-updates-feed-page';
 
 function nextRecencyCursor(pageRows: readonly UpdatesFeedJoinRow[]): string | null {
   const last = pageRows[pageRows.length - 1];
@@ -103,40 +89,17 @@ export class GetFollowedObjectsUpdatesFeedEndpoint {
     const governance = await this.governanceResolver.resolveMergedForObjectView(
       governanceObjectIdFromHeader,
     );
-    const rowsByObject = groupJoinRowsByObjectId(pageRows);
-    const objectIds = [...rowsByObject.keys()];
-
-    const [dtoGroups, objectsById] = await Promise.all([
-      Promise.all(
-        objectIds.map(async (objectId) => {
-          const ownerships = await this.objectOwnershipRepo.findByObjectId(objectId);
-          return this.itemsBuilder.buildForObject(
-            objectId,
-            rowsByObject.get(objectId) ?? [],
-            governance,
-            ownerships,
-            viewerAccount,
-          );
-        }),
-      ),
-      projectFeedObjectsById(
-        {
-          aggregatedObjectRepo: this.aggregatedObjectRepo,
-          objectViewService: this.objectViewService,
-          objectProjection: this.objectProjection,
-        },
-        objectIds,
-        { locale, governance, governanceObjectIdFromHeader, viewerAccount },
-      ),
-    ]);
-
-    const dtoByUpdateId = new Map<string, ObjectUpdateFeedItemDto>(
-      dtoGroups.flat().map((dto) => [dto.update_id, dto]),
+    const items = await hydrateObjectUpdatesFeedPage(
+      {
+        objectOwnershipRepo: this.objectOwnershipRepo,
+        itemsBuilder: this.itemsBuilder,
+        aggregatedObjectRepo: this.aggregatedObjectRepo,
+        objectViewService: this.objectViewService,
+        objectProjection: this.objectProjection,
+      },
+      pageRows,
+      { locale, governance, governanceObjectIdFromHeader, viewerAccount },
     );
-    const items = pageRows
-      .map((jr) => dtoByUpdateId.get(jr.row.update_id))
-      .filter((dto): dto is ObjectUpdateFeedItemDto => dto != null)
-      .map((dto) => ({ ...dto, object: objectsById.get(dto.object_id) ?? null }));
 
     const nextCursor = hasMore ? nextRecencyCursor(pageRows) : null;
     return {

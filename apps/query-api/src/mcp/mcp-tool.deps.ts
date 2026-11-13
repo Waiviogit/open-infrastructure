@@ -24,6 +24,12 @@ import type {
   GetUserActivityEndpoint,
   GetHomeFeedEndpoint,
 } from '../domain/feed';
+import type {
+  GetHubActivityFeedEndpoint,
+  GetHubPostsFeedEndpoint,
+  GetHubThreadsFeedEndpoint,
+  GetHubUpdatesFeedEndpoint,
+} from '../domain/hub-feed';
 import type { GetObjectUpdatesFeedEndpoint } from '../domain/object-updates/get-object-updates-feed.endpoint';
 import type { GetUpdateVotersEndpoint } from '../domain/object-updates/get-update-voters.endpoint';
 import type {
@@ -150,6 +156,10 @@ export interface McpToolDeps {
   getUserCommentsFeed: GetUserCommentsFeedEndpoint;
   getUserActivity: GetUserActivityEndpoint;
   getHomeFeed: GetHomeFeedEndpoint;
+  getHubPostsFeed: GetHubPostsFeedEndpoint;
+  getHubThreadsFeed: GetHubThreadsFeedEndpoint;
+  getHubActivityFeed: GetHubActivityFeedEndpoint;
+  getHubUpdatesFeed: GetHubUpdatesFeedEndpoint;
   getUserWaivWallet: GetUserWaivWalletEndpoint;
   getUserWaivWalletHistory: GetUserWaivWalletHistoryEndpoint;
   getUserEngineWallet: GetUserEngineWalletEndpoint;

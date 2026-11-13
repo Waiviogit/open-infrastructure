@@ -18,6 +18,7 @@ import { OblModule } from '../domain/obl';
 import { MessagingModule } from '../domain/messaging/messaging.module';
 import { McpController } from './mcp.controller';
 import { McpService } from './mcp.service';
+import { HubFeedModule } from '../domain/hub-feed';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { McpService } from './mcp.service';
     OblModule,
     MessagingModule,
     PlacesModule,
+    HubFeedModule,
   ],
   controllers: [McpController],
   providers: [McpService],

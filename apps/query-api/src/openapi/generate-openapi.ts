@@ -9,6 +9,7 @@ import './users-social.openapi';
 import './users-favorites.openapi';
 import './users-expertise.openapi';
 import './feed.openapi';
+import './hub-feed.openapi';
 import './user-activity.openapi';
 import './user-wallet.openapi';
 import './user-hive-advanced-report.openapi';
