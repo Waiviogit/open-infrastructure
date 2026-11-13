@@ -42,3 +42,9 @@ export const HIVE_ACCOUNTS_CACHE_TTL_SEC = 60;
 
 /** Redis TTL for Instacart IDP recipe `products_link_url` (30 days). */
 export const INSTACART_RECIPE_LINK_CACHE_TTL_SEC = 2_592_000;
+
+/**
+ * Redis TTL for a hub rail counter snapshot per (account, tab) (seconds).
+ * Matches the scheduler bucket refresh interval: fresher data does not exist.
+ */
+export const HUB_FEED_FILTER_COUNTS_CACHE_TTL_SEC = 300;

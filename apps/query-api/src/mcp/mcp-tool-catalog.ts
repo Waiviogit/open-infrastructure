@@ -490,6 +490,27 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/hub-feed.md',
   },
   {
+    name: 'get_user_feed_filters',
+    description:
+      'Hub rail for an account and tab: followed accounts and followed objects grouped by type, each with new items in the last 72 hours.',
+    httpEquivalent: 'GET /query/v1/users/:name/feed-filters',
+    specPath: 'docs/apps/query-api/spec/hub-feed-filters.md',
+  },
+  {
+    name: 'get_user_feed_filter_users',
+    description:
+      'Next page ("show more") of followed accounts in the hub rail, same order and counts as get_user_feed_filters.',
+    httpEquivalent: 'GET /query/v1/users/:name/feed-filters/users',
+    specPath: 'docs/apps/query-api/spec/hub-feed-filters.md',
+  },
+  {
+    name: 'get_user_feed_filter_objects',
+    description:
+      'Next page ("show more") of followed objects of one object type in the hub rail, same order and counts as get_user_feed_filters.',
+    httpEquivalent: 'GET /query/v1/users/:name/feed-filters/objects',
+    specPath: 'docs/apps/query-api/spec/hub-feed-filters.md',
+  },
+  {
     name: 'get_post',
     description:
       'Single post by author/permlink with rewards (currency affects reward label). See single-post-endpoint.md.',

@@ -46,6 +46,7 @@ import { HubPostsFeedRepository } from './hub-posts-feed.repository';
 import { HubThreadsFeedRepository } from './hub-threads-feed.repository';
 import { HubActivityFeedRepository } from './hub-activity-feed.repository';
 import { HubUpdatesFeedRepository } from './hub-updates-feed.repository';
+import { HubFeedFilterCountsRepository } from './hub-feed-filter-counts.repository';
 
 @Module({
   providers: [
@@ -97,6 +98,7 @@ import { HubUpdatesFeedRepository } from './hub-updates-feed.repository';
     HubThreadsFeedRepository,
     HubActivityFeedRepository,
     HubUpdatesFeedRepository,
+    HubFeedFilterCountsRepository,
   ],
   exports: [
     ObjectsCoreRepository,
@@ -147,6 +149,7 @@ import { HubUpdatesFeedRepository } from './hub-updates-feed.repository';
     HubThreadsFeedRepository,
     HubActivityFeedRepository,
     HubUpdatesFeedRepository,
+    HubFeedFilterCountsRepository,
   ],
 })
 export class RepositoriesModule {}

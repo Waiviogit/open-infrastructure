@@ -10,6 +10,11 @@ import { GetHubActivityFeedEndpoint } from './get-hub-activity-feed.endpoint';
 import { GetHubPostsFeedEndpoint } from './get-hub-posts-feed.endpoint';
 import { GetHubThreadsFeedEndpoint } from './get-hub-threads-feed.endpoint';
 import { GetHubUpdatesFeedEndpoint } from './get-hub-updates-feed.endpoint';
+import { GetUserFeedFilterObjectsEndpoint } from './get-user-feed-filter-objects.endpoint';
+import { GetUserFeedFilterUsersEndpoint } from './get-user-feed-filter-users.endpoint';
+import { GetUserFeedFiltersEndpoint } from './get-user-feed-filters.endpoint';
+import { HubFeedFilterItemsHydrator } from './hub-feed-filter-items.hydrator';
+import { HubFeedFilterSnapshotService } from './hub-feed-filter-snapshot.service';
 
 @Module({
   imports: [
@@ -25,12 +30,20 @@ import { GetHubUpdatesFeedEndpoint } from './get-hub-updates-feed.endpoint';
     GetHubThreadsFeedEndpoint,
     GetHubActivityFeedEndpoint,
     GetHubUpdatesFeedEndpoint,
+    HubFeedFilterSnapshotService,
+    HubFeedFilterItemsHydrator,
+    GetUserFeedFiltersEndpoint,
+    GetUserFeedFilterUsersEndpoint,
+    GetUserFeedFilterObjectsEndpoint,
   ],
   exports: [
     GetHubPostsFeedEndpoint,
     GetHubThreadsFeedEndpoint,
     GetHubActivityFeedEndpoint,
     GetHubUpdatesFeedEndpoint,
+    GetUserFeedFiltersEndpoint,
+    GetUserFeedFilterUsersEndpoint,
+    GetUserFeedFilterObjectsEndpoint,
   ],
 })
 export class HubFeedModule {}

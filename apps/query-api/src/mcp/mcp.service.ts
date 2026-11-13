@@ -9,6 +9,9 @@ import {
   GetHubPostsFeedEndpoint,
   GetHubThreadsFeedEndpoint,
   GetHubUpdatesFeedEndpoint,
+  GetUserFeedFilterObjectsEndpoint,
+  GetUserFeedFilterUsersEndpoint,
+  GetUserFeedFiltersEndpoint,
 } from '../domain/hub-feed';
 import { GetCategoryObjectsEndpoint } from '../domain/categories/get-category-objects.endpoint';
 import {
@@ -204,6 +207,9 @@ export class McpService {
     private readonly getHubThreadsFeed: GetHubThreadsFeedEndpoint,
     private readonly getHubActivityFeed: GetHubActivityFeedEndpoint,
     private readonly getHubUpdatesFeed: GetHubUpdatesFeedEndpoint,
+    private readonly getUserFeedFilters: GetUserFeedFiltersEndpoint,
+    private readonly getUserFeedFilterUsers: GetUserFeedFilterUsersEndpoint,
+    private readonly getUserFeedFilterObjects: GetUserFeedFilterObjectsEndpoint,
     private readonly currencyQueries: CurrencyQueryService,
     private readonly oblOffers: OblOffersService,
     private readonly oblLedger: OblLedgerService,
@@ -304,6 +310,9 @@ export class McpService {
       getHubThreadsFeed: this.getHubThreadsFeed,
       getHubActivityFeed: this.getHubActivityFeed,
       getHubUpdatesFeed: this.getHubUpdatesFeed,
+      getUserFeedFilters: this.getUserFeedFilters,
+      getUserFeedFilterUsers: this.getUserFeedFilterUsers,
+      getUserFeedFilterObjects: this.getUserFeedFilterObjects,
       currencyQueries: this.currencyQueries,
       oblOffers: this.oblOffers,
       oblLedger: this.oblLedger,

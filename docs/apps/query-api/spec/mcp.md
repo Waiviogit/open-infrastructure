@@ -135,6 +135,9 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 | `get_hub_feed_threads` | `POST /query/v1/feed/threads` | [hub-feed.md](hub-feed.md) |
 | `get_hub_feed_activity` | `POST /query/v1/feed/activity` | [hub-feed.md](hub-feed.md) |
 | `get_hub_feed_updates` | `POST /query/v1/feed/updates` | [hub-feed.md](hub-feed.md) |
+| `get_user_feed_filters` | `GET /query/v1/users/:name/feed-filters` | [hub-feed-filters.md](hub-feed-filters.md) |
+| `get_user_feed_filter_users` | `GET /query/v1/users/:name/feed-filters/users` | [hub-feed-filters.md](hub-feed-filters.md) |
+| `get_user_feed_filter_objects` | `GET /query/v1/users/:name/feed-filters/objects` | [hub-feed-filters.md](hub-feed-filters.md) |
 | `check_object_activity_duplicate` | `POST /query/v1/objects/:object_id/channel/activity/dedup-check` | [osl-messaging.md](osl-messaging.md) |
 | `get_memo_public_key` | `GET /query/v1/users/:account/memo-public-key` | [osl-messaging.md](osl-messaging.md) |
 

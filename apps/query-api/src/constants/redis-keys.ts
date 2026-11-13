@@ -28,6 +28,8 @@ export const redisKey = {
     buildRedisKey(APP, 'cache', 'post-reward', 'fiat', base),
   hiveGlobalProperties: () =>
     buildRedisKey(APP, 'cache', 'hive', 'dynamic-global-properties'),
+  hubFeedFilterCounts: (account: string, tab: string) =>
+    buildRedisKey(APP, 'cache', 'hub-feed-filters', account.trim().toLowerCase(), tab),
   hiveRewardFund: () => buildRedisKey(APP, 'cache', 'reward-fund', 'hive'),
   hiveAccount: (accountName: string) =>
     buildRedisKey(APP, 'cache', 'hive', 'account', accountName.trim().toLowerCase()),

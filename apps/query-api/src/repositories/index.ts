@@ -86,3 +86,8 @@ export type {
   ScoreKeysetCursor,
   TimeKeysetCursor,
 } from './hub-feed-scope.sql';
+export {
+  HubFeedFilterCountsRepository,
+  type HubFeedFollowCountRow,
+  type HubFeedFollowCountsQuery,
+} from './hub-feed-filter-counts.repository';

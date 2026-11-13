@@ -4,6 +4,26 @@ export { GetHubThreadsFeedEndpoint } from './get-hub-threads-feed.endpoint';
 export { GetHubActivityFeedEndpoint } from './get-hub-activity-feed.endpoint';
 export { GetHubUpdatesFeedEndpoint } from './get-hub-updates-feed.endpoint';
 export { HubFeedViewerRequiredError } from './hub-feed-viewer-required.error';
+export { GetUserFeedFiltersEndpoint } from './get-user-feed-filters.endpoint';
+export { GetUserFeedFilterUsersEndpoint } from './get-user-feed-filter-users.endpoint';
+export { GetUserFeedFilterObjectsEndpoint } from './get-user-feed-filter-objects.endpoint';
+export type { HubFeedFilterHydrationContext } from './hub-feed-filter-items.hydrator';
+export type {
+  HubFeedFilterObjectDto,
+  HubFeedFilterObjectsPageDto,
+  HubFeedFiltersDto,
+  HubFeedFilterTypeDto,
+  HubFeedFilterUserDto,
+  HubFeedFilterUsersPageDto,
+} from './hub-feed-filters.dto';
+export {
+  hubFeedFilterObjectsQuerySchema,
+  hubFeedFiltersQuerySchema,
+  hubFeedFilterUsersQuerySchema,
+  type HubFeedFilterObjectsQuery,
+  type HubFeedFiltersQuery,
+  type HubFeedFilterUsersQuery,
+} from './schemas/hub-feed-filters.schema';
 export {
   HUB_FEED_SORTS,
   HUB_FEED_TABS,

@@ -40,6 +40,7 @@ import { ActivityNotesModule } from '../domain/activity-notes';
 import { ActivityMessageNotesController } from './activity-message-notes.controller';
 import { HubFeedModule } from '../domain/hub-feed';
 import { HubFeedController } from './hub-feed.controller';
+import { HubFeedFiltersController } from './hub-feed-filters.controller';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { HubFeedController } from './hub-feed.controller';
     WaivWalletGeneratedReportController,
     PostsController,
     HubFeedController,
+    HubFeedFiltersController,
     UserPostDraftsController,
     CurrencyController,
     SearchController,

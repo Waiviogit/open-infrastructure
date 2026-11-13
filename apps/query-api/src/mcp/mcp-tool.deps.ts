@@ -29,6 +29,9 @@ import type {
   GetHubPostsFeedEndpoint,
   GetHubThreadsFeedEndpoint,
   GetHubUpdatesFeedEndpoint,
+  GetUserFeedFilterObjectsEndpoint,
+  GetUserFeedFilterUsersEndpoint,
+  GetUserFeedFiltersEndpoint,
 } from '../domain/hub-feed';
 import type { GetObjectUpdatesFeedEndpoint } from '../domain/object-updates/get-object-updates-feed.endpoint';
 import type { GetUpdateVotersEndpoint } from '../domain/object-updates/get-update-voters.endpoint';
@@ -160,6 +163,9 @@ export interface McpToolDeps {
   getHubThreadsFeed: GetHubThreadsFeedEndpoint;
   getHubActivityFeed: GetHubActivityFeedEndpoint;
   getHubUpdatesFeed: GetHubUpdatesFeedEndpoint;
+  getUserFeedFilters: GetUserFeedFiltersEndpoint;
+  getUserFeedFilterUsers: GetUserFeedFilterUsersEndpoint;
+  getUserFeedFilterObjects: GetUserFeedFilterObjectsEndpoint;
   getUserWaivWallet: GetUserWaivWalletEndpoint;
   getUserWaivWalletHistory: GetUserWaivWalletHistoryEndpoint;
   getUserEngineWallet: GetUserEngineWalletEndpoint;

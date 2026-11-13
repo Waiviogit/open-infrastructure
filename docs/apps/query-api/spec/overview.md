@@ -56,6 +56,7 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [Single post endpoint](single-post-endpoint.md) | `GET /query/v1/posts/:author/:permlink` |
 | [Home feed](home-feed.md) | `POST /query/v1/posts/feed` |
 | [Hub feed](hub-feed.md) | `POST /query/v1/feed/{posts,threads,activity,updates}` — hub tabs filtered by the left rail |
+| [Hub feed filters](hub-feed-filters.md) | `GET /query/v1/users/:name/feed-filters` (+ `/users`, `/objects`) — rail follows with 3-day counters |
 | [Followed objects feeds](followed-objects-feeds.md) | `POST /query/v1/users/:name/following-objects/{threads,updates}` (hub Threads / Updates tabs) |
 | [Post discussion endpoint](post-discussion-endpoint.md) | `GET /query/v1/posts/:author/:permlink/discussion` |
 | [Post voters endpoint](post-voters-endpoint.md) | `GET /query/v1/posts/:author/:permlink/voters` |
