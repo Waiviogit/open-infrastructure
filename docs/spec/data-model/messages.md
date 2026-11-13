@@ -51,6 +51,8 @@ Key indexes:
 - `idx_messages_channel_time` on `(channel_id, created_at_unix DESC, event_seq DESC)`
 - `idx_messages_channel_activity_time` on `(channel_id, (COALESCE(original_created_at_unix, created_at_unix)) DESC, event_seq DESC)` (migration `00066_messages_channel_activity_time.ts`) — per-channel object-activity order for the followed-objects feed
 - `idx_messages_linked_object_ids` GIN on `linked_object_ids` (migration `00061_messages_linked_object_ids.ts`)
+- `idx_messages_canonical_activity_time` on `((COALESCE(original_created_at_unix, created_at_unix)) DESC, event_seq DESC)` where `message_id = dup_group_id` (migration `00075_hub_feed_filters.ts`) — site-wide hub Activity "New" and the bucket refresh job
+- `idx_messages_author_activity_time` on `(author, (COALESCE(original_created_at_unix, created_at_unix)) DESC, event_seq DESC)` where `message_id = dup_group_id` (migration `00075_hub_feed_filters.ts`) — hub Activity author filter and My feed author branch
 
 ## Linked object mentions (object channels)
 

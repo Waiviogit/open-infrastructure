@@ -274,7 +274,7 @@ jobs:
         run: pnpm nx run-many -t lint
 
   migrations-db:
-    name: Migrations — Postgres integration tests
+    name: Migrations + scheduler — Postgres integration tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -286,6 +286,8 @@ jobs:
             migrations:
               - 'libs/migrations/**'
               - 'libs/test-postgres/**'
+              - 'libs/odl-db-types/**'
+              - 'apps/scheduler/**'
               - 'docker-compose.test.yml'
 
       - uses: pnpm/action-setup@v4
@@ -301,11 +303,25 @@ jobs:
         if: steps.paths.outputs.migrations == 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: Start test Postgres + Redis
+        if: steps.paths.outputs.migrations == 'true'
+        run: pnpm test:db:up
+
       - name: Migrations integration tests
         if: steps.paths.outputs.migrations == 'true'
         env:
           POSTGRES_TEST_URL: postgres://test:test@127.0.0.1:55432/test
-        run: pnpm test:db
+        run: pnpm nx test migrations
+
+      - name: scheduler unit + Postgres integration tests
+        if: steps.paths.outputs.migrations == 'true'
+        env:
+          POSTGRES_TEST_URL: postgres://test:test@127.0.0.1:55432/test
+        run: pnpm nx test scheduler
+
+      - name: Stop test stack
+        if: always() && steps.paths.outputs.migrations == 'true'
+        run: pnpm test:db:down
 
   query-api-e2e:
     name: Query API — e2e + Postgres integration tests

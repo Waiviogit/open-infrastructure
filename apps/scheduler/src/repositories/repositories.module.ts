@@ -4,6 +4,7 @@ import { SchedulerRepository } from './scheduler.repository';
 import { HiveEngineRatesRepository } from './hive-engine-rates.repository';
 import { PostObjectsRepository } from './post-objects.repository';
 import { PostExpertiseRepository } from './post-expertise.repository';
+import { FeedActivityBucketsRepository } from './feed-activity-buckets.repository';
 
 @Module({
   providers: [
@@ -12,6 +13,7 @@ import { PostExpertiseRepository } from './post-expertise.repository';
     HiveEngineRatesRepository,
     PostObjectsRepository,
     PostExpertiseRepository,
+    FeedActivityBucketsRepository,
   ],
   exports: [
     SchedulerRepository,
@@ -19,6 +21,7 @@ import { PostExpertiseRepository } from './post-expertise.repository';
     HiveEngineRatesRepository,
     PostObjectsRepository,
     PostExpertiseRepository,
+    FeedActivityBucketsRepository,
   ],
 })
 export class RepositoriesModule {}

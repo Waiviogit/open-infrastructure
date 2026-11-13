@@ -215,6 +215,10 @@ export type {
   ActivityMessageNote,
   NewActivityMessageNote,
   ActivityMessageNoteUpdate,
+  FeedActivityBucketTab,
+  FeedActivityBucketEntityKind,
+  FeedActivityBucket,
+  NewFeedActivityBucket,
 } from './odl/tables';
 export type { ObjectStatus } from './object-status';
 export { OBJECT_STATUS_VALUES } from './object-status';

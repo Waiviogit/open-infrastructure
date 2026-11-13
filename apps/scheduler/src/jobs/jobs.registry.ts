@@ -8,6 +8,8 @@ import { postRewardReconcileJob } from './post-reward-reconcile.job';
 import { postRewardsFinalizeJob } from './post-rewards-finalize.job';
 import { postExpertiseBackfillJob } from './post-expertise-backfill.job';
 import { waivPowerAvgJob } from './waiv-power-avg.job';
+import { feedActivityBucketsRefreshJob } from './feed-activity-buckets-refresh.job';
+import { feedActivityBucketsRebuildJob } from './feed-activity-buckets-rebuild.job';
 
 /**
  * All scheduled jobs in one list for uniform registration and tooling.
@@ -19,6 +21,8 @@ export const cronJobRegistry: CronJobDefinition[] = [
   postRewardReconcileJob,
   postRewardsFinalizeJob,
   postExpertiseBackfillJob,
+  feedActivityBucketsRefreshJob,
+  feedActivityBucketsRebuildJob,
   hiveGlobalPropertiesWarmJob,
   systemHealthCheckJob,
   ...currencyCronJobDefinitions,

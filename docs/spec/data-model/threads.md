@@ -49,4 +49,6 @@ erDiagram
 | Table | Index | Purpose |
 | ----- | ----- | ------- |
 | threads | `(created_unix DESC)` | Chronological listing |
+| threads | `idx_threads_hashtags_gin` GIN `(hashtags)` | Threads linked to objects (migration `00072`) |
+| threads | `idx_threads_author_created` `(author, created_unix DESC, permlink DESC) WHERE deleted = false` | Hub feed author filter and My feed author branch (migration `00075`) |
 | thread_active_votes | `(voter)` | Look up votes by voter |

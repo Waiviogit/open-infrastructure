@@ -104,6 +104,7 @@ export interface OdlDatabase {
   message_tombstones: MessageTombstonesTable;
   message_context_exclusions: MessageContextExclusionsTable;
   activity_message_notes: ActivityMessageNotesTable;
+  feed_activity_buckets: FeedActivityBucketsTable;
 }
 
 // ---------------------------------------------------------------------------
@@ -1630,3 +1631,25 @@ export interface ActivityMessageNotesTable {
 export type ActivityMessageNote = Selectable<ActivityMessageNotesTable>;
 export type NewActivityMessageNote = Insertable<ActivityMessageNotesTable>;
 export type ActivityMessageNoteUpdate = Updateable<ActivityMessageNotesTable>;
+
+/** Hub feed tab a `feed_activity_buckets` row counts items for. */
+export type FeedActivityBucketTab = 'posts' | 'threads' | 'activity' | 'updates';
+
+/** Entity a `feed_activity_buckets` row belongs to: an author account or an object. */
+export type FeedActivityBucketEntityKind = 'user' | 'object';
+
+/**
+ * Hourly item counts per author / object and hub tab (scheduler-owned, rebuilt from content).
+ * Rows exist only for hours with activity; `bucket_hour` is unix seconds aligned to 3600.
+ */
+export interface FeedActivityBucketsTable {
+  tab: FeedActivityBucketTab;
+  entity_kind: FeedActivityBucketEntityKind;
+  entity_id: string;
+  bucket_hour: number;
+  item_count: number;
+  updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+export type FeedActivityBucket = Selectable<FeedActivityBucketsTable>;
+export type NewFeedActivityBucket = Insertable<FeedActivityBucketsTable>;

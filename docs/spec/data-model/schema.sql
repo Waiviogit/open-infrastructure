@@ -62,6 +62,8 @@ CREATE INDEX idx_object_updates_identifier_value_lower ON object_updates (lower(
 CREATE INDEX idx_object_updates_address_locality_lower ON object_updates (lower(value_json->>'locality') text_pattern_ops) WHERE update_type = 'address' AND value_json->>'locality' IS NOT NULL;
 CREATE INDEX idx_object_updates_object_rank_score ON object_updates (object_id, rank_score);
 CREATE INDEX idx_object_updates_object_created ON object_updates (object_id, created_at_unix DESC, update_id DESC);
+CREATE INDEX idx_object_updates_creator_created ON object_updates (creator, created_at_unix DESC, update_id DESC);
+CREATE INDEX idx_object_updates_created ON object_updates (created_at_unix DESC, update_id DESC);
 
 -- Trigger: keep search_vector in sync with value_text
 CREATE OR REPLACE FUNCTION object_updates_search_vector_trigger()
@@ -631,6 +633,7 @@ CREATE TABLE threads (
 );
 
 CREATE INDEX idx_threads_created_unix ON threads (created_unix DESC);
+CREATE INDEX idx_threads_author_created ON threads (author, created_unix DESC, permlink DESC) WHERE deleted = false;
 CREATE INDEX idx_threads_hashtags_gin ON threads USING GIN (hashtags);
 
 CREATE TABLE thread_active_votes (
@@ -815,6 +818,7 @@ CREATE INDEX idx_waiv_generated_report_rows_report_ts
   ON waiv_generated_report_rows (report_id, timestamp DESC, id DESC);
 
 -- Object-activity sort index idx_messages_channel_activity_time: see docs/spec/data-model/messages.md
+-- Hub feed indexes idx_messages_canonical_activity_time, idx_messages_author_activity_time: see docs/spec/data-model/messages.md
 
 -- Private per-account notes on activity messages (query-api, JWT subject only).
 -- Removed with the message (ON DELETE CASCADE). See docs/spec/data-model/messages.md
@@ -829,3 +833,19 @@ CREATE TABLE activity_message_notes (
 
 CREATE INDEX activity_message_notes_author_message_idx
   ON activity_message_notes (author, message_id, created_at);
+
+-- ---------------------------------------------------------------------------
+-- feed_activity_buckets (hub feed filter counters, scheduler-owned)
+-- @see docs/apps/scheduler/spec/feed-activity-buckets.md
+-- ---------------------------------------------------------------------------
+CREATE TABLE feed_activity_buckets (
+  tab         TEXT NOT NULL CHECK (tab IN ('posts', 'threads', 'activity', 'updates')),
+  entity_kind TEXT NOT NULL CHECK (entity_kind IN ('user', 'object')),
+  entity_id   TEXT NOT NULL,
+  bucket_hour BIGINT NOT NULL,
+  item_count  INTEGER NOT NULL CHECK (item_count > 0),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (tab, entity_kind, entity_id, bucket_hour)
+);
+
+CREATE INDEX idx_feed_activity_buckets_tab_hour ON feed_activity_buckets (tab, bucket_hour);

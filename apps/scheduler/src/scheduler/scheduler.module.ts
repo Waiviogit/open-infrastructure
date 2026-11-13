@@ -25,6 +25,8 @@ import { PostRewardsFinalizeRunner } from '../jobs/post-rewards-finalize.runner'
 import { WaivPowerAvgRunner } from '../jobs/waiv-power-avg.runner';
 import { PostExpertiseService } from '../domain/post-expertise/post-expertise.service';
 import { PostExpertiseBackfillRunner } from '../jobs/post-expertise-backfill.runner';
+import { FeedActivityBucketsService } from '../domain/feed-activity-buckets/feed-activity-buckets.service';
+import { FeedActivityBucketsRunner } from '../jobs/feed-activity-buckets.runner';
 import { SystemHealthCheckRunner } from '../jobs/system-health-check.runner';
 import { PostRewardsFinalizeQueue } from '../queues/post-rewards-finalize.queue';
 import { PostWaivReconcileQueue } from '../queues/post-waiv-reconcile.queue';
@@ -136,6 +138,8 @@ import {
     PostRewardsFinalizeRunner,
     PostExpertiseBackfillRunner,
     PostExpertiseService,
+    FeedActivityBucketsRunner,
+    FeedActivityBucketsService,
     PostWaivReconcileQueue,
     PostRewardsFinalizeQueue,
     WaivRewardPoolCache,

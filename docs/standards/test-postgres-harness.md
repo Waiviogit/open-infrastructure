@@ -59,7 +59,7 @@ Fixtures (`src/support/fixtures/`) commit rows — the server is another process
 
 `.github/workflows/verify.yml`, both with `POSTGRES_TEST_URL=postgres://test:test@127.0.0.1:55432/test`:
 
-- `migrations-db` — `pnpm test:db`;
+- `migrations-db` (paths filter: migrations, test-postgres, odl-db-types, scheduler, compose) — `test:db:up` → `nx test migrations` → `nx test scheduler` (its `*.db.spec.ts` files run instead of skipping) → `test:db:down`;
 - `query-api-e2e` (paths filter: query-api, query-api-e2e, migrations, odl-db-types, test-postgres, compose) — `test:db:up` → `nx e2e query-api-e2e` → `nx test query-api` (the `*.db.spec.ts` files run instead of skipping) → `test:db:down`.
 
 ## Known gaps
