@@ -24,6 +24,7 @@ import type {
 import {
   HOME_FEED_TAB_SORTS,
   buildHomeFeedHref,
+  homeFeedFilterKey,
   isSameHomeFeedFilter,
   parseHomeFeedFilter,
   resolveHomeFeedFilter,
@@ -36,7 +37,6 @@ import {
   HomeFeedFilterLink,
   HomeFeedFilterSection,
   HomeFeedFilterShowMore,
-  HomeFeedFilterUnavailable,
 } from './home-feed-filter-rows';
 
 const ROW_AVATAR_SIZE = 20;
@@ -50,8 +50,13 @@ const SORTS: readonly { sort: HomeFeedSort; icon: IconName; labelKey: string }[]
 export type HomeFeedFiltersPanelProps = {
   tab: HomeFeedTabKey;
   signedIn: boolean;
-  /** Followed accounts / objects with counters; `null` for guests or when unavailable. */
+  /**
+   * Followed accounts / objects that have items on this tab, with counters; `null` for
+   * guests or when unavailable.
+   */
   summary: HomeFeedFiltersView | null;
+  /** Tabs where the server-rendered URL's author / object has items. */
+  presence?: { filterKey: string; tabs: readonly HomeFeedTabKey[] };
 };
 
 function objectName(item: HomeFeedFilterObject): string {
@@ -68,14 +73,22 @@ function objectImage(item: HomeFeedFilterObject): string | undefined {
  * Hub left rail: exactly one active filter for every tab. Sorts and My feed first, then
  * followed accounts and followed objects by type with "new in 3 days" counters.
  */
-export function HomeFeedFiltersPanel({ tab, signedIn, summary }: HomeFeedFiltersPanelProps) {
+export function HomeFeedFiltersPanel({
+  tab,
+  signedIn,
+  summary,
+  presence,
+}: HomeFeedFiltersPanelProps) {
   const { t } = useI18n();
   const { search } = useEffectiveNav();
-  const { effective } = resolveHomeFeedFilter(
-    tab,
-    parseHomeFeedFilter(new URLSearchParams(search)),
-    signedIn,
-  );
+  const requested = parseHomeFeedFilter(new URLSearchParams(search));
+  // Presence belongs to the filter the server rendered; a just-clicked row (always present
+  // on this tab) has none yet and is treated as present, so it highlights at once.
+  const presentTabs =
+    presence && requested && homeFeedFilterKey(requested) === presence.filterKey
+      ? presence.tabs
+      : undefined;
+  const { effective } = resolveHomeFeedFilter(tab, requested, signedIn, presentTabs);
   const tabHref = HOME_FEED_TABS.find((entry) => entry.key === tab)?.href ?? '/';
   const hrefFor = (filter: HomeFeedFilter | null) => buildHomeFeedHref(tabHref, filter);
   const isActive = (filter: HomeFeedFilter) => isSameHomeFeedFilter(filter, effective);
@@ -83,8 +96,8 @@ export function HomeFeedFiltersPanel({ tab, signedIn, summary }: HomeFeedFilters
   return (
     <nav aria-label={t('home_feed_filters_aria')} className="flex min-w-0 flex-col gap-card-padding p-2">
       <div className="flex flex-col gap-0.5">
-        {SORTS.map(({ sort, icon, labelKey }) =>
-          HOME_FEED_TAB_SORTS[tab].includes(sort) ? (
+        {SORTS.filter(({ sort }) => HOME_FEED_TAB_SORTS[tab].includes(sort)).map(
+          ({ sort, icon, labelKey }) => (
             <HomeFeedFilterLink
               key={sort}
               href={hrefFor({ kind: sort })}
@@ -93,10 +106,6 @@ export function HomeFeedFiltersPanel({ tab, signedIn, summary }: HomeFeedFilters
             >
               {t(labelKey)}
             </HomeFeedFilterLink>
-          ) : (
-            <HomeFeedFilterUnavailable key={sort} icon={icon} reason={t('home_feed_filter_unavailable_on_tab')}>
-              {t(labelKey)}
-            </HomeFeedFilterUnavailable>
           ),
         )}
         {signedIn ? (
@@ -127,7 +136,7 @@ type FollowSectionsProps = {
 function HomeFeedFollowSections({ tab, summary, hrefFor, isActive }: FollowSectionsProps) {
   const { t } = useI18n();
   if (summary.users.total === 0 && summary.objectTypes.length === 0) {
-    return <p className="px-2 text-caption text-muted">{t('home_feed_filters_follow_hint')}</p>;
+    return null;
   }
   return (
     <div className="flex min-w-0 flex-col gap-2">

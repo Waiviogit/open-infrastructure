@@ -11,6 +11,7 @@ import {
   resolveHomeFeedFilter,
 } from '@/modules/home';
 import { getHomeHubActivityPage } from '@/modules/home/application/queries/get-home-hub-feed.query';
+import { getHomeFeedPresentTabsQuery } from '@/modules/home/application/queries/get-home-feed-presence.query';
 import { getRequestUser } from '@/shared/infrastructure/auth/get-request-user.server';
 
 import { buildHomeFeedTabMetadata } from '../../home-feed-metadata';
@@ -31,10 +32,12 @@ async function HomeActivityFeedContent({ searchParams }: HubFeedPageProps) {
     getRequestLocale(),
   ]);
   const viewer = user?.username ?? null;
+  const filterInUrl = parseHomeFeedFilter(params);
   const { effective, requested, notice } = resolveHomeFeedFilter(
     'activity',
-    parseHomeFeedFilter(params),
+    filterInUrl,
     viewer != null,
+    await getHomeFeedPresentTabsQuery(filterInUrl),
   );
   const initialPage = await getHomeHubActivityPage({ filter: effective, viewer, locale });
   return (

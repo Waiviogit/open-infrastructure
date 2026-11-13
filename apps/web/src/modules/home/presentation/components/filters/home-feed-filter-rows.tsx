@@ -63,29 +63,6 @@ export function HomeFeedFilterLink({
   );
 }
 
-/** A sort the active tab cannot apply: shown, not clickable, with the reason. */
-export function HomeFeedFilterUnavailable({
-  icon,
-  children,
-  reason,
-}: {
-  icon: IconName;
-  children: ReactNode;
-  reason: string;
-}) {
-  return (
-    <span
-      className="flex w-full min-w-0 cursor-not-allowed items-center gap-2 rounded-btn px-2 py-1.5 text-body-sm text-muted"
-      aria-disabled="true"
-      title={reason}
-    >
-      <Icon name={icon} size={16} className="shrink-0" />
-      <span className="min-w-0 truncate">{children}</span>
-      <span className="sr-only">{reason}</span>
-    </span>
-  );
-}
-
 type HomeFeedFilterSectionProps = {
   id: string;
   title: ReactNode;
@@ -115,7 +92,7 @@ export function HomeFeedFilterSection({
         type="button"
         className="flex w-full min-w-0 items-center gap-2 rounded-btn px-2 py-1.5 text-body-sm font-weight-strong text-fg hover:bg-ghost-surface"
         aria-expanded={!collapsed}
-        aria-controls={contentId}
+        aria-controls={collapsed ? undefined : contentId}
         aria-label={toggleLabel}
         onClick={onToggle}
       >
@@ -128,9 +105,11 @@ export function HomeFeedFilterSection({
           className={['shrink-0 transition-transform', count ? '' : 'ml-auto', collapsed ? '-rotate-90' : ''].join(' ')}
         />
       </button>
-      <div id={contentId} hidden={collapsed} className="mt-1 flex flex-col gap-0.5">
-        {children}
-      </div>
+      {collapsed ? null : (
+        <div id={contentId} className="mt-1 flex flex-col gap-0.5">
+          {children}
+        </div>
+      )}
     </section>
   );
 }

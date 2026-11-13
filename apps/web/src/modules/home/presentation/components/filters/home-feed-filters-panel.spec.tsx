@@ -90,7 +90,14 @@ describe('HomeFeedFiltersPanel', () => {
 
     expect(activeLinks().map((link) => link.getAttribute('href'))).toEqual(['/?author=alice']);
     expect(screen.getByRole('link', { name: /bob/ }).getAttribute('href')).toBe('/?author=bob');
-    expect(screen.getByRole('link', { name: /cafe-1/, hidden: true }).getAttribute('href')).toBe('/?object=cafe-1');
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Restaurant' }));
+    expect(screen.getByRole('link', { name: /cafe-1/ }).getAttribute('href')).toBe('/?object=cafe-1');
+  });
+
+  it('falls back to my feed when the URL author has nothing on this tab', () => {
+    mockSearch = 'author=carol';
+    renderPanel({ tab: 'threads', presence: { filterKey: 'author:carol', tabs: ['posts'] } });
+    expect(activeLinks().map((link) => link.getAttribute('href'))).toEqual(['/feed/threads']);
   });
 
   it('shows +N only for rows with new items', () => {
@@ -107,19 +114,30 @@ describe('HomeFeedFiltersPanel', () => {
 
     expect(people.getAttribute('aria-expanded')).toBe('true');
     expect(restaurants.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('cafe-1')).toBeNull();
 
     fireEvent.click(restaurants);
     expect(restaurants.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('cafe-1')).toBeTruthy();
     expect(restaurants.tagName).toBe('BUTTON');
+
+    fireEvent.click(people);
+    expect(screen.queryByText('alice')).toBeNull();
   });
 
-  it('disables sorts the tab cannot apply', () => {
+  it('shows only the sorts the tab supports', () => {
     renderPanel({ tab: 'activity' });
-    expect(screen.queryByRole('link', { name: 'home_feed_filter_hot' })).toBeNull();
-    expect(screen.getByText('home_feed_filter_hot').closest('[aria-disabled="true"]')).toBeTruthy();
+    expect(screen.queryByText('home_feed_filter_hot')).toBeNull();
+    expect(screen.queryByText('home_feed_filter_trending')).toBeNull();
     expect(screen.getByRole('link', { name: 'home_feed_filter_new' }).getAttribute('href')).toBe(
       '/feed/activity?filter=new',
     );
+  });
+
+  it('hides Hot on Updates', () => {
+    renderPanel({ tab: 'updates' });
+    expect(screen.queryByText('home_feed_filter_hot')).toBeNull();
+    expect(screen.getByRole('link', { name: 'home_feed_filter_trending' })).toBeTruthy();
   });
 
   it('guests get site-wide sorts and a sign-in prompt, defaulting to trending', () => {

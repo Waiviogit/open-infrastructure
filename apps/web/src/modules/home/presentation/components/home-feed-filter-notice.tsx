@@ -28,7 +28,9 @@ export function HomeFeedFilterNotice({ notice, requested }: HomeFeedFilterNotice
           '{sort}',
           t(SORT_LABEL_KEYS[requested.kind as keyof typeof SORT_LABEL_KEYS]),
         )
-      : t('home_feed_filter_signin_required');
+      : notice === 'entity_unavailable'
+        ? t('home_feed_filter_entity_unavailable')
+        : t('home_feed_filter_signin_required');
 
   return (
     <p

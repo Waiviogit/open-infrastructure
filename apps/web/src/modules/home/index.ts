@@ -20,6 +20,7 @@ export {
   defaultHomeFeedFilter,
   homeFeedFilterKey,
   homeFeedFilterSearch,
+  isEntityFilter,
   isHomeFeedSort,
   isSameHomeFeedFilter,
   parseHomeFeedFilter,

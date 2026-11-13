@@ -51,6 +51,17 @@ describe('home feed filter URL', () => {
     expect(resolveHomeFeedFilter('updates', { kind: 'hot' }, true).effective).toEqual({ kind: 'new' });
   });
 
+  it('falls back to the tab default for an author or object with nothing on the tab', () => {
+    const author = { kind: 'author' as const, account: 'alice' };
+    expect(resolveHomeFeedFilter('threads', author, true, ['posts'])).toEqual({
+      effective: { kind: 'my' },
+      requested: author,
+      notice: 'entity_unavailable',
+    });
+    expect(resolveHomeFeedFilter('posts', author, true, ['posts']).effective).toEqual(author);
+    expect(resolveHomeFeedFilter('threads', author, true).effective).toEqual(author);
+  });
+
   it('asks guests to sign in for my feed', () => {
     expect(resolveHomeFeedFilter('posts', { kind: 'my' }, false)).toEqual({
       effective: { kind: 'trending' },

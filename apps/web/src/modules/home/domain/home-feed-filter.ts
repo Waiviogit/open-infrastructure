@@ -13,7 +13,7 @@ export type HomeFeedFilter =
   | { kind: 'object'; objectId: string };
 
 /** Why the applied filter differs from the one in the URL. */
-export type HomeFeedFilterNoticeKind = 'sort_unavailable' | 'sign_in_required';
+export type HomeFeedFilterNoticeKind = 'sort_unavailable' | 'sign_in_required' | 'entity_unavailable';
 
 export type ResolvedHomeFeedFilter = {
   /** Filter the feed is loaded with. */
@@ -106,14 +106,19 @@ export function defaultHomeFeedFilter(tab: HomeFeedTabKey, signedIn: boolean): H
 }
 
 /**
- * Applied filter for a tab. A sort the tab does not support falls back to New and
- * `my` without a session falls back to the guest default; the URL keeps the request,
- * so switching back to a tab that supports it restores it.
+ * Applied filter for a tab. A sort the tab does not support falls back to New, `my`
+ * without a session falls back to the guest default, and an author / object with no
+ * items on the tab (not in `presentTabs`) falls back to the tab default. The URL keeps
+ * the request, so switching back to a tab that supports it restores it.
+ *
+ * `presentTabs`: tabs where the requested author / object has items; `undefined` when
+ * unknown (treated as present).
  */
 export function resolveHomeFeedFilter(
   tab: HomeFeedTabKey,
   requested: HomeFeedFilter | null,
   signedIn: boolean,
+  presentTabs?: readonly HomeFeedTabKey[],
 ): ResolvedHomeFeedFilter {
   if (!requested) {
     return { effective: defaultHomeFeedFilter(tab, signedIn), requested, notice: null };
@@ -124,7 +129,17 @@ export function resolveHomeFeedFilter(
   if (isHomeFeedSort(requested.kind) && !HOME_FEED_TAB_SORTS[tab].includes(requested.kind)) {
     return { effective: { kind: 'new' }, requested, notice: 'sort_unavailable' };
   }
+  if (isEntityFilter(requested) && presentTabs && !presentTabs.includes(tab)) {
+    return { effective: defaultHomeFeedFilter(tab, signedIn), requested, notice: 'entity_unavailable' };
+  }
   return { effective: requested, requested, notice: null };
+}
+
+/** Author / object filters: their availability differs per tab. */
+export function isEntityFilter(
+  filter: HomeFeedFilter,
+): filter is Extract<HomeFeedFilter, { kind: 'author' | 'object' }> {
+  return filter.kind === 'author' || filter.kind === 'object';
 }
 
 export function isHomeFeedSort(kind: HomeFeedFilter['kind']): kind is HomeFeedSort {
