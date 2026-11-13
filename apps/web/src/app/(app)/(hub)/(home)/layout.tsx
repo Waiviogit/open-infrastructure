@@ -1,12 +1,13 @@
 import { Suspense, type ReactNode } from 'react';
 
-import { HomeFeedScrollReset, HomeFeedTabBand } from '@/modules/home';
+import { HomeFeedScrollReset } from '@/modules/home';
 import { HomeFeedMobileFilters } from '@/modules/home/presentation/components/filters/home-feed-mobile-filters';
 
 /**
- * Hub feed shell: tab band (Posts / Threads / Activity / Updates) under the hub section nav,
- * then the same three-column grid as the profile: filter rail | feed | right column
- * (reserved, empty for now). Below `lg` the rail (`filters` slot) opens in a drawer.
+ * Hub feed shell: the same three-column grid as the profile: filter rail | feed | right
+ * column (reserved, empty for now). Below `lg` the rail (`filters` slot) opens in a drawer.
+ * The tab band (Posts / Threads / Activity / Updates) is rendered by the hub layout
+ * (`HubFeedTabBand`), outside the hub content clip, so it spans the viewport.
  *
  * The rail sticks below the app header and the hub section nav; `--hub-section-nav-height`
  * is published by `HubStickySectionNav`. The tab band is not sticky, so it does not change
@@ -21,7 +22,6 @@ export default function HomeFeedLayout({
 }) {
   return (
     <>
-      <HomeFeedTabBand />
       <div
         className={[
           'mt-card-padding grid grid-cols-1 gap-card-padding',

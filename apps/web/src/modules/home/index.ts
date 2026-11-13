@@ -2,6 +2,7 @@ export {
   HomeActivityFeedList,
   HomeFeedFilterNotice,
   HomeFeedTabBand,
+  HubFeedTabBand,
   HomeFeedPostsList,
   HomeFeedScrollReset,
   HomeThreadsFeedList,

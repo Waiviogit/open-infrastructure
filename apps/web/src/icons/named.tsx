@@ -8,6 +8,7 @@ function createNamedIcon(name: IconName) {
   };
 }
 
+export const ActivityIcon = createNamedIcon('activity');
 export const ArrowLeftRightIcon = createNamedIcon('arrow-left-right');
 export const ArrowUpDownIcon = createNamedIcon('arrow-up-down');
 export const AwardIcon = createNamedIcon('award');
@@ -61,6 +62,7 @@ export const LockOpenIcon = createNamedIcon('lock-open');
 export const MailIcon = createNamedIcon('mail');
 export const MapIcon = createNamedIcon('map');
 export const MapPinIcon = createNamedIcon('map-pin');
+export const MessageCircleIcon = createNamedIcon('message-circle');
 export const MaximizeIcon = createNamedIcon('maximize');
 export const MinimizeIcon = createNamedIcon('minimize');
 export const MinusIcon = createNamedIcon('minus');
@@ -111,6 +113,7 @@ export const ZapIcon = createNamedIcon('zap');
 
 /** Maps {@link IconName} to its named component export. */
 export const NAMED_ICON_BY_NAME = {
+  activity: ActivityIcon,
   'arrow-left-right': ArrowLeftRightIcon,
   'arrow-up-down': ArrowUpDownIcon,
   award: AwardIcon,
@@ -164,6 +167,7 @@ export const NAMED_ICON_BY_NAME = {
   mail: MailIcon,
   map: MapIcon,
   'map-pin': MapPinIcon,
+  'message-circle': MessageCircleIcon,
   maximize: MaximizeIcon,
   minimize: MinimizeIcon,
   minus: MinusIcon,

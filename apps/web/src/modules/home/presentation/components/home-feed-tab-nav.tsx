@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { Icon, type IconName } from '@/icons';
 import {
   OptimisticNavLink,
   profileSectionTabClass,
@@ -17,6 +18,15 @@ import {
   resolveActiveHomeFeedTab,
   type HomeFeedTabKey,
 } from '../../domain/home-feed-tabs';
+
+const TAB_ICONS: Readonly<Record<HomeFeedTabKey, IconName>> = {
+  posts: 'file-text',
+  threads: 'message-circle',
+  activity: 'activity',
+  updates: 'bell',
+};
+
+const TAB_ICON_SIZE = 18;
 
 type HomeFeedTabNavViewProps = {
   activeKey: HomeFeedTabKey | null;
@@ -49,7 +59,10 @@ export function HomeFeedTabNavView({ activeKey, search }: HomeFeedTabNavViewProp
             className={profileSectionTabClass(active, 'primary')}
             aria-current={active ? 'page' : undefined}
           >
-            {t(tab.labelKey)}
+            <span className="inline-flex items-center gap-2">
+              <Icon name={TAB_ICONS[tab.key]} size={TAB_ICON_SIZE} className="shrink-0" />
+              {t(tab.labelKey)}
+            </span>
           </OptimisticNavLink>
         );
       })}

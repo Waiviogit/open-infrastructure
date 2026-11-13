@@ -19,9 +19,9 @@ updated_at: 2026-11-13
 
 ## Layout
 
-`(app)/(hub)/(home)/layout.tsx`:
+`(app)/(hub)/layout.tsx` + `(app)/(hub)/(home)/layout.tsx`:
 
-1. `HomeFeedTabBand`: a full-width band under the sticky hub section nav (FEED / DISCOVER / MARKET), same band as the profile and object menus. The tabs (`HomeFeedTabNav`: `ScrollableHorizontalTabNav` + `profileSectionTabClass` + `OptimisticNavLink prefetchShell`) sit over the feed column. The band is not sticky.
+1. `HubFeedTabBand` (rendered by `(hub)/layout.tsx` on `/` and `/feed/*`, outside the hub content's `lg:overflow-x-clip`, so the band spans the viewport): a full-width band under the sticky hub section nav (FEED / DISCOVER / MARKET). The tabs (`HomeFeedTabNav`: `ScrollableHorizontalTabNav` + `profileSectionTabClass` + `OptimisticNavLink prefetchShell`) are centered, each with an icon: Posts `file-text`, Threads `message-circle`, Activity `activity`, Updates `bell`. The band is not sticky; below `lg` the tabs scroll horizontally.
 2. The profile grid: the filter rail (`filters` slot, [feed filters](feed-filters.md)) | the feed | an empty right column (`--shell-right-width`, reserved).
 
 The rail is sticky below the app header and the hub section nav: `HubStickySectionNav` publishes its height as `--hub-section-nav-height` on the hub root, and the rail uses `top: header + section nav + card spacing` with a matching `max-height` (scrolls inside if taller). Below `lg` the rail moves into a drawer opened above the feed. The hub FEED section stays active on `/` and `/feed/*` (`isHomeFeedPath`).

@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Activity,
   ArrowLeftRight,
   ArrowUpDown,
   Award,
@@ -47,6 +48,7 @@ import {
   Mail,
   Map,
   MapPin,
+  MessageCircle,
   Maximize2,
   MessageSquare,
   Minimize2,
@@ -130,6 +132,7 @@ export function createLucideIcon(LucideGlyph: LucideIcon): IconComponent {
 }
 
 export const lucideIconPack = {
+  activity: createLucideIcon(Activity),
   'arrow-left-right': createLucideIcon(ArrowLeftRight),
   'arrow-up-down': createLucideIcon(ArrowUpDown),
   award: createLucideIcon(Award),
@@ -178,6 +181,7 @@ export const lucideIconPack = {
   mail: createLucideIcon(Mail),
   map: createLucideIcon(Map),
   'map-pin': createLucideIcon(MapPin),
+  'message-circle': createLucideIcon(MessageCircle),
   maximize: createLucideIcon(Maximize2),
   minimize: createLucideIcon(Minimize2),
   minus: createLucideIcon(Minus),
