@@ -73,3 +73,16 @@ export { PostRepliesRepository } from './post-replies.repository';
 export { ThreadRepliesRepository } from './thread-replies.repository';
 export { AffiliateObjectsRepository } from './affiliate-objects.repository';
 export { ActivityMessageNotesRepository } from './activity-message-notes.repository';
+export { HubPostsFeedRepository, type RankedFeedBranchRow } from './hub-posts-feed.repository';
+export { HubThreadsFeedRepository } from './hub-threads-feed.repository';
+export { HubActivityFeedRepository } from './hub-activity-feed.repository';
+export {
+  HubUpdatesFeedRepository,
+  type UpdateRankCursor,
+  type UpdateTimeCursor,
+} from './hub-updates-feed.repository';
+export type {
+  HubRankedMetric,
+  ScoreKeysetCursor,
+  TimeKeysetCursor,
+} from './hub-feed-scope.sql';

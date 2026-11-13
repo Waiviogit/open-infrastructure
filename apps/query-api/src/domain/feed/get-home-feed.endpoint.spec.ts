@@ -17,6 +17,7 @@ describe('GetHomeFeedEndpoint', () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
     );
 
     const result = await endpoint.execute(
@@ -28,16 +29,17 @@ describe('GetHomeFeedEndpoint', () => {
   });
 
   it('encodes next cursor when more rows exist', async () => {
-    const postsRepo = {
-      findHomeFeed: jest.fn().mockResolvedValue([
+    const hubPostsRepo = {
+      findMy: jest.fn().mockResolvedValue([
         { author: 'a', permlink: 'p1', feed_at: 100, reblogged_by: null },
         { author: 'b', permlink: 'p2', feed_at: 90, reblogged_by: null },
         { author: 'c', permlink: 'p3', feed_at: 80, reblogged_by: null },
       ]),
+      findNew: jest.fn(),
     };
     const userAccountMutesRepo = { listMutedForMuters: jest.fn().mockResolvedValue([]) };
     const endpoint = new GetHomeFeedEndpoint(
-      postsRepo as never,
+      {} as never,
       {} as never,
       userAccountMutesRepo as never,
       {} as never,
@@ -45,11 +47,12 @@ describe('GetHomeFeedEndpoint', () => {
       {} as never,
       {} as never,
       {} as never,
+      hubPostsRepo as never,
     );
 
     const result = await endpoint.execute({ limit: 2, currency: 'USD' }, 'en-US', undefined, 'alice');
 
-    expect(postsRepo.findHomeFeed).toHaveBeenCalledWith('alice', [], null, 3);
+    expect(hubPostsRepo.findMy).toHaveBeenCalledWith('alice', [], null, 3);
     expect(buildFeedStoryItemsFromPostPage).toHaveBeenCalled();
     expect(result.hasMore).toBe(true);
     expect(result.cursor).toBe(
@@ -58,14 +61,15 @@ describe('GetHomeFeedEndpoint', () => {
   });
 
   it('loads global feed for guest without loading mutes', async () => {
-    const postsRepo = {
-      findHomeFeed: jest.fn().mockResolvedValue([]),
+    const hubPostsRepo = {
+      findMy: jest.fn(),
+      findNew: jest.fn().mockResolvedValue([]),
     };
     const userAccountMutesRepo = {
       listMutedForMuters: jest.fn().mockResolvedValue([]),
     };
     const endpoint = new GetHomeFeedEndpoint(
-      postsRepo as never,
+      {} as never,
       {} as never,
       userAccountMutesRepo as never,
       {} as never,
@@ -73,11 +77,13 @@ describe('GetHomeFeedEndpoint', () => {
       {} as never,
       {} as never,
       {} as never,
+      hubPostsRepo as never,
     );
 
     await endpoint.execute({ limit: 20, currency: 'USD' }, 'en-US');
 
     expect(userAccountMutesRepo.listMutedForMuters).not.toHaveBeenCalled();
-    expect(postsRepo.findHomeFeed).toHaveBeenCalledWith(undefined, [], null, 21);
+    expect(hubPostsRepo.findNew).toHaveBeenCalledWith([], null, 21);
+    expect(hubPostsRepo.findMy).not.toHaveBeenCalled();
   });
 });

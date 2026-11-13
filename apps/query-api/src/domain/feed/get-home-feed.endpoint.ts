@@ -3,6 +3,7 @@ import { ObjectViewService } from '@opden-data-layer/objects-domain';
 import {
   AggregatedObjectRepository,
   AccountsCurrentRepository,
+  HubPostsFeedRepository,
   PostsRepository,
   UserAccountMutesRepository,
   type FeedBranchRow,
@@ -26,6 +27,7 @@ export class GetHomeFeedEndpoint {
     private readonly governanceResolver: GovernanceResolverService,
     private readonly objectProjection: ObjectProjectionService,
     private readonly postRewardService: PostRewardService,
+    private readonly hubPostsRepo: HubPostsFeedRepository,
   ) {}
 
   async execute(
@@ -51,12 +53,10 @@ export class GetHomeFeedEndpoint {
         ? await this.userAccountMutesRepo.listMutedForMuters([viewerTrimmed])
         : [];
 
-    const feedRows = await this.postsRepo.findHomeFeed(
-      viewerTrimmed.length > 0 ? viewerTrimmed : undefined,
-      mutedAuthors,
-      cursorPayload,
-      limitPlusOne,
-    );
+    const feedRows =
+      viewerTrimmed.length > 0
+        ? await this.hubPostsRepo.findMy(viewerTrimmed, mutedAuthors, cursorPayload, limitPlusOne)
+        : await this.hubPostsRepo.findNew([], cursorPayload, limitPlusOne);
 
     const hasMore = feedRows.length > limit;
     const pageRows: FeedBranchRow[] = hasMore ? feedRows.slice(0, limit) : feedRows;

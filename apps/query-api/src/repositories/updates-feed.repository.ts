@@ -79,7 +79,7 @@ export class UpdatesFeedRepository {
       }
 
       const rows = await q.limit(params.limit).execute();
-      return rows.map((r) => this.toJoinRow(r));
+      return rows.map((r) => toUpdatesFeedJoinRow(r));
     } catch (e) {
       this.logger.error((e as Error).message);
       return [];
@@ -136,7 +136,7 @@ export class UpdatesFeedRepository {
       }
 
       const rows = await q.limit(params.limit).execute();
-      return rows.map((r) => this.toJoinRow(r));
+      return rows.map((r) => toUpdatesFeedJoinRow(r));
     } catch (e) {
       this.logger.error((e as Error).message);
       return [];
@@ -178,7 +178,7 @@ export class UpdatesFeedRepository {
       }
 
       const rows = await q.execute();
-      return rows.map((r) => this.toJoinRow(r));
+      return rows.map((r) => toUpdatesFeedJoinRow(r));
     } catch (e) {
       this.logger.error((e as Error).message);
       return [];
@@ -213,7 +213,7 @@ export class UpdatesFeedRepository {
       if (!row) {
         return null;
       }
-      return this.toJoinRow(row);
+      return toUpdatesFeedJoinRow(row);
     } catch (e) {
       this.logger.error((e as Error).message);
       return null;
@@ -294,24 +294,25 @@ export class UpdatesFeedRepository {
       return emptyRankVoteProjection();
     }
   }
+}
 
-  private toJoinRow(r: Record<string, unknown>): UpdatesFeedJoinRow {
-    const {
-      creator_wobjects_weight: cw,
-      geo_lat: gla,
-      geo_lon: glo,
-      ...rest
-    } = r as Record<string, unknown> & {
-      creator_wobjects_weight: number;
-      geo_lat: number | null;
-      geo_lon: number | null;
-    };
-    const row = rest as unknown as ObjectUpdate;
-    return {
-      row,
-      creator_wobjects_weight: typeof cw === 'number' ? cw : Number(cw ?? 0),
-      geo_lat: gla == null ? null : Number(gla),
-      geo_lon: glo == null ? null : Number(glo),
-    };
-  }
+/** Maps a joined `object_updates` row (+ creator weight, geo) to {@link UpdatesFeedJoinRow}. */
+export function toUpdatesFeedJoinRow(r: Record<string, unknown>): UpdatesFeedJoinRow {
+  const {
+    creator_wobjects_weight: cw,
+    geo_lat: gla,
+    geo_lon: glo,
+    ...rest
+  } = r as Record<string, unknown> & {
+    creator_wobjects_weight: number;
+    geo_lat: number | null;
+    geo_lon: number | null;
+  };
+  const row = rest as unknown as ObjectUpdate;
+  return {
+    row,
+    creator_wobjects_weight: typeof cw === 'number' ? cw : Number(cw ?? 0),
+    geo_lat: gla == null ? null : Number(gla),
+    geo_lon: glo == null ? null : Number(glo),
+  };
 }

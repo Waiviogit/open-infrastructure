@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, home-feed]
-updated_at: 2026-08-06
+updated_at: 2026-11-13
 related:
   - docs/apps/query-api/spec/overview.md
   - docs/apps/web/spec/pages/home/page.md
@@ -26,8 +26,8 @@ related:
 
 | Viewer | Feed scope |
 |--------|------------|
-| Guest (no `X-Viewer`) | All root posts in `posts`, ordered by `created_unix` DESC. |
-| Logged-in (`X-Viewer`) | Posts matching **any** of: author in `user_subscriptions.following` for viewer; linked object in `user_object_follows` for viewer; linked object in `object_favorite` or `object_ownership` for viewer. |
+| Guest (no `X-Viewer`) | All root posts (`depth = 0` or null) in `posts`, ordered by `created_unix` DESC. |
+| Logged-in (`X-Viewer`) | Posts matching **any** of: author in `user_subscriptions.following` for viewer; linked **active** object in `user_object_follows`, `object_favorite` or `object_ownership` for viewer. |
 
 Muted authors (`user_account_mutes`) are excluded for logged-in viewers. Reblogs are not included in v1.
 
@@ -37,10 +37,10 @@ Muted authors (`user_account_mutes`) are excluded for logged-in viewers. Reblogs
 
 | Mode | Query shape | Index |
 |------|-------------|-------|
-| Guest | Root posts ordered by `created_unix DESC` | `idx_posts_root_created_unix` (partial, root rows) |
-| Logged-in | Single query with `OR` of subscription `IN` + two correlated `EXISTS` on `post_objects` | Per-branch indexes; planner may scan heavily for users with many follows |
+| Guest | Root posts ordered by `created_unix DESC` | `idx_posts_root_created_unix` (partial, `depth = 0 OR depth IS NULL`) |
+| Logged-in | `UNION` of two branches, each limited before the merge: a `LATERAL` page per followed author, and newest root posts with an `EXISTS` on the viewer's object set | `idx_posts_author_created_unix`; `idx_posts_root_created_unix` + `post_objects` PK |
 
-> **TODO:** Refactor personalized mode to **pushdown `UNION ALL`** + `mergeFeedBranches` (same pattern as [user blog feed](user-blog-feed-endpoint.md) / `docs/spec/data-model/posts.md`) so each branch uses its own index and keyset cursor before merge.
+The same queries serve the hub feed "New" and "My feed" filters ([hub feed](hub-feed.md)).
 
 ## Request body: `HomeFeedBody`
 
@@ -57,5 +57,5 @@ Same shape as [User blog feed](user-blog-feed-endpoint.md): `UserBlogFeedRespons
 ## Implementation
 
 - Endpoint: `GetHomeFeedEndpoint`
-- Repository: `PostsRepository.findHomeFeed`
+- Repository: `HubPostsFeedRepository.findNew` (guest) / `findMy` (viewer)
 - Controller: `PostsController.getHomeFeedRoute`

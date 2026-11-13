@@ -625,7 +625,7 @@ export class MessagingRepository {
   }
 }
 
-function normalizeActivityRow(row: ObjectActivityMessageRow): ObjectActivityMessageRow {
+export function normalizeActivityRow(row: ObjectActivityMessageRow): ObjectActivityMessageRow {
   return {
     ...row,
     created_at_unix: Number(row.created_at_unix),

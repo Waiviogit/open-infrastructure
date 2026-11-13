@@ -42,6 +42,10 @@ import { PostRepliesRepository } from './post-replies.repository';
 import { ThreadRepliesRepository } from './thread-replies.repository';
 import { AffiliateObjectsRepository } from './affiliate-objects.repository';
 import { ActivityMessageNotesRepository } from './activity-message-notes.repository';
+import { HubPostsFeedRepository } from './hub-posts-feed.repository';
+import { HubThreadsFeedRepository } from './hub-threads-feed.repository';
+import { HubActivityFeedRepository } from './hub-activity-feed.repository';
+import { HubUpdatesFeedRepository } from './hub-updates-feed.repository';
 
 @Module({
   providers: [
@@ -89,6 +93,10 @@ import { ActivityMessageNotesRepository } from './activity-message-notes.reposit
     ThreadRepliesRepository,
     AffiliateObjectsRepository,
     ActivityMessageNotesRepository,
+    HubPostsFeedRepository,
+    HubThreadsFeedRepository,
+    HubActivityFeedRepository,
+    HubUpdatesFeedRepository,
   ],
   exports: [
     ObjectsCoreRepository,
@@ -135,6 +143,10 @@ import { ActivityMessageNotesRepository } from './activity-message-notes.reposit
     ThreadRepliesRepository,
     AffiliateObjectsRepository,
     ActivityMessageNotesRepository,
+    HubPostsFeedRepository,
+    HubThreadsFeedRepository,
+    HubActivityFeedRepository,
+    HubUpdatesFeedRepository,
   ],
 })
 export class RepositoriesModule {}
