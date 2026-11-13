@@ -1,3 +1,4 @@
+import { isHiveAccountName, normalizeHiveAccountInput } from '@opden-data-layer/common';
 import { z } from 'zod';
 
 import { HUB_FEED_TABS } from '../hub-feed-filter';
@@ -7,6 +8,7 @@ import {
 } from '../hub-feed.constants';
 
 const OBJECT_TYPE_MAX_LENGTH = 64;
+const OBJECT_ID_MAX_LENGTH = 256;
 
 const tab = z.enum(HUB_FEED_TABS).describe('Hub tab whose items are counted');
 
@@ -44,3 +46,21 @@ export const hubFeedFilterObjectsQuerySchema = z.object({
   limit: pageSize.describe('Page size'),
 });
 export type HubFeedFilterObjectsQuery = z.infer<typeof hubFeedFilterObjectsQuerySchema>;
+
+/** GET /feed/presence fields (MCP input); the route requires exactly one. */
+export const hubFeedPresenceQueryFieldsSchema = z.object({
+  author: z
+    .string()
+    .transform(normalizeHiveAccountInput)
+    .refine(isHiveAccountName, 'Invalid Hive account name')
+    .optional()
+    .describe('Hive account'),
+  object: z.string().trim().min(1).max(OBJECT_ID_MAX_LENGTH).optional().describe('Object id'),
+});
+
+/** GET /feed/presence: exactly one of `author` / `object`. */
+export const hubFeedPresenceQuerySchema = hubFeedPresenceQueryFieldsSchema.refine(
+  (query) => (query.author == null) !== (query.object == null),
+  { message: 'Pass exactly one of author or object' },
+);
+export type HubFeedPresenceQuery = z.infer<typeof hubFeedPresenceQuerySchema>;

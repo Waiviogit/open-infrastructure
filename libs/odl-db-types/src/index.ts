@@ -219,6 +219,8 @@ export type {
   FeedActivityBucketEntityKind,
   FeedActivityBucket,
   NewFeedActivityBucket,
+  FeedActivityPresence,
+  NewFeedActivityPresence,
 } from './odl/tables';
 export type { ObjectStatus } from './object-status';
 export { OBJECT_STATUS_VALUES } from './object-status';

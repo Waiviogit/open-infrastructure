@@ -105,6 +105,7 @@ export interface OdlDatabase {
   message_context_exclusions: MessageContextExclusionsTable;
   activity_message_notes: ActivityMessageNotesTable;
   feed_activity_buckets: FeedActivityBucketsTable;
+  feed_activity_presence: FeedActivityPresenceTable;
 }
 
 // ---------------------------------------------------------------------------
@@ -1653,3 +1654,18 @@ export interface FeedActivityBucketsTable {
 
 export type FeedActivityBucket = Selectable<FeedActivityBucketsTable>;
 export type NewFeedActivityBucket = Insertable<FeedActivityBucketsTable>;
+
+/**
+ * Accounts / objects with any item of a hub tab and the time of the latest one
+ * (scheduler-owned: refreshed from buckets, rebuilt weekly from full history).
+ */
+export interface FeedActivityPresenceTable {
+  tab: FeedActivityBucketTab;
+  entity_kind: FeedActivityBucketEntityKind;
+  entity_id: string;
+  last_item_unix: number;
+  updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+export type FeedActivityPresence = Selectable<FeedActivityPresenceTable>;
+export type NewFeedActivityPresence = Insertable<FeedActivityPresenceTable>;

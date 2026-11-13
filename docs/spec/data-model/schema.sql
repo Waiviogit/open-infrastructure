@@ -849,3 +849,13 @@ CREATE TABLE feed_activity_buckets (
 );
 
 CREATE INDEX idx_feed_activity_buckets_tab_hour ON feed_activity_buckets (tab, bucket_hour);
+
+-- feed_activity_presence (hub rail: who has any item of a tab, scheduler-owned)
+CREATE TABLE feed_activity_presence (
+  tab            TEXT NOT NULL CHECK (tab IN ('posts', 'threads', 'activity', 'updates')),
+  entity_kind    TEXT NOT NULL CHECK (entity_kind IN ('user', 'object')),
+  entity_id      TEXT NOT NULL,
+  last_item_unix BIGINT NOT NULL,
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (tab, entity_kind, entity_id)
+);

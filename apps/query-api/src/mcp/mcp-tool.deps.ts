@@ -26,6 +26,7 @@ import type {
 } from '../domain/feed';
 import type {
   GetHubActivityFeedEndpoint,
+  GetHubFeedPresenceEndpoint,
   GetHubPostsFeedEndpoint,
   GetHubThreadsFeedEndpoint,
   GetHubUpdatesFeedEndpoint,
@@ -163,6 +164,7 @@ export interface McpToolDeps {
   getHubThreadsFeed: GetHubThreadsFeedEndpoint;
   getHubActivityFeed: GetHubActivityFeedEndpoint;
   getHubUpdatesFeed: GetHubUpdatesFeedEndpoint;
+  getHubFeedPresence: GetHubFeedPresenceEndpoint;
   getUserFeedFilters: GetUserFeedFiltersEndpoint;
   getUserFeedFilterUsers: GetUserFeedFilterUsersEndpoint;
   getUserFeedFilterObjects: GetUserFeedFilterObjectsEndpoint;

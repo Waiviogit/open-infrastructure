@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import {
   HubFeedViewerRequiredError,
+  hubFeedPresenceQueryFieldsSchema,
   hubFeedFilterObjectsQuerySchema,
   hubFeedFiltersQuerySchema,
   hubFeedFilterUsersQuerySchema,
@@ -104,6 +105,20 @@ export function registerHubFeedTools(server: McpServer, deps: McpToolDeps): void
           ctx.viewerAccount,
         ),
       );
+    },
+  );
+
+  server.registerTool(
+    'get_hub_feed_presence',
+    {
+      description: catalogDescription('get_hub_feed_presence'),
+      inputSchema: hubFeedPresenceQueryFieldsSchema,
+    },
+    async (args) => {
+      if ((args.author == null) === (args.object == null)) {
+        return toolError('Pass exactly one of author or object');
+      }
+      return jsonToolResult(await deps.getHubFeedPresence.execute(args));
     },
   );
 

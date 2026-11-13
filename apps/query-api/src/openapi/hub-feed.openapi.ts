@@ -10,6 +10,7 @@ import {
   hubFeedFilterObjectsQuerySchema,
   hubFeedFiltersQuerySchema,
   hubFeedFilterUsersQuerySchema,
+  hubFeedPresenceQueryFieldsSchema,
 } from '../domain/hub-feed/schemas/hub-feed-filters.schema';
 import { userBlogFeedResponseSchema } from './feed.openapi';
 import { projectedObjectOpenApiSchema } from './projected-object.schema';
@@ -211,3 +212,30 @@ for (const route of filterRoutes) {
     },
   });
 }
+
+registry.registerPath({
+  method: 'get',
+  path: '/query/v1/feed/presence',
+  tags: [queryApiOpenApiTags.hubFeed],
+  summary: 'Hub tabs on which an account or object has items',
+  description:
+    'Pass exactly one of `author` / `object`. Tabs come from the scheduler presence table (any item ever on the tab). The web keeps an author / object filter when switching to a listed tab and shows the tab default otherwise.',
+  request: { query: hubFeedPresenceQueryFieldsSchema },
+  responses: {
+    200: {
+      description: 'Tabs in hub order.',
+      content: {
+        'application/json': {
+          schema: registry.register(
+            'HubFeedPresence',
+            z.object({ tabs: z.array(z.enum(['posts', 'threads', 'activity', 'updates'])) }),
+          ),
+        },
+      },
+    },
+    400: {
+      description: 'Neither or both of `author` / `object`, or an invalid account name.',
+      content: { 'application/json': { schema: badRequestSchema } },
+    },
+  },
+});

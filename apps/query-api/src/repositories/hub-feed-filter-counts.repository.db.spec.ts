@@ -49,6 +49,19 @@ async function insertObject(trx: Trx, objectId: string, status: 'active' | 'unav
     .execute();
 }
 
+async function present(
+  trx: Trx,
+  entityKind: 'user' | 'object',
+  entityId: string,
+  lastItem: number,
+  tab: 'posts' | 'threads' = 'posts',
+): Promise<void> {
+  await trx
+    .insertInto('feed_activity_presence')
+    .values({ tab, entity_kind: entityKind, entity_id: entityId, last_item_unix: lastItem })
+    .execute();
+}
+
 async function bucket(
   trx: Trx,
   entityKind: 'user' | 'object',
@@ -77,7 +90,7 @@ describeDb('HubFeedFilterCountsRepository (db)', () => {
     await db.destroy();
   });
 
-  it('sums window buckets of the tab per follow, zero for quiet follows, skips inactive objects', async () => {
+  it('lists only follows present on the tab, sums window buckets, skips inactive objects', async () => {
     await withRollback(db, async (trx) => {
       const repo = new HubFeedFilterCountsRepository(trx as unknown as Kysely<Database>);
       await ensureAccount(trx, 'hfc-viewer');
@@ -99,6 +112,16 @@ describeDb('HubFeedFilterCountsRepository (db)', () => {
           { account: 'hfc-viewer', object_id: 'hfc-gone', bell: false },
         ])
         .execute();
+      await ensureAccount(trx, 'hfc-no-posts');
+      await trx
+        .insertInto('user_subscriptions')
+        .values({ follower: 'hfc-viewer', following: 'hfc-no-posts', bell: null })
+        .execute();
+      await present(trx, 'user', 'hfc-alice', SINCE + HOUR);
+      await present(trx, 'user', 'hfc-quiet', 100);
+      await present(trx, 'user', 'hfc-no-posts', 200, 'threads');
+      await present(trx, 'object', 'hfc-obj', SINCE);
+      await present(trx, 'object', 'hfc-gone', SINCE);
       await bucket(trx, 'user', 'hfc-alice', SINCE, 2);
       await bucket(trx, 'user', 'hfc-alice', SINCE + HOUR, 3);
       await bucket(trx, 'user', 'hfc-alice', SINCE - HOUR, 50);
@@ -111,9 +134,9 @@ describeDb('HubFeedFilterCountsRepository (db)', () => {
 
       expect(rows).toEqual(
         expect.arrayContaining([
-          { kind: 'user', id: 'hfc-alice', object_type: null, count: 5, weight: 70 },
-          { kind: 'user', id: 'hfc-quiet', object_type: null, count: 0, weight: 0 },
-          { kind: 'object', id: 'hfc-obj', object_type: 'restaurant', count: 4, weight: 0 },
+          { kind: 'user', id: 'hfc-alice', object_type: null, count: 5, last_item_unix: SINCE + HOUR },
+          { kind: 'user', id: 'hfc-quiet', object_type: null, count: 0, last_item_unix: 100 },
+          { kind: 'object', id: 'hfc-obj', object_type: 'restaurant', count: 4, last_item_unix: SINCE },
         ]),
       );
       expect(rows).toHaveLength(3);

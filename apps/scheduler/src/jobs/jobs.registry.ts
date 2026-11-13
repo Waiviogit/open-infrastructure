@@ -10,6 +10,7 @@ import { postExpertiseBackfillJob } from './post-expertise-backfill.job';
 import { waivPowerAvgJob } from './waiv-power-avg.job';
 import { feedActivityBucketsRefreshJob } from './feed-activity-buckets-refresh.job';
 import { feedActivityBucketsRebuildJob } from './feed-activity-buckets-rebuild.job';
+import { feedActivityPresenceRebuildJob } from './feed-activity-presence-rebuild.job';
 
 /**
  * All scheduled jobs in one list for uniform registration and tooling.
@@ -23,6 +24,7 @@ export const cronJobRegistry: CronJobDefinition[] = [
   postExpertiseBackfillJob,
   feedActivityBucketsRefreshJob,
   feedActivityBucketsRebuildJob,
+  feedActivityPresenceRebuildJob,
   hiveGlobalPropertiesWarmJob,
   systemHealthCheckJob,
   ...currencyCronJobDefinitions,

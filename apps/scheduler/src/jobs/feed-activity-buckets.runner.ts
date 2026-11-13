@@ -34,7 +34,7 @@ export class FeedActivityBucketsRunner implements OnModuleInit {
     }
     const summary = await this.service.run(mode, ctx.signal);
     this.logger.log(
-      `feed-activity-buckets ${summary.mode}: from=${summary.fromHour} written=${summary.writtenRows} pruned=${summary.prunedRows}`,
+      `feed-activity-buckets ${summary.mode}: from=${summary.fromHour} written=${summary.writtenRows} presence=${summary.presenceRows} pruned=${summary.prunedRows}`,
     );
   }
 }

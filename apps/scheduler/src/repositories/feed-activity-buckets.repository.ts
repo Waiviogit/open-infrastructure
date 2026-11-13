@@ -7,8 +7,10 @@ import { FEED_ACTIVITY_BUCKET_SEC } from '../constants/feed-activity-buckets.con
 type DbExecutor = Kysely<Database> | Transaction<Database>;
 
 /**
- * Hourly item counts per author / object and hub tab (`feed_activity_buckets`).
- * Data access only: the service decides ranges and owns the transaction.
+ * Hub feed counters (`feed_activity_buckets`) and presence (`feed_activity_presence`).
+ * Both are derived from one item list per tab, so "has items on the tab" and
+ * "new items on the tab" always agree. Data access only: the service decides ranges
+ * and owns the transactions.
  * @see docs/apps/scheduler/spec/feed-activity-buckets.md
  */
 @Injectable()
@@ -19,12 +21,16 @@ export class FeedActivityBucketsRepository {
     return trx ?? this.db;
   }
 
-  /** Serializes writers of one tab until the transaction ends. */
-  async lockTab(tab: FeedActivityBucketTab, trx: Transaction<Database>): Promise<void> {
-    await sql`SELECT pg_advisory_xact_lock(hashtext(${`feed_activity_buckets:${tab}`}))`.execute(trx);
+  /** Serializes writers of one table + tab until the transaction ends. */
+  async lock(
+    scope: 'buckets' | 'presence',
+    tab: FeedActivityBucketTab,
+    trx: Transaction<Database>,
+  ): Promise<void> {
+    await sql`SELECT pg_advisory_xact_lock(hashtext(${`feed_activity_${scope}:${tab}`}))`.execute(trx);
   }
 
-  async deleteFromHour(
+  async deleteBucketsFromHour(
     tab: FeedActivityBucketTab,
     fromHour: number,
     trx?: DbExecutor,
@@ -37,7 +43,7 @@ export class FeedActivityBucketsRepository {
     return Number(result.numDeletedRows ?? 0);
   }
 
-  async deleteBeforeHour(beforeHour: number, trx?: DbExecutor): Promise<number> {
+  async deleteBucketsBeforeHour(beforeHour: number, trx?: DbExecutor): Promise<number> {
     const result = await this.executor(trx)
       .deleteFrom('feed_activity_buckets')
       .where('bucket_hour', '<', beforeHour)
@@ -49,83 +55,103 @@ export class FeedActivityBucketsRepository {
    * Counts items of `tab` whose time is at or after `fromHour` and writes one row per
    * (entity, hour). Rows for the same key are overwritten, so a repeated run is idempotent.
    */
-  async insertCountsFromHour(
+  async insertBucketsFromHour(
     tab: FeedActivityBucketTab,
     fromHour: number,
     trx?: DbExecutor,
   ): Promise<number> {
+    const width = sql.lit(FEED_ACTIVITY_BUCKET_SEC);
     const result = await sql`
       INSERT INTO feed_activity_buckets (tab, entity_kind, entity_id, bucket_hour, item_count)
-      ${countsSelect(tab, fromHour)}
+      SELECT ${tab}, i.entity_kind, i.entity_id, (i.item_unix / ${width}) * ${width}, COUNT(*)::int
+      FROM (${tabItemsSql(tab, fromHour)}) AS i
+      GROUP BY i.entity_kind, i.entity_id, 4
       ON CONFLICT (tab, entity_kind, entity_id, bucket_hour)
       DO UPDATE SET item_count = EXCLUDED.item_count, updated_at = NOW()
     `.execute(this.executor(trx));
     return Number(result.numAffectedRows ?? 0);
   }
-}
 
-function hourOf(column: RawBuilder<unknown>): RawBuilder<number> {
-  const width = sql.lit(FEED_ACTIVITY_BUCKET_SEC);
-  return sql<number>`(${column} / ${width}) * ${width}`;
+  /** Marks entities with items of `tab` since `fromUnix` as present, keeping the latest time. */
+  async upsertPresenceSince(
+    tab: FeedActivityBucketTab,
+    fromUnix: number,
+    trx?: DbExecutor,
+  ): Promise<number> {
+    const result = await sql`
+      INSERT INTO feed_activity_presence (tab, entity_kind, entity_id, last_item_unix)
+      SELECT ${tab}, i.entity_kind, i.entity_id, MAX(i.item_unix)
+      FROM (${tabItemsSql(tab, fromUnix)}) AS i
+      GROUP BY i.entity_kind, i.entity_id
+      ON CONFLICT (tab, entity_kind, entity_id)
+      DO UPDATE SET
+        last_item_unix = GREATEST(feed_activity_presence.last_item_unix, EXCLUDED.last_item_unix),
+        updated_at = NOW()
+    `.execute(this.executor(trx));
+    return Number(result.numAffectedRows ?? 0);
+  }
+
+  async deletePresence(tab: FeedActivityBucketTab, trx?: DbExecutor): Promise<number> {
+    const result = await this.executor(trx)
+      .deleteFrom('feed_activity_presence')
+      .where('tab', '=', tab)
+      .executeTakeFirst();
+    return Number(result.numDeletedRows ?? 0);
+  }
 }
 
 /**
- * `SELECT tab, entity_kind, entity_id, bucket_hour, item_count` for one tab.
- * Each predicate matches what the hub feed shows for that tab and filter.
+ * `(entity_kind, entity_id, item_unix)`: one row per item and entity it belongs to, for
+ * items of `tab` at or after `fromUnix`. Predicates match what the hub feed shows for the
+ * author / object filter of that tab.
  */
-function countsSelect(tab: FeedActivityBucketTab, fromHour: number): RawBuilder<unknown> {
+function tabItemsSql(tab: FeedActivityBucketTab, fromUnix: number): RawBuilder<unknown> {
   switch (tab) {
     case 'posts':
-      return postsCountsSelect(fromHour);
+      return postItemsSql(fromUnix);
     case 'threads':
-      return threadsCountsSelect(fromHour);
+      return threadItemsSql(fromUnix);
     case 'activity':
-      return activityCountsSelect(fromHour);
+      return activityItemsSql(fromUnix);
     case 'updates':
-      return updatesCountsSelect(fromHour);
+      return updateItemsSql(fromUnix);
   }
 }
 
 /** Root posts by author, and by every object linked through `post_objects`. */
-function postsCountsSelect(fromHour: number): RawBuilder<unknown> {
-  const hour = hourOf(sql`p.created_unix`);
+function postItemsSql(fromUnix: number): RawBuilder<unknown> {
   return sql`
-    SELECT 'posts', 'user', p.author, ${hour}, COUNT(*)::int
+    SELECT 'user' AS entity_kind, p.author AS entity_id, p.created_unix AS item_unix
     FROM posts AS p
     WHERE (p.depth = 0 OR p.depth IS NULL)
-      AND p.created_unix >= ${fromHour}
-    GROUP BY p.author, 4
+      AND p.created_unix >= ${fromUnix}
     UNION ALL
-    SELECT 'posts', 'object', po.object_id, ${hour}, COUNT(*)::int
+    SELECT 'object', po.object_id, p.created_unix
     FROM posts AS p
     INNER JOIN post_objects AS po
       ON po.author = p.author AND po.permlink = p.permlink
     WHERE (p.depth = 0 OR p.depth IS NULL)
-      AND p.created_unix >= ${fromHour}
-    GROUP BY po.object_id, 4
+      AND p.created_unix >= ${fromUnix}
   `;
 }
 
-/** Own non-bulk threads by author; threads whose `hashtags` name an object. */
-function threadsCountsSelect(fromHour: number): RawBuilder<unknown> {
-  const hour = hourOf(sql`t.created_unix`);
+/** Own non-bulk threads by author; threads whose `hashtags` name an object (once each). */
+function threadItemsSql(fromUnix: number): RawBuilder<unknown> {
   return sql`
-    SELECT 'threads', 'user', t.author, ${hour}, COUNT(*)::int
+    SELECT 'user' AS entity_kind, t.author AS entity_id, t.created_unix AS item_unix
     FROM threads AS t
     WHERE t.deleted = false
       AND t.bulk_message = false
-      AND t.created_unix >= ${fromHour}
-    GROUP BY t.author, 4
+      AND t.created_unix >= ${fromUnix}
     UNION ALL
-    SELECT 'threads', 'object', tag.object_id, ${hour}, COUNT(*)::int
+    SELECT 'object', tag.object_id, t.created_unix
     FROM threads AS t
     CROSS JOIN LATERAL (
       SELECT DISTINCT h AS object_id FROM unnest(t.hashtags) AS h
     ) AS tag
     INNER JOIN objects_core AS oc ON oc.object_id = tag.object_id
     WHERE t.deleted = false
-      AND t.created_unix >= ${fromHour}
-    GROUP BY tag.object_id, 4
+      AND t.created_unix >= ${fromUnix}
   `;
 }
 
@@ -134,7 +160,7 @@ function threadsCountsSelect(fromHour: number): RawBuilder<unknown> {
  * (`COALESCE(original_created_at_unix, created_at_unix)`); an object counts a message
  * once whether it is the channel object or a linked object.
  */
-function activityCountsSelect(fromHour: number): RawBuilder<unknown> {
+function activityItemsSql(fromUnix: number): RawBuilder<unknown> {
   return sql`
     WITH recent AS (
       SELECT
@@ -146,35 +172,30 @@ function activityCountsSelect(fromHour: number): RawBuilder<unknown> {
       INNER JOIN channels AS c ON c.channel_id = m.channel_id
       WHERE c.kind = 'object'
         AND m.message_id = m.dup_group_id
-        AND COALESCE(m.original_created_at_unix, m.created_at_unix) >= ${fromHour}
+        AND COALESCE(m.original_created_at_unix, m.created_at_unix) >= ${fromUnix}
     )
-    SELECT 'activity', 'user', r.author, ${hourOf(sql`r.effective_unix`)}, COUNT(*)::int
+    SELECT 'user' AS entity_kind, r.author AS entity_id, r.effective_unix AS item_unix
     FROM recent AS r
-    GROUP BY r.author, 4
     UNION ALL
-    SELECT 'activity', 'object', o.object_id, ${hourOf(sql`r.effective_unix`)}, COUNT(*)::int
+    SELECT 'object', o.object_id, r.effective_unix
     FROM recent AS r
     CROSS JOIN LATERAL (
       SELECT DISTINCT x AS object_id
       FROM unnest(array_append(r.linked_object_ids, r.channel_object_id)) AS x
       WHERE x IS NOT NULL
     ) AS o
-    GROUP BY o.object_id, 4
   `;
 }
 
 /** Object updates by creator and by object. */
-function updatesCountsSelect(fromHour: number): RawBuilder<unknown> {
-  const hour = hourOf(sql`ou.created_at_unix`);
+function updateItemsSql(fromUnix: number): RawBuilder<unknown> {
   return sql`
-    SELECT 'updates', 'user', ou.creator, ${hour}, COUNT(*)::int
+    SELECT 'user' AS entity_kind, ou.creator AS entity_id, ou.created_at_unix AS item_unix
     FROM object_updates AS ou
-    WHERE ou.created_at_unix >= ${fromHour}
-    GROUP BY ou.creator, 4
+    WHERE ou.created_at_unix >= ${fromUnix}
     UNION ALL
-    SELECT 'updates', 'object', ou.object_id, ${hour}, COUNT(*)::int
+    SELECT 'object', ou.object_id, ou.created_at_unix
     FROM object_updates AS ou
-    WHERE ou.created_at_unix >= ${fromHour}
-    GROUP BY ou.object_id, 4
+    WHERE ou.created_at_unix >= ${fromUnix}
   `;
 }

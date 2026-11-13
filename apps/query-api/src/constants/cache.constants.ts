@@ -44,7 +44,7 @@ export const HIVE_ACCOUNTS_CACHE_TTL_SEC = 60;
 export const INSTACART_RECIPE_LINK_CACHE_TTL_SEC = 2_592_000;
 
 /**
- * Redis TTL for a hub rail counter snapshot per (account, tab) (seconds).
- * Matches the scheduler bucket refresh interval: fresher data does not exist.
+ * Redis TTL for a hub rail snapshot per (account, tab) (seconds). Counters change only every
+ * scheduler refresh (30 minutes); the short TTL keeps a new follow from waiting that long.
  */
 export const HUB_FEED_FILTER_COUNTS_CACHE_TTL_SEC = 300;

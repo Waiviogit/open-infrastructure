@@ -15,36 +15,52 @@ function setup() {
   } as unknown as Kysely<Database>;
   const calls: string[] = [];
   const buckets = {
-    lockTab: jest.fn(async (tab: string) => {
-      calls.push(`lock:${tab}`);
+    lock: jest.fn(async (scope: string, tab: string) => {
+      calls.push(`lock:${scope}:${tab}`);
     }),
-    deleteFromHour: jest.fn(async (tab: string, from: number) => {
+    deleteBucketsFromHour: jest.fn(async (tab: string, from: number) => {
       calls.push(`delete:${tab}:${from / HOUR}`);
       return 0;
     }),
-    insertCountsFromHour: jest.fn(async (tab: string) => {
+    insertBucketsFromHour: jest.fn(async (tab: string) => {
       calls.push(`insert:${tab}`);
       return 3;
     }),
-    deleteBeforeHour: jest.fn(async () => 5),
+    upsertPresenceSince: jest.fn(async (tab: string, from: number) => {
+      calls.push(`presence:${tab}:${from / HOUR}`);
+      return 2;
+    }),
+    deletePresence: jest.fn(async (tab: string) => {
+      calls.push(`clear-presence:${tab}`);
+      return 1;
+    }),
+    deleteBucketsBeforeHour: jest.fn(async () => 5),
   } as unknown as FeedActivityBucketsRepository;
   return { service: new FeedActivityBucketsService(db, buckets), buckets, calls };
 }
 
 describe('FeedActivityBucketsService', () => {
-  it('refresh recounts the last two hours of every tab without pruning', async () => {
+  it('refresh recounts the last two hours of every tab and marks their entities present', async () => {
     const { service, buckets, calls } = setup();
 
     const summary = await service.run('refresh', new AbortController().signal, NOW);
 
-    expect(summary).toEqual({ mode: 'refresh', fromHour: 999 * HOUR, writtenRows: 12, prunedRows: 0 });
-    expect(calls).toEqual([
-      'lock:posts', 'delete:posts:999', 'insert:posts',
-      'lock:threads', 'delete:threads:999', 'insert:threads',
-      'lock:activity', 'delete:activity:999', 'insert:activity',
-      'lock:updates', 'delete:updates:999', 'insert:updates',
+    expect(summary).toEqual({
+      mode: 'refresh',
+      fromHour: 999 * HOUR,
+      writtenRows: 12,
+      presenceRows: 8,
+      prunedRows: 0,
+    });
+    expect(calls.slice(0, 5)).toEqual([
+      'lock:buckets:posts',
+      'delete:posts:999',
+      'insert:posts',
+      'lock:presence:posts',
+      'presence:posts:999',
     ]);
-    expect(buckets.deleteBeforeHour).not.toHaveBeenCalled();
+    expect(buckets.deleteBucketsBeforeHour).not.toHaveBeenCalled();
+    expect(buckets.deletePresence).not.toHaveBeenCalled();
   });
 
   it('rebuild recounts the 3-day window and prunes past retention', async () => {
@@ -54,7 +70,23 @@ describe('FeedActivityBucketsService', () => {
 
     expect(summary.fromHour).toBe((1_000 - 71) * HOUR);
     expect(summary.prunedRows).toBe(5);
-    expect(buckets.deleteBeforeHour).toHaveBeenCalledWith((1_000 - 95) * HOUR);
+    expect(buckets.deleteBucketsBeforeHour).toHaveBeenCalledWith((1_000 - 95) * HOUR);
+  });
+
+  it('presence rebuilds every tab from full history without touching buckets', async () => {
+    const { service, buckets, calls } = setup();
+
+    const summary = await service.run('presence', new AbortController().signal, NOW);
+
+    expect(summary.presenceRows).toBe(8);
+    expect(calls).toEqual(
+      ['posts', 'threads', 'activity', 'updates'].flatMap((tab) => [
+        `lock:presence:${tab}`,
+        `clear-presence:${tab}`,
+        `presence:${tab}:0`,
+      ]),
+    );
+    expect(buckets.insertBucketsFromHour).not.toHaveBeenCalled();
   });
 
   it('stops before the next tab once aborted', async () => {
@@ -65,7 +97,7 @@ describe('FeedActivityBucketsService', () => {
     const summary = await service.run('rebuild', controller.signal, NOW);
 
     expect(summary.writtenRows).toBe(0);
-    expect(buckets.lockTab).not.toHaveBeenCalled();
-    expect(buckets.deleteBeforeHour).not.toHaveBeenCalled();
+    expect(buckets.lock).not.toHaveBeenCalled();
+    expect(buckets.deleteBucketsBeforeHour).not.toHaveBeenCalled();
   });
 });

@@ -26,9 +26,22 @@ function repo(trx: Trx): FeedActivityBucketsRepository {
 async function recount(trx: Trx, tab: FeedActivityBucketTab): Promise<void> {
   const r = repo(trx);
   const tx = trx as unknown as Transaction<Database>;
-  await r.lockTab(tab, tx);
-  await r.deleteFromHour(tab, FROM_HOUR, tx);
-  await r.insertCountsFromHour(tab, FROM_HOUR, tx);
+  await r.lock('buckets', tab, tx);
+  await r.deleteBucketsFromHour(tab, FROM_HOUR, tx);
+  await r.insertBucketsFromHour(tab, FROM_HOUR, tx);
+}
+
+async function presence(trx: Trx, tab: FeedActivityBucketTab): Promise<Record<string, number>> {
+  const rows = await trx
+    .selectFrom('feed_activity_presence')
+    .select(['entity_kind', 'entity_id', 'last_item_unix'])
+    .where('tab', '=', tab)
+    .execute();
+  const out: Record<string, number> = {};
+  for (const row of rows) {
+    out[`${row.entity_kind}:${row.entity_id}`] = Number(row.last_item_unix);
+  }
+  return out;
 }
 
 async function buckets(
@@ -308,6 +321,49 @@ describeDb('FeedActivityBucketsRepository (db)', () => {
     });
   });
 
+  it('marks present every entity with items of the tab since the start, keeping the latest time', async () => {
+    await withRollback(db, async (trx) => {
+      await insertObject(trx, 'obj-a');
+      await insertThread(trx, { author: 'bob', permlink: 't-old', created: BEFORE_WINDOW, hashtags: ['obj-a'] });
+      await insertThread(trx, { author: 'bob', permlink: 't-new', created: IN_WINDOW, hashtags: [] });
+      await insertThread(trx, { author: 'carol', permlink: 't-bulk', created: IN_WINDOW, hashtags: [], bulk: true });
+      await insertPost(trx, { author: 'dave', permlink: 'p1', created: IN_WINDOW });
+
+      await repo(trx).upsertPresenceSince('threads', 0);
+
+      expect(await presence(trx, 'threads')).toEqual({
+        'user:bob': IN_WINDOW,
+        'object:obj-a': BEFORE_WINDOW,
+      });
+      expect(await presence(trx, 'posts')).toEqual({});
+    });
+  });
+
+  it('a refresh never moves the latest time back; a rebuild drops entities whose items are gone', async () => {
+    await withRollback(db, async (trx) => {
+      await insertObject(trx, 'obj-a');
+      await insertUpdate(trx, { updateId: 'u1', objectId: 'obj-a', creator: 'dave', created: IN_WINDOW });
+      const r = repo(trx);
+      await trx
+        .insertInto('feed_activity_presence')
+        .values([
+          { tab: 'updates', entity_kind: 'user', entity_id: 'dave', last_item_unix: IN_WINDOW + HOUR },
+          { tab: 'updates', entity_kind: 'user', entity_id: 'gone', last_item_unix: 1 },
+        ])
+        .execute();
+
+      await r.upsertPresenceSince('updates', FROM_HOUR);
+      expect((await presence(trx, 'updates'))['user:dave']).toBe(IN_WINDOW + HOUR);
+
+      await r.deletePresence('updates');
+      await r.upsertPresenceSince('updates', 0);
+      expect(await presence(trx, 'updates')).toEqual({
+        'user:dave': IN_WINDOW,
+        'object:obj-a': IN_WINDOW,
+      });
+    });
+  });
+
   it('prunes buckets before the retention hour', async () => {
     await withRollback(db, async (trx) => {
       await trx
@@ -318,7 +374,7 @@ describeDb('FeedActivityBucketsRepository (db)', () => {
         ])
         .execute();
 
-      const pruned = await repo(trx).deleteBeforeHour(FROM_HOUR);
+      const pruned = await repo(trx).deleteBucketsBeforeHour(FROM_HOUR);
 
       expect(pruned).toBe(1);
       expect(await buckets(trx, 'posts')).toEqual({ 'user:new@1000': 1 });

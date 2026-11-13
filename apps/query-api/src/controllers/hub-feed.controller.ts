@@ -1,17 +1,21 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query } from '@nestjs/common';
 
 import type { UserBlogFeedResponse } from '../domain/feed';
 import {
   GetHubActivityFeedEndpoint,
+  GetHubFeedPresenceEndpoint,
   GetHubPostsFeedEndpoint,
   GetHubThreadsFeedEndpoint,
   GetHubUpdatesFeedEndpoint,
   HubFeedViewerRequiredError,
   hubActivityFeedBodySchema,
+  hubFeedPresenceQuerySchema,
   hubPostsFeedBodySchema,
   hubThreadsFeedBodySchema,
   hubUpdatesFeedBodySchema,
   type HubActivityFeedBody,
+  type HubFeedPresenceDto,
+  type HubFeedPresenceQuery,
   type HubPostsFeedBody,
   type HubThreadsFeedBody,
   type HubUpdatesFeedBody,
@@ -21,7 +25,7 @@ import type { FollowedObjectsUpdatesFeedResponseDto } from '../domain/object-upd
 import { ReqGovernanceObjectId } from '../http/governance-object-id.decorator';
 import { ReqLocale } from '../http/locale-header.decorator';
 import { ReqViewer } from '../http/viewer-header.decorator';
-import { ZodBodyPipe } from '../pipes';
+import { ZodBodyPipe, ZodQueryPipe } from '../pipes';
 
 async function mapHubFeedErrors<T>(run: () => Promise<T>): Promise<T> {
   try {
@@ -45,7 +49,15 @@ export class HubFeedController {
     private readonly getHubThreadsFeed: GetHubThreadsFeedEndpoint,
     private readonly getHubActivityFeed: GetHubActivityFeedEndpoint,
     private readonly getHubUpdatesFeed: GetHubUpdatesFeedEndpoint,
+    private readonly getHubFeedPresence: GetHubFeedPresenceEndpoint,
   ) {}
+
+  @Get('presence')
+  async presence(
+    @Query(new ZodQueryPipe(hubFeedPresenceQuerySchema)) query: HubFeedPresenceQuery,
+  ): Promise<HubFeedPresenceDto> {
+    return this.getHubFeedPresence.execute(query);
+  }
 
   @Post('posts')
   async posts(

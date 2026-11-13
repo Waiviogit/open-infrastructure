@@ -6,6 +6,7 @@ import type { Request, Response } from 'express';
 import { GetUserCategoriesEndpoint } from '../domain/categories/get-user-categories.endpoint';
 import {
   GetHubActivityFeedEndpoint,
+  GetHubFeedPresenceEndpoint,
   GetHubPostsFeedEndpoint,
   GetHubThreadsFeedEndpoint,
   GetHubUpdatesFeedEndpoint,
@@ -207,6 +208,7 @@ export class McpService {
     private readonly getHubThreadsFeed: GetHubThreadsFeedEndpoint,
     private readonly getHubActivityFeed: GetHubActivityFeedEndpoint,
     private readonly getHubUpdatesFeed: GetHubUpdatesFeedEndpoint,
+    private readonly getHubFeedPresence: GetHubFeedPresenceEndpoint,
     private readonly getUserFeedFilters: GetUserFeedFiltersEndpoint,
     private readonly getUserFeedFilterUsers: GetUserFeedFilterUsersEndpoint,
     private readonly getUserFeedFilterObjects: GetUserFeedFilterObjectsEndpoint,
@@ -310,6 +312,7 @@ export class McpService {
       getHubThreadsFeed: this.getHubThreadsFeed,
       getHubActivityFeed: this.getHubActivityFeed,
       getHubUpdatesFeed: this.getHubUpdatesFeed,
+      getHubFeedPresence: this.getHubFeedPresence,
       getUserFeedFilters: this.getUserFeedFilters,
       getUserFeedFilterUsers: this.getUserFeedFilterUsers,
       getUserFeedFilterObjects: this.getUserFeedFilterObjects,

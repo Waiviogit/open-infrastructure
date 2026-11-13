@@ -48,18 +48,18 @@ The hub start page's left rail lists the account's followed accounts and followe
 
 | Section | Order |
 |---------|-------|
-| Accounts | count DESC, `accounts_current.wobjects_weight` DESC, name |
-| Objects in a type | count DESC, `objects_core.weight` DESC, object id |
-| Object types | summed count DESC, type name |
+| Accounts | count DESC, latest item DESC, name |
+| Objects in a type | count DESC, latest item DESC, object id |
+| Object types | summed count DESC, most recent object DESC, type name |
 
 "Show more" routes slice the same sorted snapshot, so pages never overlap.
 
 ## Counting
 
 - Counts come only from `feed_activity_buckets` ([feed activity buckets](../../scheduler/spec/feed-activity-buckets.md)): for every follow, the sum of its hourly buckets of the tab from `windowStart` (the current hour plus the 71 before it). No content table is scanned per request; each follow is a primary-key range read of at most 72 rows.
-- Follows: `user_subscriptions` (accounts) and `user_object_follows` joined to **active** `objects_core`. Lists are capped at `HUB_FEED_FILTERS_MAX_FOLLOWS` (5 000, newest follows kept).
+- Follows: `user_subscriptions` (accounts) and `user_object_follows` joined to **active** `objects_core`, then to `feed_activity_presence` of the tab: a follow appears only if it has **any** item on the tab (an account without threads is not on the Threads rail), so empty People / type sections never appear. Lists are capped at `HUB_FEED_FILTERS_MAX_FOLLOWS` (5 000, newest follows kept).
 - Type count = sum of its objects' counts (an item linked to two followed objects of one type counts twice).
-- Numbers lag content by up to the scheduler refresh (5 minutes) plus the cache TTL, and do not apply the viewer's mutes.
+- Numbers and presence lag content by up to the scheduler refresh (30 minutes) plus the cache TTL, and do not apply the viewer's mutes.
 
 ## Time budget and cache
 

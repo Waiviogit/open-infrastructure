@@ -490,6 +490,13 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/hub-feed.md',
   },
   {
+    name: 'get_hub_feed_presence',
+    description:
+      'Hub tabs (posts, threads, activity, updates) on which an account (author) or an object has any item.',
+    httpEquivalent: 'GET /query/v1/feed/presence',
+    specPath: 'docs/apps/query-api/spec/hub-feed.md',
+  },
+  {
     name: 'get_user_feed_filters',
     description:
       'Hub rail for an account and tab: followed accounts and followed objects grouped by type, each with new items in the last 72 hours.',

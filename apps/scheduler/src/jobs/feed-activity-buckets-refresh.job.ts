@@ -5,15 +5,16 @@ import { getFeedActivityBucketsRunnerForJob } from './feed-activity-buckets.runn
 const logger = new Logger('feed-activity-buckets-refresh');
 
 /**
- * Every 5 minutes: recount hub feed counter buckets of the last hours.
+ * Every 30 minutes: recount hub feed counter buckets of the last hours and mark their
+ * accounts / objects present on the tab.
  * @see docs/apps/scheduler/spec/feed-activity-buckets.md
  */
 export const feedActivityBucketsRefreshJob: CronJobDefinition = {
   name: 'feed-activity-buckets-refresh',
-  schedule: '*/5 * * * *',
+  schedule: '*/30 * * * *',
   category: 'light',
   enabled: true,
-  timeoutMs: 240_000,
+  timeoutMs: 1_500_000,
   lockTtlSec: 60,
   retryCount: 0,
   retryDelayMs: 10_000,

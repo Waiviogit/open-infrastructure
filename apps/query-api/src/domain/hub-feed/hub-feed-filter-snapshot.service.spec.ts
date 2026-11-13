@@ -11,12 +11,12 @@ function setup(options: { cached?: string | null; counted?: unknown[] | null } =
       .fn()
       .mockResolvedValue(
         options.counted === undefined
-          ? [{ kind: 'user', id: 'bob', object_type: null, count: 2, weight: 1 }]
+          ? [{ kind: 'user', id: 'bob', object_type: null, count: 2, last_item_unix: 1 }]
           : options.counted,
       ),
     findFollows: jest
       .fn()
-      .mockResolvedValue([{ kind: 'user', id: 'bob', object_type: null, count: null, weight: 1 }]),
+      .mockResolvedValue([{ kind: 'user', id: 'bob', object_type: null, count: null, last_item_unix: 1 }]),
   };
   const service = new HubFeedFilterSnapshotService(countsRepo as never, redisFactory as never);
   return { service, client, countsRepo };
@@ -36,13 +36,13 @@ describe('HubFeedFilterSnapshotService', () => {
 
     const snapshot = await service.getSnapshot('Alice', 'threads');
 
-    expect(snapshot.users).toEqual([{ name: 'bob', count: 2, weight: 1 }]);
+    expect(snapshot.users).toEqual([{ name: 'bob', count: 2, lastItemUnix: 1 }]);
     expect(countsRepo.findFollowsWithCounts).toHaveBeenCalledWith(
       expect.objectContaining({ account: 'Alice', tab: 'threads' }),
       300,
     );
     expect(client.set).toHaveBeenCalledWith(
-      'query-api:cache:hub-feed-filters:alice:threads',
+      'query-api:cache:hub-feed-filters:v2:alice:threads',
       JSON.stringify(snapshot),
       300,
     );

@@ -135,6 +135,7 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 | `get_hub_feed_threads` | `POST /query/v1/feed/threads` | [hub-feed.md](hub-feed.md) |
 | `get_hub_feed_activity` | `POST /query/v1/feed/activity` | [hub-feed.md](hub-feed.md) |
 | `get_hub_feed_updates` | `POST /query/v1/feed/updates` | [hub-feed.md](hub-feed.md) |
+| `get_hub_feed_presence` | `GET /query/v1/feed/presence` | [hub-feed.md](hub-feed.md) |
 | `get_user_feed_filters` | `GET /query/v1/users/:name/feed-filters` | [hub-feed-filters.md](hub-feed-filters.md) |
 | `get_user_feed_filter_users` | `GET /query/v1/users/:name/feed-filters/users` | [hub-feed-filters.md](hub-feed-filters.md) |
 | `get_user_feed_filter_objects` | `GET /query/v1/users/:name/feed-filters/objects` | [hub-feed-filters.md](hub-feed-filters.md) |

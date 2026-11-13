@@ -91,3 +91,4 @@ export {
   type HubFeedFollowCountRow,
   type HubFeedFollowCountsQuery,
 } from './hub-feed-filter-counts.repository';
+export { HubFeedPresenceRepository } from './hub-feed-presence.repository';

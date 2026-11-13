@@ -27,6 +27,7 @@ The hub start page has four tabs (Posts, Threads, Activity, Updates). The left r
 | `POST` | `/query/v1/feed/threads` | `UserBlogFeedResponse`; each item's `objects` lists active objects named in the hashtags (max 4) |
 | `POST` | `/query/v1/feed/activity` | `FollowedObjectsMessagesResponse` (same as `following-objects/messages`) |
 | `POST` | `/query/v1/feed/updates` | `HubUpdatesFeedResponse` (items as `following-objects/updates`) |
+| `GET` | `/query/v1/feed/presence?author=` \| `?object=` | `{ tabs }`: tabs on which the account / object has any item (`feed_activity_presence`). The web keeps an author / object filter on those tabs and shows the tab default elsewhere |
 
 Headers: `X-Viewer` (required for `my`; viewer mutes and vote state), `Accept-Language` / `X-Locale`, `X-Governance-Object-Id`.
 
@@ -43,7 +44,7 @@ Errors: 400 for an invalid body, a sort the tab does not support (Activity: `tre
 
 Cursors are base64url JSON `{ v: 1, f: <filter key>, p: <position> }`. Ranked cursors carry the window start of their first page, so later pages keep the same 3-day window.
 
-MCP: `get_hub_feed_posts`, `get_hub_feed_threads`, `get_hub_feed_activity`, `get_hub_feed_updates` take the same body plus `viewer`, `locale`, `governance_object_id` ([mcp.md](mcp.md)).
+MCP: `get_hub_feed_posts`, `get_hub_feed_threads`, `get_hub_feed_activity`, `get_hub_feed_updates` take the same body plus `viewer`, `locale`, `governance_object_id`; `get_hub_feed_presence` mirrors the presence route ([mcp.md](mcp.md)).
 
 ## Filters
 

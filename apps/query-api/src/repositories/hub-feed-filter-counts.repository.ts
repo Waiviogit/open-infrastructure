@@ -5,13 +5,16 @@ import type { FeedActivityBucketTab } from '@opden-data-layer/odl-db-types';
 import type { Database } from '../database';
 import { KYSELY } from '../database';
 
-/** One followed account or object with its item count in the window (`null` when not counted). */
+/**
+ * One followed account or object that has items on the tab: item count in the window
+ * (`null` when not counted) and the time of its latest item.
+ */
 export interface HubFeedFollowCountRow {
   kind: 'user' | 'object';
   id: string;
   object_type: string | null;
   count: number | null;
-  weight: number;
+  last_item_unix: number;
 }
 
 export interface HubFeedFollowCountsQuery {
@@ -26,13 +29,14 @@ interface RawRow {
   id: string;
   object_type: string | null;
   count: number | string | null;
-  weight: number | string | null;
+  last_item_unix: number | string;
 }
 
 /**
- * Rail counters: the account's follows (accounts, active objects) with item counts summed
- * from the scheduler's `feed_activity_buckets`. Each count is a primary-key range read
- * (at most one row per hour), so cost grows with the follow list, not with content.
+ * Rail of one tab: the account's follows (accounts, active objects) that have any item of
+ * the tab (`feed_activity_presence`), with item counts summed from `feed_activity_buckets`.
+ * Presence is a primary-key join and each count a primary-key range read (at most one row
+ * per hour), so cost grows with the follow list, not with content.
  * @see docs/apps/query-api/spec/hub-feed-filters.md
  */
 @Injectable()
@@ -66,7 +70,7 @@ export class HubFeedFilterCountsRepository {
     }
   }
 
-  /** Follows only (`count = null`): the fallback when counting timed out. */
+  /** Present follows only (`count = null`): the fallback when counting timed out. */
   async findFollows(query: HubFeedFollowCountsQuery): Promise<HubFeedFollowCountRow[]> {
     try {
       const result = await this.followsSql(query, false).execute(this.db);
@@ -110,20 +114,27 @@ export class HubFeedFilterCountsRepository {
         fu.id,
         NULL::text AS object_type,
         ${countOf('user', sql`fu.id`)} AS count,
-        COALESCE(ac.wobjects_weight, 0)::double precision AS weight
+        fap.last_item_unix
       FROM followed_users AS fu
-      LEFT JOIN accounts_current AS ac ON ac.name = fu.id
+      INNER JOIN feed_activity_presence AS fap
+        ON fap.tab = ${query.tab}
+       AND fap.entity_kind = 'user'
+       AND fap.entity_id = fu.id
       UNION ALL
       SELECT
         'object' AS kind,
         fo.id,
         oc.object_type,
         ${countOf('object', sql`fo.id`)} AS count,
-        COALESCE(oc.weight, 0)::double precision AS weight
+        fap.last_item_unix
       FROM followed_objects AS fo
       INNER JOIN objects_core AS oc
         ON oc.object_id = fo.id
        AND oc.status = 'active'
+      INNER JOIN feed_activity_presence AS fap
+        ON fap.tab = ${query.tab}
+       AND fap.entity_kind = 'object'
+       AND fap.entity_id = fo.id
     `;
   }
 }
@@ -134,6 +145,6 @@ function toRow(row: RawRow): HubFeedFollowCountRow {
     id: row.id,
     object_type: row.object_type,
     count: row.count == null ? null : Number(row.count),
-    weight: Number(row.weight ?? 0),
+    last_item_unix: Number(row.last_item_unix),
   };
 }
