@@ -2,21 +2,33 @@
 
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import type { UserBlogFeedPage } from '@/modules/feed/application/dto/user-blog-feed-page.dto';
+import { homeFeedFilterSchema } from '@/modules/home/application/dto/home-feed-filter.dto';
 import type {
   HomeActivityFeedPage,
   HomeUpdatesFeedPage,
 } from '@/modules/home/application/dto/home-followed-feeds.dto';
 import {
-  getHomeActivityFeedPageQuery,
-  getHomeThreadsFeedPageQuery,
-  getHomeUpdatesFeedPageQuery,
-  type HomeFollowedFeedRequest,
-} from '@/modules/home/application/queries/get-home-followed-feeds.query';
-import { getHomeFeedPageQuery } from '@/modules/home/application/queries/get-home-feed-page.query';
-import { HOME_FEED_PAGE_SIZE } from '@/modules/home/domain/home-feed-tabs';
+  getHomeHubActivityPage,
+  getHomeHubPostsPage,
+  getHomeHubThreadsPage,
+  getHomeHubUpdatesPage,
+  type HomeHubFeedRequest,
+} from '@/modules/home/application/queries/get-home-hub-feed.query';
+import type {
+  HomeFeedFilterObjectsPage,
+  HomeFeedFilterUsersPage,
+} from '@/modules/home/application/dto/home-feed-filters.dto';
+import {
+  getHomeFeedFilterObjectsPageQuery,
+  getHomeFeedFilterUsersPageQuery,
+} from '@/modules/home/application/queries/get-home-feed-filters.query';
+import type { HomeFeedFilter } from '@/modules/home/domain/home-feed-filter';
+import { HOME_FEED_TABS, type HomeFeedTabKey } from '@/modules/home/domain/home-feed-tabs';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
 
-const EMPTY_PAGE = { items: [], cursor: null, hasMore: false } as const;
+function emptyPage<T>(): { items: T[]; cursor: null; hasMore: false } {
+  return { items: [], cursor: null, hasMore: false };
+}
 
 async function getViewerUsername(): Promise<string | null> {
   const auth = createCookieAuthContextProvider();
@@ -24,33 +36,114 @@ async function getViewerUsername(): Promise<string | null> {
   return user?.username ?? null;
 }
 
-/** Followed-objects tabs read the signed-in viewer's own follows; guests get an empty page. */
-async function followedFeedRequest(cursor: string): Promise<HomeFollowedFeedRequest | null> {
-  const account = await getViewerUsername();
-  if (!account) {
+/**
+ * Next-page request for the rail filter the list was rendered with. The filter comes
+ * from the client, so it is validated again; "my" without a session yields no request.
+ */
+async function nextPageRequest(
+  rawFilter: unknown,
+  cursor: unknown,
+): Promise<HomeHubFeedRequest | null> {
+  const filter = homeFeedFilterSchema.safeParse(rawFilter);
+  if (!filter.success || typeof cursor !== 'string' || cursor.length === 0) {
     return null;
   }
-  return { account, cursor, locale: await getRequestLocale() };
+  const viewer = await getViewerUsername();
+  if (filter.data.kind === 'my' && !viewer) {
+    return null;
+  }
+  return { filter: filter.data, viewer, locale: await getRequestLocale(), cursor };
 }
 
-export async function loadMoreHomeFeedAction(cursor: string): Promise<UserBlogFeedPage> {
-  const viewer = await getViewerUsername();
-  return getHomeFeedPageQuery({ cursor, limit: HOME_FEED_PAGE_SIZE }, viewer);
+/** Never throws to the client: a failed page is an empty page and the list stops. */
+async function loadNextPage<TPage>(
+  rawFilter: unknown,
+  cursor: unknown,
+  load: (request: HomeHubFeedRequest) => Promise<TPage>,
+  empty: TPage,
+): Promise<TPage> {
+  try {
+    const request = await nextPageRequest(rawFilter, cursor);
+    return request ? await load(request) : empty;
+  } catch {
+    return empty;
+  }
+}
+
+export async function loadMoreHomeFeedAction(
+  filter: HomeFeedFilter,
+  cursor: string,
+): Promise<UserBlogFeedPage> {
+  return loadNextPage(filter, cursor, getHomeHubPostsPage, emptyPage());
+}
+
+export async function loadMoreHomeThreadsFeedAction(
+  filter: HomeFeedFilter,
+  cursor: string,
+): Promise<UserBlogFeedPage> {
+  return loadNextPage(filter, cursor, getHomeHubThreadsPage, emptyPage());
 }
 
 export async function loadMoreHomeActivityFeedAction(
+  filter: HomeFeedFilter,
   cursor: string,
 ): Promise<HomeActivityFeedPage> {
-  const request = await followedFeedRequest(cursor);
-  return request ? getHomeActivityFeedPageQuery(request) : { ...EMPTY_PAGE, items: [] };
+  return loadNextPage(filter, cursor, getHomeHubActivityPage, emptyPage());
 }
 
-export async function loadMoreHomeThreadsFeedAction(cursor: string): Promise<UserBlogFeedPage> {
-  const request = await followedFeedRequest(cursor);
-  return request ? getHomeThreadsFeedPageQuery(request) : { ...EMPTY_PAGE, items: [] };
+const HOME_FEED_TAB_KEYS = new Set<string>(HOME_FEED_TABS.map((tab) => tab.key));
+const MAX_FILTER_SKIP = 5_000;
+const OBJECT_TYPE_MAX_LENGTH = 64;
+
+function isValidSkip(skip: unknown): skip is number {
+  return typeof skip === 'number' && Number.isInteger(skip) && skip >= 0 && skip <= MAX_FILTER_SKIP;
 }
 
-export async function loadMoreHomeUpdatesFeedAction(cursor: string): Promise<HomeUpdatesFeedPage> {
-  const request = await followedFeedRequest(cursor);
-  return request ? getHomeUpdatesFeedPageQuery(request) : { ...EMPTY_PAGE, items: [] };
+/** "Show more" of followed accounts in the signed-in viewer's rail. */
+export async function loadMoreHomeFeedFilterUsersAction(
+  tab: HomeFeedTabKey,
+  skip: number,
+): Promise<HomeFeedFilterUsersPage> {
+  const empty: HomeFeedFilterUsersPage = { items: [], hasMore: false };
+  try {
+    const viewer = await getViewerUsername();
+    if (!viewer || !HOME_FEED_TAB_KEYS.has(tab) || !isValidSkip(skip)) {
+      return empty;
+    }
+    return await getHomeFeedFilterUsersPageQuery(viewer, tab, skip, await getRequestLocale());
+  } catch {
+    return empty;
+  }
+}
+
+/** "Show more" of followed objects of one type in the signed-in viewer's rail. */
+export async function loadMoreHomeFeedFilterObjectsAction(
+  tab: HomeFeedTabKey,
+  objectType: string,
+  skip: number,
+): Promise<HomeFeedFilterObjectsPage> {
+  const empty: HomeFeedFilterObjectsPage = { items: [], hasMore: false };
+  try {
+    const viewer = await getViewerUsername();
+    const type = typeof objectType === 'string' ? objectType.trim() : '';
+    if (
+      !viewer ||
+      !HOME_FEED_TAB_KEYS.has(tab) ||
+      !isValidSkip(skip) ||
+      type.length === 0 ||
+      type.length > OBJECT_TYPE_MAX_LENGTH
+    ) {
+      return empty;
+    }
+    return await getHomeFeedFilterObjectsPageQuery(viewer, tab, type, skip, await getRequestLocale());
+  } catch {
+    return empty;
+  }
+}
+
+export async function loadMoreHomeUpdatesFeedAction(
+  filter: HomeFeedFilter,
+  cursor: string,
+): Promise<HomeUpdatesFeedPage> {
+  return loadNextPage(filter, cursor, getHomeHubUpdatesPage, emptyPage());
 }

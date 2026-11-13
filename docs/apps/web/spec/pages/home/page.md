@@ -11,7 +11,7 @@ related:
 type: spec
 status: active
 scope: web
-updated_at: 2026-11-06
+updated_at: 2026-11-13
 ---
 
 # Home page (`/`)
@@ -20,7 +20,7 @@ updated_at: 2026-11-06
 
 ## Purpose
 
-App root landing under `(app)/(hub)/(home)`. Shows hub section nav, the feed tab menu (Posts / Threads / Activity / Updates — see [feed-tabs.md](feed-tabs.md)) and the Posts feed (global for guests, personalized when logged in). Metadata via `@/seo`.
+App root landing under `(app)/(hub)/(home)`. Shows hub section nav, the feed tab band (Posts / Threads / Activity / Updates — see [feed-tabs.md](feed-tabs.md)), the filter rail (Trending / Hot / New, My feed, followed accounts and objects with 3-day counters — see [feed-filters.md](feed-filters.md)) and the Posts feed (My feed when logged in, Trending for guests). Metadata via `@/seo`.
 
 ## Route
 

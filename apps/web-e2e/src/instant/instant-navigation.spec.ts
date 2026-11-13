@@ -45,7 +45,7 @@ test.describe('instant navigation', () => {
 
   test('feed tab Threads → Updates paints the feed skeleton', async ({ page }) => {
     await page.goto('/feed/threads');
-    const trigger = page.locator('aside nav[aria-label="Feed sections"] a[href="/feed/updates"]');
+    const trigger = page.locator('nav[aria-label="Feed sections"] a[href="/feed/updates"]');
     await expect(trigger).toBeVisible();
 
     const updatesFeed = page.getByTestId('home-updates-feed');
@@ -55,6 +55,18 @@ test.describe('instant navigation', () => {
       await expect(updatesFeed).toHaveCount(0);
     });
     await expect(updatesFeed).toBeVisible();
+  });
+
+  // The rail filter is shared by every tab: the tab links carry it, and a tab that cannot
+  // apply it (Activity has no ranking) explains the fallback to New.
+  test('feed tabs keep the rail filter; Activity explains an unavailable sort', async ({ page }) => {
+    await page.goto('/feed/threads?filter=hot');
+    const activityTab = page.locator('nav[aria-label="Feed sections"] a[href="/feed/activity?filter=hot"]');
+    await expect(activityTab).toBeVisible();
+
+    await activityTab.click();
+    await expect(page).toHaveURL(/\/feed\/activity\?filter=hot$/);
+    await expect(page.getByRole('status')).toContainText('is not available on this tab');
   });
 
   // Hub section tabs prefetch their shells (`prefetchShell`). Bare `/discover` is redirected to

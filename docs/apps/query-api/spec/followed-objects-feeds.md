@@ -16,7 +16,7 @@ related:
 
 # Followed objects feeds
 
-Two keyset feeds that merge content across every object `{name}` follows. They back the hub **Threads** and **Updates** tabs ([web spec](../../web/spec/pages/home/feed-tabs.md)). The **Activity** tab uses the existing `POST .../following-objects/messages` ([osl-messaging.md](osl-messaging.md)).
+Two keyset feeds that merge content across every object `{name}` follows (MCP and external clients). The web hub tabs now read [`POST /query/v1/feed/{tab}`](hub-feed.md) instead, whose `my` filter also includes followed accounts, favorites and owned objects. Followed-objects messages: `POST .../following-objects/messages` ([osl-messaging.md](osl-messaging.md)).
 
 "Followed objects" = rows of `user_object_follows` where `account = {name}`, joined to `objects_core` with `status = 'active'`. Favorites and ownership do **not** count (unlike the personalized [home feed](home-feed.md)).
 

@@ -1,7 +1,7 @@
 export {
   HomeActivityFeedList,
-  HomeFeedGuestPrompt,
-  HomeFeedMenu,
+  HomeFeedFilterNotice,
+  HomeFeedTabBand,
   HomeFeedPostsList,
   HomeFeedScrollReset,
   HomeThreadsFeedList,
@@ -14,3 +14,19 @@ export {
   resolveActiveHomeFeedTab,
   type HomeFeedTabKey,
 } from './domain/home-feed-tabs';
+export {
+  HOME_FEED_TAB_SORTS,
+  buildHomeFeedHref,
+  defaultHomeFeedFilter,
+  homeFeedFilterKey,
+  homeFeedFilterSearch,
+  isHomeFeedSort,
+  isSameHomeFeedFilter,
+  parseHomeFeedFilter,
+  resolveHomeFeedFilter,
+  type HomeFeedFilter,
+  type HomeFeedFilterNoticeKind,
+  type HomeFeedSearchParamsSource,
+  type HomeFeedSort,
+  type ResolvedHomeFeedFilter,
+} from './domain/home-feed-filter';

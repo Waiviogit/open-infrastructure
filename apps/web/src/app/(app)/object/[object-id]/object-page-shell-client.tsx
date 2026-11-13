@@ -50,7 +50,10 @@ import { ObjectPageCenterSkeleton } from '@/modules/object/presentation/componen
 import { useEffectiveNav, useInstantNavigation } from '@/shared/presentation';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-after-broadcast';
-import { revalidateObjectAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
+import {
+  revalidateObjectAfterBroadcast,
+  revalidateUserSocialAfterBroadcast,
+} from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 
 import {
   resolveGalleryAlbumForObjectPage,
@@ -366,9 +369,12 @@ export function ObjectPageShellClient({
         operations: [op],
       });
       void awaitTrxConfirmation(transactionId).finally(() => {
-        void refreshAfterBroadcast(router, () =>
-          revalidateObjectAfterBroadcast(model.objectId),
-        ).finally(() => {
+        void refreshAfterBroadcast(router, async () => {
+          await Promise.all([
+            revalidateObjectAfterBroadcast(model.objectId),
+            revalidateUserSocialAfterBroadcast(account),
+          ]);
+        }).finally(() => {
           setFollowPending(false);
         });
       });

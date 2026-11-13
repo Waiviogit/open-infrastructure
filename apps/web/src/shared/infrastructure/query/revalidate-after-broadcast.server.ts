@@ -81,12 +81,17 @@ export async function revalidateObjectAfterBroadcast(
   revalidatePath(objectPath(id), 'layout');
 }
 
-/** User profile hero, followers/following tabs, follow bell. */
+/**
+ * User profile hero, followers/following tabs, follow bell, and the account's hub
+ * My feed + rail (follows, favorites and ownership decide both).
+ */
 export async function revalidateUserSocialAfterBroadcast(accountName: string): Promise<void> {
   const name = accountName.trim().toLowerCase();
   if (name.length === 0) {
     return;
   }
+  updateTag(queryApiCacheTags.homeFeed(name));
+  updateTag(queryApiCacheTags.homeFeedFilters(name));
   updateTag(queryApiCacheTags.userProfile(name));
   updateTag(queryApiCacheTags.userAccountSidebar(name));
   updateTag(queryApiCacheTags.userFollowers(name));

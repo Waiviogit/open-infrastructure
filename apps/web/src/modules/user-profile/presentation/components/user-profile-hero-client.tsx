@@ -81,9 +81,12 @@ export function UserProfileHeroClient({
     setFollowPending(true);
     try {
       await broadcastUserFollowToggle(account, accountName, previousFollowing);
-      await refreshAfterBroadcast(router, () =>
-        revalidateUserSocialAfterBroadcast(accountName),
-      );
+      await refreshAfterBroadcast(router, async () => {
+        await Promise.all([
+          revalidateUserSocialAfterBroadcast(accountName),
+          revalidateUserSocialAfterBroadcast(account),
+        ]);
+      });
     } catch {
       setIsFollowing(previousFollowing);
       setViewerBell(previousBell);

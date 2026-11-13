@@ -47,6 +47,9 @@ export const queryApiCacheTags = {
     `query-api:user:${accountName.trim().toLowerCase()}:feed-unread-counts`,
   homeFeed: (viewerKey: string) =>
     `query-api:home-feed:${viewerKey.trim().toLowerCase()}`,
+  /** Hub rail (followed accounts / objects with 3-day counters) of one account. */
+  homeFeedFilters: (accountName: string) =>
+    `query-api:home-feed-filters:${accountName.trim().toLowerCase()}`,
   userThreadsFeed: (accountName: string) =>
     `query-api:user:${accountName.trim().toLowerCase()}:threads-feed`,
   userCommentsFeed: (accountName: string) =>

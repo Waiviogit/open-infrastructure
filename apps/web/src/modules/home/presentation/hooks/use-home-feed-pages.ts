@@ -4,6 +4,8 @@ import { useCallback, useTransition } from 'react';
 
 import { useInfiniteScroll, useSyncedPaginatedList } from '@/shared/presentation';
 
+import { appendUniqueFeedItems } from '../../domain/append-unique-feed-items';
+
 export type HomeFeedPage<TItem> = {
   items: TItem[];
   cursor: string | null;
@@ -12,11 +14,13 @@ export type HomeFeedPage<TItem> = {
 
 /**
  * RSC-seeded cursor list with infinite scroll for hub feed tabs.
- * `loadMore` is a server action; it returns an empty page on failure, never throws.
+ * `loadMore` is a server action bound to the list's rail filter; it returns an empty page
+ * on failure, never throws. Lists are keyed by filter, so a filter change remounts them.
  */
 export function useHomeFeedPages<TItem>(
   initialPage: HomeFeedPage<TItem>,
   loadMore: (cursor: string) => Promise<HomeFeedPage<TItem>>,
+  getKey: (item: TItem) => string,
 ) {
   const { items, setItems, cursor, setCursor, hasMore, setHasMore } =
     useSyncedPaginatedList(initialPage);
@@ -28,11 +32,11 @@ export function useHomeFeedPages<TItem>(
     }
     startTransition(async () => {
       const next = await loadMore(cursor);
-      setItems((prev) => [...prev, ...next.items]);
+      setItems((prev) => appendUniqueFeedItems(prev, next.items, getKey));
       setCursor(next.cursor);
       setHasMore(next.hasMore);
     });
-  }, [cursor, loadMore, pending, setCursor, setHasMore, setItems]);
+  }, [cursor, getKey, loadMore, pending, setCursor, setHasMore, setItems]);
 
   const { sentinelRef } = useInfiniteScroll({
     hasMore,

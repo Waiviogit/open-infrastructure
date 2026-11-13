@@ -2,6 +2,8 @@
 
 import { UPDATE_REGISTRY } from '@opden-data-layer/core/update-registry';
 
+import { useCallback } from 'react';
+
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useLoginModal } from '@/modules/auth';
 import { objectFields } from '@/modules/feed/application/dto/object-fields';
@@ -17,6 +19,7 @@ import type {
   HomeUpdateFeedItemView,
   HomeUpdatesFeedPage,
 } from '../../application/dto/home-followed-feeds.dto';
+import type { HomeFeedFilter } from '../../domain/home-feed-filter';
 import { useHomeFeedPages } from '../hooks/use-home-feed-pages';
 import { HomeFeedEmptyState } from './home-feed-empty-state';
 import { HomeFeedLoadMore } from './home-feed-load-more';
@@ -25,8 +28,12 @@ const OBJECT_AVATAR_SIZE = 28;
 
 type HomeUpdatesFeedListProps = {
   initialPage: HomeUpdatesFeedPage;
-  currentUsername: string;
+  currentUsername: string | null;
+  /** Rail filter the first page was loaded with; next pages use the same one. */
+  filter: HomeFeedFilter;
 };
+
+const updateKey = (item: HomeUpdateFeedItemView) => item.update_id;
 
 function UpdateObjectHeader({ item }: { item: HomeUpdateFeedItemView }) {
   const name = (item.object && objectFields.name(item.object)) || item.object_id;
@@ -43,16 +50,29 @@ function UpdateObjectHeader({ item }: { item: HomeUpdateFeedItemView }) {
   );
 }
 
-export function HomeUpdatesFeedList({ initialPage, currentUsername }: HomeUpdatesFeedListProps) {
+export function HomeUpdatesFeedList({
+  initialPage,
+  currentUsername,
+  filter,
+}: HomeUpdatesFeedListProps) {
   const { t } = useI18n();
   const { openLogin } = useLoginModal();
+  const loadMore = useCallback(
+    (cursor: string) => loadMoreHomeUpdatesFeedAction(filter, cursor),
+    [filter],
+  );
   const { items, hasMore, pending, canLoadMore, onLoadMore, sentinelRef } = useHomeFeedPages(
     initialPage,
-    loadMoreHomeUpdatesFeedAction,
+    loadMore,
+    updateKey,
   );
 
   if (items.length === 0) {
-    return <HomeFeedEmptyState message={t('home_feed_updates_empty')} />;
+    return (
+      <HomeFeedEmptyState
+        message={t(filter.kind === 'my' ? 'home_feed_updates_empty' : 'home_feed_filter_empty')}
+      />
+    );
   }
 
   return (
