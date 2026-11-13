@@ -5,7 +5,10 @@ import {
   MessagingRepository,
   UserAccountMutesRepository,
 } from '../../repositories';
-import type { ObjectActivityMessageRow } from '../../repositories/messaging.repository';
+import {
+  normalizeActivityRow,
+  type ObjectActivityMessageRow,
+} from '../../repositories/messaging.repository';
 import { GovernanceResolverService } from '../governance';
 import {
   buildObjectActivityFeedItems,
@@ -97,8 +100,17 @@ export class GetHubActivityFeedEndpoint {
         return this.hubActivityRepo.findNew(excluded, cursor, limitPlusOne);
       case 'my':
         return this.hubActivityRepo.findMy(viewer, excluded, cursor, limitPlusOne);
-      case 'object':
-        return this.messagingRepo.listObjectActivityMessages(filter.object_id, excluded, cursor, limitPlusOne);
+      case 'object': {
+        // This shared query returns driver values (bigint columns as strings); the hub
+        // queries already normalize theirs.
+        const rows = await this.messagingRepo.listObjectActivityMessages(
+          filter.object_id,
+          excluded,
+          cursor,
+          limitPlusOne,
+        );
+        return rows.map(normalizeActivityRow);
+      }
       default:
         return assertNeverHubFeedFilter(filter);
     }

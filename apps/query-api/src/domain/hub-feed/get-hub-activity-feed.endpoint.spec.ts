@@ -61,12 +61,20 @@ describe('GetHubActivityFeedEndpoint', () => {
     });
   });
 
-  it('reads one object through the object activity query', async () => {
+  it('reads one object through the object activity query and normalizes driver values', async () => {
     const { endpoint, messagingRepo } = setup();
+    messagingRepo.listObjectActivityMessages.mockResolvedValue([
+      { ...message('m1', 300, 30), created_at_unix: '300', event_seq: '30', duplicate_count: '2' },
+    ]);
 
-    await endpoint.execute(body({ filter: { kind: 'object', object_id: 'obj' } }), undefined, undefined);
+    const page = await endpoint.execute(
+      body({ filter: { kind: 'object', object_id: 'obj' } }),
+      undefined,
+      undefined,
+    );
 
     expect(messagingRepo.listObjectActivityMessages).toHaveBeenCalledWith('obj', ['gov-muted'], null, 21);
+    expect(page.items[0].created_at_unix).toBe(300);
   });
 
   it('shows an explicitly chosen author without mute lookups', async () => {
