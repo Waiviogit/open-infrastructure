@@ -17,7 +17,6 @@ import {
   favoritesTypeHasCategories,
   type FavoritesTypeSummary,
 } from '../../domain/types/favorites';
-import { formatFavoritesTypeLabel } from './favorites-type-label';
 import { useEffectiveProfileNav } from './user-profile-pending-nav-context';
 import { UserProfileNavLink } from './user-profile-nav-link';
 
@@ -45,8 +44,8 @@ function chipClass(active: boolean): string {
 const CHIP_ROW_CLASS = 'scrollbar-minimal flex list-none gap-2 overflow-x-auto p-0 pb-1';
 
 /**
- * Mobile replacement of the Favorites left rail (hidden from `lg`): a scrollable row of type
- * chips, plus child-category and Uncategorized chips for a category type.
+ * Mobile replacement of the Favorites left rail (hidden from `lg`): child-category and
+ * Uncategorized chips of a category type. Types are in the submenu at every width.
  */
 export function FavoritesMobileNav({
   accountName,
@@ -65,80 +64,55 @@ export function FavoritesMobileNav({
   const activeName = effectiveLineage[effectiveLineage.length - 1] ?? null;
 
   const navLineage = isUncategorizedLineage(lineage) ? [] : lineage;
-  const showCategories =
-    navData !== null &&
-    activeType === objectType &&
-    favoritesTypeHasCategories(items, objectType);
+  if (
+    navData === null ||
+    activeType !== objectType ||
+    !favoritesTypeHasCategories(items, objectType)
+  ) {
+    return null;
+  }
   const showUncategorized =
-    showCategories &&
-    navLineage.length === 0 &&
-    navData.items.length > 0 &&
-    navData.uncategorized_count > 0;
-  const hasCategoryRow = showCategories && (navData.items.length > 0 || showUncategorized);
-
-  if (items.length <= 1 && !hasCategoryRow) {
+    navLineage.length === 0 && navData.items.length > 0 && navData.uncategorized_count > 0;
+  if (navData.items.length === 0 && !showUncategorized) {
     return null;
   }
 
   return (
-    <nav aria-label={t('favorites_mobile_nav_aria')} className="mb-card-padding space-y-2 lg:hidden">
-      {items.length > 1 ? (
-        <ul className={CHIP_ROW_CLASS}>
-          {items.map((item) => {
-            const active = item.objectType === activeType;
-            return (
-              <li key={item.objectType}>
-                <UserProfileNavLink
-                  href={buildFavoritesPath(accountName, item.objectType)}
-                  className={chipClass(active)}
-                  aria-current={active ? 'true' : undefined}
-                >
-                  {formatFavoritesTypeLabel(item.objectType)}
-                  {item.objectsCount != null ? (
-                    <span className="text-caption tabular-nums">{item.objectsCount}</span>
-                  ) : null}
-                </UserProfileNavLink>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
-      {hasCategoryRow ? (
-        <ul className={CHIP_ROW_CLASS}>
-          {navData.items.map((item) => {
-            const active = !uncategorizedActive && activeName === item.name;
-            return (
-              <li key={item.name}>
-                <UserProfileNavLink
-                  href={buildProfileShopHref(
-                    buildFavoritesPath(accountName, objectType, [...navLineage, item.name]),
-                    filters,
-                  )}
-                  className={chipClass(active)}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  {item.name}
-                  {item.has_children ? <span aria-hidden>›</span> : null}
-                </UserProfileNavLink>
-              </li>
-            );
-          })}
-          {showUncategorized ? (
-            <li>
+    <nav aria-label={t('favorites_categories_aria')} className="mb-card-padding lg:hidden">
+      <ul className={CHIP_ROW_CLASS}>
+        {navData.items.map((item) => {
+          const active = !uncategorizedActive && activeName === item.name;
+          return (
+            <li key={item.name}>
               <UserProfileNavLink
                 href={buildProfileShopHref(
-                  buildFavoritesPath(accountName, objectType, [UNCATEGORIZED_SHOP_PATH_SEGMENT]),
+                  buildFavoritesPath(accountName, objectType, [...navLineage, item.name]),
                   filters,
                 )}
-                className={chipClass(uncategorizedActive)}
-                aria-current={uncategorizedActive ? 'page' : undefined}
+                className={chipClass(active)}
+                aria-current={active ? 'page' : undefined}
               >
-                {t('profile_categories_uncategorized')}
+                {item.name}
+                {item.has_children ? <span aria-hidden>›</span> : null}
               </UserProfileNavLink>
             </li>
-          ) : null}
-        </ul>
-      ) : null}
+          );
+        })}
+        {showUncategorized ? (
+          <li>
+            <UserProfileNavLink
+              href={buildProfileShopHref(
+                buildFavoritesPath(accountName, objectType, [UNCATEGORIZED_SHOP_PATH_SEGMENT]),
+                filters,
+              )}
+              className={chipClass(uncategorizedActive)}
+              aria-current={uncategorizedActive ? 'page' : undefined}
+            >
+              {t('profile_categories_uncategorized')}
+            </UserProfileNavLink>
+          </li>
+        ) : null}
+      </ul>
     </nav>
   );
 }

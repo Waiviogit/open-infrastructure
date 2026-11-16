@@ -32,8 +32,8 @@ export type ProfileFavoritesMainContentProps = {
 };
 
 /**
- * Center column of the Favorites tab: breadcrumbs, the mobile type/category nav, filter chips,
- * then category sections or a flat list of the active type.
+ * Center column of the Favorites tab (types are in the profile submenu): breadcrumbs, the mobile
+ * category chips, filter chips, then category sections or a flat list of the active type.
  * Unknown types and a category lineage on a type without categorized objects are not found.
  */
 export async function ProfileFavoritesMainContent({

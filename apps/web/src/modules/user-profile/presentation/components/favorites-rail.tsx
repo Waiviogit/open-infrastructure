@@ -11,7 +11,7 @@ export type FavoritesRailProps = {
   lineageSegments?: readonly string[];
 };
 
-/** Left rail of the Favorites tab: type accordion with the category nav of the active type. */
+/** Left rail of the Favorites tab: category nav of the active type; empty for a type without categories. */
 export async function FavoritesRail({
   accountName,
   routeObjectType,

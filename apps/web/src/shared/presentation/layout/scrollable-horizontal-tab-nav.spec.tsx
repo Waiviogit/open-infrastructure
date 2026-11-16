@@ -3,7 +3,7 @@
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { ScrollableHorizontalTabNav } from './scrollable-horizontal-tab-nav';
+import { ScrollableHorizontalTabNav, scrollLeftToReveal } from './scrollable-horizontal-tab-nav';
 
 class MockResizeObserver {
   private callback: ResizeObserverCallback;
@@ -207,5 +207,37 @@ describe('ScrollableHorizontalTabNav', () => {
     const nav = container.querySelector('nav');
     expect(nav?.className).toContain('mx-auto');
     expect(nav?.className).not.toContain('justify-center');
+  });
+});
+
+describe('scrollLeftToReveal', () => {
+  /** Scrollport 600px wide at x=646 (page centered on a wide screen); tabs 104px wide. */
+  function setup(tabX: number, scrollLeft = 0) {
+    const container = document.createElement('div');
+    const target = document.createElement('a');
+    container.appendChild(target);
+    Object.defineProperty(container, 'clientWidth', { configurable: true, value: 600 });
+    Object.defineProperty(container, 'scrollLeft', { configurable: true, value: scrollLeft });
+    Object.defineProperty(target, 'offsetWidth', { configurable: true, value: 104 });
+    // offsetLeft counts from <body>, not from the scrollport — it must not be used.
+    Object.defineProperty(target, 'offsetLeft', { configurable: true, value: 646 + tabX });
+    container.getBoundingClientRect = () => ({ left: 646 }) as DOMRect;
+    target.getBoundingClientRect = () => ({ left: 646 + tabX - scrollLeft }) as DOMRect;
+    return { container, target };
+  }
+
+  it('keeps a visible first tab in place on a wide screen', () => {
+    const { container, target } = setup(0);
+    expect(scrollLeftToReveal(container, target)).toBeNull();
+  });
+
+  it('scrolls right just enough to show a tab past the right edge', () => {
+    const { container, target } = setup(800);
+    expect(scrollLeftToReveal(container, target)).toBe(304);
+  });
+
+  it('scrolls back left to a tab before the scrolled-out area', () => {
+    const { container, target } = setup(100, 300);
+    expect(scrollLeftToReveal(container, target)).toBe(100);
   });
 });

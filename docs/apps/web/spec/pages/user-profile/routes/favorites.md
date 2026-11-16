@@ -1,12 +1,12 @@
 ---
 id: web-pages-user-profile-routes-favorites
 title: User profile — favorites
-description: "One Favorites tab at `/@:name/favorites`: type accordion with category navigation, breadcrumbs, filters and an infinite object list."
+description: "One Favorites tab at `/@:name/favorites`: horizontal type menu, category navigation in the left rail, breadcrumbs, filters and an infinite object list."
 type: spec
 status: active
 scope: web
 tags: [web, page, user-profile, favorites]
-updated_at: 2026-11-11
+updated_at: 2026-11-16
 related:
   - docs/apps/web/spec/pages/user-profile/profile-shell.md
   - docs/apps/query-api/spec/users-favorites-endpoint.md
@@ -44,9 +44,10 @@ One tab for every object the user keeps: the former Shop (`book`, `product`), Re
 
 | Region | Component | Behavior |
 |--------|-----------|----------|
-| Left rail (`lg+`) | `FavoritesRail` → `FavoritesRailPanel` | Accordion of types with counts. Type links drop filters. Only the active type is expanded (`aria-expanded`); the chevron (after the type label) and `CategoryNavChrome` appear only when the type `has_categories` (`favorites/types`): ← Up / All categories, children (`›` when they have children), Uncategorized. A type that supports categories but has none yet looks like any type without categories — no chevron, no "No categories yet", no lone Uncategorized. Uncategorized is listed only next to real categories. A leaf shows its siblings with the leaf highlighted. |
+| Type menu (all widths) | `FavoritesTypesMenu` → `FavoritesTypesMenuNav` | Horizontal tabs of the user's types with counts, in the profile submenu card — same slot and look as the wallet tabs (`UserProfileSubmenu`, variant `favorites`). Rendered by `(main)/layout.tsx`, so it stays mounted and outside the pending overlay. Type links drop filters; the active tab follows the effective pathname (first type on bare `/favorites`). No types → no card. |
+| Left rail (`lg+`) | `FavoritesRail` → `FavoritesRailPanel` | Only the category navigation of the active type, under the type label: `CategoryNavChrome` — ← Up / All categories, children (`›` when they have children), Uncategorized. Shown only when the type `has_categories` (`favorites/types`); otherwise the left column is empty (a type that supports categories but has none yet counts as without). Uncategorized is listed only next to real categories. A leaf shows its siblings with the leaf highlighted. The rail is in page flow (`FAVORITES_LEFT_RAIL_FLOW_CLASS`): not sticky and no own scroll — a long category list grows the page. |
 | Center | `ProfileFavoritesMainContent` | `FavoritesBreadcrumbs`, `FavoritesMobileNav`, filter chips, then content (below). |
-| Mobile (`< lg`) | `FavoritesMobileNav` | Scrollable type chips; for a type with categories, child-category chips and (next to them) Uncategorized. A mobile filters sheet is a follow-up. |
+| Mobile (`< lg`) | `FavoritesMobileNav` | Child-category chips and (next to them) Uncategorized for a type with categories; types are in the type menu. A mobile filters sheet is a follow-up. |
 | Right rail (`lg+`) | `ProfileFavoritesFiltersFromUrl` | Rating + tag facets of the URL type (and category path) for **every** type the registry gives tag/rating updates. Bare `/favorites` reads the first type from BFF `GET /api/users/:name/favorites/types`. |
 
 ### Center content
@@ -66,16 +67,16 @@ Displayed counts are live counts over the same scope as the lists (see [shop-fee
 
 ## Navigation and loading
 
-- All rail, chip, crumb and section links are `UserProfileNavLink` (instant URL + optimistic active state). The rail and chips read the effective pathname (`useEffectiveProfileNav` + `parseFavoritesPath`); while a newly picked type is pending, the rail shows a category skeleton under it.
-- Pending overlay: breadcrumbs, then a sections skeleton (same card shell as a loaded section) for a category type without filters (not Uncategorized), else a list skeleton. Route `loading.tsx`: `ProfileFavoritesContentSkeleton`; rail fallback: `ProfileFavoritesRailSkeleton`.
-- No layout shift while switching types or categories: the breadcrumb row has a fixed one-line height (`FAVORITES_CRUMBS_ROW_CLASS` in `favorites-layout-classes.ts`) shared by the real breadcrumbs and both skeletons, and the pending overlay has no inset on this tab. On `lg+` both side rails are offset by that row (`FAVORITES_SIDE_RAIL_OFFSET_CLASS`) so they start level with the first card. The left rail has no title (the active hero tab already says Favorites).
+- All type tab, rail, chip, crumb and section links are `UserProfileNavLink` (instant URL + optimistic active state). The type menu, rail and chips read the effective pathname (`useEffectiveProfileNav` + `parseFavoritesPath`); while a newly picked category type is pending, the rail shows a category skeleton under its label, and a type without categories empties the rail at once.
+- Pending overlay: breadcrumbs, then a sections skeleton (same card shell as a loaded section) for a category type without filters (not Uncategorized), else a list skeleton. Route `loading.tsx`: `ProfileFavoritesContentSkeleton`; rail fallback: `ProfileFavoritesRailSkeleton`; type menu fallback: `FavoritesTypesMenuSkeleton`.
+- No layout shift while switching types or categories: the breadcrumb row has a fixed one-line height (`FAVORITES_CRUMBS_ROW_CLASS` in `favorites-layout-classes.ts`) shared by the real breadcrumbs and both skeletons, and the pending overlay has no inset on this tab. Both side rails start at the top of the column, level with the type menu card.
 - Filters: URL `tags=Category:value` (repeatable, AND) and `rating` (`6` | `8` | `10`). Category, section, crumb and Uncategorized links keep them.
 
 ## Data loading
 
 | Data | Source |
 |------|--------|
-| Types | `getFavoritesTypesQuery` (`react.cache`, shared by rail and center) |
+| Types | `getFavoritesTypesQuery` (`react.cache`, shared by type menu, rail and center; the menu fetch runs once per profile layout render, cached by `queryApiFetch`) |
 | Category nav | `getCategoryNav(account, type, {name, path})` — exactly one type; rail via `getFavoritesRailNavQuery` |
 | Objects / sections | `shop-objects` / `shop-sections` with `types=<type>` (`shop-objects.client.ts`) |
 | Next pages | `favorites-feed.actions.ts`: `loadMoreFavoritesObjectsAction`, `loadMoreFavoritesSectionsAction` → `Result<page, 'service_unavailable'>` |
@@ -84,12 +85,12 @@ Lists and sections use `useSyncedPaginatedList` + `useInfiniteScroll` (sentinel 
 
 ## Cache invalidation
 
-`favorites/types` is tagged `userFavoritesTypes`; `categories`, `shop-objects` and `shop-sections` are tagged `userFavorites`. Toggling the administrative heart revalidates both for the account (`revalidateUserSocialAfterBroadcast`), so the rail, counts and lists update on `router.refresh()`.
+`favorites/types` is tagged `userFavoritesTypes`; `categories`, `shop-objects` and `shop-sections` are tagged `userFavorites`. Toggling the administrative heart revalidates both for the account (`revalidateUserSocialAfterBroadcast`), so the type menu, rail, counts and lists update on `router.refresh()`.
 
 ## Verification
 
 | Command | Purpose |
 |---------|---------|
-| `pnpm nx test web --testPathPatterns=favorites` | Path helpers, breadcrumbs, rail panel, clients |
+| `pnpm nx test web --testPathPatterns=favorites` | Path helpers, breadcrumbs, type menu, rail panel, mobile chips, clients |
 | `pnpm typecheck:web` | Route and component types |
-| Manual | `/@acc/favorites`, `/@acc/favorites/recipe/German%20Cuisine/Comfort%20Food?tags=Cuisine:german`, `/@acc/favorites/place`: accordion, crumbs keep filters, filters on a type without categories, Uncategorized, infinite scroll, Back/Forward, mobile chips; `/@acc/recipe` opens the post route |
+| Manual | `/@acc/favorites`, `/@acc/favorites/recipe/German%20Cuisine/Comfort%20Food?tags=Cuisine:german`, `/@acc/favorites/place`: type tabs, categories rail (empty on Place, scrolls with the page), crumbs keep filters, filters on a type without categories, Uncategorized, infinite scroll, Back/Forward, mobile chips; `/@acc/recipe` opens the post route |

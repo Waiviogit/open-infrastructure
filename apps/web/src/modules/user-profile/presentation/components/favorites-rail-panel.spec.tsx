@@ -36,13 +36,8 @@ jest.mock('./user-profile-nav-link', () => ({
   ),
 }));
 
-jest.mock('@/shared/presentation/layout', () => ({
-  PROFILE_RAIL_STICKY_CLASS: 'sticky',
-}));
-
 const messages = {
-  favorites: 'Favorites',
-  favorites_types_empty: 'No favorite object types yet.',
+  favorites_categories_aria: 'Favorites categories',
   profile_categories_up: '← Up',
   profile_categories_all: 'All categories',
   profile_categories_uncategorized: 'Uncategorized',
@@ -64,7 +59,7 @@ const RECIPE_NAV: CategoryNavData = {
   show_other: false,
 };
 
-function renderPanel(overrides: Partial<FavoritesRailPanelProps> = {}) {
+function renderPanel(overrides: Partial<FavoritesRailPanelProps> = {}): HTMLElement | null {
   const props: FavoritesRailPanelProps = {
     accountName: 'alice',
     items: ITEMS,
@@ -79,11 +74,13 @@ function renderPanel(overrides: Partial<FavoritesRailPanelProps> = {}) {
       <FavoritesRailPanel {...props} />
     </I18nProvider>,
   );
-  return screen.getByRole('navigation', { name: 'Favorites' });
+  return screen.queryByRole('navigation', { name: 'Favorites categories' });
 }
 
-function typeLink(nav: HTMLElement, label: RegExp): HTMLElement {
-  return within(nav).getByRole('link', { name: label });
+function renderRail(overrides: Partial<FavoritesRailPanelProps> = {}): HTMLElement {
+  const nav = renderPanel(overrides);
+  expect(nav).not.toBeNull();
+  return nav as HTMLElement;
 }
 
 describe('FavoritesRailPanel', () => {
@@ -92,96 +89,83 @@ describe('FavoritesRailPanel', () => {
     mockSearch = '';
   });
 
-  it('lists types with counts; type links drop filters', () => {
-    mockSearch = 'tags=Cuisine%3Agerman';
-    const nav = renderPanel();
-    expect(typeLink(nav, /^Recipe/)).toHaveAttribute('href', '/@alice/favorites/recipe');
-    expect(typeLink(nav, /^Recipe/)).toHaveTextContent('12');
-    expect(typeLink(nav, /^Place/)).toHaveAttribute('href', '/@alice/favorites/place');
-    expect(typeLink(nav, /^Book/)).toHaveTextContent(/^Book$/);
-  });
-
-  it('expands only the active category type and renders its category nav', () => {
-    const nav = renderPanel();
-    const recipe = typeLink(nav, /^Recipe/);
-    expect(recipe).toHaveAttribute('aria-expanded', 'true');
-    expect(recipe).toHaveAttribute('aria-current', 'page');
-    expect(typeLink(nav, /^Book/)).toHaveAttribute('aria-expanded', 'false');
-    expect(typeLink(nav, /^Place/)).not.toHaveAttribute('aria-expanded');
-
-    const panel = document.getElementById(recipe.getAttribute('aria-controls') ?? '');
-    expect(panel).not.toBeNull();
-    const category = within(panel as HTMLElement).getByRole('link', { name: /German Cuisine/ });
-    expect(category).toHaveAttribute('href', '/@alice/favorites/recipe/German%20Cuisine');
-    expect(
-      within(panel as HTMLElement).getByRole('link', { name: 'Uncategorized' }),
-    ).toHaveAttribute('href', '/@alice/favorites/recipe/uncategorized');
+  it('shows only the category nav of the active type, headed by the type label', () => {
+    const nav = renderRail();
+    expect(within(nav).getByText('Recipe')).toBeInTheDocument();
+    expect(within(nav).queryByText('Place')).toBeNull();
+    expect(within(nav).getByRole('link', { name: /German Cuisine/ })).toHaveAttribute(
+      'href',
+      '/@alice/favorites/recipe/German%20Cuisine',
+    );
+    expect(within(nav).getByRole('link', { name: 'Uncategorized' })).toHaveAttribute(
+      'href',
+      '/@alice/favorites/recipe/uncategorized',
+    );
   });
 
   it('keeps filters on category links', () => {
     mockSearch = 'rating=8';
-    const nav = renderPanel();
+    const nav = renderRail();
     expect(within(nav).getByRole('link', { name: /Desserts/ })).toHaveAttribute(
       'href',
       '/@alice/favorites/recipe/Desserts?rating=8',
     );
   });
 
-  it('treats a category type with nothing categorized as a plain type (no chevron, no panel)', () => {
+  it('scrolls with the page: the rail is not sticky and has no own scroll', () => {
+    const nav = renderRail();
+    expect(nav.className).not.toMatch(/sticky/);
+    expect(nav.className).not.toMatch(/overflow-y-auto/);
+    expect(nav.className).not.toMatch(/max-h-/);
+  });
+
+  it('renders nothing for a type without categories', () => {
+    mockPathname = '/@alice/favorites/place';
+    expect(renderPanel({ serverObjectType: 'place', navData: null })).toBeNull();
+  });
+
+  it('renders nothing for a category type with nothing categorized yet', () => {
     mockPathname = '/@alice/favorites/book';
-    const nav = renderPanel({
-      items: [
-        { objectType: 'recipe', objectsCount: 12, hasCategories: true },
-        { objectType: 'book', objectsCount: 7, hasCategories: false },
-      ],
-      serverObjectType: 'book',
-      navData: null,
-    });
-    const book = typeLink(nav, /^Book/);
-    expect(book).toHaveAttribute('aria-current', 'page');
-    expect(book).not.toHaveAttribute('aria-expanded');
-    expect(book.querySelector('svg')).toBeNull();
-    expect(within(nav).queryByRole('link', { name: 'Uncategorized' })).toBeNull();
+    expect(
+      renderPanel({
+        items: [
+          { objectType: 'recipe', objectsCount: 12, hasCategories: true },
+          { objectType: 'book', objectsCount: 7, hasCategories: false },
+        ],
+        serverObjectType: 'book',
+        navData: null,
+      }),
+    ).toBeNull();
   });
 
   it('hides a lone Uncategorized when the category root lists no categories', () => {
     mockPathname = '/@alice/favorites/book';
-    const nav = renderPanel({
+    const nav = renderRail({
       serverObjectType: 'book',
       navData: { items: [], uncategorized_count: 7, show_other: false },
     });
-    const panel = document.getElementById(
-      typeLink(nav, /^Book/).getAttribute('aria-controls') ?? '',
-    ) as HTMLElement;
-    expect(within(panel).queryAllByRole('link')).toHaveLength(0);
+    expect(within(nav).queryAllByRole('link')).toHaveLength(0);
   });
 
-  it('switches the expanded type optimistically and shows a skeleton until the server catches up', () => {
+  it('shows a skeleton when another category type is picked, until the server catches up', () => {
     mockPathname = '/@alice/favorites/book';
-    const nav = renderPanel();
-    const book = typeLink(nav, /^Book/);
-    expect(book).toHaveAttribute('aria-expanded', 'true');
-    expect(typeLink(nav, /^Recipe/)).toHaveAttribute('aria-expanded', 'false');
+    const nav = renderRail();
+    expect(within(nav).getByText('Book')).toBeInTheDocument();
     expect(within(nav).queryByRole('link', { name: /German Cuisine/ })).toBeNull();
-    const panel = document.getElementById(book.getAttribute('aria-controls') ?? '');
-    expect(panel?.querySelector('.animate-pulse')).not.toBeNull();
+    expect(nav.querySelector('.animate-pulse')).not.toBeNull();
   });
 
-  it('collapses category nav when a type without categories is active', () => {
+  it('empties at once when a type without categories is picked', () => {
     mockPathname = '/@alice/favorites/place';
-    const nav = renderPanel({ serverObjectType: 'place', navData: null });
-    expect(typeLink(nav, /^Place/)).toHaveAttribute('aria-current', 'page');
-    expect(typeLink(nav, /^Recipe/)).toHaveAttribute('aria-expanded', 'false');
-    expect(within(nav).queryByRole('link', { name: /German Cuisine/ })).toBeNull();
+    expect(renderPanel()).toBeNull();
   });
 
   it('highlights the open category and offers Up / All categories on a drill-down', () => {
     mockPathname = '/@alice/favorites/recipe/German%20Cuisine/Desserts';
-    const nav = renderPanel({
+    const nav = renderRail({
       lineageSegments: ['German Cuisine', 'Desserts'],
       navLineage: ['German Cuisine'],
     });
-    expect(typeLink(nav, /^Recipe/)).toHaveAttribute('aria-current', 'true');
     expect(within(nav).getByRole('link', { name: /Desserts/ })).toHaveAttribute(
       'aria-current',
       'page',
@@ -196,14 +180,13 @@ describe('FavoritesRailPanel', () => {
     );
   });
 
-  it('shows the first type as active on bare /favorites', () => {
+  it('uses the first type on bare /favorites', () => {
     mockPathname = '/@alice/favorites';
-    const nav = renderPanel();
-    expect(typeLink(nav, /^Recipe/)).toHaveAttribute('aria-current', 'page');
+    const nav = renderRail();
+    expect(within(nav).getByText('Recipe')).toBeInTheDocument();
   });
 
-  it('shows the empty state without types', () => {
-    renderPanel({ items: [], serverObjectType: null, navData: null });
-    expect(screen.getByText('No favorite object types yet.')).toBeInTheDocument();
+  it('renders nothing without types', () => {
+    expect(renderPanel({ items: [], serverObjectType: null, navData: null })).toBeNull();
   });
 });

@@ -29,7 +29,6 @@ import {
 } from '../../domain/profile-shop-registry';
 import { fetchProfileFavoritesTypes } from '../../infrastructure/profile-favorites-types.client';
 import { fetchProfileShopFilters } from '../../infrastructure/profile-shop-filters.client';
-import { FAVORITES_SIDE_RAIL_OFFSET_CLASS } from './favorites-layout-classes';
 
 const FILTER_DEBOUNCE_MS = 300;
 const DEFAULT_OPEN_CATEGORIES = 2;
@@ -253,7 +252,6 @@ export function ProfileShopFilters({
     <aside
       className={[
         PROFILE_FILTER_RAIL_STICKY_CLASS,
-        FAVORITES_SIDE_RAIL_OFFSET_CLASS,
         'rounded-card border border-border bg-surface/60 p-card-padding',
       ].join(' ')}
       aria-label={t('discover_filters_title')}

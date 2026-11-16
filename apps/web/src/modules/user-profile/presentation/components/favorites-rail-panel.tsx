@@ -1,19 +1,20 @@
 'use client';
 
-import { useId } from 'react';
-
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { ChevronDownIcon } from '@/icons';
-import { PROFILE_RAIL_STICKY_CLASS } from '@/shared/presentation/layout';
 
-import { buildFavoritesPath, parseFavoritesPath } from '../../domain/favorites-path';
+import { parseFavoritesPath } from '../../domain/favorites-path';
 import type { CategoryNavData } from '../../domain/types/category-nav';
-import type { FavoritesTypeSummary } from '../../domain/types/favorites';
+import {
+  favoritesTypeHasCategories,
+  type FavoritesTypeSummary,
+} from '../../domain/types/favorites';
 import { CategoryNavChrome } from './category-nav-chrome';
 import { formatFavoritesTypeLabel } from './favorites-type-label';
-import { FAVORITES_SIDE_RAIL_OFFSET_CLASS } from './favorites-layout-classes';
+import {
+  FAVORITES_LEFT_RAIL_CARD_CLASS,
+  FAVORITES_LEFT_RAIL_FLOW_CLASS,
+} from './favorites-layout-classes';
 import { useEffectiveProfileNav } from './user-profile-pending-nav-context';
-import { UserProfileNavLink } from './user-profile-nav-link';
 
 const CATEGORY_NAV_SKELETON_ROWS = 4;
 
@@ -43,9 +44,10 @@ function CategoryNavPendingSkeleton() {
 }
 
 /**
- * Accordion of the user's Favorites types. Only the active type is expanded; a category type
- * shows its category nav under it. The active type follows the optimistic pathname, and the
- * nav shows a skeleton until the server catches up with a newly picked type.
+ * Left rail of the Favorites tab: the category navigation of the active type. Types live in the
+ * horizontal submenu; a type without categories leaves the rail empty. The active type follows
+ * the optimistic pathname, and the nav shows a skeleton until the server catches up with a newly
+ * picked type.
  */
 export function FavoritesRailPanel({
   accountName,
@@ -56,88 +58,36 @@ export function FavoritesRailPanel({
   navLineage,
 }: FavoritesRailPanelProps) {
   const { t } = useI18n();
-  const panelIdPrefix = useId();
   const { pathname } = useEffectiveProfileNav();
   const effectivePath = parseFavoritesPath(pathname);
   const activeType = effectivePath
     ? (effectivePath.objectType ?? items[0]?.objectType ?? null)
     : serverObjectType;
-  const effectiveLineage = effectivePath?.lineage ?? lineageSegments;
+
+  if (activeType === null || !favoritesTypeHasCategories(items, activeType)) {
+    return null;
+  }
 
   return (
     <nav
-      aria-label={t('favorites')}
-      className={[
-        PROFILE_RAIL_STICKY_CLASS,
-        FAVORITES_SIDE_RAIL_OFFSET_CLASS,
-        'rounded-card border border-border bg-surface/60 p-card-padding',
-      ].join(' ')}
+      aria-label={t('favorites_categories_aria')}
+      className={[FAVORITES_LEFT_RAIL_FLOW_CLASS, FAVORITES_LEFT_RAIL_CARD_CLASS].join(' ')}
     >
-      {items.length === 0 ? (
-        <p className="text-body-sm text-muted">{t('favorites_types_empty')}</p>
+      <p className="mb-2 truncate font-weight-label text-body-sm text-fg">
+        {formatFavoritesTypeLabel(activeType)}
+      </p>
+      {activeType !== serverObjectType ? (
+        <CategoryNavPendingSkeleton />
+      ) : navData === null ? (
+        <p className="py-1 text-body-sm text-muted">{t('profile_categories_unavailable')}</p>
       ) : (
-        <ul className="flex list-none flex-col gap-1 p-0">
-          {items.map(({ objectType, objectsCount, hasCategories }) => {
-            const isActive = objectType === activeType;
-            const expandable = hasCategories;
-            const expanded = expandable && isActive;
-            const panelId = `${panelIdPrefix}-${objectType}`;
-            const isServerType = objectType === serverObjectType;
-            return (
-              <li key={objectType}>
-                <UserProfileNavLink
-                  href={buildFavoritesPath(accountName, objectType)}
-                  className={[
-                    'flex items-center justify-between gap-2 rounded-btn px-2 py-1.5 text-body-sm hover:bg-surface-control hover:text-fg',
-                    isActive ? 'bg-surface-control font-weight-label text-fg' : 'text-muted',
-                  ].join(' ')}
-                  aria-current={
-                    isActive ? (effectiveLineage.length === 0 ? 'page' : 'true') : undefined
-                  }
-                  aria-expanded={expandable ? expanded : undefined}
-                  aria-controls={expanded ? panelId : undefined}
-                >
-                  <span className="flex min-w-0 items-center gap-1">
-                    <span className="truncate">{formatFavoritesTypeLabel(objectType)}</span>
-                    {expandable ? (
-                      <ChevronDownIcon
-                        size={12}
-                        className={[
-                          'shrink-0 text-fg-secondary transition-transform duration-150',
-                          expanded ? '' : '-rotate-90',
-                        ].join(' ')}
-                      />
-                    ) : null}
-                  </span>
-                  {objectsCount != null ? (
-                    <span className="shrink-0 text-caption tabular-nums text-fg-secondary">
-                      {objectsCount}
-                    </span>
-                  ) : null}
-                </UserProfileNavLink>
-                {expanded ? (
-                  <div id={panelId} className="ms-3 mt-1 border-s border-border ps-2">
-                    {!isServerType ? (
-                      <CategoryNavPendingSkeleton />
-                    ) : navData === null ? (
-                      <p className="py-1 text-body-sm text-muted">
-                        {t('profile_categories_unavailable')}
-                      </p>
-                    ) : (
-                      <CategoryNavChrome
-                        data={navData}
-                        accountName={accountName}
-                        objectType={objectType}
-                        lineageSegments={lineageSegments}
-                        navLineage={navLineage}
-                      />
-                    )}
-                  </div>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
+        <CategoryNavChrome
+          data={navData}
+          accountName={accountName}
+          objectType={activeType}
+          lineageSegments={lineageSegments}
+          navLineage={navLineage}
+        />
       )}
     </nav>
   );

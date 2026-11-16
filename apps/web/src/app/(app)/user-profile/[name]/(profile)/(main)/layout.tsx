@@ -6,6 +6,8 @@ import {
   FeedColumn,
 } from '@/shared/presentation/layout';
 import {
+  FavoritesTypesMenu,
+  FavoritesTypesMenuSkeleton,
   ProfileMainWalletModalShell,
   RightSidebar,
   UserMenuVerticalRail,
@@ -25,8 +27,22 @@ async function ProfileMainRail({ params }: AccountParams) {
   return <UserMenuVerticalRail accountName={await readAccountName(params)} />;
 }
 
+/**
+ * The Favorites types menu is rendered here (not in the Favorites page) so it stays mounted and
+ * outside the pending overlay while a type or category loads, like the wallet tabs.
+ */
 async function ProfileMainSubmenu({ params }: AccountParams) {
-  return <UserProfileSubmenu accountName={await readAccountName(params)} />;
+  const accountName = await readAccountName(params);
+  return (
+    <UserProfileSubmenu
+      accountName={accountName}
+      favoritesTypesMenu={
+        <Suspense fallback={<FavoritesTypesMenuSkeleton />}>
+          <FavoritesTypesMenu accountName={accountName} />
+        </Suspense>
+      }
+    />
+  );
 }
 
 async function ProfileMainRightSidebar({ params }: AccountParams) {

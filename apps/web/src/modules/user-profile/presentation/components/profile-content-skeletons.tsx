@@ -9,7 +9,8 @@ import { FeedListSkeleton } from '@/modules/feed/presentation/components/feed-sk
 import { ProfileMapSidebarListSkeleton } from './profile-map-sidebar-list-skeleton';
 import {
   FAVORITES_CRUMBS_ROW_CLASS,
-  FAVORITES_SIDE_RAIL_OFFSET_CLASS,
+  FAVORITES_LEFT_RAIL_CARD_CLASS,
+  FAVORITES_LEFT_RAIL_FLOW_CLASS,
 } from './favorites-layout-classes';
 
 export function ProfileSocialListSkeleton() {
@@ -154,22 +155,23 @@ export function ProfileLeftRailSkeleton() {
   );
 }
 
-/** Favorites left rail (type accordion) placeholder. */
+/** Favorites left rail (categories of the active type) placeholder. */
 export function ProfileFavoritesRailSkeleton() {
   return (
-    <nav
-      className={`${FAVORITES_SIDE_RAIL_OFFSET_CLASS} rounded-card border border-border bg-surface/60 p-card-padding`}
+    <div
+      className={`${FAVORITES_LEFT_RAIL_FLOW_CLASS} ${FAVORITES_LEFT_RAIL_CARD_CLASS}`}
       aria-busy="true"
-      aria-label="Loading favorites types"
+      aria-label="Loading favorites categories"
     >
+      <div className="mb-2 h-4 w-24 animate-pulse rounded-btn bg-surface-control" />
       <ul className="list-none space-y-1 p-0">
         {Array.from({ length: 4 }, (_, i) => (
           <li key={i}>
-            <div className="h-8 w-full animate-pulse rounded-btn bg-surface-control" />
+            <div className="h-7 w-full animate-pulse rounded-btn bg-surface-control" />
           </li>
         ))}
       </ul>
-    </nav>
+    </div>
   );
 }
 

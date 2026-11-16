@@ -5,6 +5,7 @@ export type UserMenuSubmenuVariant =
   | 'wallet'
   | 'followers'
   | 'expertise'
+  | 'favorites'
   | null;
 
 const FEED_SUBSEGMENTS = new Set(['threads', 'comments', 'mentions', 'activity']);
@@ -55,6 +56,9 @@ export function getSubmenuVariant(pathname: string): UserMenuSubmenuVariant {
   }
   if (head === 'expertise-hashtags' || head === 'expertise-objects') {
     return 'expertise';
+  }
+  if (head === 'favorites') {
+    return 'favorites';
   }
   return null;
 }

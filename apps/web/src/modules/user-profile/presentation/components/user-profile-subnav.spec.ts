@@ -16,4 +16,9 @@ describe('getSubmenuVariant', () => {
     expect(getSubmenuVariant('/user-profile/alice/messages')).toBeNull();
     expect(getSubmenuVariant('/@alice')).toBe('feed');
   });
+
+  it('shows the Favorites types menu on every Favorites route', () => {
+    expect(getSubmenuVariant('/@alice/favorites')).toBe('favorites');
+    expect(getSubmenuVariant('/@alice/favorites/recipe/German%20Cuisine')).toBe('favorites');
+  });
 });

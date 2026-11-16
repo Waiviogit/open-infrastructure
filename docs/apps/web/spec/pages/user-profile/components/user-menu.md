@@ -40,7 +40,7 @@ Below `lg`, primary and submenu rows stay on **one horizontal line** and scroll 
 ## navigation layers
 
 - **Primary:** one link per main section — see [rendering](#rendering).
-- **Secondary:** route-aligned links for Posts, Wallet, Followers, and Expertise only — see [Secondary subnav](#secondary-subnav). Wallet submenu uses `?type=` for active state ([transfers.md](../routes/transfers.md)).
+- **Secondary:** route-aligned links for Posts, Wallet, Followers, Expertise and Favorites (types) only — see [Secondary subnav](#secondary-subnav). Wallet submenu uses `?type=` for active state ([transfers.md](../routes/transfers.md)).
 
 ## Secondary subnav
 
@@ -52,6 +52,7 @@ Shown when `getSubmenuVariant(pathname)` returns a variant (see `user-profile-su
 | Wallet (`/transfers`, `/permissions`) | `?type=WAIV`, `?type=HIVE`, `?type=ENGINE`, `/@:name/permissions` | [transfers.md](../routes/transfers.md), [permissions.md](../routes/permissions.md) |
 | Followers section | `/followers`, `/following`, `/following-objects` (counts from social context) | [social-graph.md](../routes/social-graph.md) |
 | Expertise | `/expertise-hashtags`, `/expertise-objects` | [expertise.md](../routes/expertise.md) |
+| Favorites | One tab per Favorites type (`/favorites/:type`, with counts). Data-driven, so it is not rendered by `UserMenu`: `(main)/layout.tsx` passes the server `FavoritesTypesMenu` into `UserProfileSubmenu` | [favorites.md](../routes/favorites.md) |
 
 WAIV table page (`/@:name/transfers/waiv-table`) may use a separate `tab` query for in-page tabs — not part of this header submenu.
 

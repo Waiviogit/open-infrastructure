@@ -3,6 +3,11 @@ export { decodeCategoryPathSegment } from '../domain/category-nav-path';
 export { ProfileRouteStub } from './components/profile-route-stub';
 export { FavoritesRail } from './components/favorites-rail';
 export type { FavoritesRailProps } from './components/favorites-rail';
+export {
+  FavoritesTypesMenu,
+  FavoritesTypesMenuSkeleton,
+} from './components/favorites-types-menu';
+export type { FavoritesTypesMenuProps } from './components/favorites-types-menu';
 export { ProfileFavoritesMainContent } from './components/profile-favorites-main-content';
 export type { ProfileFavoritesMainContentProps } from './components/profile-favorites-main-content';
 export { ProfileMapEmpty } from './components/profile-map-empty';

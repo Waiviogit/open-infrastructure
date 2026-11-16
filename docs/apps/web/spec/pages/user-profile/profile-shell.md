@@ -40,7 +40,7 @@ Describe the App Router layout tree, public URLs, and persistent regions for eve
 user-profile/[name]/layout.tsx          validate name + load profile (404 if missing)
   (profile)/layout.tsx                  UserProfileHeroClient + social counts provider
     (main)/layout.tsx                   three-column shell (left parallel route + main + right rail)
-      @leftSidebar/*                    account panel; Favorites type accordion (parallel route)
+      @leftSidebar/*                    account panel; Favorites category nav (parallel route)
       page.tsx, threads/, followers/, transfers/, permissions/, …
     about/layout.tsx                    main + right rail only
     map/layout.tsx                      single column
@@ -62,7 +62,7 @@ user-profile/[name]/layout.tsx          validate name + load profile (404 if mis
 |--------|-----------|-------------|
 | Hero | `UserProfileHeroClient`. A cover fills the identity band down to the primary nav (min 240px) with a bottom scrim. | `(profile)/layout.tsx` only — not on `(article)/post/*` |
 | Primary nav | `UserMenu` in hero | See [user-menu.md](components/user-menu.md) |
-| Left rail | `@leftSidebar` → `ProfileAccountSidebar` on default routes; `FavoritesRail` (types + category nav) on favorites; vertical `UserMenu` in twitter mode | Hidden below `lg` |
+| Left rail | `@leftSidebar` → `ProfileAccountSidebar` on default routes; `FavoritesRail` (category nav of the active type, empty without categories; types are in the center submenu) on favorites; vertical `UserMenu` in twitter mode | Hidden below `lg` |
 | Center | Route `page.tsx` children | — |
 | Right rail | `RightSidebar` | Hidden on `map`, `waiv-table`; hidden below `lg` on `(main)`. Wallet actions and the market panel also show on `/permissions`. |
 

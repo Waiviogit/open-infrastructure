@@ -22,6 +22,7 @@ const ITALIAN_COMFORT_COUNT = 6;
 const UNCATEGORIZED_RECIPES = 5;
 const RESTAURANTS = 25;
 const RESTAURANT_CUISINES = ['pizza', 'sushi', 'burgers'];
+const EXTRA_MENU_TYPES = ['business', 'dish', 'drink', 'shop', 'page', 'webpage'];
 
 type ObjectSpec = {
   objectId: string;
@@ -109,6 +110,10 @@ function buildSpecs(): ObjectSpec[] {
     specs.push({ objectId: `fav-link-${i}`, objectType: 'link', name: `Recipe site ${i}`, categories: ['Recipe Sites'], tags: [] });
   }
   specs.push({ objectId: 'fav-link-unc', objectType: 'link', name: 'Uncategorized link', categories: [], tags: [] });
+  // Enough types for the horizontal types menu to overflow (scroll position of the first tab).
+  for (const objectType of EXTRA_MENU_TYPES) {
+    specs.push({ objectId: `fav-${objectType}-1`, objectType, name: `One ${objectType}`, categories: [], tags: [] });
+  }
   return specs;
 }
 

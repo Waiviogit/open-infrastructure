@@ -51,6 +51,26 @@ function overflowStateEqual(a: ScrollOverflowState, b: ScrollOverflowState): boo
   );
 }
 
+/**
+ * `scrollLeft` that brings `target` fully into the scrollport, or null when it is already visible.
+ * Measured from client rects: `offsetLeft` counts from the nearest positioned ancestor (often
+ * `<body>`), not from the scrollport, and would scroll a visible first tab out of view.
+ */
+export function scrollLeftToReveal(container: HTMLElement, target: HTMLElement): number | null {
+  const targetLeft =
+    target.getBoundingClientRect().left -
+    container.getBoundingClientRect().left +
+    container.scrollLeft;
+  const targetRight = targetLeft + target.offsetWidth;
+  if (targetLeft < container.scrollLeft) {
+    return Math.max(0, targetLeft);
+  }
+  if (targetRight > container.scrollLeft + container.clientWidth) {
+    return Math.max(0, targetRight - container.clientWidth);
+  }
+  return null;
+}
+
 function gutterBleedClass(bleed: 'gutter' | 'card' | 'none'): string {
   if (bleed === 'gutter') {
     return '-mx-gutter sm:-mx-gutter-sm';
@@ -130,19 +150,15 @@ export function ScrollableHorizontalTabNav({
     }
     const container = scrollRef.current;
     const target = container.querySelector(activeItemSelector) as HTMLElement | null;
-    if (container && target) {
-      const targetLeft = target.offsetLeft;
-      const targetRight = targetLeft + target.offsetWidth;
-      if (targetLeft < container.scrollLeft) {
-        container.scrollTo({ left: targetLeft, behavior: 'smooth' });
-      } else if (targetRight > container.scrollLeft + container.clientWidth) {
-        container.scrollTo({
-          left: Math.max(0, targetRight - container.clientWidth),
-          behavior: 'smooth',
-        });
-      }
+    if (!target) {
+      return;
     }
-  }, [activeItemSelector, children]);
+    const left = scrollLeftToReveal(container, target);
+    if (left !== null) {
+      container.scrollTo({ left, behavior: 'smooth' });
+    }
+    // Re-run once the arrows appear: they narrow the scrollport after the first measurement.
+  }, [activeItemSelector, children, overflow.hasOverflow]);
 
   const scrollByPage = useCallback((direction: -1 | 1) => {
     const el = scrollRef.current;
