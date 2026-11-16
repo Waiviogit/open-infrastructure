@@ -31,6 +31,7 @@ export const ACTIVITY_SOURCE_PLATFORMS = [
   'x',
   'youtube',
   'threads',
+  'linkedin',
   'other',
 ] as const;
 export type ActivitySourcePlatform = (typeof ACTIVITY_SOURCE_PLATFORMS)[number];

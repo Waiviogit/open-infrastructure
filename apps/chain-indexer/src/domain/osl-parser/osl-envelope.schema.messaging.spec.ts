@@ -80,6 +80,24 @@ describe('messageCreatePayloadSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('accepts linkedin as source platform', () => {
+    const result = messageCreatePayloadSchema.safeParse({
+      channel_id: 'obj-ch-1',
+      body: 'imported post',
+      source: { platform: 'linkedin', id: '7528002007157071872', fp_v: 1 },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects unknown source platform', () => {
+    const result = messageCreatePayloadSchema.safeParse({
+      channel_id: 'obj-ch-1',
+      body: 'imported post',
+      source: { platform: 'myspace', id: '1', fp_v: 1 },
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('rejects non-integer original_created_at_unix', () => {
     expect(
       messageCreatePayloadSchema.safeParse({
