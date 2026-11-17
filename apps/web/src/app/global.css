@@ -613,6 +613,11 @@
     height: 960px;
   }
 
+  /* LinkedIn card slot (`linkedInIframesToCardSlots`) until the card mounts into it. */
+  .linkedin-post-slot:empty {
+    @apply mx-auto my-4 min-h-[8rem] w-full max-w-[540px] rounded-btn border border-border bg-surface-control;
+  }
+
   /**
    * Post body tables (editor Insert → Table, GFM) — legacy look, same as the editor:
    * equal fixed columns, long text wraps and grows the row, rows striped white / grey

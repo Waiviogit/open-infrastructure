@@ -42,7 +42,7 @@ Next.js **Route Handlers** under `apps/web/src/app/api/` proxy to backend servic
 | `/api/discover/users` | GET | query-api discover users | Discover page |
 | `/api/discover/tag-categories` | GET | query-api tag categories | Discover filters |
 | `/api/hello` | GET | — | Health / smoke only |
-| `/api/social-embed/linkedin` | GET | `www.linkedin.com/embed/feed/update/{urn}` → card layout | LinkedIn iframe height ([linkedin-embed.md](components/linkedin-embed.md)); **422** for layouts it cannot size |
+| `/api/social-embed/linkedin` | GET | `www.linkedin.com/embed/feed/update/{urn}` → post card | LinkedIn post card ([linkedin-embed.md](components/linkedin-embed.md)); **422** for layouts it does not know (client keeps the iframe) |
 | `/api/users/[name]/wallet/waiv` | GET | query-api WAIV summary | WAIV transfers tab |
 | `/api/users/[name]/wallet/hive` | GET | query-api HIVE summary | HIVE transfers tab |
 | `/api/users/[name]/wallet/engine` | GET | query-api ENGINE summary | ENGINE transfers tab |

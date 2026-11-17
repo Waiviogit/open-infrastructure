@@ -8,7 +8,9 @@ import { GET } from './route';
 
 const URN = 'urn:li:share:7528142279761571840';
 const EMBED_HTML =
-  '<article><div data-test-id="main-feed-activity-embed-card__entity-lockup"></div>' +
+  '<article><div data-test-id="main-feed-activity-embed-card__entity-lockup">' +
+  '<a href="https://www.linkedin.com/in/someone" data-tracking-control-name="public_post_embed_feed-actor-name">Someone</a></div>' +
+  '<a data-test-id="main-feed-activity-embed-card__linkedin-logo-image"></a>' +
   '<p data-test-id="main-feed-activity-embed-card__commentary">Hello</p></article>';
 
 function request(urn: string): NextRequest {
@@ -30,7 +32,7 @@ describe('GET /api/social-embed/linkedin', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it('returns the parsed card layout from the embed page', async () => {
+  it('returns the parsed card from the embed page', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -38,20 +40,33 @@ describe('GET /api/social-embed/linkedin', () => {
     }) as typeof fetch;
 
     const response = await GET(request(URN));
-    const body = (await response.json()) as { layout: unknown };
+    const body = (await response.json()) as { card: unknown };
 
     expect(response.status).toBe(200);
-    expect(body.layout).toEqual({ commentary: 'Hello', hasActivityHeader: false, media: 'none' });
+    expect(body.card).toEqual({
+      permalink: `https://www.linkedin.com/feed/update/${URN}`,
+      activityHeader: null,
+      author: {
+        name: 'Someone',
+        headline: '',
+        profileUrl: 'https://www.linkedin.com/in/someone',
+        avatarUrl: null,
+      },
+      commentary: 'Hello',
+      media: { kind: 'none' },
+      reactionCount: null,
+      commentCount: null,
+    });
     expect(response.headers.get('Cache-Control')).toContain('max-age=3600');
     const upstreamUrl = (global.fetch as jest.Mock).mock.calls[0][0] as string;
     expect(upstreamUrl).toBe(`https://www.linkedin.com/embed/feed/update/${URN}`);
   });
 
-  it('returns 422 when the card has a block it cannot size', async () => {
+  it('returns 422 when the card has a block it does not know', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      text: async () => `${EMBED_HTML}<div data-test-id="feed-video-content"></div>`,
+      text: async () => `${EMBED_HTML}<div data-test-id="feed-reshare-content"></div>`,
     }) as typeof fetch;
     const response = await GET(request(URN));
     expect(response.status).toBe(422);

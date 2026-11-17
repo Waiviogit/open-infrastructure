@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { PlayIcon } from '@/icons';
 import { getImagePathPost } from '@/shared/infrastructure/image/get-proxy-image-url';
+import { linkedInUrnFromEmbedSrc } from '@/shared/infrastructure/linkedin-post-card';
 import {
   buildVideoEmbedUrl,
   isNativeFeedVideoProvider,
@@ -16,6 +17,8 @@ import {
 
 import { useBindSocialEmbedHeights } from '../hooks/use-bind-social-embed-heights';
 import { useVideoPreviewThumbnail } from '../hooks/use-video-preview-thumbnail';
+
+import { LinkedInPostEmbed } from './linkedin-post-embed';
 
 export type VideoPreviewPlayerProps = {
   /** Raw video URL or pre-parsed preview metadata. */
@@ -160,6 +163,14 @@ export function VideoPreviewPlayer({
 
   if (!preview) {
     return null;
+  }
+
+  const linkedInUrn =
+    mountNativeFeedPlayer && preview.provider === 'linkedin'
+      ? linkedInUrnFromEmbedSrc(preview.embedUrl)
+      : null;
+  if (linkedInUrn) {
+    return <LinkedInPostEmbed urn={linkedInUrn} className={className} />;
   }
 
   const classes = variantClasses(variant, preview.layout, preview.provider);

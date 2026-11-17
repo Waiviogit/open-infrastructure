@@ -4,15 +4,15 @@ import { safeFetch } from '@/shared/infrastructure/http/safe-fetch.server';
 import {
   isLinkedInEmbedUrn,
   linkedInEmbedPageUrl,
-  parseLinkedInEmbedLayout,
-} from '@/shared/infrastructure/linkedin-embed-layout';
+  parseLinkedInPostCard,
+} from '@/shared/infrastructure/linkedin-post-card';
 
-const CACHE_TTL_LINKEDIN_LAYOUT_SEC = 3600;
+const CACHE_TTL_LINKEDIN_CARD_SEC = 3600;
 const LINKEDIN_EMBED_TIMEOUT_MS = 5000;
 /** Embed pages are ~20–30 KB; anything far larger is not the card we parse. */
 const LINKEDIN_EMBED_MAX_BYTES = 512 * 1024;
 
-/** Card layout of a LinkedIn embed, so the client can size its iframe (LinkedIn posts no height). */
+/** Card data of a LinkedIn post, rendered by the client instead of the embed iframe. */
 export async function GET(request: NextRequest) {
   const urn = request.nextUrl.searchParams.get('urn')?.trim() ?? '';
   if (!isLinkedInEmbedUrn(urn)) {
@@ -44,16 +44,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'unavailable' }, { status: 502 });
   }
 
-  const layout = parseLinkedInEmbedLayout(html);
-  if (!layout) {
+  const card = parseLinkedInPostCard(html, urn);
+  if (!card) {
     return NextResponse.json({ error: 'unsupported_layout' }, { status: 422 });
   }
 
   return NextResponse.json(
-    { layout },
+    { card },
     {
       headers: {
-        'Cache-Control': `public, max-age=${CACHE_TTL_LINKEDIN_LAYOUT_SEC}`,
+        'Cache-Control': `public, max-age=${CACHE_TTL_LINKEDIN_CARD_SEC}`,
       },
     },
   );

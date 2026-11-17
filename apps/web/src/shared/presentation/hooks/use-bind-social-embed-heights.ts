@@ -8,16 +8,13 @@ import {
   parseSocialEmbedHeight,
 } from '@/shared/infrastructure/social-embed-height';
 
-import { useFitLinkedInEmbeds } from './use-fit-linkedin-embeds';
-
 /**
  * Grow IG / FB / X iframes to the height they post, so the card does not scroll inside.
- * LinkedIn posts no height; its iframes are sized from the card layout instead.
+ * LinkedIn posts no height; it is rendered as a native card (`LinkedInPostEmbed`) instead.
  */
 export function useBindSocialEmbedHeights(
   containerRef: RefObject<HTMLElement | null>,
 ): void {
-  useFitLinkedInEmbeds(containerRef);
   useLayoutEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (!isSocialEmbedResizeOrigin(event.origin)) {

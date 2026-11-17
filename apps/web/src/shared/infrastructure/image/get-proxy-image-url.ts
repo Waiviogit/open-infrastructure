@@ -43,6 +43,8 @@ const SKIP_PROXY_SUBSTRINGS = [
   'muscdn',
   'gstatic.com',
   'ecency.com',
+  // LinkedIn CDN (post cards) — Hive 0x0 returns 403.
+  'media.licdn.com',
   // First-party ipfs-gateway content URLs — Hive 0x0 returns 403.
   '/ipfs-gateway/content/image/',
 ] as const;
