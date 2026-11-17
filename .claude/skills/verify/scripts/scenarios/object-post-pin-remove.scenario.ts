@@ -6,6 +6,8 @@
  *         a malformed pin, a duplicate pin, `grace` votes for the post-4 pin, `vic` votes for the post-1 pin.
  * probe:  object_updates / validity_votes rows.
  * unpin:  `vic` votes against his own post-5 pin (what the menu's Unpin broadcasts).
+ * featured: recipe `pinv-recipe` (description + pins: post-2, post-3 with an extra `grace` vote, and
+ *         `vic`'s own newer post-4) and recipe `pinv-recipe-plain` without pins (description fallback).
  */
 import { buildOdlUpdateCreateOp, buildOdlUpdateVoteOp } from '@opden-data-layer/hive-broadcast';
 import { sql } from 'kysely';
@@ -13,6 +15,8 @@ import type { Harness, Scenario } from '../indexer-harness';
 
 const ODL_ID = 'odl-mainnet';
 const OBJECT_ID = 'pinv-drink';
+const RECIPE_ID = 'pinv-recipe';
+const PLAIN_RECIPE_ID = 'pinv-recipe-plain';
 const AUTHOR = 'bob';
 const POST_COUNT = 8;
 const ACCOUNTS = ['alice', 'bob', 'carol', 'dave', 'erin', 'frank', 'grace', 'vic'];
@@ -20,10 +24,15 @@ const BASE_CREATED_UNIX = 1_760_000_000;
 
 const ref = (n: number) => `${AUTHOR}/post-${n}`;
 
-function create(creator: string, updateType: 'pin' | 'remove', value: string) {
+function create(
+  creator: string,
+  updateType: 'pin' | 'remove',
+  value: string,
+  objectId: string = OBJECT_ID,
+) {
   return buildOdlUpdateCreateOp({
     id: ODL_ID,
-    objectId: OBJECT_ID,
+    objectId,
     updateType,
     creator,
     valueKind: 'text',
@@ -32,22 +41,32 @@ function create(creator: string, updateType: 'pin' | 'remove', value: string) {
   });
 }
 
-function vote(voter: string, updateId: string, value: 'for' | 'against') {
+function vote(
+  voter: string,
+  updateId: string,
+  value: 'for' | 'against',
+  objectId: string = OBJECT_ID,
+) {
   return buildOdlUpdateVoteOp({
     id: ODL_ID,
     updateId,
-    objectId: OBJECT_ID,
+    objectId,
     voter,
     vote: value,
     required_posting_auths: [voter],
   });
 }
 
-async function updateIdFor(h: Harness, updateType: string, value: string): Promise<string> {
+async function updateIdFor(
+  h: Harness,
+  updateType: string,
+  value: string,
+  objectId: string = OBJECT_ID,
+): Promise<string> {
   const row = await h.db
     .selectFrom('object_updates')
     .select('update_id')
-    .where('object_id', '=', OBJECT_ID)
+    .where('object_id', '=', objectId)
     .where('update_type', '=', updateType)
     .where('value_text', '=', value)
     .executeTakeFirstOrThrow();
@@ -151,6 +170,51 @@ const scenario: Scenario = {
         .selectFrom('validity_votes')
         .select(['update_id', 'voter', 'vote'])
         .where('update_id', '=', await updateIdFor(h, 'pin', ref(5)))
+        .execute(),
+    );
+  },
+
+  async featured(h) {
+    const recipe = (objectId: string, name: string) => ({
+      id: ODL_ID,
+      required_auths: [] as string[],
+      required_posting_auths: ['alice'],
+      json: JSON.stringify({
+        events: [
+          { action: 'object_create', v: 1, payload: { object_id: objectId, object_type: 'recipe' } },
+          {
+            action: 'update_create',
+            v: 1,
+            payload: { object_id: objectId, update_type: 'name', value_text: name, locale: 'en-US' },
+          },
+          {
+            action: 'update_create',
+            v: 1,
+            payload: {
+              object_id: objectId,
+              update_type: 'description',
+              value_text: `${name}: hot-and-sour Thai soup with lemongrass.`,
+              locale: 'en-US',
+            },
+          },
+        ],
+      }),
+    });
+    await h.hiveBlock([recipe(RECIPE_ID, 'Tom Yum Soup'), recipe(PLAIN_RECIPE_ID, 'Plain Soup')]);
+    await h.hiveBlock([
+      create('carol', 'pin', ref(2), RECIPE_ID),
+      create('dave', 'pin', ref(3), RECIPE_ID),
+      create('vic', 'pin', ref(4), RECIPE_ID),
+    ]);
+    await h.hiveBlock([vote('grace', await updateIdFor(h, 'pin', ref(3), RECIPE_ID), 'for', RECIPE_ID)]);
+    h.log(
+      'recipe pins',
+      await h.db
+        .selectFrom('object_updates')
+        .select(['update_id', 'creator', 'value_text'])
+        .where('object_id', '=', RECIPE_ID)
+        .where('update_type', '=', 'pin')
+        .orderBy('event_seq')
         .execute(),
     );
   },

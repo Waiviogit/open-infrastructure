@@ -1,5 +1,6 @@
 'use client';
 
+import type { BlogPostPayload } from '@/modules/feed';
 import type { ReactNode } from 'react';
 import { useMemo, useCallback } from 'react';
 
@@ -74,6 +75,8 @@ export type ObjectPageTabPaneProps = {
   viewerUsername: string | null;
   relatedAlbumPreview?: RelatedAlbumPreviewView | null;
   relatedAlbumInitialPage?: RelatedAlbumListView | null;
+  /** Recipe Details: the object's featured (top pinned) post, shown instead of the description. */
+  featuredPost?: BlogPostPayload | null;
   initialNestedStack: ObjectNestedViewResolved[];
   defaultNestedContent: ObjectNestedViewResolved | null;
   updatesFeedSlot?: ReactNode;
@@ -102,6 +105,7 @@ export function ObjectPageTabPane({
   viewerUsername,
   relatedAlbumPreview = null,
   relatedAlbumInitialPage = null,
+  featuredPost = null,
   initialNestedStack,
   defaultNestedContent,
   updatesFeedSlot = null,
@@ -463,6 +467,7 @@ export function ObjectPageTabPane({
       objectTypeKey={model.objectTypeKey}
       relatedAlbumPreview={relatedAlbumPreview}
       relatedAlbumInitialPage={relatedAlbumInitialPage}
+      featuredPost={featuredPost}
       isEditMode={isEditMode}
     />
   );

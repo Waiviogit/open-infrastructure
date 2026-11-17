@@ -73,6 +73,14 @@ jest.mock('./object-description-body', () => ({
   ),
 }));
 
+jest.mock('@/modules/feed/presentation', () => ({
+  BlogPostScreen: ({ story }: { story: { title?: string } }) => (
+    <div data-testid="featured-post">{story.title}</div>
+  ),
+}));
+
+import type { BlogPostPayload } from '@/modules/feed';
+
 import { ObjectPrimaryContent } from './object-primary-content';
 
 const EMPTY_NESTED_STACK: never[] = [];
@@ -189,6 +197,23 @@ describe('ObjectPrimaryContent details tab', () => {
     );
     expect(screen.queryByTestId('feed-sub-nav')).not.toBeInTheDocument();
     expect(screen.queryByTestId('write-post-prompt')).not.toBeInTheDocument();
+  });
+
+  it('shows the featured post instead of the description', () => {
+    const featuredPost = {
+      story: { title: 'Tom Yum Soup' },
+      bodyHtmlSafe: '<p>Recipe</p>',
+    } as BlogPostPayload;
+    render(
+      <ObjectPrimaryContent
+        {...baseProps}
+        activePrimarySegment="details"
+        descriptionContent="Hot-and-sour Thai soup."
+        featuredPost={featuredPost}
+      />,
+    );
+    expect(screen.getByTestId('featured-post')).toHaveTextContent('Tom Yum Soup');
+    expect(screen.queryByTestId('description-body')).not.toBeInTheDocument();
   });
 });
 

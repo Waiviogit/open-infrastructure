@@ -7,7 +7,7 @@ import {
   Query,
   Param,
 } from '@nestjs/common';
-import { UPDATE_TYPES } from '@opden-data-layer/core';
+import { UPDATE_TYPES, type SupportedCurrency } from '@opden-data-layer/core';
 import {
   CheckObjectExistsEndpoint,
   GetObjectByIdEndpoint,
@@ -64,14 +64,20 @@ import {
   type UpdateVotersResponseDto,
 } from '../domain/object-updates';
 import {
+  GetObjectFeaturedPostEndpoint,
   GetObjectPostsFeedEndpoint,
   GetObjectThreadsFeedEndpoint,
+  type ObjectFeaturedPostResponse,
   objectPostsFeedBodySchema,
   type ObjectPostsFeedBody,
   objectThreadsFeedBodySchema,
   type ObjectThreadsFeedBody,
   type UserBlogFeedResponse,
 } from '../domain/feed';
+import {
+  postByKeyQuerySchema,
+  type PostByKeyQuery,
+} from '../domain/feed/schemas/post-by-key-query.schema';
 import {
   CheckActivityDuplicateEndpoint,
   GetObjectActivityMessageEndpoint,
@@ -97,6 +103,7 @@ import {
 } from '../domain/instacart';
 import { CountryResolverService } from '../domain/geoip';
 import { ReqClientIp } from '../http/client-ip.decorator';
+import { ReqCurrency } from '../http/currency-query.decorator';
 import { ReqGovernanceObjectId } from '../http/governance-object-id.decorator';
 import { ReqLocale } from '../http/locale-header.decorator';
 import { ReqViewer } from '../http/viewer-header.decorator';
@@ -120,6 +127,7 @@ export class ObjectsController {
     private readonly getObjectRelatedAlbumEndpoint: GetObjectRelatedAlbumEndpoint,
     private readonly checkObjectExists: CheckObjectExistsEndpoint,
     private readonly getObjectPostsFeed: GetObjectPostsFeedEndpoint,
+    private readonly getObjectFeaturedPost: GetObjectFeaturedPostEndpoint,
     private readonly getObjectThreadsFeed: GetObjectThreadsFeedEndpoint,
     private readonly getObjectOptions: GetObjectOptionsEndpoint,
     private readonly getObjectChannelEndpoint: GetObjectChannelEndpoint,
@@ -469,6 +477,31 @@ export class ObjectsController {
       throw new NotFoundException(
         `Update not found: ${decodedUpdateId} on object ${decodedObjectId}`,
       );
+    }
+    return result;
+  }
+
+  @Get(':objectId/featured-post')
+  async getFeaturedPost(
+    @Param('objectId') rawObjectId: string,
+    @ReqLocale() locale: string,
+    @ReqGovernanceObjectId() governanceObjectIdFromHeader: string | undefined,
+    @ReqViewer() viewer: string | undefined,
+    @ReqCurrency() currency: SupportedCurrency,
+    @Query(new ZodQueryPipe(postByKeyQuerySchema)) query: PostByKeyQuery,
+    @ReqClientIp() clientIp: string | null,
+  ): Promise<ObjectFeaturedPostResponse> {
+    const objectId = decodeURIComponent(rawObjectId);
+    const result = await this.getObjectFeaturedPost.execute({
+      objectId,
+      locale,
+      governanceObjectIdFromHeader,
+      viewerAccount: viewer,
+      currency,
+      countryCode: this.countryResolver.resolve(clientIp, query.country),
+    });
+    if (!result) {
+      throw new NotFoundException(`Object not found: ${objectId}`);
     }
     return result;
   }

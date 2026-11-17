@@ -1,5 +1,7 @@
 'use client';
 
+import type { BlogPostPayload } from '@/modules/feed';
+import { BlogPostScreen } from '@/modules/feed/presentation';
 import { useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -197,6 +199,8 @@ export type ObjectPrimaryContentProps = {
   objectTypeKey?: string;
   relatedAlbumPreview?: RelatedAlbumPreviewView | null;
   relatedAlbumInitialPage?: RelatedAlbumListView | null;
+  /** Recipe Details: the featured (top pinned) post, shown in full instead of the description. */
+  featuredPost?: BlogPostPayload | null;
   isEditMode?: boolean;
 };
 
@@ -243,6 +247,7 @@ export function ObjectPrimaryContent({
   objectTypeKey = '',
   relatedAlbumPreview = null,
   relatedAlbumInitialPage = null,
+  featuredPost = null,
   isEditMode = false,
 }: ObjectPrimaryContentProps) {
   const { navigateInstant } = useInstantNavigation();
@@ -800,6 +805,18 @@ export function ObjectPrimaryContent({
       Boolean(hostPageContent?.trim()) ||
       (currentView.objectType === 'list' && currentView.listItems.length > 0) ||
       Boolean(currentView.pageContentHtml?.trim());
+
+    if (!hasNestedOrHost && featuredPost) {
+      return (
+        <FeedColumn>
+          <BlogPostScreen
+            story={featuredPost.story}
+            bodyHtmlSafe={featuredPost.bodyHtmlSafe}
+            currentUsername={viewerUsername ?? null}
+          />
+        </FeedColumn>
+      );
+    }
 
     if (!hasNestedOrHost) {
       const hasDescription =

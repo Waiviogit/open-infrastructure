@@ -16,6 +16,8 @@ export const queryApiCacheTags = {
   objectUpdate: (objectId: string, updateId: string) =>
     `query-api:object:${objectId.trim()}:updates:${updateId.trim()}`,
   objectPostsFeed: (objectId: string) => `query-api:object:${objectId.trim()}:posts-feed`,
+  objectFeaturedPost: (objectId: string) =>
+    `query-api:object:${objectId.trim()}:featured-post`,
   objectThreadsFeed: (objectId: string) => `query-api:object:${objectId.trim()}:threads-feed`,
   userProfile: (accountName: string) =>
     `query-api:user:${accountName.trim().toLowerCase()}:profile`,

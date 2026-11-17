@@ -10,6 +10,7 @@ import {
   collectViewerUpdateVotes,
   EMPTY_VIEWER_UPDATE_VOTES,
   mapPostRefUpdateIds,
+  selectObjectFeaturedPostRef,
   selectObjectFeedPins,
 } from './object-feed-pins';
 
@@ -156,5 +157,23 @@ describe('mapPostRefUpdateIds', () => {
     ] as ObjectUpdate[];
 
     expect([...mapPostRefUpdateIds(rows, UPDATE_TYPES.PIN)]).toEqual([['ann/post', 'p1']]);
+  });
+});
+
+describe('selectObjectFeaturedPostRef', () => {
+  it('returns the top pin, not the viewer-specific one', () => {
+    const v = view([
+      pin('p1', 'ann/admin', { tier: 'admin' }),
+      pin('p2', 'ann/newer', { seq: 9 }),
+    ]);
+
+    expect(selectObjectFeaturedPostRef(v)).toEqual({ author: 'ann', permlink: 'admin' });
+  });
+
+  it('skips a removed pin and returns null without pins', () => {
+    const removed = view([pin('p1', 'ann/post')], [update(UPDATE_TYPES.REMOVE, 'r1', 'ann/post')]);
+
+    expect(selectObjectFeaturedPostRef(removed)).toBeNull();
+    expect(selectObjectFeaturedPostRef(view([]))).toBeNull();
   });
 });

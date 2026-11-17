@@ -175,6 +175,13 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/object-posts-feed.md',
   },
   {
+    name: 'get_object_featured_post',
+    description:
+      "An object's featured post: its top pinned post in full (same for every viewer), or null. Recipe pages show it on Details.",
+    httpEquivalent: 'GET /query/v1/objects/:id/featured-post',
+    specPath: 'docs/apps/query-api/spec/object-featured-post.md',
+  },
+  {
     name: 'get_object_threads',
     description:
       'Paginated threads feed for an object (Reviews > Threads tab; legacy byHashtag scope). Optional authors_only / authors_governance_object_id restrict threads to governance authors.',

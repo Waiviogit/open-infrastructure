@@ -465,6 +465,35 @@ export function registerObjectTools(server: McpServer, deps: McpToolDeps): void 
   );
 
   server.registerTool(
+    'get_object_featured_post',
+    {
+      description: catalogDescription('get_object_featured_post'),
+      inputSchema: withMcpLocaleContext(
+        z.object({
+          object_id: z.string().min(1).describe('Object id'),
+          currency: z.enum(SUPPORTED_CURRENCIES).default('USD'),
+          country: z.string().optional().describe('ISO country / affiliate geo override'),
+        }),
+      ),
+    },
+    async (args) => {
+      const ctx = pickMcpContext(args);
+      const result = await deps.getObjectFeaturedPost.execute({
+        objectId: args.object_id,
+        locale: ctx.locale,
+        governanceObjectIdFromHeader: ctx.governanceObjectIdFromHeader,
+        viewerAccount: ctx.viewerAccount,
+        currency: args.currency,
+        countryCode: resolveMcpCountry(deps, args.country),
+      });
+      if (!result) {
+        return toolError(`Object not found: ${args.object_id}`);
+      }
+      return jsonToolResult(result);
+    },
+  );
+
+  server.registerTool(
     'get_object_threads',
     {
       description: catalogDescription('get_object_threads'),

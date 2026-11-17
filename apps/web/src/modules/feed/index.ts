@@ -8,6 +8,7 @@ export { getUserThreadsFeedPageQuery } from './application/queries/get-user-thre
 export { getUserCommentsFeedPageQuery } from './application/queries/get-user-comments-feed.query';
 export { getUserMentionsFeedPageQuery } from './application/queries/get-user-mentions-feed.query';
 export { getSinglePostQuery } from './application/queries/get-single-post.query';
+export { getObjectFeaturedPostQuery } from './application/queries/get-object-featured-post.query';
 export type { BlogPostPayload } from './application/queries/get-single-post.query';
 export type { VoteWeightContext } from './domain/vote-weight';
 export {

@@ -1,4 +1,4 @@
-import { formatPostRef, parsePostRef, UPDATE_TYPES } from '@opden-data-layer/core';
+import { formatPostRef, parsePostRef, UPDATE_TYPES, type PostRef } from '@opden-data-layer/core';
 import {
   compareResolvedSingleCardinality,
   type ResolvedObjectView,
@@ -143,4 +143,20 @@ export function mapPostRefUpdateIds(
     }
   }
   return out;
+}
+
+/** The featured post is the first pinned post shown to every viewer. */
+const FEATURED_POST_PIN_COUNT = 1;
+
+/**
+ * Featured post of an object (recipe Details, …): the top-ranked valid pin, the same for every
+ * viewer — the viewer's own pins do not replace it. `remove` beats `pin` as in the Posts feed.
+ */
+export function selectObjectFeaturedPostRef(view: ResolvedObjectView): PostRef | null {
+  const { pinnedRefs } = selectObjectFeedPins({
+    view,
+    viewerVotes: EMPTY_VIEWER_UPDATE_VOTES,
+    maxPinned: FEATURED_POST_PIN_COUNT,
+  });
+  return pinnedRefs[0] ? parsePostRef(pinnedRefs[0]) : null;
 }

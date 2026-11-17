@@ -145,3 +145,8 @@ export interface PostDiscussionResponseDto {
   childrenById: Record<string, string[]>;
   comments: Record<string, DiscussionCommentDto>;
 }
+
+/** `GET /query/v1/objects/:objectId/featured-post` — the object's top pinned post, or null. */
+export interface ObjectFeaturedPostResponse {
+  post: SinglePostViewDto | null;
+}

@@ -51,7 +51,8 @@ import { ObjectPageActivityFeedSection } from './object-page-activity-section.se
 import { ObjectPageActivityMessageSection } from './object-page-activity-message-section.server';
 import { buildActivityMessageExcerpt, getObjectActivityMessageQuery } from '@/modules/messaging';
 import { ObjectThreadsFeedList } from './object-threads-feed-list';
-import { FeedPostsLoadingSkeleton } from '@/modules/feed';
+import { FeedPostsLoadingSkeleton, getObjectFeaturedPostQuery } from '@/modules/feed';
+import { objectShowsFeaturedPost } from '@/modules/object/domain/object-featured-post';
 import {
   isAllowedFieldReferenceObjectType,
   isFieldReferenceSourceType,
@@ -522,12 +523,16 @@ async function ObjectDetailPageContent({ params, searchParams }: ObjectDetailPag
     : null;
 
   const needsRelatedAlbumData = isObjectTypeEligibleForRelatedAlbum(model.objectTypeKey);
-  const [relatedAlbumPreview, relatedAlbumInitialPage] = await Promise.all([
+  const [relatedAlbumPreview, relatedAlbumInitialPage, featuredPost] = await Promise.all([
     needsRelatedAlbumData && initialPrimarySegment === 'gallery'
       ? fetchObjectRelatedAlbumPreview(objectId, { locale })
       : Promise.resolve(null),
     needsRelatedAlbumData && initialGalleryAlbum === RELATED_ALBUM_NAME
       ? fetchObjectRelatedAlbumPage(objectId, { locale, limit: 20 })
+      : Promise.resolve(null),
+    // Loaded on every tab of a recipe so switching to Details does not flash the description.
+    objectShowsFeaturedPost(model.objectTypeKey)
+      ? getObjectFeaturedPostQuery(objectId, locale, viewerUsername)
       : Promise.resolve(null),
   ]);
 
@@ -628,6 +633,7 @@ async function ObjectDetailPageContent({ params, searchParams }: ObjectDetailPag
         viewerUsername={viewerUsername}
         relatedAlbumPreview={relatedAlbumPreview}
         relatedAlbumInitialPage={relatedAlbumInitialPage}
+        featuredPost={featuredPost}
         initialNestedStack={initialNestedStack}
         defaultNestedContent={defaultNestedContent}
         updatesFeedSlot={updatesFeedSlot}

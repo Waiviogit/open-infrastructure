@@ -300,3 +300,51 @@ registry.registerPath({
     },
   },
 });
+
+const objectFeaturedPostResponseSchema = registry.register(
+  'ObjectFeaturedPostResponse',
+  z.object({
+    post: singlePostViewSchema.nullable().openapi({
+      description: "The object's top pinned post in full, or null when nothing is pinned.",
+    }),
+  }),
+);
+
+registry.registerPath({
+  method: 'get',
+  path: '/query/v1/objects/{objectId}/featured-post',
+  tags: [queryApiOpenApiTags.objects],
+  summary: 'Featured (top pinned) post of an object',
+  description:
+    'Top-ranked valid `pin` update of the object (admin / trusted, then community weight, then newest; a post with a valid `remove` is never featured). Same for every viewer — the viewer only affects vote / reblog flags. Body shape matches `GET /query/v1/posts/{author}/{permlink}`.',
+  request: {
+    params: z.object({
+      objectId: z
+        .string()
+        .min(1)
+        .openapi({ param: { name: 'objectId', in: 'path', required: true } }),
+    }),
+    query: z.object({
+      currency: currencyQueryParam,
+      country: z.string().trim().max(32).optional().openapi({
+        description: 'ISO 3166-1 alpha-2 or affiliate geo token; overrides GeoIP when valid.',
+      }),
+    }),
+    headers: z.object({
+      'accept-language': z.string().optional(),
+      'x-locale': z.string().optional(),
+      'x-governance-object-id': z.string().optional(),
+      'x-viewer': z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Featured post, or `{ post: null }`.',
+      content: { 'application/json': { schema: objectFeaturedPostResponseSchema } },
+    },
+    404: {
+      description: 'Unknown or inactive object.',
+      content: { 'application/json': { schema: notFoundSchema } },
+    },
+  },
+});

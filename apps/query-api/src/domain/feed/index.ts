@@ -3,6 +3,7 @@ export { GetPostByKeyEndpoint } from './get-post-by-key.endpoint';
 export { GetPostDiscussionEndpoint } from './get-post-discussion.endpoint';
 export { GetPostVotersEndpoint } from './get-post-voters.endpoint';
 export { GetObjectPostsFeedEndpoint } from './get-object-posts-feed.endpoint';
+export { GetObjectFeaturedPostEndpoint } from './get-object-featured-post.endpoint';
 export { GetObjectThreadsFeedEndpoint } from './get-object-threads-feed.endpoint';
 export { GetFollowedObjectsThreadsFeedEndpoint } from './get-followed-objects-threads-feed.endpoint';
 export {
@@ -32,6 +33,7 @@ export type {
   PostVoterRowDto,
   PostVotersPageDto,
   SinglePostViewDto,
+  ObjectFeaturedPostResponse,
   DiscussionCommentDto,
   UserBlogFeedResponse,
   PostDiscussionResponseDto,

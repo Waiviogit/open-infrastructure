@@ -69,6 +69,7 @@ export async function revalidateObjectAfterBroadcast(
     updateTag(queryApiCacheTags.objectUpdate(id, updateId));
   }
   updateTag(queryApiCacheTags.objectPostsFeed(id));
+  updateTag(queryApiCacheTags.objectFeaturedPost(id));
   updateTag(queryApiCacheTags.objectThreadsFeed(id));
   updateTag(queryApiCacheTags.objectChannel(id));
   updateTag(queryApiCacheTags.objectChannelMessages(id));

@@ -17,6 +17,7 @@ import type {
   GetUserBlogFeedEndpoint,
   GetUserBlogObjectFiltersEndpoint,
   GetObjectPostsFeedEndpoint,
+  GetObjectFeaturedPostEndpoint,
   GetObjectThreadsFeedEndpoint,
   GetUserCommentsFeedEndpoint,
   GetUserMentionsFeedEndpoint,
@@ -148,6 +149,7 @@ export interface McpToolDeps {
   getObjectOwnership: GetObjectOwnershipEndpoint;
   getObjectUpdatesFeed: GetObjectUpdatesFeedEndpoint;
   getObjectPostsFeed: GetObjectPostsFeedEndpoint;
+  getObjectFeaturedPost: GetObjectFeaturedPostEndpoint;
   getObjectThreadsFeed: GetObjectThreadsFeedEndpoint;
   getUpdateVoters: GetUpdateVotersEndpoint;
   getUserProfile: GetUserProfileEndpoint;

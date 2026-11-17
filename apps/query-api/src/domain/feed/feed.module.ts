@@ -11,6 +11,7 @@ import { PostRewardRatesCache } from './post-reward-rates.cache';
 import { HiveGlobalPropertiesCache } from './hive-global-properties.cache';
 import { PostRewardService } from './post-reward.service';
 import { GetObjectPostsFeedEndpoint } from './get-object-posts-feed.endpoint';
+import { GetObjectFeaturedPostEndpoint } from './get-object-featured-post.endpoint';
 import { GetObjectThreadsFeedEndpoint } from './get-object-threads-feed.endpoint';
 import { GetUserBlogFeedEndpoint } from './get-user-blog-feed.endpoint';
 import { GetUserBlogObjectFiltersEndpoint } from './get-user-blog-object-filters.endpoint';
@@ -34,6 +35,7 @@ import { MarkProfileFeedReadEndpoint } from './mark-profile-feed-read.endpoint';
   ],
   providers: [
     GetObjectPostsFeedEndpoint,
+    GetObjectFeaturedPostEndpoint,
     GetObjectThreadsFeedEndpoint,
     GetFollowedObjectsThreadsFeedEndpoint,
     GetUserBlogFeedEndpoint,
@@ -55,6 +57,7 @@ import { MarkProfileFeedReadEndpoint } from './mark-profile-feed-read.endpoint';
   ],
   exports: [
     GetObjectPostsFeedEndpoint,
+    GetObjectFeaturedPostEndpoint,
     GetObjectThreadsFeedEndpoint,
     GetFollowedObjectsThreadsFeedEndpoint,
     GetUserBlogFeedEndpoint,
