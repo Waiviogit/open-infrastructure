@@ -7,6 +7,7 @@ import { ModalShell, ModalShellCloseButton } from '@/shared/presentation';
 
 import { shortContractId } from '../../../domain/dispute-resolution';
 import type { LedgerContractRow } from '../../../domain/ledger.types';
+import { compactServiceOrderDetails } from '../../../domain/service-order-create';
 import { emptyValueFromSchema } from '../../../domain/service-order-schema';
 import { ObjectBuilder } from '../object-builder';
 
@@ -71,9 +72,10 @@ export function BusinessCreateServiceOrderModal({
     !isBusy && contractId.trim().length > 0 && detailsValid;
 
   async function handleSubmit() {
-    const detailsPayload =
-      Object.keys(details).length > 0 ? details : undefined;
-    await onSubmit({ contractId, details: detailsPayload });
+    await onSubmit({
+      contractId,
+      details: compactServiceOrderDetails(details),
+    });
     onClose();
   }
 
