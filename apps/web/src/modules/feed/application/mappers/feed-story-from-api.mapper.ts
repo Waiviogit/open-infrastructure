@@ -51,8 +51,11 @@ export const feedStoryItemApiSchema = z.object({
   reward: postRewardSchema.nullable().optional(),
   waivRewardEligible: z.boolean().optional().default(false),
   pin: z.boolean().optional(),
+  viewerPinned: z.boolean().optional(),
   hasPinUpdate: z.boolean().optional(),
   hasRemoveUpdate: z.boolean().optional(),
+  pinUpdateId: z.string().nullable().optional(),
+  removeUpdateId: z.string().nullable().optional(),
 });
 
 /** Single-post endpoint: same as feed item plus full `body`. */
@@ -109,8 +112,11 @@ export function mapFeedStoryItemApiToView(item: FeedStoryItemApi): FeedStoryView
     reward: item.reward ?? null,
     waivRewardEligible: item.waivRewardEligible ?? false,
     pin: item.pin,
+    viewerPinned: item.viewerPinned,
     hasPinUpdate: item.hasPinUpdate,
     hasRemoveUpdate: item.hasRemoveUpdate,
+    pinUpdateId: item.pinUpdateId ?? null,
+    removeUpdateId: item.removeUpdateId ?? null,
   };
 }
 

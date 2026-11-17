@@ -1,6 +1,7 @@
 export { BlogPostScreen } from './components/blog-post-screen';
 export { PostInterceptModalShell } from './components/post-intercept-modal-shell';
 export { FeedList } from './components/feed-list';
+export type { ObjectPostReviewContext } from './hooks/use-object-post-review';
 export { FeedPostsLoadingSkeleton } from './components/feed-posts-loading-skeleton';
 export {
   FeedListSkeleton,

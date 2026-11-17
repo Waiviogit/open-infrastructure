@@ -1,6 +1,7 @@
 import { UPDATE_TYPES } from '@opden-data-layer/core';
 import type { ResolvedObjectView } from '@opden-data-layer/objects-domain';
 
+import { EMPTY_VIEWER_UPDATE_VOTES } from './object-feed-pins';
 import {
   buildObjectPostFeedScope,
   parsePinnedPostRefs,
@@ -84,6 +85,8 @@ describe('buildObjectPostFeedScope', () => {
       linkedObjectIds: ['obj-1', 'obj-2'],
       mutedAuthors: ['muted1'],
       locale: 'en-US',
+      viewerVotes: EMPTY_VIEWER_UPDATE_VOTES,
+      maxPinned: 3,
       viewerAccount: 'bob',
     });
 
@@ -107,6 +110,8 @@ describe('buildObjectPostFeedScope', () => {
       linkedObjectIds: ['obj-1'],
       mutedAuthors: [],
       locale: 'en-US',
+      viewerVotes: EMPTY_VIEWER_UPDATE_VOTES,
+      maxPinned: 3,
     });
     expect(scope.languages).toEqual(['en-US', 'en']);
   });
@@ -151,6 +156,8 @@ describe('buildObjectPostFeedScope', () => {
       linkedObjectIds: ['obj-1'],
       mutedAuthors: [],
       locale: 'en-US',
+      viewerVotes: EMPTY_VIEWER_UPDATE_VOTES,
+      maxPinned: 3,
     });
 
     expect(scope.newsFeedMode).toBe(true);
@@ -196,6 +203,8 @@ describe('buildObjectPostFeedScope', () => {
       linkedObjectIds: ['obj-1'],
       mutedAuthors: [],
       locale: 'en-US',
+      viewerVotes: EMPTY_VIEWER_UPDATE_VOTES,
+      maxPinned: 3,
     });
 
     expect(scope.linkUrlPrefixes).toEqual(['https://example.com/path']);
@@ -327,6 +336,8 @@ describe('buildObjectPostFeedScope', () => {
       linkedObjectIds: ['obj-1'],
       mutedAuthors: [],
       locale: 'en-US',
+      viewerVotes: EMPTY_VIEWER_UPDATE_VOTES,
+      maxPinned: 3,
     });
 
     expect(scope.linkUrlPrefixes).toEqual(
@@ -376,6 +387,8 @@ describe('buildObjectPostFeedScope', () => {
       linkedObjectIds: ['obj-1'],
       mutedAuthors: [],
       locale: 'en-US',
+      viewerVotes: EMPTY_VIEWER_UPDATE_VOTES,
+      maxPinned: 3,
     });
 
     expect(scope.linkUrlPrefixes).toEqual(['https://x.com/waivio']);
@@ -418,6 +431,8 @@ describe('buildObjectPostFeedScope', () => {
       linkedObjectIds: ['obj-1'],
       mutedAuthors: [],
       locale: 'en-US',
+      viewerVotes: EMPTY_VIEWER_UPDATE_VOTES,
+      maxPinned: 3,
     });
 
     expect(scope.newsFeedAuthorsOnly).toBe(false);

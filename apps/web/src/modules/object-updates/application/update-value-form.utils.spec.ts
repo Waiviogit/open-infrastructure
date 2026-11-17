@@ -11,6 +11,7 @@ import {
   UPDATE_NAME,
   UPDATE_OBJECT_CONTROL,
   UPDATE_PARENT,
+  UPDATE_PIN,
   UPDATE_TAG_CATEGORY_ITEM,
   UPDATE_TELEPHONE,
   UPDATE_WALLET_ADDRESS,
@@ -382,5 +383,18 @@ describe('update-value-form.utils', () => {
         entries: [{ code: '', chance: 100 }],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('pin / remove post refs', () => {
+  it('normalizes a post URL to author/permlink before broadcast', () => {
+    expect(validateUpdateValue(UPDATE_PIN, 'https://waivio.com/@Grampo/kopi-talua')).toEqual({
+      success: true,
+      value: 'grampo/kopi-talua',
+    });
+  });
+
+  it('rejects input that does not name a post', () => {
+    expect(validateUpdateValue(UPDATE_PIN, 'kopi-talua').success).toBe(false);
   });
 });

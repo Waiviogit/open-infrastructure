@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { UPDATE_ARRAY_MAX, UPDATE_STRING_MAX } from '../string-limits';
+import { isPostRef, POST_REF_MAX_LENGTH } from '../post-ref';
 
 export const hiveAccountNameSchema = z
   .string()
@@ -7,6 +8,12 @@ export const hiveAccountNameSchema = z
   .max(UPDATE_STRING_MAX.HIVE_ACCOUNT);
 
 export const objectIdSchema = z.string().min(3).max(UPDATE_STRING_MAX.OBJECT_ID);
+
+/** Hive post reference `author/permlink` (`pin` / `remove` bodies). */
+export const postRefSchema = z
+  .string()
+  .max(POST_REF_MAX_LENGTH)
+  .refine(isPostRef, { message: 'Expected author/permlink' });
 
 export const labelSchema = z.string().min(1).max(UPDATE_STRING_MAX.LABEL);
 

@@ -77,6 +77,7 @@ Do **not** duplicate page-route detail in this file — link the site map or the
 | [object-card.md](object-card.md) | Shared `ObjectCard` (discover, feed links, shop): rating grid, admin heart |
 | [object-create-broadcast.md](object-create-broadcast.md) | Object create: `custom_json` chunking, IPFS path, publish dock size |
 | [object-follow.md](object-follow.md) | Object detail: Follow/Unfollow + Bell → ODL `object_follow` broadcast |
+| [object-post-pin-remove.md](object-post-pin-remove.md) | Object Posts feed: Pin / Unpin / Remove from the story ⋯ menu; Reviews fields in the edit rail |
 | [object-update-detail.md](object-update-detail.md) | Deep link `/object/:id/updates/:updateId` from notifications |
 | [user-follow.md](user-follow.md) | Hive follow/unfollow + ODL bell; social list actions |
 | [scroll-restoration.md](scroll-restoration.md) | History-entry scroll memory and pre-paint scroll-to-top on detail routes |

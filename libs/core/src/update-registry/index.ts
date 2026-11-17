@@ -25,6 +25,15 @@ export { UPDATE_ADD_ON } from './updates/add-on';
 export { UPDATE_IS_SIMILAR_TO } from './updates/is-similar-to';
 export { UPDATE_PIN } from './updates/pin';
 export { UPDATE_REMOVE } from './updates/remove';
+export {
+  formatPostRef,
+  HIVE_PERMLINK_MAX_LENGTH,
+  isPostRef,
+  parsePostRef,
+  POST_REF_MAX_LENGTH,
+  postRefFromInput,
+  type PostRef,
+} from './post-ref';
 export { UPDATE_SHOP_FILTER } from './updates/shop-filter';
 export {
   MENU_ITEM_STYLES,
@@ -165,6 +174,7 @@ export {
   numericStringSchema,
   objectIdArraySchema,
   objectIdSchema,
+  postRefSchema,
   phoneSchema,
   postalCodeSchema,
   shortTokenArraySchema,

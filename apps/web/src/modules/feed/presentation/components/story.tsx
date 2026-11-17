@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { CommentIcon } from '@/icons';
+import { CommentIcon, PinIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { feedExcerptToSafeHtml } from '@/shared/infrastructure/feed-excerpt-html';
 import { isThreeSpeakEmbedUrl } from '@/shared/infrastructure/three-speak-preview';
@@ -23,6 +23,10 @@ import { isReplyFeedItem, viewerIsAuthor } from '../../domain/feed-item-kind';
 import type { FeedTab } from '../../domain/feed-tab';
 
 import { useCommentEditTarget } from '../hooks/use-comment-edit-target';
+import {
+  useObjectPostReview,
+  type ObjectPostReviewContext,
+} from '../hooks/use-object-post-review';
 import { useStoryPreviewMediaUrl } from '../hooks/use-story-preview-media-url';
 import {
   FEED_STORY_TAGGED_OBJECT_MAX,
@@ -31,6 +35,7 @@ import {
 } from './story-utils';
 import { StoryRewardBadge } from './story-reward-badge';
 import { ObjectPageLink } from './object-page-link';
+import { ObjectPostRemoveModal } from './object-post-remove-modal';
 import { StoryCommentEditor } from './story-comment-editor';
 import { StoryCommentsSection } from './story-comments-section';
 import { StoryInlineCommentEdit } from './story-inline-comment-edit';
@@ -44,6 +49,8 @@ type StoryProps = {
   feedTab?: FeedTab;
   currentUsername: string | null;
   onBroadcastRevalidate?: () => Promise<void>;
+  /** Object Posts feed only: enables Pin / Unpin / Remove for the object. */
+  objectReview?: ObjectPostReviewContext;
 };
 
 export function Story({
@@ -51,9 +58,12 @@ export function Story({
   feedTab,
   currentUsername,
   onBroadcastRevalidate,
+  objectReview,
 }: StoryProps) {
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [commentsExpanded, setCommentsExpanded] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const review = useObjectPostReview(story, objectReview, currentUsername);
   const { t, locale } = useI18n();
   const displayAuthor = story.authorDisplayName ?? story.authorName;
   const displayTimeIso = story.feedAt ?? story.createdAt;
@@ -135,6 +145,17 @@ export function Story({
             ) : null}
           </div>
           <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 text-caption text-fg-tertiary">
+            {objectReview && review.pinned ? (
+              <>
+                <span className="inline-flex items-center gap-1 font-weight-label text-accent">
+                  <PinIcon size={14} className="shrink-0" />
+                  {t('object_post_pinned')}
+                </span>
+                <span className="text-muted" aria-hidden>
+                  ·
+                </span>
+              </>
+            ) : null}
             <time dateTime={displayTimeIso}>{relativeLabel}</time>
             {story.category ? (
               <>
@@ -360,6 +381,18 @@ export function Story({
             onEditInline={isReply ? () => void commentEdit.open() : undefined}
             currentUsername={currentUsername}
             isOwnPost={isOwnPost}
+            menuAnchor="row"
+            objectReview={
+              objectReview && !isReply
+                ? {
+                    viewerPinned: review.viewerPinned,
+                    pending: review.pending,
+                    onPin: () => void review.run('pin'),
+                    onUnpin: () => void review.run('unpin'),
+                    onRemove: () => setRemoveConfirmOpen(true),
+                  }
+                : undefined
+            }
           />
         </div>
         <StoryRewardBadge
@@ -368,6 +401,22 @@ export function Story({
           postAuthor={story.authorName}
         />
       </footer>
+      {review.error ? (
+        <p className="mt-2 text-caption text-error" role="alert">
+          {review.error}
+        </p>
+      ) : null}
+      {objectReview ? (
+        <ObjectPostRemoveModal
+          open={removeConfirmOpen}
+          pending={review.pending}
+          onClose={() => setRemoveConfirmOpen(false)}
+          onConfirm={() => {
+            setRemoveConfirmOpen(false);
+            void review.run('remove');
+          }}
+        />
+      ) : null}
       {commentsExpanded ? (
         <>
           <StoryCommentsSection

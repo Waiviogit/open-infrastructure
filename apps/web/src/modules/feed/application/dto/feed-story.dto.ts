@@ -105,8 +105,11 @@ export const feedStoryViewSchema = z.object({
   reward: postRewardSchema.nullable().optional(),
   waivRewardEligible: z.boolean().optional().default(false),
   pin: z.boolean().optional(),
+  viewerPinned: z.boolean().optional(),
   hasPinUpdate: z.boolean().optional(),
   hasRemoveUpdate: z.boolean().optional(),
+  pinUpdateId: z.string().nullable().optional(),
+  removeUpdateId: z.string().nullable().optional(),
 });
 
 export type FeedStoryView = z.infer<typeof feedStoryViewSchema>;

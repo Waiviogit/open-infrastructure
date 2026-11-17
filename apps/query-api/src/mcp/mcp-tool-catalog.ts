@@ -170,7 +170,7 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   {
     name: 'get_object_posts',
     description:
-      'Paginated posts feed for an object (Reviews tab; legacy getPostsByObject scope).',
+      'Paginated posts feed for an object (Reviews tab; legacy getPostsByObject scope). First page starts with up to 3 pinned posts plus the viewer\'s own pins; posts with a valid remove update are hidden.',
     httpEquivalent: 'POST /query/v1/objects/:id/posts',
     specPath: 'docs/apps/query-api/spec/object-posts-feed.md',
   },

@@ -1,4 +1,4 @@
-import type { UpdateDefinition } from '@opden-data-layer/core/update-registry';
+import { postRefFromInput, type UpdateDefinition } from '@opden-data-layer/core/update-registry';
 import { UPDATE_TYPES } from '@opden-data-layer/core/update-types';
 import { z } from 'zod';
 
@@ -175,10 +175,19 @@ function describeJsonField(key: string, schema: z.ZodType): JsonFieldDescriptor 
   return { key, kind: 'string', optional };
 }
 
+/** `pin` / `remove` accept a post URL or `@author/permlink`; the stored value is `author/permlink`. */
+export function isPostRefUpdateType(updateType: string): boolean {
+  return updateType === UPDATE_TYPES.PIN || updateType === UPDATE_TYPES.REMOVE;
+}
+
 export function coerceFormValueForValidation(
   definition: UpdateDefinition,
   raw: unknown,
 ): unknown {
+  if (isPostRefUpdateType(definition.update_type)) {
+    const text = typeof raw === 'string' ? raw : '';
+    return postRefFromInput(text) ?? text;
+  }
   if (
     definition.value_kind === 'text' ||
     definition.value_kind === 'object_ref' ||

@@ -102,12 +102,18 @@ export interface FeedStoryItemDto {
   };
   objects: ProjectedObject[];
   votes: FeedVoteSummaryDto;
-  /** True when this post is pinned in the object's feed (shown first on page 1). */
+  /** Object Posts feed only: post is in the pinned block (shown first on page 1). */
   pin?: boolean;
-  /** Object has a `pin` update referencing this post. */
+  /** Object Posts feed only: the viewer pinned this post (created the `pin` update or voted `for`). */
+  viewerPinned?: boolean;
+  /** Object Posts feed only: object has a `pin` update for this post (any validity). */
   hasPinUpdate?: boolean;
-  /** Object has a `remove` update referencing this post. */
+  /** Object Posts feed only: object has a `remove` update for this post (any validity). */
   hasRemoveUpdate?: boolean;
+  /** Object Posts feed only: id of the object's `pin` update for this post (vote on it instead of re-creating). */
+  pinUpdateId?: string | null;
+  /** Object Posts feed only: id of the object's `remove` update for this post. */
+  removeUpdateId?: string | null;
 }
 
 export interface UserBlogFeedResponse {

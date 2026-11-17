@@ -20,13 +20,13 @@ export interface ObjectPostFeedScope {
   mentionAccounts: string[];
   /** Primary language subtags for hashtag objects (`post_languages.language`). */
   languages: string[];
-  /** Post refs excluded from the main feed (`remove` + `pin`). */
+  /** Post refs excluded from the main feed (valid `remove` + displayed pins). */
   excludedPostRefs: PostAuthorPermlinkRef[];
-  /** Pinned post keys (`author/permlink`) for prepend + flagging. */
+  /** Displayed pinned post keys (`author/permlink`) in order: viewer's pins, then the capped rest. */
   pinnedPostRefs: string[];
-  /** Post refs pinned by the viewer (`creator` on pin update). */
+  /** Post refs pinned by the viewer (creator of the `pin` update or `for` vote). */
   viewerPinnedPostRefs: string[];
-  /** Post refs listed in `remove` updates (for `hasRemoveUpdate` flag). */
+  /** Post refs hidden by valid `remove` updates. */
   removePostRefs: string[];
   /** Authors muted by the viewer. */
   mutedAuthors: string[];

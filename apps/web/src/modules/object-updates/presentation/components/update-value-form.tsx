@@ -20,6 +20,7 @@ import {
   getJsonFieldDescriptors,
   getTextEnumValues,
   initialValueForDefinition,
+  isPostRefUpdateType,
   unwrapRootStringArraySchema,
   validateUpdateValue,
   type JsonFieldDescriptor,
@@ -34,6 +35,7 @@ import { isImageCidOrUrlUpdateType } from '../../application/image-form-value';
 import { imageEditorConfigForUpdateType } from '../../application/image-editor-config';
 import { MenuItemForm } from './menu-item-form';
 import { ObjectRefSearchField } from './object-ref-search-field';
+import { PostRefField } from './post-ref-field';
 import { TagCategoryItemForm } from './tag-category-item-form';
 import { UserRefSearchField } from './user-ref-search-field';
 import { StatusUpdateForm } from './status-update-form';
@@ -178,6 +180,9 @@ function UpdateValueFields({
     }
     if (updateType === UPDATE_TYPES.AFFILIATE_URL_TEMPLATE) {
       return <AffiliateUrlTemplateForm value={value} onChange={onChange} />;
+    }
+    if (isPostRefUpdateType(updateType)) {
+      return <PostRefField label={label} value={value} onChange={onChange} />;
     }
     const text = typeof value === 'string' ? value : '';
     const textEnumValues = getTextEnumValues(definition.schema);

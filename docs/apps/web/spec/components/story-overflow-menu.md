@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, components]
-updated_at: 2026-06-10
+updated_at: 2026-11-17
 related:
   - docs/apps/web/spec/overview.md
   - docs/apps/web/spec/architecture.md
@@ -27,6 +27,10 @@ Context menu on each feed **story card** (`Story`) opened from the footer **more
 | Logged out | “Other” set | Any item opens the **Sign in** modal (`LoginModalProvider` / `LoginDialog`). |
 | Logged in, not author | “Other” set | Items are **disabled** (placeholders). |
 | Logged in, author | “Own” set | Root post: **Edit post** links to the editor. Comment or thread (`parentAuthor` set, or the `comments` / `threads` tab): **Edit** opens the inline editor in place of the excerpt ([comment-edit.md](../comment-edit.md)). Other items disabled. |
+
+On an object's Posts tab every root post also gets **Pin** / **Unpin** and **Remove** at the top of the menu (both sets) — see [object-post-pin-remove.md](../object-post-pin-remove.md).
+
+**Placement:** feed cards pass `menuAnchor="row"` — the menu opens upward from the start edge of the story footer, so it stays inside the card (`FeedColumn` is `overflow-x-clip`; the old end-of-trigger anchor cut the labels off). Other callers keep the default `trigger` anchor.
 
 The editor page loads **title** and **body** from query-api `GET /query/v1/users/:author/drafts?permlink=…` using the session access cookie as `Authorization: Bearer` (see `fetch-user-post-draft.server.ts`).
 

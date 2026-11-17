@@ -9,6 +9,7 @@ import {
   UserAccountMutesRepository,
   type FeedBranchRow,
 } from '../../repositories';
+import { OBJECT_FEED_MAX_PINNED_POSTS } from '../../constants/object-feed.constants';
 import { GovernanceResolverService } from '../governance';
 import { ObjectProjectionService } from '../object-projection';
 import { decodeFeedCursor, encodeFeedCursor } from './feed-cursor';
@@ -20,6 +21,7 @@ import {
   parsePinnedPostRefs,
   pinnedRefsToKeys,
 } from './object-feed-scope.builder';
+import { collectViewerUpdateVotes, mapPostRefUpdateIds } from './object-feed-pins';
 import type { ObjectPostsFeedBody } from './schemas/object-posts-feed.schema';
 
 const OBJECT_FEED_UPDATE_TYPES = [
@@ -113,6 +115,8 @@ export class GetObjectPostsFeedEndpoint {
       mutedAuthors,
       locale,
       viewerAccount,
+      viewerVotes: collectViewerUpdateVotes(agg.validity_votes, viewerAccount),
+      maxPinned: OBJECT_FEED_MAX_PINNED_POSTS,
     });
 
     if (scope.newsFeedMode && !scope.newsFilter) {
@@ -137,16 +141,18 @@ export class GetObjectPostsFeedEndpoint {
     );
 
     let pageRows: FeedBranchRow[];
+    let feedPage: FeedBranchRow[];
     let hasMore: boolean;
 
     if (!cursorPayload && pinnedRows.length > 0) {
       const feedSlots = Math.max(0, limit - pinnedRows.length);
-      const feedPage = filteredFeedRows.slice(0, feedSlots);
+      feedPage = filteredFeedRows.slice(0, feedSlots);
       hasMore = filteredFeedRows.length > feedSlots;
       pageRows = [...pinnedRows, ...feedPage];
     } else {
       hasMore = filteredFeedRows.length > limit;
-      pageRows = hasMore ? filteredFeedRows.slice(0, limit) : filteredFeedRows;
+      feedPage = hasMore ? filteredFeedRows.slice(0, limit) : filteredFeedRows;
+      pageRows = feedPage;
     }
 
     if (pageRows.length === 0) {
@@ -171,37 +177,52 @@ export class GetObjectPostsFeedEndpoint {
     );
 
     const pinnedRefSet = new Set(scope.pinnedPostRefs);
-    const removeRefSet = new Set(scope.removePostRefs);
     const viewerPinnedSet = new Set(scope.viewerPinnedPostRefs);
+    const pinUpdateIds = mapPostRefUpdateIds(agg.updates, UPDATE_TYPES.PIN);
+    const removeUpdateIds = mapPostRefUpdateIds(agg.updates, UPDATE_TYPES.REMOVE);
 
     for (const item of items) {
       const ref = `${item.author}/${item.permlink}`;
-      if (pinnedRefSet.has(ref)) {
-        item.hasPinUpdate = true;
-        item.pin = true;
-      }
-      if (removeRefSet.has(ref)) {
-        item.hasRemoveUpdate = true;
-      }
-      if (viewerPinnedSet.has(ref)) {
-        item.pin = true;
-      }
-    }
-
-    let nextCursor: string | null = null;
-    if (hasMore && pageRows.length > 0) {
-      const last = pageRows[pageRows.length - 1];
-      nextCursor = encodeFeedCursor({
-        feedAt: Number(last.feed_at),
-        author: last.author,
-        permlink: last.permlink,
-      });
+      const pinUpdateId = pinUpdateIds.get(ref);
+      const removeUpdateId = removeUpdateIds.get(ref);
+      item.pin = pinnedRefSet.has(ref);
+      item.viewerPinned = viewerPinnedSet.has(ref);
+      item.hasPinUpdate = pinUpdateId != null;
+      item.hasRemoveUpdate = removeUpdateId != null;
+      item.pinUpdateId = pinUpdateId ?? null;
+      item.removeUpdateId = removeUpdateId ?? null;
     }
 
     return {
       items,
-      cursor: nextCursor,
+      cursor: hasMore ? nextFeedCursor(feedPage, filteredFeedRows[feedPage.length]) : null,
       hasMore,
     };
   }
+}
+
+/**
+ * Keyset cursor after the last regular feed row on the page. Pinned rows never set it: when the
+ * pinned block fills page 1, the cursor sits just above the first feed row not shown yet.
+ */
+function nextFeedCursor(
+  shown: readonly FeedBranchRow[],
+  firstNotShown: FeedBranchRow | undefined,
+): string | null {
+  const last = shown[shown.length - 1];
+  if (last) {
+    return encodeFeedCursor({
+      feedAt: Number(last.feed_at),
+      author: last.author,
+      permlink: last.permlink,
+    });
+  }
+  if (firstNotShown) {
+    return encodeFeedCursor({
+      feedAt: Number(firstNotShown.feed_at) + 1,
+      author: firstNotShown.author,
+      permlink: firstNotShown.permlink,
+    });
+  }
+  return null;
 }

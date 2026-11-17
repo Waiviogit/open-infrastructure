@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import {
   BrandFacebookIcon,
   BrandXIcon,
+  CloseIcon,
   EyeOffIcon,
   FlagIcon,
   MoreHorizontalIcon,
@@ -27,6 +28,22 @@ export type StoryOverflowMenuProps = {
   /** Logged-in viewer username, or null when logged out. */
   currentUsername: string | null;
   isOwnPost: boolean;
+  /** Object Posts feed only: Pin / Unpin / Remove the post for the object. */
+  objectReview?: StoryObjectReviewMenu;
+  /**
+   * `trigger` (default): the menu opens from the ⋯ button's end edge.
+   * `row`: it opens from the start edge of the nearest positioned ancestor (the story footer), so it
+   * stays inside a feed card that sits in an `overflow-x-clip` column.
+   */
+  menuAnchor?: 'trigger' | 'row';
+};
+
+export type StoryObjectReviewMenu = {
+  viewerPinned: boolean;
+  pending: boolean;
+  onPin: () => void;
+  onUnpin: () => void;
+  onRemove: () => void;
 };
 
 type MenuRowProps = {
@@ -90,6 +107,8 @@ export function StoryOverflowMenu({
   onEditInline,
   currentUsername,
   isOwnPost,
+  objectReview,
+  menuAnchor = 'trigger',
 }: StoryOverflowMenuProps) {
   const { t } = useI18n();
   const { openLogin } = useLoginModal();
@@ -139,8 +158,39 @@ export function StoryOverflowMenu({
 
   const showOwnVariant = loggedIn && isOwnPost;
 
+  const objectReviewRows = objectReview ? (
+    <>
+      <MenuRow
+        icon={<PinIcon size={18} className="shrink-0" />}
+        label={t(objectReview.viewerPinned ? 'object_post_menu_unpin' : 'object_post_menu_pin')}
+        disabled={objectReview.pending}
+        onActivate={() =>
+          requireLoginOr(() => {
+            closeMenu();
+            if (objectReview.viewerPinned) {
+              objectReview.onUnpin();
+            } else {
+              objectReview.onPin();
+            }
+          })
+        }
+      />
+      <MenuRow
+        icon={<CloseIcon size={18} className="shrink-0" />}
+        label={t('object_post_menu_remove')}
+        disabled={objectReview.pending}
+        onActivate={() =>
+          requireLoginOr(() => {
+            closeMenu();
+            objectReview.onRemove();
+          })
+        }
+      />
+    </>
+  ) : null;
+
   return (
-    <div ref={rootRef} className="relative inline-flex">
+    <div ref={rootRef} className={menuAnchor === 'trigger' ? 'relative inline-flex' : 'inline-flex'}>
       <button
         ref={triggerRef}
         type="button"
@@ -159,8 +209,9 @@ export function StoryOverflowMenu({
           id={menuId}
           role="menu"
           aria-orientation="vertical"
-          className="absolute bottom-full end-0 z-50 mb-1 min-w-[15rem] list-none rounded-card border border-border bg-surface p-1 shadow-card"
+          className={`absolute bottom-full ${menuAnchor === 'trigger' ? 'end-0' : 'start-0'} z-50 mb-1 min-w-[15rem] list-none rounded-card border border-border bg-surface p-1 shadow-card`}
         >
+          {objectReviewRows}
           {showOwnVariant ? (
             <>
               {editHref ? (

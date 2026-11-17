@@ -1,10 +1,14 @@
 'use client';
 
-import { useCallback, useTransition } from 'react';
+import { useCallback, useMemo, useTransition } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import type { UserBlogFeedPage } from '@/modules/feed/application/dto/user-blog-feed-page.dto';
-import { FeedList, FeedPostGrid } from '@/modules/feed/presentation';
+import {
+  FeedList,
+  FeedPostGrid,
+  type ObjectPostReviewContext,
+} from '@/modules/feed/presentation';
 import { useInfiniteScroll, useSyncedPaginatedList } from '@/shared/presentation';
 import { shouldUsePostGrid, useShellMode } from '@/shell-mode';
 
@@ -33,6 +37,13 @@ export function ObjectPostsFeedList({
     useSyncedPaginatedList(initialPage);
   const [pending, startTransition] = useTransition();
   const useInstagramGrid = shouldUsePostGrid(resolvedMode);
+  const objectReview = useMemo<ObjectPostReviewContext>(
+    () => ({
+      objectId,
+      onPostRemoved: (storyId) => setItems((prev) => prev.filter((s) => s.id !== storyId)),
+    }),
+    [objectId, setItems],
+  );
 
   const onLoadMore = useCallback(() => {
     if (!cursor || pending) {
@@ -70,6 +81,7 @@ export function ObjectPostsFeedList({
           feedTab="posts"
           currentUsername={currentUsername}
           onBroadcastRevalidate={onBroadcastRevalidate}
+          objectReview={objectReview}
         />
       )}
       {hasMore ? (

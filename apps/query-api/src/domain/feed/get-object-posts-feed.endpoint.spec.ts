@@ -102,7 +102,10 @@ describe('GetObjectPostsFeedEndpoint', () => {
     };
     accounts = { findByName: jest.fn() };
     aggregatedObjectRepo = {
-      loadByObjectIds: jest.fn().mockResolvedValue({ objects: [{ object_id: 'waivio' }], voterWaivPowers: {} }),
+      loadByObjectIds: jest.fn().mockResolvedValue({
+        objects: [{ object_id: 'waivio', updates: [], validity_votes: [] }],
+        voterWaivPowers: {},
+      }),
     };
     objectViewService = {
       resolve: jest.fn().mockReturnValue([resolvedView()]),
@@ -196,6 +199,56 @@ describe('GetObjectPostsFeedEndpoint', () => {
     ]);
   });
 
+  it('keeps the next cursor on regular rows when pinned posts fill page 1', async () => {
+    const pinValue = (id: string, ref: string) => ({
+      update_id: id,
+      update_type: 'pin',
+      creator: 'bob',
+      locale: null,
+      created_at_unix: 1,
+      event_seq: BigInt(1),
+      value_text: ref,
+      value_geo: null,
+      value_json: null,
+      validity_status: 'VALID' as const,
+      validity_tier: 'baseline' as const,
+      decisive_vote_event_seq: null,
+      approve_percent: 100,
+      field_weight: null,
+      rank_score: null,
+      rank_context: null,
+      rank_decisive_event_seq: null,
+    });
+    objectViewService.resolve.mockReturnValue([
+      resolvedView({
+        fields: {
+          [UPDATE_TYPES.PIN]: {
+            update_type: UPDATE_TYPES.PIN,
+            cardinality: 'multi',
+            values: [pinValue('p1', 'pinned/old-a'), pinValue('p2', 'pinned/old-b')],
+          },
+        },
+      }),
+    ]);
+    postsRepo.findPostsFeedRowsByKeys.mockResolvedValue([
+      { author: 'pinned', permlink: 'old-a', feed_at: 10, reblogged_by: null },
+      { author: 'pinned', permlink: 'old-b', feed_at: 20, reblogged_by: null },
+    ]);
+    postsRepo.findObjectPostsFeed.mockResolvedValue([
+      { author: 'feed', permlink: 'newest', feed_at: 90, reblogged_by: null },
+      { author: 'feed', permlink: 'older', feed_at: 80, reblogged_by: null },
+    ]);
+    buildFeedStoryItemsFromPostPageMock.mockImplementation(async (_deps, rows) =>
+      rows.map((row) => feedItem(row.author, row.permlink)),
+    );
+
+    const r = await endpoint.execute('waivio', { limit: 2, currency: 'USD' }, 'en-US');
+
+    expect(r?.items.map((i) => i.permlink)).toEqual(['old-a', 'old-b']);
+    expect(r?.hasMore).toBe(true);
+    expect(r?.cursor).toBe(encodeFeedCursor({ feedAt: 91, author: 'feed', permlink: 'newest' }));
+  });
+
   it('attaches pin and remove flags to hydrated items', async () => {
     objectViewService.resolve.mockReturnValue([
       resolvedView({
@@ -253,6 +306,19 @@ describe('GetObjectPostsFeedEndpoint', () => {
         },
       }),
     ]);
+    aggregatedObjectRepo.loadByObjectIds.mockResolvedValue({
+      objects: [
+        {
+          object_id: 'waivio',
+          updates: [
+            { update_id: 'p1', update_type: 'pin', value_text: 'alice/post-1', event_seq: BigInt(1) },
+            { update_id: 'r9', update_type: 'remove', value_text: 'alice/post-1', event_seq: BigInt(2) },
+          ],
+          validity_votes: [],
+        },
+      ],
+      voterWaivPowers: new Map(),
+    } as never);
     postsRepo.findObjectPostsFeed.mockResolvedValue([
       { author: 'alice', permlink: 'post-1', feed_at: 100, reblogged_by: null },
     ]);
@@ -267,7 +333,11 @@ describe('GetObjectPostsFeedEndpoint', () => {
     );
     expect(r?.items[0]).toMatchObject({
       pin: true,
+      viewerPinned: true,
       hasPinUpdate: true,
+      pinUpdateId: 'p1',
+      hasRemoveUpdate: true,
+      removeUpdateId: 'r9',
     });
   });
 

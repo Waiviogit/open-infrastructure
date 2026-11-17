@@ -3,6 +3,7 @@ import {
   OBJECT_TYPE_REGISTRY,
   UPDATE_TYPES,
   expandPostLanguageTags,
+  parsePostRef,
   type LinkType,
 } from '@opden-data-layer/core';
 import type { ResolvedObjectView } from '@opden-data-layer/objects-domain';
@@ -11,6 +12,7 @@ import type {
   ObjectPostFeedScope,
   PostAuthorPermlinkRef,
 } from '../../repositories/object-post-feed-scope.types';
+import { selectObjectFeedPins, type ViewerUpdateVotes } from './object-feed-pins';
 
 const LINK_OBJECT_TYPE = 'link';
 const HASHTAG_OBJECT_TYPE = 'hashtag';
@@ -33,38 +35,6 @@ export function objectTypesSupportingWalletAddress(): string[] {
   return Object.entries(OBJECT_TYPE_REGISTRY)
     .filter(([, def]) => def.supported_updates.includes(UPDATE_TYPES.WALLET_ADDRESS))
     .map(([key]) => key);
-}
-
-function parseAuthorPermlinkRef(raw: string): PostAuthorPermlinkRef | null {
-  const trimmed = raw.trim();
-  const slash = trimmed.indexOf('/');
-  if (slash <= 0 || slash >= trimmed.length - 1) {
-    return null;
-  }
-  const author = trimmed.slice(0, slash).trim();
-  const permlink = trimmed.slice(slash + 1).trim();
-  if (!author || !permlink) {
-    return null;
-  }
-  return { author, permlink };
-}
-
-function collectTextValues(view: ResolvedObjectView, updateType: string): string[] {
-  const field = view.fields[updateType];
-  if (!field) {
-    return [];
-  }
-  const out: string[] = [];
-  for (const u of field.values) {
-    if (u.validity_status !== 'VALID') {
-      continue;
-    }
-    const text = u.value_text?.trim();
-    if (text) {
-      out.push(text);
-    }
-  }
-  return out;
 }
 
 function collectJsonValues<T>(view: ResolvedObjectView, updateType: string): T[] {
@@ -225,42 +195,6 @@ function buildLinkUrlPrefixes(view: ResolvedObjectView): string[] {
   return [...new Set(prefixes)];
 }
 
-function collectPinnedRefs(
-  view: ResolvedObjectView,
-  viewerAccount?: string,
-): { pinnedRefs: PostAuthorPermlinkRef[]; viewerPinnedRefs: PostAuthorPermlinkRef[] } {
-  const field = view.fields[UPDATE_TYPES.PIN];
-  const pinnedRefs: PostAuthorPermlinkRef[] = [];
-  const viewerPinnedRefs: PostAuthorPermlinkRef[] = [];
-  const viewer = viewerAccount?.trim() ?? '';
-
-  if (!field) {
-    return { pinnedRefs, viewerPinnedRefs };
-  }
-
-  for (const u of field.values) {
-    if (u.validity_status !== 'VALID') {
-      continue;
-    }
-    const ref = u.value_text ? parseAuthorPermlinkRef(u.value_text) : null;
-    if (!ref) {
-      continue;
-    }
-    pinnedRefs.push(ref);
-    if (viewer !== '' && u.creator === viewer) {
-      viewerPinnedRefs.push(ref);
-    }
-  }
-
-  return { pinnedRefs, viewerPinnedRefs };
-}
-
-function collectRemoveRefs(view: ResolvedObjectView): PostAuthorPermlinkRef[] {
-  return collectTextValues(view, UPDATE_TYPES.REMOVE)
-    .map(parseAuthorPermlinkRef)
-    .filter((r): r is PostAuthorPermlinkRef => r != null);
-}
-
 function dedupePostRefs(refs: PostAuthorPermlinkRef[]): PostAuthorPermlinkRef[] {
   const seen = new Set<string>();
   const out: PostAuthorPermlinkRef[] = [];
@@ -281,15 +215,18 @@ export function buildObjectPostFeedScope(params: {
   mutedAuthors: string[];
   locale: string;
   viewerAccount?: string;
+  viewerVotes: ViewerUpdateVotes;
+  maxPinned: number;
 }): ObjectPostFeedScope {
-  const { view, linkedObjectIds, mutedAuthors, locale, viewerAccount } = params;
+  const { view, linkedObjectIds, mutedAuthors, locale, viewerAccount, viewerVotes, maxPinned } =
+    params;
   const newsFilter = parseNewsFeedFilter(view);
   const newsFeedMode = view.object_type === NEWSFEED_OBJECT_TYPE;
 
-  const { pinnedRefs, viewerPinnedRefs } = collectPinnedRefs(view, viewerAccount);
-  const removeRefs = collectRemoveRefs(view);
-
-  const excludedPostRefs = dedupePostRefs([...removeRefs, ...pinnedRefs]);
+  const pins = selectObjectFeedPins({ view, viewerAccount, viewerVotes, maxPinned });
+  const excludedPostRefs = dedupePostRefs(
+    parsePinnedPostRefs([...pins.removeRefs, ...pins.pinnedRefs]),
+  );
 
   const languages: string[] = [];
   if (view.object_type === HASHTAG_OBJECT_TYPE && locale.trim() !== '') {
@@ -313,9 +250,9 @@ export function buildObjectPostFeedScope(params: {
     mentionAccounts,
     languages,
     excludedPostRefs,
-    pinnedPostRefs: pinnedRefs.map((r) => `${r.author}/${r.permlink}`),
-    viewerPinnedPostRefs: viewerPinnedRefs.map((r) => `${r.author}/${r.permlink}`),
-    removePostRefs: removeRefs.map((r) => `${r.author}/${r.permlink}`),
+    pinnedPostRefs: pins.pinnedRefs,
+    viewerPinnedPostRefs: pins.viewerPinnedRefs,
+    removePostRefs: pins.removeRefs,
     mutedAuthors: [...new Set(mutedAuthors.map((a) => a.trim()).filter(Boolean))],
     newsFeedAuthorsOnly: Boolean(newsFeedMode && newsFilter && newsFilter.authors.length > 0),
   };
@@ -326,5 +263,5 @@ export function pinnedRefsToKeys(refs: PostAuthorPermlinkRef[]): { author: strin
 }
 
 export function parsePinnedPostRefs(refs: readonly string[]): PostAuthorPermlinkRef[] {
-  return refs.map(parseAuthorPermlinkRef).filter((r): r is PostAuthorPermlinkRef => r != null);
+  return refs.map(parsePostRef).filter((r): r is PostAuthorPermlinkRef => r != null);
 }

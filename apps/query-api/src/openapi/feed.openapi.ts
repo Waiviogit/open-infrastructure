@@ -113,6 +113,27 @@ export const feedStoryItemSchema = registry.register(
     votes: feedVoteSummarySchema,
     reward: postRewardSchema.nullable(),
     waivRewardEligible: z.boolean(),
+    pin: z.boolean().optional().openapi({
+      description: 'Object Posts feed only: post is in the pinned block (first page).',
+    }),
+    viewerPinned: z.boolean().optional().openapi({
+      description:
+        'Object Posts feed only: the viewer created the `pin` update or voted `for` it.',
+    }),
+    hasPinUpdate: z.boolean().optional().openapi({
+      description: 'Object Posts feed only: object has a `pin` update for this post (any validity).',
+    }),
+    hasRemoveUpdate: z.boolean().optional().openapi({
+      description:
+        'Object Posts feed only: object has a `remove` update for this post (any validity).',
+    }),
+    pinUpdateId: z.string().nullable().optional().openapi({
+      description:
+        'Object Posts feed only: `pin` update id for this post; vote on it instead of re-creating.',
+    }),
+    removeUpdateId: z.string().nullable().optional().openapi({
+      description: 'Object Posts feed only: `remove` update id for this post.',
+    }),
   }),
 );
 
