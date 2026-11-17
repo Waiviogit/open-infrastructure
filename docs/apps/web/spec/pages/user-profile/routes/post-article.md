@@ -53,7 +53,7 @@ Server-side `sanitizePostHtml` (`apps/web/src/shared/infrastructure/sanitize-pos
 - Standalone **Facebook** `/videos/{id}`, `/watch/?v=`, `/reel(s)/`, `fb.watch/`, and existing `plugins/video.php` URLs become `.blog-post-facebook-embed` iframes (`plugins/video.php?href=`). Reels add `--portrait`. Adjacent plugin + share URLs that canonicalize to the same `src` collapse to one iframe.
 - Standalone **X / Twitter** `{user}/status/{id}` URLs become `.blog-post-x-embed` iframes (`platform.twitter.com/embed/Tweet.html?id=`).
 - Standalone **LinkedIn** `embed/feed/update/urn:li:activity|{ugcPost}|share:{id}` and `/posts/…activity-{id}` URLs become `.blog-post-linkedin-embed` iframes (`linkedin.com/embed/feed/update/urn:li:…`). Trailing excerpt ellipsis (`…` / `%E2%80%A6`) is stripped so the embed path stays a valid URN.
-- Instagram, Facebook Reels, X, and LinkedIn iframes listen for host `postMessage` height and grow the wrapper — no inner scrollbar on the card.
+- Instagram, Facebook Reels, and X iframes listen for host `postMessage` height and grow the wrapper — no inner scrollbar on the card. LinkedIn sends no height; its iframe is sized from the card layout ([LinkedIn embed height](../../../components/linkedin-embed.md)).
 
 Feed story cards still use `Story` for previews; full post views do **not** show a separate hero video above the body — video appears inline from the body content (or from the Peakd prefix preprocess).
 

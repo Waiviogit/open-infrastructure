@@ -90,6 +90,7 @@ Do **not** duplicate page-route detail in this file — link the site map or the
 | [components/story-overflow-menu.md](components/story-overflow-menu.md) | ⋯ menu on story cards: root post edit → editor + draft load, comment / thread edit inline |
 | [components/avatar.md](components/avatar.md) | Shared `UserAvatar`, `resolveAvatarUrl` (profile + feed) |
 | [components/code-block-copy.md](components/code-block-copy.md) | Copy button on every code block rendered through `SocialEmbedHtml` |
+| [components/linkedin-embed.md](components/linkedin-embed.md) | LinkedIn iframe height from the embed card layout (LinkedIn posts no height) |
 
 ## Verification
 
