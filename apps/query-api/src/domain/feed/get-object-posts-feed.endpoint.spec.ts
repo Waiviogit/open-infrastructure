@@ -365,4 +365,62 @@ describe('GetObjectPostsFeedEndpoint', () => {
       encodeFeedCursor({ feedAt: 100, author: 'alice', permlink: 'post-1' }),
     );
   });
+
+  describe('findFirstPost (featured post)', () => {
+    const topPin = {
+      update_id: 'p1',
+      update_type: 'pin',
+      creator: 'carol',
+      locale: null,
+      created_at_unix: 1,
+      event_seq: BigInt(1),
+      value_text: 'chef/top-recipe',
+      value_geo: null,
+      value_json: null,
+      validity_status: 'VALID' as const,
+      validity_tier: 'baseline' as const,
+      decisive_vote_event_seq: null,
+      approve_percent: 100,
+      field_weight: null,
+      rank_score: null,
+      rank_context: null,
+      rank_decisive_event_seq: null,
+    };
+
+    it('returns null for an unknown object', async () => {
+      objectsCoreRepo.findByObjectIdForPage.mockResolvedValue(null as never);
+
+      await expect(endpoint.findFirstPost('nope', 'en-US')).resolves.toBeNull();
+    });
+
+    it('returns the top pin without querying the feed', async () => {
+      objectViewService.resolve.mockReturnValue([
+        resolvedView({
+          fields: {
+            [UPDATE_TYPES.PIN]: { update_type: UPDATE_TYPES.PIN, cardinality: 'multi', values: [topPin] },
+          },
+        }),
+      ]);
+
+      await expect(endpoint.findFirstPost('waivio', 'en-US')).resolves.toEqual({
+        first: { author: 'chef', permlink: 'top-recipe', source: 'pinned' },
+      });
+      expect(postsRepo.findObjectPostsFeed).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the newest post when nothing is pinned', async () => {
+      postsRepo.findObjectPostsFeed.mockResolvedValue([
+        { author: 'alice', permlink: 'newest', feed_at: 100, reblogged_by: null },
+      ]);
+
+      await expect(endpoint.findFirstPost('waivio', 'en-US')).resolves.toEqual({
+        first: { author: 'alice', permlink: 'newest', source: 'latest' },
+      });
+      expect(postsRepo.findObjectPostsFeed).toHaveBeenCalledWith(expect.anything(), null, 1);
+    });
+
+    it('returns no post when the object has no posts', async () => {
+      await expect(endpoint.findFirstPost('waivio', 'en-US')).resolves.toEqual({ first: null });
+    });
+  });
 });

@@ -199,7 +199,7 @@ export type ObjectPrimaryContentProps = {
   objectTypeKey?: string;
   relatedAlbumPreview?: RelatedAlbumPreviewView | null;
   relatedAlbumInitialPage?: RelatedAlbumListView | null;
-  /** Recipe Details: the featured (top pinned) post, shown in full instead of the description. */
+  /** Recipe Details: the featured post (top pin, else newest post), shown in full instead of the description. */
   featuredPost?: BlogPostPayload | null;
   isEditMode?: boolean;
 };

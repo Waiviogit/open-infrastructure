@@ -2,7 +2,8 @@
 
 /**
  * Recipe Details featured post (seeded by object-post-pin-remove.scenario.ts `featured` step):
- * `pinv-recipe` shows its top pinned post in the middle column, `pinv-recipe-plain` keeps the description.
+ * `pinv-recipe` shows its top pinned post in the middle column, `pinv-recipe-latest` its newest
+ * not-removed post, `pinv-recipe-plain` (no posts) keeps the description.
  * Usage: node object-featured-post.web.cjs <screenshotDir>
  */
 const path = require('path');
@@ -26,6 +27,7 @@ async function middleColumn(page) {
   try {
     for (const [objectId, shot] of [
       ['pinv-recipe', 'featured-details.png'],
+      ['pinv-recipe-latest', 'featured-latest.png'],
       ['pinv-recipe-plain', 'featured-plain.png'],
     ]) {
       const { page, status } = await openAs(browser, 'vic', `/object/${objectId}`, { hydrate: 'button' });

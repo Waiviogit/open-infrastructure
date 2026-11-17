@@ -1,7 +1,7 @@
 ---
 id: web-pages-object-routes-featured-post
 title: Object page — featured post on Details
-description: "Recipe Details shows the object's featured (top pinned) post in full in the middle column, in place of the description."
+description: "Recipe Details shows the object's featured post (top pin, else newest post) in full in the middle column, in place of the description."
 type: spec
 status: active
 scope: web
@@ -20,12 +20,19 @@ related:
 
 ## Behavior
 
-A recipe goes together with its featured post: the top pinned post of the object (`pin` update, ranked by governance, then votes, then newest). On the **Details** tab the middle column shows that post in full (`BlogPostScreen`: title, author, video, body, votes, comments) instead of `ObjectDescriptionBody`.
+A recipe goes together with its featured post — the first post of its Posts feed as an anonymous viewer sees it:
+
+1. the top pinned post (`pin` update, ranked by governance, then votes, then newest);
+2. else the newest post of the Posts feed (same scope, removed posts excluded);
+3. else nothing — the description stays.
+
+On the **Details** tab the middle column shows that post in full (`BlogPostScreen`: title, author, video, body, votes, comments) instead of `ObjectDescriptionBody`.
 
 | Case | Middle column |
 |------|---------------|
-| Recipe with a featured post | Featured post |
-| Recipe without one, or the post is gone | Description (unchanged) |
+| Recipe with a pinned post | Top pinned post |
+| Recipe without pins but with posts | Newest post |
+| Recipe without posts, or the post is gone | Description (unchanged) |
 | Other object types | Description (unchanged) |
 | Nested menu / page content on Details | Unchanged (featured post only replaces the description) |
 
@@ -34,7 +41,7 @@ The featured post is the same for every viewer; the viewer's own pins only reord
 ## Data
 
 - `page.tsx` loads `getObjectFeaturedPostQuery(objectId, locale, viewer)` for every tab of a recipe (in parallel with the tab data), so switching to Details does not flash the description first.
-- Query → `GET /query/v1/objects/:id/featured-post`, cached with tag `objectFeaturedPost(objectId)`; `revalidateObjectAfterBroadcast` clears it, so Pin / Unpin / Remove on the Posts tab update Details.
+- Query → `GET /query/v1/objects/:id/featured-post`, cached with tag `objectFeaturedPost(objectId)`; `revalidateObjectAfterBroadcast` clears it, so Pin / Unpin / Remove on the Posts tab update Details. A newly published post shows up within the query cache lifetime (60 s), like the Posts feed.
 - Types that opt in: `FEATURED_POST_OBJECT_TYPES` in `apps/web/src/modules/object/domain/object-featured-post.ts` (today `recipe`).
 
 ## Code
@@ -47,4 +54,4 @@ The featured post is the same for every viewer; the viewer's own pins only reord
 
 ## Legacy
 
-Legacy social sites (`SocialProduct` → `RecipePost`, "Top Recipe") showed the first post of the object feed on recipes — the pinned one, else the newest. Here only a pinned post is featured; without one the description stays.
+Same as legacy social sites (`SocialProduct` → `RecipePost`, "Top Recipe"): the first post of the object feed on recipes — the pinned one, else the newest. Legacy showed nothing without posts; here the description stays.

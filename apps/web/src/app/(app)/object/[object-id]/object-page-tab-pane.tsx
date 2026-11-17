@@ -75,7 +75,7 @@ export type ObjectPageTabPaneProps = {
   viewerUsername: string | null;
   relatedAlbumPreview?: RelatedAlbumPreviewView | null;
   relatedAlbumInitialPage?: RelatedAlbumListView | null;
-  /** Recipe Details: the object's featured (top pinned) post, shown instead of the description. */
+  /** Recipe Details: the featured post (top pin, else newest post), shown instead of the description. */
   featuredPost?: BlogPostPayload | null;
   initialNestedStack: ObjectNestedViewResolved[];
   defaultNestedContent: ObjectNestedViewResolved | null;

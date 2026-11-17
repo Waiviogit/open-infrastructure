@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { fetchObjectFeaturedPost } from '../../infrastructure/clients/object-featured-post.client';
 import { toBlogPostPayload, type BlogPostPayload } from './get-single-post.query';
 
-/** The object's featured (top pinned) post in full, or null when it has none. */
+/** The object's featured post in full (top pin, else newest post), or null when it has no posts. */
 async function getObjectFeaturedPostQueryImpl(
   objectId: string,
   locale: string,

@@ -1,29 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { UPDATE_TYPES, type SupportedCurrency } from '@opden-data-layer/core';
-import { ObjectViewService } from '@opden-data-layer/objects-domain';
-import { AggregatedObjectRepository, ObjectsCoreRepository } from '../../repositories';
-import { GovernanceResolverService } from '../governance';
+import type { SupportedCurrency } from '@opden-data-layer/core';
 import type { ObjectFeaturedPostResponse } from './feed-story-dtos';
+import { GetObjectPostsFeedEndpoint } from './get-object-posts-feed.endpoint';
 import { GetPostByKeyEndpoint } from './get-post-by-key.endpoint';
-import { selectObjectFeaturedPostRef } from './object-feed-pins';
-
-const FEATURED_POST_UPDATE_TYPES = [UPDATE_TYPES.PIN, UPDATE_TYPES.REMOVE] as const;
 
 /**
- * Featured post of an object: its top pinned post, returned in full (single-post shape).
+ * Featured post of an object: the first post of its Posts feed for an anonymous viewer — the top
+ * pin, else the newest post — returned in full (single-post shape).
  * @see docs/apps/query-api/spec/object-featured-post.md
  */
 @Injectable()
 export class GetObjectFeaturedPostEndpoint {
   constructor(
-    private readonly objectsCoreRepo: ObjectsCoreRepository,
-    private readonly aggregatedObjectRepo: AggregatedObjectRepository,
-    private readonly objectViewService: ObjectViewService,
-    private readonly governanceResolver: GovernanceResolverService,
+    private readonly getObjectPostsFeed: GetObjectPostsFeedEndpoint,
     private readonly getPostByKey: GetPostByKeyEndpoint,
   ) {}
 
-  /** Null when the object does not exist; `{ post: null }` when it has no featured post. */
+  /** Null when the object does not exist; `{ post: null }` when it has no posts. */
   async execute(params: {
     objectId: string;
     locale: string;
@@ -32,43 +25,27 @@ export class GetObjectFeaturedPostEndpoint {
     currency: SupportedCurrency;
     countryCode: string | null;
   }): Promise<ObjectFeaturedPostResponse | null> {
-    const objectId = params.objectId.trim();
-    if (!objectId) {
+    const found = await this.getObjectPostsFeed.findFirstPost(
+      params.objectId,
+      params.locale,
+      params.governanceObjectIdFromHeader,
+    );
+    if (!found) {
       return null;
     }
-    const core = await this.objectsCoreRepo.findByObjectIdForPage(objectId);
-    if (!core) {
-      return null;
-    }
-
-    const [{ objects, voterWaivPowers }, governance] = await Promise.all([
-      this.aggregatedObjectRepo.loadByObjectIds([objectId], { includeRankVoteProjection: false }),
-      this.governanceResolver.resolveMergedForObjectView(params.governanceObjectIdFromHeader),
-    ]);
-    if (objects.length === 0) {
-      return null;
-    }
-
-    const [view] = this.objectViewService.resolve(objects, voterWaivPowers, {
-      update_types: [...FEATURED_POST_UPDATE_TYPES],
-      locale: params.locale,
-      include_rejected: false,
-      governance,
-    });
-    const ref = view ? selectObjectFeaturedPostRef(view) : null;
-    if (!ref) {
-      return { post: null };
+    if (!found.first) {
+      return { post: null, source: null };
     }
 
     const post = await this.getPostByKey.execute(
-      ref.author,
-      ref.permlink,
+      found.first.author,
+      found.first.permlink,
       params.locale,
       params.governanceObjectIdFromHeader,
       params.viewerAccount,
       params.currency,
       params.countryCode,
     );
-    return { post };
+    return post ? { post, source: found.first.source } : { post: null, source: null };
   }
 }

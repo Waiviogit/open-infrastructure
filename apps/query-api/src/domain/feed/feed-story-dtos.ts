@@ -146,7 +146,12 @@ export interface PostDiscussionResponseDto {
   comments: Record<string, DiscussionCommentDto>;
 }
 
-/** `GET /query/v1/objects/:objectId/featured-post` — the object's top pinned post, or null. */
+/**
+ * `GET /query/v1/objects/:objectId/featured-post` — the top pinned post, else the newest post
+ * of the object's Posts feed, or null when it has no posts.
+ */
 export interface ObjectFeaturedPostResponse {
   post: SinglePostViewDto | null;
+  /** `pinned` — top pin; `latest` — newest post (nothing pinned); null without a post. */
+  source: 'pinned' | 'latest' | null;
 }

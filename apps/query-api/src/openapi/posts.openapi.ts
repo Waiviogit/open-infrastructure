@@ -305,7 +305,11 @@ const objectFeaturedPostResponseSchema = registry.register(
   'ObjectFeaturedPostResponse',
   z.object({
     post: singlePostViewSchema.nullable().openapi({
-      description: "The object's top pinned post in full, or null when nothing is pinned.",
+      description:
+        "The object's top pinned post in full, else its newest post, or null when it has no posts.",
+    }),
+    source: z.enum(['pinned', 'latest']).nullable().openapi({
+      description: '`pinned` — top pin; `latest` — newest post (nothing pinned); null without a post.',
     }),
   }),
 );
@@ -314,9 +318,9 @@ registry.registerPath({
   method: 'get',
   path: '/query/v1/objects/{objectId}/featured-post',
   tags: [queryApiOpenApiTags.objects],
-  summary: 'Featured (top pinned) post of an object',
+  summary: 'Featured post of an object (top pin, else newest post)',
   description:
-    'Top-ranked valid `pin` update of the object (admin / trusted, then community weight, then newest; a post with a valid `remove` is never featured). Same for every viewer — the viewer only affects vote / reblog flags. Body shape matches `GET /query/v1/posts/{author}/{permlink}`.',
+    "First post of the object's Posts feed for an anonymous viewer: the top-ranked valid `pin` (admin / trusted, then community weight, then newest), else the newest post in the feed scope. A post with a valid `remove` is never featured. Same for every viewer — the viewer only affects vote / reblog flags. Post shape matches `GET /query/v1/posts/{author}/{permlink}`.",
   request: {
     params: z.object({
       objectId: z
@@ -339,7 +343,7 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: 'Featured post, or `{ post: null }`.',
+      description: 'Featured post, or `{ post: null, source: null }` when the object has no posts.',
       content: { 'application/json': { schema: objectFeaturedPostResponseSchema } },
     },
     404: {

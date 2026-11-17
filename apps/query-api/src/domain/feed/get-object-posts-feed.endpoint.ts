@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ObjectViewService } from '@opden-data-layer/objects-domain';
+import { ObjectViewService, type AggregatedObject } from '@opden-data-layer/objects-domain';
 import { UPDATE_TYPES } from '@opden-data-layer/core';
 import {
   AggregatedObjectRepository,
@@ -23,6 +23,17 @@ import {
 } from './object-feed-scope.builder';
 import { collectViewerUpdateVotes, mapPostRefUpdateIds } from './object-feed-pins';
 import type { ObjectPostsFeedBody } from './schemas/object-posts-feed.schema';
+import type { ObjectPostFeedScope } from '../../repositories/object-post-feed-scope.types';
+
+/** `findFirstPost` needs only the newest regular row. */
+const LATEST_POST_LIMIT = 1;
+
+/** Featured post source: the top pin, or the newest post when nothing is pinned. */
+export interface ObjectFeedFirstPost {
+  author: string;
+  permlink: string;
+  source: 'pinned' | 'latest';
+}
 
 const OBJECT_FEED_UPDATE_TYPES = [
   UPDATE_TYPES.NEWS_FEED,
@@ -61,10 +72,16 @@ export class GetObjectPostsFeedEndpoint {
       return null;
     }
 
-    const core = await this.objectsCoreRepo.findByObjectIdForPage(trimmedId);
-    if (!core) {
+    const loaded = await this.loadFeedScope(
+      trimmedId,
+      locale,
+      governanceObjectIdFromHeader,
+      viewerAccount,
+    );
+    if (!loaded) {
       return null;
     }
+    const { scope, agg } = loaded;
 
     const limit = body.limit;
     const limitPlusOne = limit + 1;
@@ -72,52 +89,6 @@ export class GetObjectPostsFeedEndpoint {
     if (body.cursor && !cursorPayload) {
       return { items: [], cursor: null, hasMore: false };
     }
-
-    const { objects, voterWaivPowers } = await this.aggregatedObjectRepo.loadByObjectIds(
-      [trimmedId],
-      { viewerAccount },
-    );
-    const agg = objects[0];
-    if (!agg) {
-      return null;
-    }
-
-    const governance = await this.governanceResolver.resolveMergedForObjectView(
-      governanceObjectIdFromHeader,
-    );
-
-    const views = this.objectViewService.resolve(objects, voterWaivPowers, {
-      update_types: [...OBJECT_FEED_UPDATE_TYPES],
-      locale,
-      include_rejected: false,
-      governance,
-    });
-    const view = views[0];
-    if (!view) {
-      return null;
-    }
-
-    const viewerTrimmed = viewerAccount?.trim() ?? '';
-    const mutedAuthors =
-      viewerTrimmed !== ''
-        ? await this.userAccountMutesRepo.listMutedForMuters([viewerTrimmed])
-        : [];
-
-    const groupSiblingIds = view.meta_group_id
-      ? await this.objectsCoreRepo.findObjectIdsByMetaGroupId(view.meta_group_id, trimmedId)
-      : [];
-    const relistingIds = await this.objectsCoreRepo.findRelistingObjectIds(trimmedId);
-    const linkedObjectIds = [trimmedId, ...groupSiblingIds, ...relistingIds];
-
-    const scope = buildObjectPostFeedScope({
-      view,
-      linkedObjectIds,
-      mutedAuthors,
-      locale,
-      viewerAccount,
-      viewerVotes: collectViewerUpdateVotes(agg.validity_votes, viewerAccount),
-      maxPinned: OBJECT_FEED_MAX_PINNED_POSTS,
-    });
 
     if (scope.newsFeedMode && !scope.newsFilter) {
       return { items: [], cursor: null, hasMore: false };
@@ -198,6 +169,99 @@ export class GetObjectPostsFeedEndpoint {
       cursor: hasMore ? nextFeedCursor(feedPage, filteredFeedRows[feedPage.length]) : null,
       hasMore,
     };
+  }
+
+  /**
+   * First post of the Posts feed as an anonymous viewer sees it: the top pin, else the newest post
+   * (legacy recipe "Top Recipe"). No hydration. Null when the object does not exist.
+   * @see docs/apps/query-api/spec/object-featured-post.md
+   */
+  async findFirstPost(
+    objectId: string,
+    locale: string,
+    governanceObjectIdFromHeader?: string,
+  ): Promise<{ first: ObjectFeedFirstPost | null } | null> {
+    const trimmedId = objectId.trim();
+    if (!trimmedId) {
+      return null;
+    }
+    const loaded = await this.loadFeedScope(trimmedId, locale, governanceObjectIdFromHeader);
+    if (!loaded) {
+      return null;
+    }
+    const { scope } = loaded;
+
+    const [topPin] = parsePinnedPostRefs(scope.pinnedPostRefs);
+    if (topPin) {
+      return { first: { ...topPin, source: 'pinned' } };
+    }
+    if (scope.newsFeedMode && !scope.newsFilter) {
+      return { first: null };
+    }
+    const [latest] = await this.postsRepo.findObjectPostsFeed(scope, null, LATEST_POST_LIMIT);
+    return {
+      first: latest ? { author: latest.author, permlink: latest.permlink, source: 'latest' } : null,
+    };
+  }
+
+  /** Object view + feed scope (linked objects, pins, removes, mutes); null when the object is missing. */
+  private async loadFeedScope(
+    objectId: string,
+    locale: string,
+    governanceObjectIdFromHeader?: string,
+    viewerAccount?: string,
+  ): Promise<{ scope: ObjectPostFeedScope; agg: AggregatedObject } | null> {
+    const core = await this.objectsCoreRepo.findByObjectIdForPage(objectId);
+    if (!core) {
+      return null;
+    }
+
+    const { objects, voterWaivPowers } = await this.aggregatedObjectRepo.loadByObjectIds(
+      [objectId],
+      { viewerAccount },
+    );
+    const agg = objects[0];
+    if (!agg) {
+      return null;
+    }
+
+    const governance = await this.governanceResolver.resolveMergedForObjectView(
+      governanceObjectIdFromHeader,
+    );
+
+    const views = this.objectViewService.resolve(objects, voterWaivPowers, {
+      update_types: [...OBJECT_FEED_UPDATE_TYPES],
+      locale,
+      include_rejected: false,
+      governance,
+    });
+    const view = views[0];
+    if (!view) {
+      return null;
+    }
+
+    const viewerTrimmed = viewerAccount?.trim() ?? '';
+    const mutedAuthors =
+      viewerTrimmed !== ''
+        ? await this.userAccountMutesRepo.listMutedForMuters([viewerTrimmed])
+        : [];
+
+    const groupSiblingIds = view.meta_group_id
+      ? await this.objectsCoreRepo.findObjectIdsByMetaGroupId(view.meta_group_id, objectId)
+      : [];
+    const relistingIds = await this.objectsCoreRepo.findRelistingObjectIds(objectId);
+    const linkedObjectIds = [objectId, ...groupSiblingIds, ...relistingIds];
+
+    const scope = buildObjectPostFeedScope({
+      view,
+      linkedObjectIds,
+      mutedAuthors,
+      locale,
+      viewerAccount,
+      viewerVotes: collectViewerUpdateVotes(agg.validity_votes, viewerAccount),
+      maxPinned: OBJECT_FEED_MAX_PINNED_POSTS,
+    });
+    return { scope, agg };
   }
 }
 

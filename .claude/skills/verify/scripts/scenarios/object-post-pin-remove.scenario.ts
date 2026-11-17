@@ -7,7 +7,8 @@
  * probe:  object_updates / validity_votes rows.
  * unpin:  `vic` votes against his own post-5 pin (what the menu's Unpin broadcasts).
  * featured: recipe `pinv-recipe` (description + pins: post-2, post-3 with an extra `grace` vote, and
- *         `vic`'s own newer post-4) and recipe `pinv-recipe-plain` without pins (description fallback).
+ *         `vic`'s own newer post-4), recipe `pinv-recipe-latest` without pins but with posts 7 and 8
+ *         (`remove` on post-8 → featured falls back to post-7), recipe `pinv-recipe-plain` without posts.
  */
 import { buildOdlUpdateCreateOp, buildOdlUpdateVoteOp } from '@opden-data-layer/hive-broadcast';
 import { sql } from 'kysely';
@@ -17,6 +18,7 @@ const ODL_ID = 'odl-mainnet';
 const OBJECT_ID = 'pinv-drink';
 const RECIPE_ID = 'pinv-recipe';
 const PLAIN_RECIPE_ID = 'pinv-recipe-plain';
+const LATEST_RECIPE_ID = 'pinv-recipe-latest';
 const AUTHOR = 'bob';
 const POST_COUNT = 8;
 const ACCOUNTS = ['alice', 'bob', 'carol', 'dave', 'erin', 'frank', 'grace', 'vic'];
@@ -200,11 +202,23 @@ const scenario: Scenario = {
         ],
       }),
     });
-    await h.hiveBlock([recipe(RECIPE_ID, 'Tom Yum Soup'), recipe(PLAIN_RECIPE_ID, 'Plain Soup')]);
+    await h.hiveBlock([
+      recipe(RECIPE_ID, 'Tom Yum Soup'),
+      recipe(PLAIN_RECIPE_ID, 'Plain Soup'),
+      recipe(LATEST_RECIPE_ID, 'Latest Soup'),
+    ]);
+    for (const n of [7, 8]) {
+      await h.db
+        .insertInto('post_objects')
+        .values({ author: AUTHOR, permlink: `post-${n}`, object_id: LATEST_RECIPE_ID, percent: 100, object_type: 'recipe' })
+        .onConflict((oc) => oc.doNothing())
+        .execute();
+    }
     await h.hiveBlock([
       create('carol', 'pin', ref(2), RECIPE_ID),
       create('dave', 'pin', ref(3), RECIPE_ID),
       create('vic', 'pin', ref(4), RECIPE_ID),
+      create('carol', 'remove', ref(8), LATEST_RECIPE_ID),
     ]);
     await h.hiveBlock([vote('grace', await updateIdFor(h, 'pin', ref(3), RECIPE_ID), 'for', RECIPE_ID)]);
     h.log(
