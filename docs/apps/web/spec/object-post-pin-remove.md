@@ -41,6 +41,19 @@ The indexer skips a second `update_create` with the same value, so an existing u
 
 Pinned posts show a **Pinned** badge before the post time.
 
+## Pin icon (story header)
+
+Legacy `PinButton`: a pin toggle at the right end of the story header, next to the tagged-object icons, on the Posts tab only. Same broadcast as the menu items.
+
+| State | Icon | Click |
+|-------|------|-------|
+| Not pinned | Outline, muted | Pin |
+| Pinned by others | Filled, muted | Pin (`for` vote on the existing update) |
+| Viewer's pin (`viewerPinned`) | Filled, accent | Unpin |
+| Logged out | As above | Opens **Sign in** (legacy showed it disabled) |
+
+Tooltip / accessible name: **Pin** or **Unpin**; disabled while a broadcast is in flight.
+
 ## Edit rail
 
 `pin` and `remove` sit in the core edit group `reviews` (heading **REVIEWS**). The add-update form takes a post link (any `…/@author/permlink`) or `author/permlink` and stores `author/permlink` (`postRefFromInput`).
@@ -52,6 +65,7 @@ Pinned posts show a **Pinned** badge before the post time.
 | Op choice (create vs vote) | `apps/web/src/modules/feed/domain/object-post-review.ts` |
 | Broadcast hook | `apps/web/src/modules/feed/presentation/hooks/use-object-post-review.ts` |
 | Menu rows | `apps/web/src/modules/feed/presentation/components/story-overflow-menu.tsx` |
+| Pin icon | `apps/web/src/modules/feed/presentation/components/story-pin-button.tsx` |
 | Remove confirm | `apps/web/src/modules/feed/presentation/components/object-post-remove-modal.tsx` |
 | Feed host | `apps/web/src/app/(app)/object/[object-id]/object-posts-feed-list.tsx` |
 | Add-update input | `apps/web/src/modules/object-updates/presentation/components/post-ref-field.tsx` |
@@ -65,5 +79,5 @@ Pinned posts show a **Pinned** badge before the post time.
 ## Verification
 
 ```bash
-pnpm nx test web --testPathPatterns="object-post-review|story-overflow-menu|update-value-form.utils"
+pnpm nx test web --testPathPatterns="object-post-review|story-overflow-menu|story-pin-button|update-value-form.utils"
 ```

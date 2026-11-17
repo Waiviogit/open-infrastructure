@@ -4,6 +4,7 @@ import { BrandXIcon } from './brand-x';
 import { DimensionsIcon } from './dimensions';
 import { HbdSavingsShieldIcon } from './hbd-savings-shield';
 import { HiveSavingsShieldIcon } from './hive-savings-shield';
+import { PinIcon } from './pin';
 import { RewardFlashlightIcon } from './reward-flashlight';
 import { WalletPowerLightningIcon } from './wallet-power-lightning';
 import { WalletSavingsShieldIcon } from './wallet-savings-shield';
@@ -15,6 +16,8 @@ export const customIconPack = {
   dimensions: DimensionsIcon,
   'hbd-savings-shield': HbdSavingsShieldIcon,
   'hive-savings-shield': HiveSavingsShieldIcon,
+  /** Overrides Lucide `pin` with the legacy Waivio push-pin. */
+  pin: PinIcon,
   'reward-flashlight': RewardFlashlightIcon,
   'wallet-power-lightning': WalletPowerLightningIcon,
   'wallet-savings-shield': WalletSavingsShieldIcon,

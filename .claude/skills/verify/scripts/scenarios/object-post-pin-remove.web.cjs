@@ -2,7 +2,8 @@
 
 /**
  * Drives /object/pinv-drink as `vic` (seeded by object-post-pin-remove.scenario.ts):
- * pinned badges + order, ⋯ menu Pin / Unpin / Remove, Remove confirm dialog, REVIEWS edit group.
+ * pinned badges + order, header pin icon states, ⋯ menu Pin / Unpin / Remove, Remove confirm dialog,
+ * REVIEWS edit group; then the pin icon as a logged-out viewer (click opens Sign in).
  * Wallet broadcasts are not driven (they would hit the chain): the dialog is cancelled.
  * Usage: node object-post-pin-remove.web.cjs <screenshotDir>
  */
@@ -17,6 +18,13 @@ async function cards(page) {
     articles.map((a) => ({
       title: a.querySelector('h2, h3')?.textContent?.trim() ?? '',
       pinned: /Pinned/.test(a.querySelector('header')?.textContent ?? ''),
+      pinIcon: (() => {
+        const btn = a.querySelector('header button[aria-pressed]');
+        if (!btn) return null;
+        const cls = btn.querySelector('svg')?.getAttribute('class') ?? '';
+        const look = cls.includes('text-accent') ? 'accent' : cls.includes('fill-current') ? 'grey-filled' : 'outline';
+        return `${look}:${btn.getAttribute('aria-label')}`;
+      })(),
     })),
   );
 }
@@ -37,6 +45,7 @@ async function menuItems(page, title) {
     console.log('status', status);
     console.log('cards', JSON.stringify(await cards(page), null, 0));
     await page.screenshot({ path: path.join(OUT, 'pin-feed.png'), fullPage: true });
+    await page.screenshot({ path: path.join(OUT, 'pin-icons.png') });
 
     const pinnedByVic = await menuItems(page, 'Kopi Talua review 1');
     console.log('menu review 1 (vic pinned):', pinnedByVic.items.slice(0, 3));
@@ -63,6 +72,22 @@ async function menuItems(page, title) {
     );
     console.log('REVIEWS group text:', group);
     await page.screenshot({ path: path.join(OUT, 'pin-edit-rail.png') });
+    await page.context().close();
+
+    const anon = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const anonPage = await anon.newPage();
+    await anonPage.goto(`${require('../web-session.cjs').BASE_URL}${OBJECT_PATH}`, { waitUntil: 'networkidle', timeout: 180_000 });
+    await anonPage.waitForFunction(
+      () => [...document.querySelectorAll('header button[aria-pressed]')].some((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+      undefined,
+      { timeout: 120_000 },
+    );
+    console.log('anon cards', JSON.stringify(await cards(anonPage), null, 0));
+    await anonPage.locator('main article:visible header button[aria-pressed]').first().click();
+    const loginDialog = anonPage.getByRole('dialog');
+    await loginDialog.waitFor({ timeout: 30_000 });
+    console.log('anon pin click opens dialog:', (await loginDialog.textContent())?.replace(/\s+/g, ' ').trim().slice(0, 80));
+    await anonPage.screenshot({ path: path.join(OUT, 'pin-anon-login.png') });
   } finally {
     await browser.close();
   }

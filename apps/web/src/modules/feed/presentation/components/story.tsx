@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { CommentIcon, PinIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { useLoginModal } from '@/modules/auth';
 import { feedExcerptToSafeHtml } from '@/shared/infrastructure/feed-excerpt-html';
 import { isThreeSpeakEmbedUrl } from '@/shared/infrastructure/three-speak-preview';
 import { isNativeFeedVideoUrl } from '@/shared/infrastructure/video-preview';
@@ -40,6 +41,7 @@ import { StoryCommentEditor } from './story-comment-editor';
 import { StoryCommentsSection } from './story-comments-section';
 import { StoryInlineCommentEdit } from './story-inline-comment-edit';
 import { StoryOverflowMenu } from './story-overflow-menu';
+import { StoryPinButton } from './story-pin-button';
 import { StoryReblogButton } from './story-reblog-button';
 import { StoryStatButton } from './story-stat-button';
 import { StoryVoteButton } from './story-vote-button';
@@ -64,6 +66,7 @@ export function Story({
   const [commentsExpanded, setCommentsExpanded] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const review = useObjectPostReview(story, objectReview, currentUsername);
+  const { openLogin } = useLoginModal();
   const { t, locale } = useI18n();
   const displayAuthor = story.authorDisplayName ?? story.authorName;
   const displayTimeIso = story.feedAt ?? story.createdAt;
@@ -198,6 +201,17 @@ export function Story({
               );
             })}
           </ul>
+        ) : null}
+        {objectReview && !isReply ? (
+          <StoryPinButton
+            pinned={review.pinned}
+            viewerPinned={review.viewerPinned}
+            pending={review.pending}
+            loggedIn={Boolean(currentUsername?.trim())}
+            onPin={() => void review.run('pin')}
+            onUnpin={() => void review.run('unpin')}
+            onRequireLogin={openLogin}
+          />
         ) : null}
       </header>
 

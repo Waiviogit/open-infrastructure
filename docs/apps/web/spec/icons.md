@@ -73,6 +73,8 @@ Discover types: `package`, `building`, `utensils`, `utensils-crossed`, `cup-soda
 
 Custom-only: `brand-facebook`, `brand-x`, `hive-savings-shield`, `hbd-savings-shield`, `wallet-power-lightning`, `reward-flashlight`, `weight-scale`, `dimensions`, `wallet-savings-shield`
 
+Custom overrides of a Lucide key: `pin` — legacy Waivio diagonal push-pin (outline; `fill-current` for the filled pinned state), used by object Posts Pin / Unpin.
+
 ## Out of scope (not in @/icons)
 
 | Asset | Reason |
