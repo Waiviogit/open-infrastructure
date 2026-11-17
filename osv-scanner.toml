@@ -23,21 +23,6 @@ reason = "Dev-only via webpack-dev-server -> sockjs; not shipped in production D
 ignoreUntil = 2027-02-28
 
 [[IgnoredVulns]]
-id = "GHSA-5p2g-fcmc-qvqq"
-reason = "Transitive optional dep via less (vite/webpack dev toolchain). image-size repo archived; npm latest 2.0.2 still affected. Dev/build-only; not shipped in production Docker bundles."
-ignoreUntil = 2027-02-28
-
-[[IgnoredVulns]]
-id = "GHSA-w3rx-r6r6-pgpr"
-reason = "Transitive optional dep via less (vite/webpack dev toolchain). image-size repo archived; npm latest 2.0.2 still affected. Dev/build-only; not shipped in production Docker bundles."
-ignoreUntil = 2027-02-28
-
-[[IgnoredVulns]]
-id = "GHSA-rj75-hqrm-r3gf"
-reason = "Remaining hit is postcss-selector-parser@6.1.4 via Tailwind 3.4 / postcss-nested. No 6.x patch (latest 6.1.4); 7.x already overridden to 7.1.6. Build-time trusted CSS only; advisory says that path is not affected."
-ignoreUntil = 2027-04-12
-
-[[IgnoredVulns]]
 id = "GHSA-gcqx-w48m-w2h4"
 reason = "Transitive via jest-config and fork-ts-checker-webpack-plugin (dev/test/webpack only). deepmerge has no patched npm release (latest 4.3.1 still last_affected); PR #274 closed unmerged."
 ignoreUntil = 2027-04-28
