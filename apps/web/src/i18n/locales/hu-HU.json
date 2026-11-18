@@ -1239,8 +1239,6 @@
   "home_feed_threads_empty": "Még nincsenek szálak. Kövess objektumokat, hogy itt lásd az őket említő szálakat.",
   "home_feed_updates_empty": "Még nincsenek frissítések. Kövess objektumokat, hogy itt lásd a frissítéseiket.",
   "home_feed_filters_aria": "Hírfolyamszűrők",
-  "home_feed_filters_title": "Szűrők",
-  "home_feed_filters_mobile_trigger": "Szűrő: {filter}",
   "home_feed_filter_trending": "Felkapott",
   "home_feed_filter_hot": "Forró",
   "home_feed_filter_new": "Új",

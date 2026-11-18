@@ -1511,8 +1511,6 @@
   "home_feed_threads_empty": "अभी कोई थ्रेड नहीं। उनका उल्लेख करने वाले थ्रेड यहाँ देखने के लिए ऑब्जेक्ट फ़ॉलो करें।",
   "home_feed_updates_empty": "अभी कोई अपडेट नहीं। उनके अपडेट यहाँ देखने के लिए ऑब्जेक्ट फ़ॉलो करें।",
   "home_feed_filters_aria": "फ़ीड फ़िल्टर",
-  "home_feed_filters_title": "फ़िल्टर",
-  "home_feed_filters_mobile_trigger": "फ़िल्टर: {filter}",
   "home_feed_filter_trending": "ट्रेंडिंग",
   "home_feed_filter_hot": "हॉट",
   "home_feed_filter_new": "नया",

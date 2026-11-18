@@ -1238,8 +1238,6 @@
   "home_feed_threads_empty": "Ingen tråde endnu. Følg objekter for at se tråde, der nævner dem, her.",
   "home_feed_updates_empty": "Ingen opdateringer endnu. Følg objekter for at se deres opdateringer her.",
   "home_feed_filters_aria": "Feedfiltre",
-  "home_feed_filters_title": "Filtre",
-  "home_feed_filters_mobile_trigger": "Filter: {filter}",
   "home_feed_filter_trending": "Populært",
   "home_feed_filter_hot": "Hot",
   "home_feed_filter_new": "Nyt",

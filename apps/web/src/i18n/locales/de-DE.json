@@ -1512,8 +1512,6 @@
   "home_feed_threads_empty": "Noch keine Threads. Folge Objekten, um hier Threads zu sehen, die sie erwähnen.",
   "home_feed_updates_empty": "Noch keine Aktualisierungen. Folge Objekten, um hier ihre Aktualisierungen zu sehen.",
   "home_feed_filters_aria": "Feed-Filter",
-  "home_feed_filters_title": "Filter",
-  "home_feed_filters_mobile_trigger": "Filter: {filter}",
   "home_feed_filter_trending": "Im Trend",
   "home_feed_filter_hot": "Heiß",
   "home_feed_filter_new": "Neu",

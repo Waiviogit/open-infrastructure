@@ -1237,8 +1237,6 @@
   "home_feed_threads_empty": "Ainda não há threads. Siga objetos para ver aqui as threads que os mencionam.",
   "home_feed_updates_empty": "Ainda não há atualizações. Siga objetos para ver as atualizações deles aqui.",
   "home_feed_filters_aria": "Filtros do feed",
-  "home_feed_filters_title": "Filtros",
-  "home_feed_filters_mobile_trigger": "Filtro: {filter}",
   "home_feed_filter_trending": "Em alta",
   "home_feed_filter_hot": "Mais comentados",
   "home_feed_filter_new": "Novos",

@@ -1239,8 +1239,6 @@
   "home_feed_threads_empty": "Wala pang thread. Sundan ang mga object para makita rito ang mga thread na bumabanggit sa kanila.",
   "home_feed_updates_empty": "Wala pang update. Sundan ang mga object para makita rito ang kanilang mga update.",
   "home_feed_filters_aria": "Mga filter ng feed",
-  "home_feed_filters_title": "Mga filter",
-  "home_feed_filters_mobile_trigger": "Filter: {filter}",
   "home_feed_filter_trending": "Trending",
   "home_feed_filter_hot": "Mainit",
   "home_feed_filter_new": "Bago",

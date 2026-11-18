@@ -33,7 +33,7 @@ Each tab has its own rail: an account without threads is not on the Threads rail
 - `+N` = new items of the **active tab** in the last 3 days; nothing is shown when `N` is 0 or counters are unavailable. Rows are ordered by `+N`, then by their latest item. Counters and the per-tab lists follow content within 30 minutes (scheduler refresh).
 - Each section shows 5 rows; "Show more" loads 5 more in place (server actions `loadMoreHomeFeedFilterUsersAction` / `loadMoreHomeFeedFilterObjectsAction`). A section starts collapsed when its top row has nothing new. Section headers only expand or collapse; they never filter.
 - Guests see the sorts and a sign-in prompt (opens the login modal).
-- Below `lg` the rail opens in a left `DrawerRegion` from a "Filter: …" button above the feed; choosing a filter closes it.
+- Below `lg` the rail opens in a left `DrawerRegion` (`belowHeader`, `size="wide"`) that starts under the app header, from a button above the feed named after the active filter ("My feed", "Trending", `@account`, object name) — same pattern as the Discover type picker. The rail resolves the name (session default, tab sorts, followed object names) and shares it through `HomeFeedActiveFilterLabelProvider`; until the rail renders, the button shows a placeholder. Choosing a filter closes the drawer.
 
 ## URL
 
@@ -66,7 +66,7 @@ Caching: Posts and every guest feed use `queryApiFetch` (tag `homeFeed(viewer|gu
 
 ## Copy keys
 
-`home_feed_filters_aria`, `home_feed_filters_title`, `home_feed_filters_mobile_trigger`, `home_feed_filter_trending`, `home_feed_filter_hot`, `home_feed_filter_new`, `home_feed_filter_my_feed`, `home_feed_filter_section_people`, `home_feed_filter_type_toggle`, `home_feed_filter_show_more`, `home_feed_filters_window`, `home_feed_filter_count_aria`, `home_feed_filters_guest_body`, `home_feed_filters_sign_in`, `home_feed_filter_empty`, `home_feed_filter_sort_unavailable`, `home_feed_filter_signin_required`, `home_feed_filter_entity_unavailable`.
+`home_feed_filters_aria`, `home_feed_filter_trending`, `home_feed_filter_hot`, `home_feed_filter_new`, `home_feed_filter_my_feed`, `home_feed_filter_section_people`, `home_feed_filter_type_toggle`, `home_feed_filter_show_more`, `home_feed_filters_window`, `home_feed_filter_count_aria`, `home_feed_filters_guest_body`, `home_feed_filters_sign_in`, `home_feed_filter_empty`, `home_feed_filter_sort_unavailable`, `home_feed_filter_signin_required`, `home_feed_filter_entity_unavailable`.
 
 ## Verification
 

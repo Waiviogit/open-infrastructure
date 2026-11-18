@@ -1627,8 +1627,6 @@
   "home_feed_threads_empty": "No threads yet. Follow objects to see threads that mention them here.",
   "home_feed_updates_empty": "No updates yet. Follow objects to see their updates here.",
   "home_feed_filters_aria": "Feed filters",
-  "home_feed_filters_title": "Filters",
-  "home_feed_filters_mobile_trigger": "Filter: {filter}",
   "home_feed_filter_trending": "Trending",
   "home_feed_filter_hot": "Hot",
   "home_feed_filter_new": "New",

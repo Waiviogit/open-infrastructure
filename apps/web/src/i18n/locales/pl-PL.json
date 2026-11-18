@@ -1237,8 +1237,6 @@
   "home_feed_threads_empty": "Brak wątków. Obserwuj obiekty, aby widzieć tu wątki, które o nich wspominają.",
   "home_feed_updates_empty": "Brak aktualizacji. Obserwuj obiekty, aby widzieć tu ich aktualizacje.",
   "home_feed_filters_aria": "Filtry kanału",
-  "home_feed_filters_title": "Filtry",
-  "home_feed_filters_mobile_trigger": "Filtr: {filter}",
   "home_feed_filter_trending": "Popularne",
   "home_feed_filter_hot": "Gorące",
   "home_feed_filter_new": "Nowe",

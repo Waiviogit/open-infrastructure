@@ -1511,8 +1511,6 @@
   "home_feed_threads_empty": "Поки що немає тредів. Підпишіться на об'єкти, щоб бачити тут треди з їхньою згадкою.",
   "home_feed_updates_empty": "Поки що немає оновлень. Підпишіться на об'єкти, щоб бачити тут їхні оновлення.",
   "home_feed_filters_aria": "Фільтри стрічки",
-  "home_feed_filters_title": "Фільтри",
-  "home_feed_filters_mobile_trigger": "Фільтр: {filter}",
   "home_feed_filter_trending": "Популярне",
   "home_feed_filter_hot": "Обговорюване",
   "home_feed_filter_new": "Нове",

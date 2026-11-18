@@ -1511,8 +1511,6 @@
   "home_feed_threads_empty": "まだスレッドはありません。オブジェクトをフォローすると、それに言及したスレッドがここに表示されます。",
   "home_feed_updates_empty": "まだ更新はありません。オブジェクトをフォローすると、ここに更新が表示されます。",
   "home_feed_filters_aria": "フィードのフィルター",
-  "home_feed_filters_title": "フィルター",
-  "home_feed_filters_mobile_trigger": "フィルター: {filter}",
   "home_feed_filter_trending": "トレンド",
   "home_feed_filter_hot": "話題",
   "home_feed_filter_new": "新着",

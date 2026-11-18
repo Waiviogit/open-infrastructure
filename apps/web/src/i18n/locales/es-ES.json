@@ -1540,8 +1540,6 @@
   "home_feed_threads_empty": "Todavía no hay hilos. Sigue objetos para ver aquí los hilos que los mencionan.",
   "home_feed_updates_empty": "Todavía no hay actualizaciones. Sigue objetos para ver aquí sus actualizaciones.",
   "home_feed_filters_aria": "Filtros del feed",
-  "home_feed_filters_title": "Filtros",
-  "home_feed_filters_mobile_trigger": "Filtro: {filter}",
   "home_feed_filter_trending": "Tendencias",
   "home_feed_filter_hot": "Más comentado",
   "home_feed_filter_new": "Nuevo",

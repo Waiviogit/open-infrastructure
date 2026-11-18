@@ -1238,8 +1238,6 @@
   "home_feed_threads_empty": "لا توجد سلاسل بعد. تابع العناصر لرؤية السلاسل التي تذكرها هنا.",
   "home_feed_updates_empty": "لا توجد تحديثات بعد. تابع العناصر لرؤية تحديثاتها هنا.",
   "home_feed_filters_aria": "عوامل تصفية الموجز",
-  "home_feed_filters_title": "عوامل التصفية",
-  "home_feed_filters_mobile_trigger": "التصفية: {filter}",
   "home_feed_filter_trending": "رائج",
   "home_feed_filter_hot": "الأكثر نقاشًا",
   "home_feed_filter_new": "الأحدث",

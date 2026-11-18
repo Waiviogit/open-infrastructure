@@ -1238,8 +1238,6 @@
   "home_feed_threads_empty": "Encara no hi ha fils. Segueix objectes per veure aquí els fils que els mencionen.",
   "home_feed_updates_empty": "Encara no hi ha actualitzacions. Segueix objectes per veure aquí les seves actualitzacions.",
   "home_feed_filters_aria": "Filtres del feed",
-  "home_feed_filters_title": "Filtres",
-  "home_feed_filters_mobile_trigger": "Filtre: {filter}",
   "home_feed_filter_trending": "Tendències",
   "home_feed_filter_hot": "Més comentat",
   "home_feed_filter_new": "Nou",

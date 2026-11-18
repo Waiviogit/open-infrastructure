@@ -1238,8 +1238,6 @@
   "home_feed_threads_empty": "아직 스레드가 없습니다. 개체를 팔로우하면 해당 개체를 언급한 스레드를 여기에서 볼 수 있습니다.",
   "home_feed_updates_empty": "아직 업데이트가 없습니다. 개체를 팔로우하면 여기에서 업데이트를 볼 수 있습니다.",
   "home_feed_filters_aria": "피드 필터",
-  "home_feed_filters_title": "필터",
-  "home_feed_filters_mobile_trigger": "필터: {filter}",
   "home_feed_filter_trending": "인기",
   "home_feed_filter_hot": "핫",
   "home_feed_filter_new": "최신",

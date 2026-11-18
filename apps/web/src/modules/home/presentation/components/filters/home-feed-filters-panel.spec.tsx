@@ -7,6 +7,10 @@ import { I18nProvider } from '@/i18n/providers/i18n-provider';
 import type { LocaleId, Messages } from '@/i18n/types';
 
 import type { HomeFeedFiltersView } from '../../../application/dto/home-feed-filters.dto';
+import {
+  HomeFeedActiveFilterLabelProvider,
+  useHomeFeedActiveFilterLabel,
+} from './home-feed-active-filter-label';
 import { HomeFeedFiltersPanel } from './home-feed-filters-panel';
 
 let mockSearch = '';
@@ -68,6 +72,22 @@ function renderPanel(props: Partial<React.ComponentProps<typeof HomeFeedFiltersP
       <HomeFeedFiltersPanel tab="posts" signedIn summary={summary} {...props} />
     </I18nProvider>,
   );
+}
+
+function ActiveLabelProbe() {
+  return <output data-testid="active-label">{useHomeFeedActiveFilterLabel() ?? ''}</output>;
+}
+
+function renderPanelWithLabel(props: Partial<React.ComponentProps<typeof HomeFeedFiltersPanel>> = {}) {
+  render(
+    <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
+      <HomeFeedActiveFilterLabelProvider>
+        <HomeFeedFiltersPanel tab="posts" signedIn summary={summary} {...props} />
+        <ActiveLabelProbe />
+      </HomeFeedActiveFilterLabelProvider>
+    </I18nProvider>,
+  );
+  return screen.getByTestId('active-label').textContent;
 }
 
 function activeLinks() {
@@ -147,5 +167,26 @@ describe('HomeFeedFiltersPanel', () => {
     expect(activeLinks().map((link) => link.getAttribute('href'))).toEqual(['/?filter=trending']);
     fireEvent.click(screen.getByRole('button', { name: 'home_feed_filters_sign_in' }));
     expect(mockOpenLogin).toHaveBeenCalled();
+  });
+
+  describe('active filter label for the mobile trigger', () => {
+    it('names My feed by default for a signed-in viewer', () => {
+      expect(renderPanelWithLabel()).toBe('home_feed_filter_my_feed');
+    });
+
+    it('names the applied sort, not an unsupported one from the URL', () => {
+      mockSearch = 'filter=hot';
+      expect(renderPanelWithLabel({ tab: 'activity' })).toBe('home_feed_filter_new');
+    });
+
+    it('names the author with @', () => {
+      mockSearch = 'author=alice';
+      expect(renderPanelWithLabel()).toBe('@alice');
+    });
+
+    it('names the object, falling back to its id without a projection', () => {
+      mockSearch = 'object=cafe-1';
+      expect(renderPanelWithLabel()).toBe('cafe-1');
+    });
   });
 });

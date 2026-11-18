@@ -1,11 +1,14 @@
 import { Suspense, type ReactNode } from 'react';
 
 import { HomeFeedScrollReset } from '@/modules/home';
+import { HomeFeedActiveFilterLabelProvider } from '@/modules/home/presentation/components/filters/home-feed-active-filter-label';
 import { HomeFeedMobileFilters } from '@/modules/home/presentation/components/filters/home-feed-mobile-filters';
 
 /**
  * Hub feed shell: the same three-column grid as the profile: filter rail | feed | right
- * column (reserved, empty for now). Below `lg` the rail (`filters` slot) opens in a drawer.
+ * column (reserved, empty for now). Below `lg` the rail (`filters` slot) opens in a drawer
+ * under the app header; its trigger is named after the active filter, which the rail
+ * publishes through `HomeFeedActiveFilterLabelProvider`.
  * The tab band (Posts / Threads / Activity / Updates) is rendered by the hub layout
  * (`HubFeedTabBand`), outside the hub content clip, so it spans the viewport.
  *
@@ -21,7 +24,7 @@ export default function HomeFeedLayout({
   filters: ReactNode;
 }) {
   return (
-    <>
+    <HomeFeedActiveFilterLabelProvider>
       <div
         className={[
           'mt-card-padding grid grid-cols-1 gap-card-padding',
@@ -50,6 +53,6 @@ export default function HomeFeedLayout({
         </div>
         <aside className="hidden min-w-0 lg:block" aria-hidden />
       </div>
-    </>
+    </HomeFeedActiveFilterLabelProvider>
   );
 }

@@ -32,6 +32,7 @@ import {
   type HomeFeedSort,
 } from '../../../domain/home-feed-filter';
 import { HOME_FEED_TABS, type HomeFeedTabKey } from '../../../domain/home-feed-tabs';
+import { useReportHomeFeedActiveFilterLabel } from './home-feed-active-filter-label';
 import {
   HomeFeedFilterCount,
   HomeFeedFilterLink,
@@ -41,10 +42,16 @@ import {
 
 const ROW_AVATAR_SIZE = 20;
 
+const SORT_LABEL_KEYS: Readonly<Record<HomeFeedSort, string>> = {
+  trending: 'home_feed_filter_trending',
+  hot: 'home_feed_filter_hot',
+  new: 'home_feed_filter_new',
+};
+
 const SORTS: readonly { sort: HomeFeedSort; icon: IconName; labelKey: string }[] = [
-  { sort: 'trending', icon: 'trending-up', labelKey: 'home_feed_filter_trending' },
-  { sort: 'hot', icon: 'zap', labelKey: 'home_feed_filter_hot' },
-  { sort: 'new', icon: 'clock', labelKey: 'home_feed_filter_new' },
+  { sort: 'trending', icon: 'trending-up', labelKey: SORT_LABEL_KEYS.trending },
+  { sort: 'hot', icon: 'zap', labelKey: SORT_LABEL_KEYS.hot },
+  { sort: 'new', icon: 'clock', labelKey: SORT_LABEL_KEYS.new },
 ];
 
 export type HomeFeedFiltersPanelProps = {
@@ -67,6 +74,35 @@ function objectName(item: HomeFeedFilterObject): string {
 function objectImage(item: HomeFeedFilterObject): string | undefined {
   const projected = item.object as ProjectedObjectView | null;
   return projected ? objectFields.image(projected) : undefined;
+}
+
+/** Followed object's name from the rail summary; the id when it is not on the first page. */
+function followedObjectName(summary: HomeFeedFiltersView | null, objectId: string): string {
+  for (const type of summary?.objectTypes ?? []) {
+    const item = type.objects.items.find((entry) => entry.objectId === objectId);
+    if (item) {
+      return objectName(item);
+    }
+  }
+  return objectId;
+}
+
+/** Name of the applied filter, as its rail row shows it (mobile drawer trigger). */
+function activeFilterLabel(
+  filter: HomeFeedFilter,
+  summary: HomeFeedFiltersView | null,
+  t: (key: string) => string,
+): string {
+  switch (filter.kind) {
+    case 'my':
+      return t('home_feed_filter_my_feed');
+    case 'author':
+      return `@${filter.account}`;
+    case 'object':
+      return followedObjectName(summary, filter.objectId);
+    default:
+      return t(SORT_LABEL_KEYS[filter.kind]);
+  }
 }
 
 /**
@@ -92,6 +128,7 @@ export function HomeFeedFiltersPanel({
   const tabHref = HOME_FEED_TABS.find((entry) => entry.key === tab)?.href ?? '/';
   const hrefFor = (filter: HomeFeedFilter | null) => buildHomeFeedHref(tabHref, filter);
   const isActive = (filter: HomeFeedFilter) => isSameHomeFeedFilter(filter, effective);
+  useReportHomeFeedActiveFilterLabel(activeFilterLabel(effective, summary, t));
 
   return (
     <nav aria-label={t('home_feed_filters_aria')} className="flex min-w-0 flex-col gap-card-padding p-2">

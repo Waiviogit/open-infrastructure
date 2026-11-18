@@ -1239,8 +1239,6 @@
   "home_feed_threads_empty": "Još nema niti. Pratite objekte kako biste ovdje vidjeli niti koje ih spominju.",
   "home_feed_updates_empty": "Još nema ažuriranja. Pratite objekte kako biste ovdje vidjeli njihova ažuriranja.",
   "home_feed_filters_aria": "Filtri sažetka",
-  "home_feed_filters_title": "Filtri",
-  "home_feed_filters_mobile_trigger": "Filtar: {filter}",
   "home_feed_filter_trending": "U trendu",
   "home_feed_filter_hot": "Vruće",
   "home_feed_filter_new": "Novo",

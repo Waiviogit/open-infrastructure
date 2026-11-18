@@ -1511,8 +1511,6 @@
   "home_feed_threads_empty": "Zatím žádná vlákna. Sledujte objekty a uvidíte zde vlákna, která je zmiňují.",
   "home_feed_updates_empty": "Zatím žádné aktualizace. Sledujte objekty a uvidíte zde jejich aktualizace.",
   "home_feed_filters_aria": "Filtry kanálu",
-  "home_feed_filters_title": "Filtry",
-  "home_feed_filters_mobile_trigger": "Filtr: {filter}",
   "home_feed_filter_trending": "Populární",
   "home_feed_filter_hot": "Žhavé",
   "home_feed_filter_new": "Nové",

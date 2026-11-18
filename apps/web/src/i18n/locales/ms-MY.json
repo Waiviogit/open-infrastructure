@@ -1235,8 +1235,6 @@
   "home_feed_threads_empty": "Belum ada bebenang. Ikuti objek untuk melihat bebenang yang menyebutnya di sini.",
   "home_feed_updates_empty": "Belum ada kemas kini. Ikuti objek untuk melihat kemas kininya di sini.",
   "home_feed_filters_aria": "Penapis suapan",
-  "home_feed_filters_title": "Penapis",
-  "home_feed_filters_mobile_trigger": "Penapis: {filter}",
   "home_feed_filter_trending": "Sohor kini",
   "home_feed_filter_hot": "Hangat",
   "home_feed_filter_new": "Baharu",

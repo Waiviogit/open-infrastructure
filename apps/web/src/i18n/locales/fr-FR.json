@@ -1511,8 +1511,6 @@
   "home_feed_threads_empty": "Aucun fil pour l'instant. Suivez des objets pour voir ici les fils qui les mentionnent.",
   "home_feed_updates_empty": "Aucune mise à jour pour l'instant. Suivez des objets pour voir leurs mises à jour ici.",
   "home_feed_filters_aria": "Filtres du fil",
-  "home_feed_filters_title": "Filtres",
-  "home_feed_filters_mobile_trigger": "Filtre : {filter}",
   "home_feed_filter_trending": "Tendances",
   "home_feed_filter_hot": "À la une",
   "home_feed_filter_new": "Nouveau",

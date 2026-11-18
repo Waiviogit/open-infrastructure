@@ -1502,8 +1502,6 @@
   "home_feed_threads_empty": "暂无串文。关注对象后即可在这里查看提及它们的串文。",
   "home_feed_updates_empty": "暂无更新。关注对象后即可在这里查看它们的更新。",
   "home_feed_filters_aria": "动态筛选",
-  "home_feed_filters_title": "筛选",
-  "home_feed_filters_mobile_trigger": "筛选：{filter}",
   "home_feed_filter_trending": "热门",
   "home_feed_filter_hot": "热议",
   "home_feed_filter_new": "最新",

@@ -1602,8 +1602,6 @@
   "home_feed_threads_empty": "Пока нет тредов. Подпишитесь на объекты, чтобы видеть здесь треды с их упоминанием.",
   "home_feed_updates_empty": "Пока нет обновлений. Подпишитесь на объекты, чтобы видеть здесь их обновления.",
   "home_feed_filters_aria": "Фильтры ленты",
-  "home_feed_filters_title": "Фильтры",
-  "home_feed_filters_mobile_trigger": "Фильтр: {filter}",
   "home_feed_filter_trending": "Популярное",
   "home_feed_filter_hot": "Обсуждаемое",
   "home_feed_filter_new": "Новое",
