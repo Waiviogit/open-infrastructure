@@ -25,7 +25,7 @@ import { DiscoverFilterSheet } from './discover-filter-sheet';
 import { DiscoverMapModal } from './discover-map-modal';
 import { DiscoverMapRail } from './discover-map-rail';
 import { DiscoverSidebar } from './discover-sidebar';
-import { DiscoverTypeSheet } from './discover-type-sheet';
+import { DiscoverTypeDrawer } from './discover-type-drawer';
 import { ObjectPageCenterSkeleton } from '@/modules/object/presentation/components/object-page-loading-skeleton';
 
 export type DiscoverPageClientProps = {
@@ -45,7 +45,7 @@ function DiscoverPageContent({
     [searchParams],
   );
   const { openLogin } = useLoginModal();
-  const [typeSheetOpen, setTypeSheetOpen] = useState(false);
+  const [typeDrawerOpen, setTypeDrawerOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [lastMapView, setLastMapView] = useState<DiscoverMapView | null>(null);
@@ -77,7 +77,7 @@ function DiscoverPageContent({
 
   useEffect(() => {
     if (isDesktop) {
-      setTypeSheetOpen(false);
+      setTypeDrawerOpen(false);
     }
   }, [isDesktop]);
 
@@ -186,7 +186,7 @@ function DiscoverPageContent({
             showMap={showMap}
             mobileTab={mobileTab}
             onMobileTabChange={setMobileTab}
-            onOpenTypeSheet={() => setTypeSheetOpen(true)}
+            onOpenTypeDrawer={() => setTypeDrawerOpen(true)}
             onOpenFilterSheet={() => setFilterSheetOpen(true)}
             onApplyMapArea={applyMapArea}
             onMapViewChange={handleMapViewChange}
@@ -224,9 +224,9 @@ function DiscoverPageContent({
         )}
       </div>
 
-      <DiscoverTypeSheet
-        open={typeSheetOpen}
-        onClose={() => setTypeSheetOpen(false)}
+      <DiscoverTypeDrawer
+        open={typeDrawerOpen}
+        onClose={() => setTypeDrawerOpen(false)}
         usersMode={usersMode}
         objectType={objectType}
         q={q}

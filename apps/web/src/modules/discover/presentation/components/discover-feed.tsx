@@ -28,7 +28,7 @@ export type DiscoverFeedProps = {
   showMap: boolean;
   mobileTab: DiscoverMobileTab;
   onMobileTabChange: (tab: DiscoverMobileTab) => void;
-  onOpenTypeSheet: () => void;
+  onOpenTypeDrawer: () => void;
   onOpenFilterSheet: () => void;
   onApplyMapArea: (box: DiscoverBox) => void;
   onMapViewChange?: (view: DiscoverMapView) => void;
@@ -50,7 +50,7 @@ export function DiscoverFeed({
   showMap,
   mobileTab,
   onMobileTabChange,
-  onOpenTypeSheet,
+  onOpenTypeDrawer,
   onOpenFilterSheet,
   onApplyMapArea,
   onMapViewChange,
@@ -78,7 +78,7 @@ export function DiscoverFeed({
         showMap={showMap}
         mobileTab={mobileTab}
         onMobileTabChange={onMobileTabChange}
-        onOpenTypeSheet={onOpenTypeSheet}
+        onOpenTypeDrawer={onOpenTypeDrawer}
         onOpenFilterSheet={onOpenFilterSheet}
       />
 

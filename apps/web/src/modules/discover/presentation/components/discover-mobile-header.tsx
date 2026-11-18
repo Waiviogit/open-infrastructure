@@ -26,7 +26,7 @@ export type DiscoverMobileHeaderProps = {
   showMap: boolean;
   mobileTab: DiscoverMobileTab;
   onMobileTabChange: (tab: DiscoverMobileTab) => void;
-  onOpenTypeSheet: () => void;
+  onOpenTypeDrawer: () => void;
   onOpenFilterSheet: () => void;
 };
 
@@ -42,7 +42,7 @@ export function DiscoverMobileHeader({
   showMap,
   mobileTab,
   onMobileTabChange,
-  onOpenTypeSheet,
+  onOpenTypeDrawer,
   onOpenFilterSheet,
 }: DiscoverMobileHeaderProps) {
   const { t } = useI18n();
@@ -95,7 +95,7 @@ export function DiscoverMobileHeader({
       <button
         type="button"
         className="inline-flex items-center gap-1 text-section font-weight-label text-accent"
-        onClick={onOpenTypeSheet}
+        onClick={onOpenTypeDrawer}
       >
         {typeLabel}
         <ChevronDownIcon size={16} className="shrink-0" />

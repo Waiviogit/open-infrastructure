@@ -167,7 +167,7 @@ Use **`header`** / **`footer`** slots on `ModalShell` for chrome that must stay 
 |-----------|------|
 | `dialog` (default) | Centered card; optional `aside` (e.g. post modal action pills) |
 | `fullscreen` | Gallery viewer, expanded geo map — set `scrollBody={false}` when layout is flex/media, not a scrolling list |
-| `sheet` | Mobile bottom sheet (e.g. discover type picker, filter panel) — slides up from bottom, `max-h-[92dvh]` |
+| `sheet` | Mobile bottom sheet (e.g. discover filter panel) — slides up from bottom, `max-h-[92dvh]` |
 
 ### Forbidden in modals
 
@@ -180,7 +180,7 @@ Use **`header`** / **`footer`** slots on `ModalShell` for chrome that must stay 
 
 | Pattern | Examples |
 |---------|----------|
-| Mobile nav drawer | **`DrawerRegion`** |
+| Mobile nav drawer (hub feed filters, discover type picker) | **`DrawerRegion`** |
 | Search / typeahead dropdowns | **`search-dropdown.tsx`**, editor object search fields |
 | Floating toolbars / insert menus | **`editor-format-toolbar.tsx`**, **`editor-insert-menu.tsx`** |
 | Notification / header dropdowns | **`notification-bell.tsx`**, **`logged-in-header-actions.tsx`** |

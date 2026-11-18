@@ -51,11 +51,11 @@ Geo-capable registry types (`restaurant`, `place`, `business`, `person`, `servic
 
 ### Remembered object type
 
-Cookie `discover_object_type` stores the last picked registry object type (client write on type selection in the desktop sidebar or mobile type sheet; server read on page load). Returning visitors with a valid cookie are redirected to `/discover?type={remembered}`. The cookie is never set for `users` mode, `type=all`, or the automatic Product default.
+Cookie `discover_object_type` stores the last picked registry object type (client write on type selection in the desktop sidebar or mobile type drawer; server read on page load). Returning visitors with a valid cookie are redirected to `/discover?type={remembered}`. The cookie is never set for `users` mode, `type=all`, or the automatic Product default.
 
 ## Mobile layout (< `lg`)
 
-- **Type button** — accent label (`text-section`) in feed header; opens bottom sheet (`ModalShell variant="sheet"`). Same sections as the desktop sidebar: Popular, Users, All types, each row with the same glyph. Active row uses `bg-accent-soft`. Search filters Popular and All types; Users stays visible. No duplicate "Discover" label on mobile.
+- **Type button** — accent label (`text-section`) in feed header; opens a left drawer (`DiscoverTypeDrawer` → `DrawerRegion belowHeader size="wide"`) that starts under the app header and leaves it visible; same pattern as the hub feed filter drawer. Same sections as the desktop sidebar: Popular, Users, All types, each row with the same glyph. Active row uses `bg-accent-soft`. Search filters Popular and All types; Users stays visible. Picking a row navigates and closes the drawer. No duplicate "Discover" label on mobile.
 - **Filters** — `+ Filter` opens filter bottom sheet (tag categories only; same data as desktop right column). Active chips shown inline; toggles apply immediately via URL replace. No "Filters" section heading.
 - **List / Map** — geo types show underline sub-nav (`List` | `Map`) below filters. **List** shows the object feed + `Sort: …` dropdown. **Map** shows inline map (`DiscoverMapPanel variant="feed"`) with Search area, zoom, locate, and expand-to-fullscreen. Expanding opens the fullscreen map modal; **Search area** writes `box` to the URL.
 - Desktop three-column layout (sidebar / feed / filters) at `lg+`; sidebar and desktop filter column hidden on mobile. Map rail stacks above the filters column when the type supports geo.

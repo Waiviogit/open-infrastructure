@@ -50,7 +50,7 @@ function renderHeader(
         showMap
         mobileTab="list"
         onMobileTabChange={onMobileTabChange}
-        onOpenTypeSheet={jest.fn()}
+        onOpenTypeDrawer={jest.fn()}
         onOpenFilterSheet={jest.fn()}
         {...props}
       />

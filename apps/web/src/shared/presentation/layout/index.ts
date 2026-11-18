@@ -16,7 +16,7 @@ export type { FixedRegionProps } from './regions/fixed-region';
 export { CollapsibleRegion } from './regions/collapsible-region';
 export type { CollapsibleRegionProps } from './regions/collapsible-region';
 export { DrawerRegion } from './regions/drawer-region';
-export type { DrawerRegionProps } from './regions/drawer-region';
+export type { DrawerRegionProps, DrawerRegionSize } from './regions/drawer-region';
 export { ShellInset } from './regions/shell-inset';
 export type { ShellInsetProps } from './regions/shell-inset';
 export { ShellFullBleedBand } from './regions/shell-full-bleed-band';

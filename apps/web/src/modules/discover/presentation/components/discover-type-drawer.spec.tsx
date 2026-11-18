@@ -6,32 +6,18 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { I18nProvider } from '@/i18n/providers/i18n-provider';
 import type { LocaleId, Messages } from '@/i18n/types';
 
-import { DiscoverTypeSheet } from './discover-type-sheet';
+import { DiscoverTypeDrawer } from './discover-type-drawer';
 
 const navigateInstant = jest.fn();
 
 jest.mock('@/shared/presentation', () => ({
-  ModalShell: ({
-    open,
-    onClose,
-    children,
-    header,
-  }: {
-    open: boolean;
-    onClose: () => void;
-    children: React.ReactNode;
-    header?: React.ReactNode;
-  }) =>
-    open ? (
-      <div role="dialog">
-        {header}
-        {children}
-        <button type="button" aria-label="Close backdrop" onClick={onClose}>
-          Backdrop
-        </button>
-      </div>
-    ) : null,
   useInstantNavigation: () => ({ navigateInstant }),
+}));
+
+/** The layout barrel also exports the app header (server-only deps); the drawer alone is enough. */
+jest.mock('@/shared/presentation/layout', () => ({
+  DrawerRegion: jest.requireActual('@/shared/presentation/layout/regions/drawer-region')
+    .DrawerRegion,
 }));
 
 jest.mock('../../domain/discover-type-cookie', () => ({
@@ -50,13 +36,13 @@ const messages = {
   discover_no_results: 'No results found.',
 } as Messages;
 
-function renderSheet(
-  props: Partial<React.ComponentProps<typeof DiscoverTypeSheet>> = {},
+function renderDrawer(
+  props: Partial<React.ComponentProps<typeof DiscoverTypeDrawer>> = {},
 ) {
   const onClose = jest.fn();
   render(
     <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
-      <DiscoverTypeSheet
+      <DiscoverTypeDrawer
         open
         onClose={onClose}
         usersMode={false}
@@ -70,13 +56,13 @@ function renderSheet(
   return { onClose };
 }
 
-describe('DiscoverTypeSheet', () => {
+describe('DiscoverTypeDrawer', () => {
   beforeEach(() => {
     navigateInstant.mockClear();
   });
 
   it('navigates to selected type preserving query and sort', () => {
-    renderSheet();
+    renderDrawer();
     fireEvent.click(screen.getAllByRole('option', { name: 'Book' })[0]);
     expect(navigateInstant).toHaveBeenCalledWith({
       href: '/discover?type=book&q=sushi&sort=newest',
@@ -86,7 +72,7 @@ describe('DiscoverTypeSheet', () => {
   });
 
   it('marks the active type in Popular and All types', () => {
-    renderSheet({ objectType: 'restaurant' });
+    renderDrawer({ objectType: 'restaurant' });
     const selected = screen.getAllByRole('option', { selected: true });
     expect(selected).toHaveLength(2);
     expect(selected.every((option) => option.textContent?.includes('Restaurant'))).toBe(true);
@@ -95,13 +81,13 @@ describe('DiscoverTypeSheet', () => {
   });
 
   it('lists Popular above Users and All types', () => {
-    renderSheet();
+    renderDrawer();
     const headings = screen.getAllByText(/Popular|Users|All types/);
     expect(headings.map((el) => el.textContent)).toEqual(['Popular', 'Users', 'All types']);
   });
 
   it('filters object types by partial label match', () => {
-    renderSheet();
+    renderDrawer();
     fireEvent.change(screen.getByPlaceholderText('Search object types'), {
       target: { value: 'offer' },
     });
@@ -110,7 +96,7 @@ describe('DiscoverTypeSheet', () => {
   });
 
   it('shows empty state when search matches no types', () => {
-    renderSheet();
+    renderDrawer();
     fireEvent.change(screen.getByPlaceholderText('Search object types'), {
       target: { value: 'zzz' },
     });
@@ -119,8 +105,8 @@ describe('DiscoverTypeSheet', () => {
   });
 
   it('closes without navigation when backdrop is clicked', () => {
-    const { onClose } = renderSheet({ objectType: 'restaurant' });
-    fireEvent.click(screen.getByRole('button', { name: 'Close backdrop' }));
+    const { onClose } = renderDrawer({ objectType: 'restaurant' });
+    fireEvent.click(screen.getByRole('button', { name: 'Close menu' }));
     expect(onClose).toHaveBeenCalled();
     expect(navigateInstant).not.toHaveBeenCalled();
   });
