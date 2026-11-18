@@ -96,6 +96,8 @@ Implementation: `components/waivio-map-pin.ts`, `providers/leaflet/leaflet-marke
 
 `AppPopup` supports `className`, `maxWidth`, and `minWidth`. Profile map uses `className="map-object-popup"` with styles in `map-leaflet-popup.css` for zero-padding infowindow cards.
 
+**Auto-pan:** opening a popup pans the map so the bubble fits. Once the user drags or zooms while it is open, auto-pan stops until the popup closes, so the map moves freely and the bubble may leave the view. Without this, Leaflet pans back on every `popup.update()`, which react-leaflet calls each time the popup content re-renders (Discover re-renders on every `moveend`). Implementation: `providers/leaflet/leaflet-popup.tsx`.
+
 ### Viewport changes
 
 `LeafletMapViewportHandler` emits `onViewportChange` on mount and after `moveend`/`zoomend`. Callback is ref-stable to avoid effect loops.
