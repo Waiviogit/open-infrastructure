@@ -5,6 +5,10 @@ export {
   FavoritesCategoryDrawer,
   FavoritesCategoryDrawerProvider,
 } from './components/favorites-category-drawer';
+export {
+  FavoritesFilterSheet,
+  FavoritesFilterSheetProvider,
+} from './components/favorites-filter-sheet';
 export { FavoritesRail } from './components/favorites-rail';
 export type { FavoritesRailProps } from './components/favorites-rail';
 export {

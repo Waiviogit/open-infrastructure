@@ -85,7 +85,14 @@ export type ProfileShopFiltersProps = {
   uncategorizedOnly: boolean;
   filters: ProfileShopFiltersState;
   pathname: string;
+  /**
+   * `rail`: sticky card with a Filters heading (right column, `lg+`).
+   * `sheet`: bare facet list for the mobile filter sheet, which brings its own title.
+   */
+  variant?: ProfileShopFiltersVariant;
 };
+
+export type ProfileShopFiltersVariant = 'rail' | 'sheet';
 
 export function ProfileShopFilters({
   accountName,
@@ -94,6 +101,7 @@ export function ProfileShopFilters({
   uncategorizedOnly,
   filters,
   pathname,
+  variant = 'rail',
 }: ProfileShopFiltersProps) {
   const { t } = useI18n();
   const { navigateInstant } = useInstantNavigation();
@@ -237,30 +245,41 @@ export function ProfileShopFilters({
     });
   }, []);
 
+  const isSheet = variant === 'sheet';
+  const emptyInSheet = (
+    <p className="py-2 text-body-sm text-muted">{t('discover_no_results')}</p>
+  );
+
   if (!showTagFilters && !showRatingFilters) {
-    return null;
+    return isSheet ? emptyInSheet : null;
   }
 
   const ratingOptions = data?.ratings ?? [];
   const hasTagContent = orderedSections.some((s) => s.items.length > 0);
 
   if (!loading && !showRatingFilters && !hasTagContent) {
-    return null;
+    return isSheet ? emptyInSheet : null;
   }
 
   return (
     <aside
-      className={[
-        PROFILE_FILTER_RAIL_STICKY_CLASS,
-        'rounded-card border border-border bg-surface/60 p-card-padding',
-      ].join(' ')}
+      className={
+        isSheet
+          ? 'min-w-0'
+          : [
+              PROFILE_FILTER_RAIL_STICKY_CLASS,
+              'rounded-card border border-border bg-surface/60 p-card-padding',
+            ].join(' ')
+      }
       aria-label={t('discover_filters_title')}
       aria-busy={loading}
     >
-      <h2 className="mb-3 flex items-center gap-2 text-caption font-weight-label uppercase tracking-loose text-fg-tertiary">
-        <FilterIcon size="md" className="shrink-0 text-fg-secondary" />
-        <span>{t('discover_filters_title')}</span>
-      </h2>
+      {isSheet ? null : (
+        <h2 className="mb-3 flex items-center gap-2 text-caption font-weight-label uppercase tracking-loose text-fg-tertiary">
+          <FilterIcon size="md" className="shrink-0 text-fg-secondary" />
+          <span>{t('discover_filters_title')}</span>
+        </h2>
+      )}
 
       {fetchError && !loading ? (
         <div className="space-y-2">
@@ -438,8 +457,17 @@ function useFirstFavoritesType(accountName: string, enabled: boolean): string | 
   return firstType;
 }
 
-/** Right rail of the Favorites tab: rating + tag facets of the type (and category) in the URL. */
-export function ProfileFavoritesFiltersFromUrl({ accountName }: { accountName: string }) {
+/**
+ * Rating + tag facets of the Favorites type (and category) in the URL: the right rail at `lg+`,
+ * and the mobile filter sheet (`variant="sheet"`).
+ */
+export function ProfileFavoritesFiltersFromUrl({
+  accountName,
+  variant = 'rail',
+}: {
+  accountName: string;
+  variant?: ProfileShopFiltersVariant;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const filters = useMemo(() => parseProfileShopFilters(searchParams), [searchParams]);
@@ -472,6 +500,7 @@ export function ProfileFavoritesFiltersFromUrl({ accountName }: { accountName: s
       uncategorizedOnly={uncategorizedOnly}
       filters={filters}
       pathname={pathname}
+      variant={variant}
     />
   );
 }

@@ -18,6 +18,7 @@ import { getCategoryNav } from '../../infrastructure/clients/categories.client';
 import { FavoritesBreadcrumbs } from './favorites-breadcrumbs';
 import { FavoritesCategoryContent } from './favorites-category-content';
 import { FavoritesEmptyMain } from './favorites-empty-main';
+import { FavoritesMobileFilterButton } from './favorites-filter-sheet';
 import { FavoritesObjectList } from './favorites-object-list';
 import { ProfileShopFilterChips } from './profile-shop-filter-chips';
 
@@ -32,8 +33,8 @@ export type ProfileFavoritesMainContentProps = {
 
 /**
  * Center column of the Favorites tab (types are in the profile submenu): breadcrumbs (below `lg`
- * the current crumb opens the category drawer), filter chips, then category sections or a flat list
- * of the active type.
+ * the current crumb opens the category drawer), the mobile Filter button, filter chips, then
+ * category sections or a flat list of the active type.
  * Unknown types and a category lineage on a type without categorized objects are not found.
  */
 export async function ProfileFavoritesMainContent({
@@ -83,6 +84,7 @@ export async function ProfileFavoritesMainContent({
         filters={shopFilters}
         categoryMenu={withCategories}
       />
+      <FavoritesMobileFilterButton objectType={objectType} />
       <ProfileShopFilterChips filters={shopFilters} />
       {withCategories ? (
         <FavoritesCategoryContent

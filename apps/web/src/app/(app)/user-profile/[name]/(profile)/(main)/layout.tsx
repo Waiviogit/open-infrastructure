@@ -8,6 +8,8 @@ import {
 import {
   FavoritesCategoryDrawer,
   FavoritesCategoryDrawerProvider,
+  FavoritesFilterSheet,
+  FavoritesFilterSheetProvider,
   FavoritesTypesMenu,
   FavoritesTypesMenuSkeleton,
   ProfileMainWalletModalShell,
@@ -47,6 +49,11 @@ async function ProfileMainSubmenu({ params }: AccountParams) {
   );
 }
 
+/** Mobile Favorites filter sheet (right rail facets); opened by the Filter button above the list. */
+async function ProfileMainFavoritesFilterSheet({ params }: AccountParams) {
+  return <FavoritesFilterSheet accountName={await readAccountName(params)} />;
+}
+
 async function ProfileMainRightSidebar({ params }: AccountParams) {
   const accountName = await readAccountName(params);
   const user = await createCookieAuthContextProvider().getUser();
@@ -58,8 +65,9 @@ async function ProfileMainRightSidebar({ params }: AccountParams) {
  * need the account name or the viewer stream into it, so the segment has a shell of its own.
  *
  * Below `lg` the left rail is hidden; on Favorites the same `leftSidebar` node (the category
- * nav) opens in `FavoritesCategoryDrawer` from the current breadcrumb. Its open state lives here
- * because category URLs re-render the page segment while it stays open.
+ * nav) opens in `FavoritesCategoryDrawer` from the current breadcrumb, and the right rail's
+ * facets open in `FavoritesFilterSheet` from the Filter button. Their open state lives here
+ * because category and filter URLs re-render the page segment while they stay open.
  * @see apps/web/src/modules/object/presentation/components/object-view-shell.tsx
  */
 export default function UserProfileMainShellLayout({
@@ -74,6 +82,7 @@ export default function UserProfileMainShellLayout({
   return (
     <ProfileMainWalletModalShell>
     <FavoritesCategoryDrawerProvider>
+    <FavoritesFilterSheetProvider>
     <div
       className={[
         'shell-profile-grid mt-card-padding grid grid-cols-1 gap-card-padding',
@@ -113,6 +122,10 @@ export default function UserProfileMainShellLayout({
       </div>
     </div>
     <FavoritesCategoryDrawer>{leftSidebar}</FavoritesCategoryDrawer>
+    <Suspense fallback={null}>
+      <ProfileMainFavoritesFilterSheet params={params} />
+    </Suspense>
+    </FavoritesFilterSheetProvider>
     </FavoritesCategoryDrawerProvider>
     </ProfileMainWalletModalShell>
   );
