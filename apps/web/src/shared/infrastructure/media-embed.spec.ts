@@ -77,6 +77,29 @@ describe('parseMediaEmbedUrl', () => {
     );
   });
 
+  it('embeds Vimeo page, unlisted and player URLs in a 16:9 player', () => {
+    expect(parseMediaEmbedUrl('https://vimeo.com/951265255')).toEqual({
+      provider: 'vimeo',
+      embedSrc: 'https://player.vimeo.com/video/951265255',
+      wrapperClass: 'blog-post-vimeo-embed',
+      title: 'Vimeo video',
+    });
+    expect(parseMediaEmbedUrl('https://player.vimeo.com/video/800004535')?.embedSrc).toBe(
+      'https://player.vimeo.com/video/800004535',
+    );
+    expect(parseMediaEmbedUrl('https://vimeo.com/76979871/8272103f6e')?.embedSrc).toBe(
+      'https://player.vimeo.com/video/76979871?h=8272103f6e',
+    );
+    expect(
+      parseMediaEmbedUrl('https://player.vimeo.com/video/76979871?h=8272103f6e')?.embedSrc,
+    ).toBe('https://player.vimeo.com/video/76979871?h=8272103f6e');
+  });
+
+  it('rejects Vimeo pages that are not a video', () => {
+    expect(parseMediaEmbedUrl('https://vimeo.com/channels/staffpicks')).toBeNull();
+    expect(parseMediaEmbedUrl('https://vimeo.com/user12345')).toBeNull();
+  });
+
   it('embeds TikTok share URLs in a portrait player', () => {
     expect(
       parseMediaEmbedUrl(
@@ -153,6 +176,11 @@ describe('canonicalizeMediaUrl', () => {
 });
 
 describe('isProviderEmbedSrc', () => {
+  it('detects a Vimeo player src but not a Vimeo page', () => {
+    expect(isProviderEmbedSrc('https://player.vimeo.com/video/800004535')).toBe(true);
+    expect(isProviderEmbedSrc('https://vimeo.com/800004535')).toBe(false);
+  });
+
   it('detects YouTube and Instagram embed srcs', () => {
     expect(isProviderEmbedSrc('https://www.youtube.com/embed/abcdefghijk')).toBe(
       true,

@@ -504,8 +504,9 @@
     overflow: hidden;
   }
 
-  /* Injected by sanitize-post-html for YouTube / 3Speak / Instagram / TikTok / Facebook / X URLs in body */
+  /* Injected by sanitize-post-html for YouTube / Vimeo / 3Speak / Instagram / TikTok / Facebook / X URLs in body */
   .blog-post-youtube-embed,
+  .blog-post-vimeo-embed,
   .blog-post-3speak-embed {
     @apply relative my-4 aspect-video w-full max-w-full overflow-hidden bg-bg;
   }
@@ -551,6 +552,7 @@
 
   .blog-post-youtube-embed iframe,
   .blog-post-youtube-embed--portrait iframe,
+  .blog-post-vimeo-embed iframe,
   .blog-post-3speak-embed iframe,
   .blog-post-tiktok-embed iframe,
   .blog-post-facebook-embed iframe,
@@ -559,6 +561,15 @@
   .video-embed-portrait iframe {
     @apply absolute inset-0 h-full w-full border-0;
     overflow: hidden;
+  }
+
+  /*
+   * Object page body: a raw `<iframe>` from legacy page HTML gets a 16:9 block. Players inside a
+   * `.blog-post-*-embed` wrapper are excluded — they sit absolutely in the wrapper's own box,
+   * where a margin would push them down and clip the bottom.
+   */
+  .object-page-content-body iframe:not([class*='-embed'] > iframe) {
+    @apply my-4 aspect-video w-full;
   }
 
   .video-embed-widget,

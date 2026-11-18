@@ -2,6 +2,7 @@ import { parseVideoUrl, stripUrlTruncation } from './video-preview';
 
 export type MediaEmbedProvider =
   | 'youtube'
+  | 'vimeo'
   | 'instagram'
   | 'tiktok'
   | 'facebook'
@@ -17,6 +18,8 @@ export type ParsedMediaEmbed = {
 
 const YOUTUBE_IFRAME_ALLOW =
   'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+
+const VIMEO_IFRAME_ALLOW = 'autoplay; fullscreen; picture-in-picture; clipboard-write';
 
 const TIKTOK_IFRAME_ALLOW =
   'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
@@ -52,7 +55,7 @@ export function canonicalizeMediaUrl(url: string): string {
 }
 
 /**
- * Detects Instagram / YouTube / TikTok / Facebook / X / LinkedIn video URLs.
+ * Detects Instagram / YouTube / Vimeo / TikTok / Facebook / X / LinkedIn video URLs.
  * Profile URLs like instagram.com/username return null.
  */
 export function parseMediaEmbedUrl(url: string): ParsedMediaEmbed | null {
@@ -83,6 +86,14 @@ export function parseMediaEmbedUrl(url: string): ParsedMediaEmbed | null {
           ? 'blog-post-youtube-embed blog-post-youtube-embed--portrait'
           : 'blog-post-youtube-embed',
       title: 'YouTube video',
+    };
+  }
+  if (parsed.provider === 'vimeo') {
+    return {
+      provider: 'vimeo',
+      embedSrc: parsed.embedUrl,
+      wrapperClass: 'blog-post-vimeo-embed',
+      title: 'Vimeo video',
     };
   }
   if (parsed.provider === 'tiktok') {
@@ -126,7 +137,7 @@ export function parseMediaEmbedUrl(url: string): ParsedMediaEmbed | null {
 
 /** True when `url` is already a provider embed src (do not wrap again). */
 export function isProviderEmbedSrc(url: string): boolean {
-  return /(?:youtube(?:-nocookie)?\.com\/embed\/|instagram\.com\/(?:p|reel|tv)\/[^/]+\/embed|tiktok\.com\/(?:player\/v1|embed\/v2)\/|facebook\.com\/plugins\/video\.php|platform\.twitter\.com\/embed\/Tweet\.html|linkedin\.com\/embed\/feed\/update\/)/i.test(
+  return /(?:youtube(?:-nocookie)?\.com\/embed\/|player\.vimeo\.com\/video\/|instagram\.com\/(?:p|reel|tv)\/[^/]+\/embed|tiktok\.com\/(?:player\/v1|embed\/v2)\/|facebook\.com\/plugins\/video\.php|platform\.twitter\.com\/embed\/Tweet\.html|linkedin\.com\/embed\/feed\/update\/)/i.test(
     url,
   );
 }
@@ -205,6 +216,9 @@ export function mediaEmbedIframeHtml(parsed: ParsedMediaEmbed): string {
   const title = escapeHtmlAttr(parsed.title);
   if (parsed.provider === 'youtube') {
     return `<div class="${parsed.wrapperClass}"><iframe src="${src}" title="${title}" frameborder="0" allow="${YOUTUBE_IFRAME_ALLOW}" allowfullscreen loading="lazy"></iframe></div>`;
+  }
+  if (parsed.provider === 'vimeo') {
+    return `<div class="${parsed.wrapperClass}"><iframe src="${src}" title="${title}" frameborder="0" allow="${VIMEO_IFRAME_ALLOW}" allowfullscreen loading="lazy"></iframe></div>`;
   }
   if (parsed.provider === 'tiktok') {
     return `<div class="${parsed.wrapperClass}"><iframe src="${src}" title="${title}" frameborder="0" allow="${TIKTOK_IFRAME_ALLOW}" allowfullscreen loading="lazy"></iframe></div>`;

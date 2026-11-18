@@ -161,7 +161,7 @@ export function embedThreeSpeakInBody(html: string): string {
 }
 
 /**
- * Replace Instagram / YouTube / TikTok / Facebook / X / LinkedIn `<a href>` and leftover bare URLs with iframes.
+ * Replace Instagram / YouTube / Vimeo / TikTok / Facebook / X / LinkedIn `<a href>` and leftover bare URLs with iframes.
  * Skip already-embed srcs so existing iframe `src` values are not nested.
  */
 export function embedMediaUrls(html: string): string {
@@ -169,6 +169,7 @@ export function embedMediaUrls(html: string): string {
   if (
     !lower.includes('youtube') &&
     !lower.includes('youtu.be') &&
+    !lower.includes('vimeo.com') &&
     !lower.includes('instagram.com') &&
     !lower.includes('tiktok.com') &&
     !lower.includes('facebook.com') &&

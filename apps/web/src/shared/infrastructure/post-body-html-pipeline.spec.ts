@@ -158,6 +158,27 @@ describe('sanitizePostBodyHtml', () => {
     expect(shorts).toContain('src="https://www.youtube.com/embed/abcdefghijk"');
   });
 
+  it('embeds Vimeo page and player URLs, bare or linked', () => {
+    const bare = sanitizePostBodyHtml(
+      ['Watch', '', 'https://player.vimeo.com/video/800004535', '', 'Next'].join('\n'),
+    );
+    expect(bare).toContain('<div class="blog-post-vimeo-embed"><iframe src="https://player.vimeo.com/video/800004535"');
+    expect(bare).toContain('allow="autoplay; fullscreen; picture-in-picture; clipboard-write"');
+
+    const linked = sanitizePostBodyHtml('[https://vimeo.com/951265255](https://vimeo.com/951265255)');
+    expect(linked).toContain('blog-post-vimeo-embed');
+    expect(linked).toContain('src="https://player.vimeo.com/video/951265255"');
+    expect(linked).not.toContain('href="https://vimeo.com/951265255"');
+  });
+
+  it('keeps an existing Vimeo iframe as one player', () => {
+    const html = sanitizePostBodyHtml(
+      '<iframe src="https://player.vimeo.com/video/800004535" width="640" height="360"></iframe>',
+    );
+    expect(html.match(/<iframe/g)).toHaveLength(1);
+    expect(html).toContain('src="https://player.vimeo.com/video/800004535"');
+  });
+
   it('embeds TikTok share URLs', () => {
     const html = sanitizePostBodyHtml(
       'See https://www.tiktok.com/@paulchefstudio/video/7660467808018386206',

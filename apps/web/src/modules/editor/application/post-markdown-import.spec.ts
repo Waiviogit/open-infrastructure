@@ -161,6 +161,16 @@ describe('importing video links', () => {
       'Intro\n\nhttps://example.com/article\n\n[Docs](https://example.com/docs)\n\nOutro',
     );
   });
+
+  it.each(['https://vimeo.com/951265255', 'https://player.vimeo.com/video/800004535'])(
+    'turns a Vimeo URL line (%s) into an embedded video and publishes it back',
+    (url) => {
+      const { types, markdown } = importMarkdown(`Intro\n\n${url}\n\nOutro`);
+
+      expect(types).toEqual(['paragraph', 'post-video', 'paragraph']);
+      expect(markdown).toBe(`Intro\n\n${url}\n\nOutro`);
+    },
+  );
 });
 
 describe('splitMarkdownTableRow', () => {
