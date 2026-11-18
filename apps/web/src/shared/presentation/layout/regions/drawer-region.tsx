@@ -3,6 +3,8 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
+import { useCloseOnHistoryBack } from '../../navigation/use-close-on-history-back';
+
 /** Sticky wrapper of the app header in `AppShell`. */
 const APP_HEADER_STICKY_SLOT_SELECTOR = '.app-header-sticky-slot';
 
@@ -32,6 +34,11 @@ export type DrawerRegionProps = {
   belowHeader?: boolean;
   /** Panel width. Default `rail`. */
   size?: DrawerRegionSize;
+  /**
+   * Browser / phone Back closes the drawer instead of leaving the page. Links inside must then
+   * navigate with `replace` (see `useCloseOnHistoryBack`).
+   */
+  closeOnBack?: boolean;
 };
 
 function readAppHeaderBottom(): number {
@@ -78,8 +85,10 @@ export function DrawerRegion({
   className = '',
   belowHeader = false,
   size = 'rail',
+  closeOnBack = false,
 }: DrawerRegionProps) {
   const headerBottom = useAppHeaderBottom(open && belowHeader);
+  useCloseOnHistoryBack(open, onClose, closeOnBack);
 
   useEffect(() => {
     if (!open) {

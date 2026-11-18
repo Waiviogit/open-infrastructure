@@ -5,6 +5,7 @@ export {
   type NavTarget,
 } from './nav-target';
 export { pushInstantUrl, replaceInstantUrl } from './instant-url';
+export { useCloseOnHistoryBack } from './use-close-on-history-back';
 export { ScrollMemoryListener } from './scroll-memory-listener';
 export { ScrollToTopOnEnter } from './scroll-to-top-on-enter';
 export {

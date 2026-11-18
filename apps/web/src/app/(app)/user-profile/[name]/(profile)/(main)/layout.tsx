@@ -6,6 +6,8 @@ import {
   FeedColumn,
 } from '@/shared/presentation/layout';
 import {
+  FavoritesCategoryDrawer,
+  FavoritesCategoryDrawerProvider,
   FavoritesTypesMenu,
   FavoritesTypesMenuSkeleton,
   ProfileMainWalletModalShell,
@@ -54,6 +56,10 @@ async function ProfileMainRightSidebar({ params }: AccountParams) {
 /**
  * Profile `(main)` shell — parity with {@link ObjectViewShell}. The grid is static; the parts that
  * need the account name or the viewer stream into it, so the segment has a shell of its own.
+ *
+ * Below `lg` the left rail is hidden; on Favorites the same `leftSidebar` node (the category
+ * nav) opens in `FavoritesCategoryDrawer` from the current breadcrumb. Its open state lives here
+ * because category URLs re-render the page segment while it stays open.
  * @see apps/web/src/modules/object/presentation/components/object-view-shell.tsx
  */
 export default function UserProfileMainShellLayout({
@@ -67,6 +73,7 @@ export default function UserProfileMainShellLayout({
 }) {
   return (
     <ProfileMainWalletModalShell>
+    <FavoritesCategoryDrawerProvider>
     <div
       className={[
         'shell-profile-grid mt-card-padding grid grid-cols-1 gap-card-padding',
@@ -105,6 +112,8 @@ export default function UserProfileMainShellLayout({
         </div>
       </div>
     </div>
+    <FavoritesCategoryDrawer>{leftSidebar}</FavoritesCategoryDrawer>
+    </FavoritesCategoryDrawerProvider>
     </ProfileMainWalletModalShell>
   );
 }

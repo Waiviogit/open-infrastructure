@@ -1,24 +1,36 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import { I18nProvider } from '@/i18n/providers/i18n-provider';
 import type { LocaleId, Messages } from '@/i18n/types';
 
 import type { CategoryNavData } from '../../domain/types/category-nav';
 import type { FavoritesTypeSummary } from '../../domain/types/favorites';
+import {
+  FavoritesCategoryDrawer,
+  FavoritesCategoryDrawerProvider,
+  useFavoritesCategoryDrawerState,
+} from './favorites-category-drawer';
 import { FavoritesRailPanel, type FavoritesRailPanelProps } from './favorites-rail-panel';
 
 let mockPathname = '/@alice/favorites/recipe';
 let mockSearch = '';
 
 jest.mock('next/navigation', () => ({
+  usePathname: () => mockPathname,
   useSearchParams: () => new URLSearchParams(mockSearch),
 }));
 
 jest.mock('./user-profile-pending-nav-context', () => ({
   useEffectiveProfileNav: () => ({ pathname: mockPathname, search: mockSearch }),
+}));
+
+/** The layout barrel also exports the app header (server-only deps); the drawer alone is enough. */
+jest.mock('@/shared/presentation/layout', () => ({
+  DrawerRegion: jest.requireActual('@/shared/presentation/layout/regions/drawer-region')
+    .DrawerRegion,
 }));
 
 jest.mock('./user-profile-nav-link', () => ({
@@ -188,5 +200,95 @@ describe('FavoritesRailPanel', () => {
 
   it('renders nothing without types', () => {
     expect(renderPanel({ items: [], serverObjectType: null, navData: null })).toBeNull();
+  });
+
+  describe('in the mobile category drawer', () => {
+    function OpenDrawerButton() {
+      const drawer = useFavoritesCategoryDrawerState();
+      return (
+        <button type="button" onClick={drawer?.openDrawer}>
+          open categories
+        </button>
+      );
+    }
+
+    function renderDrawer(overrides: Partial<FavoritesRailPanelProps> = {}): HTMLElement {
+      const props: FavoritesRailPanelProps = {
+        accountName: 'alice',
+        items: ITEMS,
+        serverObjectType: 'recipe',
+        lineageSegments: [],
+        navData: RECIPE_NAV,
+        navLineage: [],
+        ...overrides,
+      };
+      render(
+        <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
+          <FavoritesCategoryDrawerProvider>
+            <OpenDrawerButton />
+            <FavoritesCategoryDrawer>
+              <FavoritesRailPanel {...props} />
+            </FavoritesCategoryDrawer>
+          </FavoritesCategoryDrawerProvider>
+        </I18nProvider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'open categories' }));
+      return screen.getByRole('dialog', { name: 'Favorites categories' });
+    }
+
+    it('lists one level: the type as the current level, categories with › and Uncategorized', () => {
+      const drawer = renderDrawer();
+      expect(within(drawer).getByRole('link', { name: 'Recipe' })).toHaveAttribute('aria-current', 'page');
+      expect(within(drawer).getByRole('link', { name: 'German Cuisine' })).toHaveAttribute(
+        'href',
+        '/@alice/favorites/recipe/German%20Cuisine',
+      );
+      expect(within(drawer).getByRole('link', { name: 'Uncategorized' })).toBeInTheDocument();
+      expect(within(drawer).queryByRole('link', { name: '← Up' })).toBeNull();
+    });
+
+    it('stays open on a category with children and closes on a leaf', () => {
+      const drawer = renderDrawer();
+      fireEvent.click(within(drawer).getByRole('link', { name: 'German Cuisine' }));
+      expect(screen.getByRole('dialog', { name: 'Favorites categories' })).toBeInTheDocument();
+
+      fireEvent.click(within(drawer).getByRole('link', { name: 'Desserts' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('drilled into a category: back to the parent level, the level, the open leaf marked', () => {
+      mockPathname = '/@alice/favorites/recipe/German%20Cuisine/Desserts';
+      const drawer = renderDrawer({
+        lineageSegments: ['German Cuisine', 'Desserts'],
+        navLineage: ['German Cuisine'],
+        navData: {
+          items: [
+            { name: 'Desserts', objects_count: 2, has_children: false },
+            { name: 'Soups', objects_count: 3, has_children: false },
+          ],
+          uncategorized_count: 4,
+          show_other: false,
+        },
+      });
+      expect(within(drawer).getByRole('link', { name: 'Recipe' })).toHaveAttribute(
+        'href',
+        '/@alice/favorites/recipe',
+      );
+      const level = within(drawer).getByRole('link', { name: 'German Cuisine' });
+      expect(level).toHaveAttribute('href', '/@alice/favorites/recipe/German%20Cuisine');
+      expect(level).not.toHaveAttribute('aria-current');
+      expect(within(drawer).getByRole('link', { name: 'Desserts' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      expect(within(drawer).queryByRole('link', { name: 'Uncategorized' })).toBeNull();
+    });
+
+    it('shows a skeleton while a newly opened category level loads', () => {
+      mockPathname = '/@alice/favorites/recipe/German%20Cuisine';
+      const drawer = renderDrawer();
+      expect(within(drawer).queryByRole('link')).toBeNull();
+      expect(drawer.querySelector('.animate-pulse')).not.toBeNull();
+    });
   });
 });

@@ -1,12 +1,14 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { ChevronDownIcon } from '@/icons';
 
 import { buildFavoritesPath, isUncategorizedLineage } from '../../domain/favorites-path';
 import {
   buildProfileShopHref,
   type ProfileShopFiltersState,
 } from '../../domain/profile-shop-filters-url';
+import { useFavoritesCategoryDrawerState } from './favorites-category-drawer';
 import { FAVORITES_CRUMBS_ROW_CLASS } from './favorites-layout-classes';
 import { formatFavoritesTypeLabel } from './favorites-type-label';
 import { UserProfileNavLink } from './user-profile-nav-link';
@@ -18,9 +20,44 @@ export type FavoritesBreadcrumbsProps = {
   lineage: readonly string[];
   /** Active `tags` / `rating`; every link keeps them. */
   filters: ProfileShopFiltersState;
+  /** Type has categories: below `lg` the current crumb opens the category drawer. */
+  categoryMenu?: boolean;
 };
 
 type Crumb = { key: string; label: string; path: string };
+
+const CURRENT_CRUMB_CLASS = 'truncate font-weight-label text-fg';
+
+/** Current crumb; below `lg` it is the category drawer trigger (same look as Feed / Discover). */
+function CurrentCrumb({ label, categoryMenu }: { label: string; categoryMenu: boolean }) {
+  const { t } = useI18n();
+  const drawer = useFavoritesCategoryDrawerState();
+  if (!categoryMenu || !drawer) {
+    return (
+      <span aria-current="page" className={CURRENT_CRUMB_CLASS}>
+        {label}
+      </span>
+    );
+  }
+  return (
+    <>
+      <span aria-current="page" className={`hidden lg:inline ${CURRENT_CRUMB_CLASS}`}>
+        {label}
+      </span>
+      <button
+        type="button"
+        className="inline-flex min-w-0 items-center gap-1 font-weight-label text-accent lg:hidden"
+        aria-haspopup="dialog"
+        aria-expanded={drawer.open}
+        aria-label={`${label}, ${t('favorites_categories_aria')}`}
+        onClick={drawer.openDrawer}
+      >
+        <span className="min-w-0 truncate">{label}</span>
+        <ChevronDownIcon size={16} className="shrink-0" />
+      </button>
+    </>
+  );
+}
 
 /**
  * `Type › Category › Subcategory` trail above the Favorites center column. Every crumb but the
@@ -31,6 +68,7 @@ export function FavoritesBreadcrumbs({
   objectType,
   lineage,
   filters,
+  categoryMenu = false,
 }: FavoritesBreadcrumbsProps) {
   const { t } = useI18n();
 
@@ -70,9 +108,7 @@ export function FavoritesBreadcrumbs({
                 </span>
               ) : null}
               {isLast ? (
-                <span aria-current="page" className="truncate font-weight-label text-fg">
-                  {crumb.label}
-                </span>
+                <CurrentCrumb label={crumb.label} categoryMenu={categoryMenu} />
               ) : (
                 <UserProfileNavLink
                   href={buildProfileShopHref(crumb.path, filters)}

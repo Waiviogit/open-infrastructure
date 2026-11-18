@@ -1,6 +1,10 @@
 export { PROFILE_LAYOUT_PRESETS } from './layout-presets';
 export { decodeCategoryPathSegment } from '../domain/category-nav-path';
 export { ProfileRouteStub } from './components/profile-route-stub';
+export {
+  FavoritesCategoryDrawer,
+  FavoritesCategoryDrawerProvider,
+} from './components/favorites-category-drawer';
 export { FavoritesRail } from './components/favorites-rail';
 export type { FavoritesRailProps } from './components/favorites-rail';
 export {

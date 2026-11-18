@@ -1,13 +1,24 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import { I18nProvider } from '@/i18n/providers/i18n-provider';
 import type { LocaleId, Messages } from '@/i18n/types';
 
 import type { ProfileShopFiltersState } from '../../domain/profile-shop-filters-url';
 import { FavoritesBreadcrumbs } from './favorites-breadcrumbs';
+import { FavoritesCategoryDrawerProvider } from './favorites-category-drawer';
+
+jest.mock('next/navigation', () => ({
+  usePathname: () => '/@alice/favorites/recipe/German%20Cuisine',
+}));
+
+/** The layout barrel also exports the app header (server-only deps); the drawer alone is enough. */
+jest.mock('@/shared/presentation/layout', () => ({
+  DrawerRegion: jest.requireActual('@/shared/presentation/layout/regions/drawer-region')
+    .DrawerRegion,
+}));
 
 jest.mock('./user-profile-nav-link', () => ({
   UserProfileNavLink: ({
@@ -27,6 +38,7 @@ jest.mock('./user-profile-nav-link', () => ({
 const messages = {
   favorites_breadcrumb_aria: 'Favorites path',
   profile_categories_uncategorized: 'Uncategorized',
+  favorites_categories_aria: 'Favorites categories',
 } as Messages;
 
 const NO_FILTERS: ProfileShopFiltersState = { tags: [], rating: null };
@@ -93,5 +105,36 @@ describe('FavoritesBreadcrumbs', () => {
     const nav = renderCrumbs(['uncategorized']);
     expect(within(nav).getByRole('link', { name: 'Recipe' })).toBeInTheDocument();
     expect(within(nav).getByText('Uncategorized')).toHaveAttribute('aria-current', 'page');
+  });
+
+  describe('category menu trigger', () => {
+    function renderMenuCrumbs(categoryMenu: boolean) {
+      render(
+        <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
+          <FavoritesCategoryDrawerProvider>
+            <FavoritesBreadcrumbs
+              accountName="alice"
+              objectType="recipe"
+              lineage={['German Cuisine']}
+              filters={NO_FILTERS}
+              categoryMenu={categoryMenu}
+            />
+          </FavoritesCategoryDrawerProvider>
+        </I18nProvider>,
+      );
+    }
+
+    it('turns the current crumb into the drawer button for a type with categories', () => {
+      renderMenuCrumbs(true);
+      const button = screen.getByRole('button', { name: 'German Cuisine, Favorites categories' });
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+      fireEvent.click(button);
+      expect(button).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('keeps a plain current crumb for a type without categories', () => {
+      renderMenuCrumbs(false);
+      expect(screen.queryByRole('button')).toBeNull();
+    });
   });
 });
