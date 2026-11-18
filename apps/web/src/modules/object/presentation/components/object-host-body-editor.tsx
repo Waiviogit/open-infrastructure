@@ -16,6 +16,7 @@ import { broadcastOdlOpWithOverflow } from '@/modules/object-updates/application
 import { broadcastOverflowErrorMessage } from '@/modules/object-updates/application/broadcast-overflow-error-message';
 import { validateUpdateValue } from '@/modules/object-updates/application/update-value-form.utils';
 import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-after-broadcast';
+import { formatAbsoluteDateTime } from '@/shared/utils/format-relative-time';
 import { revalidateObjectAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 
 import {
@@ -23,7 +24,9 @@ import {
   extractHostBodyFromEditorMarkdown,
   type HostBodyExtractError,
 } from '../../domain/host-body-editor';
+import type { HostBodyDraft, HostBodyDraftRepository } from '../../domain/host-body-draft';
 import type { HostBodyFormat, HostBodyTabDefinition } from '../../domain/host-body-tab';
+import { useHostBodyDraft } from '../hooks/use-host-body-draft';
 import { HtmlSandboxFrame } from './html-sandbox-frame';
 import { ObjectPageContentBody } from './object-page-content-body';
 
@@ -71,7 +74,48 @@ export type ObjectHostBodyEditorProps = {
   /** The body shown on the tab now, or `''` when there is none. */
   currentSource: string;
   viewerUsername: string;
+  /** Drafts store override (tests); defaults to the app's local drafts. */
+  draftRepository?: HostBodyDraftRepository;
 };
+
+function DraftBanner({
+  draft,
+  isStale,
+  onContinue,
+  onDiscard,
+}: {
+  draft: HostBodyDraft;
+  isStale: boolean;
+  onContinue: () => void;
+  onDiscard: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const iso = new Date(draft.updatedAt).toISOString();
+  const [before, after = ''] = t('object_body_draft_found').split('{time}');
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface p-card-padding text-body-sm"
+    >
+      <div className="min-w-0 space-y-1">
+        <p className="text-fg">
+          {before}
+          <time dateTime={iso}>{formatAbsoluteDateTime(iso, locale)}</time>
+          {after}
+        </p>
+        {isStale ? <p className="text-muted">{t('object_body_draft_stale')}</p> : null}
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={onDiscard} className={SECONDARY_BUTTON_CLASS}>
+          {t('object_body_draft_discard')}
+        </button>
+        <button type="button" onClick={onContinue} className={PRIMARY_BUTTON_CLASS}>
+          {t('object_body_draft_continue')}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Edit → Preview → Publish for a host body tab (HTML, Page, Document). The body is edited in the
@@ -85,6 +129,7 @@ export function ObjectHostBodyEditor({
   tab,
   currentSource,
   viewerUsername,
+  draftRepository,
 }: ObjectHostBodyEditorProps) {
   useHydrateWalletProvider();
   const { t, locale: uiLocale } = useI18n();
@@ -94,6 +139,8 @@ export function ObjectHostBodyEditor({
   const keys = MESSAGE_KEYS[tab.format];
 
   const [initialMarkdown] = useState(() => buildHostBodyEditorMarkdown(tab.format, currentSource));
+  const [editorSeed, setEditorSeed] = useState(initialMarkdown);
+  const [editorKey, setEditorKey] = useState(0);
   const [bodyJson, setBodyJson] = useState<string | null>(null);
   const [step, setStep] = useState<EditorStep>('edit');
   const [previewBody, setPreviewBody] = useState('');
@@ -101,6 +148,35 @@ export function ObjectHostBodyEditor({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const draft = useHostBodyDraft({
+    username: viewerUsername,
+    objectId,
+    tab,
+    currentSource,
+    repository: draftRepository,
+  });
+  const { onBodyChange: onDraftBodyChange, continueDraft, discardDraft, onPublished } = draft;
+
+  const handleBodyChange = useCallback(
+    (json: string) => {
+      setBodyJson(json);
+      onDraftBodyChange(json);
+    },
+    [onDraftBodyChange],
+  );
+
+  const onContinueDraft = useCallback(() => {
+    const body = continueDraft();
+    if (body == null) {
+      return;
+    }
+    setEditorSeed(body);
+    setBodyJson(body);
+    setEditorKey((value) => value + 1);
+    setError(null);
+    setNotice(null);
+  }, [continueDraft]);
 
   const onPreview = useCallback(() => {
     const markdown =
@@ -162,6 +238,7 @@ export function ObjectHostBodyEditor({
       }
       setSubmitting(false);
       setStep('edit');
+      onPublished(previewBody);
       setNotice(t('object_body_published'));
       void refreshAfterBroadcast(router, () => revalidateObjectAfterBroadcast(objectId));
     } catch (err) {
@@ -172,6 +249,7 @@ export function ObjectHostBodyEditor({
     locale,
     objectId,
     odlCustomJsonId,
+    onPublished,
     previewBody,
     router,
     submitting,
@@ -184,17 +262,44 @@ export function ObjectHostBodyEditor({
 
   return (
     <div className="space-y-4">
+      {!inPreview && draft.pendingDraft ? (
+        <DraftBanner
+          draft={draft.pendingDraft}
+          isStale={draft.isStale}
+          onContinue={onContinueDraft}
+          onDiscard={discardDraft}
+        />
+      ) : null}
+
       {inPreview ? null : <p className="text-body-sm text-muted">{t(keys.hint)}</p>}
 
-      <div className={inPreview ? 'hidden' : undefined}>
-        <LexicalPostEditor
-          variant="document"
-          bodyPlaceholder={t(keys.placeholder)}
-          initialBody={initialMarkdown}
-          onBodyChange={setBodyJson}
-          hashObjectSearch={{ username: viewerUsername, googlePlaces: false }}
+      {draft.status === 'loading' ? (
+        <div
+          className={[
+            'min-h-[12rem] animate-pulse rounded-card border border-border bg-surface',
+            inPreview ? 'hidden' : '',
+          ].join(' ')}
+          aria-busy="true"
         />
-      </div>
+      ) : (
+        <div
+          className={inPreview ? 'hidden' : undefined}
+          onKeyDown={draft.markUserInput}
+          onPaste={draft.markUserInput}
+          onDrop={draft.markUserInput}
+          onCut={draft.markUserInput}
+          onPointerDown={draft.markUserInput}
+        >
+          <LexicalPostEditor
+            key={editorKey}
+            variant="document"
+            bodyPlaceholder={t(keys.placeholder)}
+            initialBody={editorSeed}
+            onBodyChange={handleBodyChange}
+            hashObjectSearch={{ username: viewerUsername, googlePlaces: false }}
+          />
+        </div>
+      )}
 
       {inPreview ? (
         <section aria-labelledby="object-host-body-preview-title" className="space-y-2">

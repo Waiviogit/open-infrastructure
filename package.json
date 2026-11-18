@@ -183,6 +183,7 @@
     "eslint-plugin-react": "7.35.0",
     "eslint-plugin-react-hooks": "5.0.0",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "fake-indexeddb": "^6.2.8",
     "husky": "^9.1.7",
     "jest": "30.3.0",
     "jest-environment-jsdom": "^30.4.1",

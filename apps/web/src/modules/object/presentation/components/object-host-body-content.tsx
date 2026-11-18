@@ -38,7 +38,7 @@ export function ObjectHostBodyContent({
   if (isEditMode && viewerUsername) {
     return (
       <ObjectHostBodyEditor
-        key={objectId}
+        key={`${viewerUsername}:${objectId}`}
         objectId={objectId}
         objectTitle={objectTitle}
         tab={tab}

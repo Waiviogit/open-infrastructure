@@ -7,3 +7,7 @@ export type {
   HashObjectSearchConfig,
 } from './presentation';
 export { editorBodyToMarkdown } from './application/editor-body-to-markdown';
+export {
+  hasLexicalDraftBodyContent,
+  isLexicalDraftJson,
+} from './application/editor-body-serialization';

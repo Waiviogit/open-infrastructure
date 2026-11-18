@@ -62,7 +62,23 @@ query-api picks the winning body per locale; the web reads it from the projected
 
 **Round trip.** Publishing re-exports the whole body through the editor, so the markdown import must keep what the renderer shows. Over the local `page` bodies most differences are equivalent markdown (`***` → `---`, `*` → `-` bullets, table cell spacing, numbered text becoming real lists). Known visible changes left: an empty link `[](url)` and an empty heading `###` come back as escaped text.
 
+## Drafts
+
+One draft per signed-in user and object, kept **on this device** (legacy Waivio kept them on the server, `saveDraftPage`).
+
+| Item | Behavior |
+|------|----------|
+| Storage | `HostBodyDraftRepository` port (`domain/host-body-draft.ts`): async `load` / `save` / `remove`, never rejects. Adapter today: IndexedDB database `odl-web-object-body-drafts`, store `drafts`, key `[username, objectId]`, index `by_username`; in-memory fallback when IndexedDB is missing. The only swap point is `getHostBodyDraftRepository()` — a backend adapter replaces it there |
+| Record | `updateType` (a draft for another body update is ignored), `body` (editor Lexical JSON), `baseSourceHash` (hash of the published body it started from), `updatedAt` |
+| Autosave | `useHostBodyDraft`: 1 s after the last edit, and at once on `pagehide`, hidden tab and leaving the editor. Only after real input on the editor (key, paste, drop, cut, pointer): loading a body emits it, and the markdown round trip may reformat it, so opening edit mode never writes a draft |
+| Not a draft | Empty body, or a body equal to the published one (or one published in this session) — an existing draft is removed |
+| On entering edit mode | The editor waits up to 0.5 s for the stored draft (skeleton, no layout jump). A draft shows a banner above the editor: "You have an unsaved draft from {time}" (+ "The published version has changed…" when `baseSourceHash` differs). **Continue** loads it into the editor (and Preview); **Discard** deletes it, the editor keeps the published body. Nothing is saved while the banner is open, so typing cannot overwrite the stored draft (Continue replaces what was typed; Discard keeps and saves it) |
+| After publish | The draft is deleted |
+| Accounts | The editor remounts per `username:objectId`; drafts of other users on the same browser are never shown |
+
 ## Not covered
 
-- Server-side drafts of unpublished edits (legacy `saveDraftPage`) — an edit lives only until the page is left.
+- Backend storage and cross-device drafts — the port allows an HTTP adapter (`getHostBodyDraftRepository`).
+- Several browser tabs editing the same object: last write wins, no lock or cross-tab notice.
+- Drafts stay in the browser after sign-out (the `by_username` index allows clearing them later).
 - Vote / follow options on publish (legacy `LikeSection`, `FollowObjectForm`).
