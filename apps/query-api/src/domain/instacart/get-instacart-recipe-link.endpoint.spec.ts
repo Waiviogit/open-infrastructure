@@ -31,6 +31,8 @@ function makeEndpoint(projected: Record<string, unknown> | null) {
     { createRecipe } as never,
     { getClient: () => ({ get: redisGet, set: redisSet }) } as never,
     { get: () => undefined } as never,
+    { findFirstPost: jest.fn().mockResolvedValue({ first: null }) } as never,
+    { findPostsByKeys: jest.fn().mockResolvedValue([]) } as never,
   );
   return { endpoint, createRecipe, promptWithJsonSchema, redisSet };
 }

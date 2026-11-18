@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -8,8 +9,9 @@ import { RedisClientFactory } from '@opden-data-layer/clients';
 import { OBJECT_PAGE_VISIBLE_STATUSES, OBJECT_TYPES, UPDATE_TYPES } from '@opden-data-layer/core';
 import { ObjectViewService } from '@opden-data-layer/objects-domain';
 import { redisKey } from '../../constants/redis-keys';
-import { AggregatedObjectRepository } from '../../repositories';
+import { AggregatedObjectRepository, PostsRepository } from '../../repositories';
 import { AffiliateCodesService } from '../affiliate/affiliate-codes.service';
+import { GetObjectPostsFeedEndpoint } from '../feed/get-object-posts-feed.endpoint';
 import { GovernanceResolverService } from '../governance';
 import { ObjectProjectionService } from '../object-projection/object-projection.service';
 import { OpenAiJsonClient } from '../openai';
@@ -39,6 +41,8 @@ export type GetInstacartRecipeLinkInput = {
 
 @Injectable()
 export class GetInstacartRecipeLinkEndpoint {
+  private readonly logger = new Logger(GetInstacartRecipeLinkEndpoint.name);
+
   constructor(
     private readonly aggregatedObjectRepo: AggregatedObjectRepository,
     private readonly objectViewService: ObjectViewService,
@@ -49,6 +53,8 @@ export class GetInstacartRecipeLinkEndpoint {
     private readonly instacartIdp: InstacartIdpClient,
     private readonly redisFactory: RedisClientFactory,
     private readonly config: ConfigService,
+    private readonly objectPostsFeed: GetObjectPostsFeedEndpoint,
+    private readonly postsRepo: PostsRepository,
   ) {}
 
   async execute(input: GetInstacartRecipeLinkInput): Promise<{ url: string }> {
@@ -104,9 +110,11 @@ export class GetInstacartRecipeLinkEndpoint {
         affiliateCode,
         fallbackOrigin:
           this.config.get<string>('siteCanonical.fallbackOrigin') ?? 'https://example.com',
-        cacheGet: async (objectId) => redis.get(redisKey.instacartRecipeLink(objectId)),
-        cacheSet: async (objectId, url, ttlSec) => {
-          await redis.set(redisKey.instacartRecipeLink(objectId), url, ttlSec);
+        loadFeaturedPostBody: () => this.loadFeaturedPostBody(input),
+        cacheGet: async (objectId, fingerprint) =>
+          redis.get(redisKey.instacartRecipeLink(objectId, fingerprint)),
+        cacheSet: async (objectId, fingerprint, url, ttlSec) => {
+          await redis.set(redisKey.instacartRecipeLink(objectId, fingerprint), url, ttlSec);
         },
         openai: this.openai,
         createRecipe: (payload) => this.instacartIdp.createRecipe(payload),
@@ -116,6 +124,28 @@ export class GetInstacartRecipeLinkEndpoint {
         throw new UnprocessableEntityException(error.message);
       }
       throw error;
+    }
+  }
+
+  /**
+   * Same post the recipe Details tab features (top pin, else newest post). It is the method
+   * source for the Instacart steps; a lookup failure falls back to the description.
+   */
+  private async loadFeaturedPostBody(input: GetInstacartRecipeLinkInput): Promise<string | null> {
+    try {
+      const found = await this.objectPostsFeed.findFirstPost(
+        input.objectId,
+        input.locale,
+        input.governanceObjectIdFromHeader,
+      );
+      if (!found?.first) {
+        return null;
+      }
+      const [post] = await this.postsRepo.findPostsByKeys([found.first]);
+      return post?.body ?? null;
+    } catch (error) {
+      this.logger.warn(`Featured post lookup failed for ${input.objectId}: ${(error as Error).message}`);
+      return null;
     }
   }
 }

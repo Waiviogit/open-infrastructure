@@ -7,6 +7,8 @@ import {
 } from './create-instacart-recipe-link';
 import type { InstacartRecipePayload } from './instacart-ingredients';
 
+const FINGERPRINT_RE = /^[0-9a-f]{16}$/;
+
 const RECIPE: InstacartRecipeObject = {
   object_id: 'recipe-1',
   object_type: 'recipe',
@@ -19,9 +21,13 @@ const RECIPE: InstacartRecipeObject = {
 
 function makeDeps(
   overrides: Partial<
-    Omit<InstacartRecipeLinkDeps, 'cacheGet' | 'cacheSet' | 'openai' | 'createRecipe'>
+    Omit<
+      InstacartRecipeLinkDeps,
+      'cacheGet' | 'cacheSet' | 'openai' | 'createRecipe' | 'loadFeaturedPostBody'
+    >
   > = {},
 ) {
+  const loadFeaturedPostBody = jest.fn<Promise<string | null>, []>().mockResolvedValue(null);
   const cacheGet = jest.fn().mockResolvedValue(null);
   const cacheSet = jest.fn().mockResolvedValue(undefined);
   const openai = {
@@ -36,6 +42,7 @@ function makeDeps(
     countryCode: null,
     affiliateCode: null,
     fallbackOrigin: 'https://example.com',
+    loadFeaturedPostBody,
     cacheGet,
     cacheSet,
     openai,
@@ -61,6 +68,7 @@ describe('createInstacartRecipeLink', () => {
     expect(deps.openai.promptWithJsonSchema).not.toHaveBeenCalled();
     expect(deps.cacheSet).not.toHaveBeenCalled();
     expect(deps.cacheGet).not.toHaveBeenCalled();
+    expect(deps.loadFeaturedPostBody).not.toHaveBeenCalled();
   });
 
   it('uses .ca for Canada when INSTACART_KEY is empty', async () => {
@@ -119,6 +127,7 @@ describe('createInstacartRecipeLink', () => {
     });
     expect(deps.cacheSet).toHaveBeenCalledWith(
       'recipe-1',
+      expect.stringMatching(FINGERPRINT_RE),
       'https://www.instacart.com/r/1',
       INSTACART_RECIPE_LINK_CACHE_TTL_SEC,
     );
@@ -207,6 +216,7 @@ describe('createInstacartRecipeLink', () => {
     await createInstacartRecipeLink(RECIPE, deps);
     expect(deps.cacheSet).toHaveBeenCalledWith(
       'recipe-1',
+      expect.stringMatching(FINGERPRINT_RE),
       'https://www.instacart.com/r/1',
       2_592_000,
     );
@@ -260,5 +270,52 @@ describe('createInstacartRecipeLink', () => {
       ingredients: [{ name: 'salt' }],
       instructions: ['Boil'],
     });
+  });
+
+  it('sends the featured post as the method source to OpenAI', async () => {
+    const deps = makeDeps({ instacartKey: 'ik', openaiKey: 'ok' });
+    deps.loadFeaturedPostBody.mockResolvedValue(
+      '![pie](https://img/x.jpg)\n\n## Method\n\n1. Bake at 200°C for 45 minutes.',
+    );
+    await createInstacartRecipeLink(RECIPE, deps);
+    const { prompt, timeoutMs, reasoningEffort } =
+      deps.openai.promptWithJsonSchema.mock.calls[0][0];
+    expect(prompt).toContain('1. Bake at 200°C for 45 minutes.');
+    expect(prompt).not.toContain('https://img/x.jpg');
+    expect(timeoutMs).toBe(30_000);
+    expect(reasoningEffort).toBe('low');
+  });
+
+  it('tells OpenAI there is no post when the recipe has none', async () => {
+    const deps = makeDeps({ instacartKey: 'ik', openaiKey: 'ok' });
+    await createInstacartRecipeLink(RECIPE, deps);
+    expect(deps.openai.promptWithJsonSchema.mock.calls[0][0].prompt).toContain(
+      'Recipe post: none',
+    );
+  });
+
+  it('keys the cache by recipe inputs so a new featured post gets a new link', async () => {
+    const first = makeDeps({ instacartKey: 'ik' });
+    first.loadFeaturedPostBody.mockResolvedValue('1. Old method');
+    await createInstacartRecipeLink(RECIPE, first);
+    const second = makeDeps({ instacartKey: 'ik' });
+    second.loadFeaturedPostBody.mockResolvedValue('1. New method');
+    await createInstacartRecipeLink(RECIPE, second);
+    const same = makeDeps({ instacartKey: 'ik' });
+    same.loadFeaturedPostBody.mockResolvedValue('1. Old method');
+    await createInstacartRecipeLink(RECIPE, same);
+
+    const oldKey = first.cacheGet.mock.calls[0][1];
+    expect(second.cacheGet.mock.calls[0][1]).not.toBe(oldKey);
+    expect(same.cacheGet.mock.calls[0][1]).toBe(oldKey);
+  });
+
+  it('sends no instructions on the raw path when the description is empty', async () => {
+    const deps = makeDeps({ instacartKey: 'ik' });
+    await createInstacartRecipeLink(
+      { ...RECIPE, fields: { name: 'Soup', ingredients: ['salt'] } },
+      deps,
+    );
+    expect(deps.createRecipe.mock.calls[0][0]).toMatchObject({ instructions: [] });
   });
 });

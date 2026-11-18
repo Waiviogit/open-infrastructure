@@ -6,12 +6,13 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, instacart, recipe]
-updated_at: 2026-10-22
+updated_at: 2026-11-18
 related:
   - docs/apps/query-api/spec/overview.md
   - docs/apps/query-api/spec/openai.md
   - docs/apps/query-api/spec/affiliate-links.md
   - docs/apps/query-api/spec/geoip.md
+  - docs/apps/query-api/spec/object-featured-post.md
   - docs/apps/web/spec/object-card.md
   - docs/apps/web/spec/pages/instacart/page.md
   - docs/apps/web/spec/pages/object/routes/recipe-left-rail.md
@@ -51,8 +52,16 @@ Missing `INSTACART_KEY` / `OPENAI_API_KEY` is never 503.
 
 1. Require `object_type === recipe` and identifier type `instacart`.
 2. **No `INSTACART_KEY`:** `https://www.instacart.com` (host `.ca` when country is `CA`). Optional UTM if a governance instacart affiliate **code** exists. No Redis, OpenAI, or IDP. Ingredients are not required.
-3. **Key + Redis hit** `query-api:cache:instacart-recipe:{objectId}`: apply CA + UTM to the cached **bare** URL. Skip OpenAI / IDP. Cache never stores query params.
-4. **Key + miss:** format ingredients (OpenAI `json_schema` when `OPENAI_API_KEY` is set; else `{ name }[]` + `[description]`). `servings` is the first integer ≥ 1 from the object `servings` field, else OpenAI `servings`, else `1`. POST Instacart IDP `/idp/v1/products/recipe`. Cache TTL `2_592_000`. Empty ingredients → 422. IDP failure → storefront URL, no cache write.
+3. **Key:** empty ingredients → 422. Load the recipe's [featured post](object-featured-post.md) (top pin, else newest post) as the method source; a lookup failure counts as no post.
+4. **Cache key** `query-api:cache:instacart-recipe:{objectId}:{fingerprint}` — `fingerprint` is 16 hex chars of SHA-256 over the prompt version, name, description, ingredients, servings field, image and post markdown. Editing the recipe, pinning another post or changing the prompt yields a new Instacart link. **Hit:** apply CA + UTM to the cached **bare** URL; skip OpenAI / IDP. Cache never stores query params.
+5. **Miss:** format with OpenAI when `OPENAI_API_KEY` is set (see [Recipe formatting](#recipe-formatting)); else `{ name }[]` + `[description]` (no steps when the description is empty). `servings` is the first integer ≥ 1 from the object `servings` field, else OpenAI `servings`, else `1`. POST Instacart IDP `/idp/v1/products/recipe`. Cache TTL `2_592_000`. IDP failure → storefront URL, no cache write.
+
+## Recipe formatting
+
+Prompt and strict `json_schema`: `apps/query-api/src/domain/instacart/instacart-recipe-prompt.ts` (bump `INSTACART_RECIPE_PROMPT_VERSION` on any change). Request timeout 30 s, `reasoning_effort: low`.
+
+- **Ingredients** come from the `ingredients` field only. A product listed several times (e.g. flour in dough and filling) becomes one entry with the summed total; `measurements` holds that same total in alternative units, never partial amounts. "A or B" keeps only A. No items from notes or serving suggestions.
+- **Instructions** follow the post's method (markdown, images stripped, first 12 000 chars) step for step, keeping temperatures, times, chill durations and pan sizes, and adding nothing the source does not say. Time summaries, equipment lists, tips and credits are left out. Without a post, steps follow the description.
 
 UTM (only when a partner code exists):
 

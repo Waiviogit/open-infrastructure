@@ -1,7 +1,12 @@
+import { createHash } from 'node:crypto';
 import { INSTACART_RECIPE_LINK_CACHE_TTL_SEC } from '../../constants/cache.constants';
 import type { OpenAiJsonClient } from '../openai';
 import {
-  buildInstacartIngredientPrompt,
+  INSTACART_LLM_REASONING_EFFORT,
+  INSTACART_LLM_TIMEOUT_MS,
+  INSTACART_RECIPE_FINGERPRINT_LENGTH,
+} from './instacart.constants';
+import {
   buildInstacartRecipePayload,
   parseLlmRecipeIngredients,
   rawInstacartIngredients,
@@ -10,7 +15,12 @@ import {
   resolveInstacartServings,
   type InstacartRecipePayload,
 } from './instacart-ingredients';
-import { INSTACART_INGREDIENTS_JSON_SCHEMA } from './instacart-ingredients';
+import {
+  buildInstacartRecipePrompt,
+  INSTACART_RECIPE_JSON_SCHEMA,
+  INSTACART_RECIPE_PROMPT_VERSION,
+  recipeMethodFromPostBody,
+} from './instacart-recipe-prompt';
 import { finalizeInstacartUrl, instacartStorefrontUrl, stripQueryParams } from './instacart-url';
 
 export type InstacartRecipeObject = {
@@ -25,8 +35,10 @@ export type InstacartRecipeLinkDeps = {
   countryCode: string | null;
   affiliateCode: string | null;
   fallbackOrigin: string;
-  cacheGet: (objectId: string) => Promise<string | null>;
-  cacheSet: (objectId: string, url: string, ttlSec: number) => Promise<void>;
+  /** Body of the recipe's featured post (top pin, else newest post); null when it has none. */
+  loadFeaturedPostBody: () => Promise<string | null>;
+  cacheGet: (objectId: string, fingerprint: string) => Promise<string | null>;
+  cacheSet: (objectId: string, fingerprint: string, url: string, ttlSec: number) => Promise<void>;
   openai: Pick<OpenAiJsonClient, 'promptWithJsonSchema'>;
   createRecipe: (payload: InstacartRecipePayload) => Promise<{ url: string } | { error: string }>;
 };
@@ -41,32 +53,38 @@ export class InstacartLinkRejectedError extends Error {
   }
 }
 
+type RecipeGenerationInput = {
+  title: string;
+  description: string;
+  ingredients: string[];
+  servings: unknown;
+  imageUrl: string | undefined;
+  method: string | null;
+};
+
+/** Changes whenever anything sent to OpenAI / IDP changes, including the prompt version. */
+function recipeInputFingerprint(input: RecipeGenerationInput): string {
+  return createHash('sha256')
+    .update(JSON.stringify({ version: INSTACART_RECIPE_PROMPT_VERSION, ...input }))
+    .digest('hex')
+    .slice(0, INSTACART_RECIPE_FINGERPRINT_LENGTH);
+}
+
 export async function createInstacartRecipeLink(
   object: InstacartRecipeObject,
   deps: InstacartRecipeLinkDeps,
 ): Promise<{ url: string }> {
-  const storefront = () =>
+  const finalize = (baseUrl: string) =>
     finalizeInstacartUrl({
-      baseUrl: instacartStorefrontUrl(deps.countryCode),
+      baseUrl,
       countryCode: deps.countryCode,
       affiliateCode: deps.affiliateCode,
       fallbackOrigin: deps.fallbackOrigin,
     });
+  const storefront = () => finalize(instacartStorefrontUrl(deps.countryCode));
 
   if (!deps.instacartKey) {
     return { url: storefront() };
-  }
-
-  const cached = await deps.cacheGet(object.object_id);
-  if (cached) {
-    return {
-      url: finalizeInstacartUrl({
-        baseUrl: cached,
-        countryCode: deps.countryCode,
-        affiliateCode: deps.affiliateCode,
-        fallbackOrigin: deps.fallbackOrigin,
-      }),
-    };
   }
 
   const names = readIngredientNames(object.fields);
@@ -74,24 +92,41 @@ export async function createInstacartRecipeLink(
     throw new InstacartLinkRejectedError(422, 'Recipe has no usable ingredients');
   }
 
-  const title =
-    (typeof object.fields.name === 'string' && object.fields.name.trim()) || object.object_id;
-  const description =
-    typeof object.fields.description === 'string' ? object.fields.description.trim() : '';
-  const raw = rawInstacartIngredients(names, description);
+  const postBody = await deps.loadFeaturedPostBody();
+  const input: RecipeGenerationInput = {
+    title:
+      (typeof object.fields.name === 'string' && object.fields.name.trim()) || object.object_id,
+    description:
+      typeof object.fields.description === 'string' ? object.fields.description.trim() : '',
+    ingredients: names,
+    servings: object.fields.servings,
+    imageUrl: readRecipeImageUrl(object.fields),
+    method: postBody?.trim() ? recipeMethodFromPostBody(postBody) : null,
+  };
+  const fingerprint = recipeInputFingerprint(input);
+
+  const cached = await deps.cacheGet(object.object_id, fingerprint);
+  if (cached) {
+    return { url: finalize(cached) };
+  }
+
+  const raw = rawInstacartIngredients(names, input.description);
   let ingredients = raw.ingredients;
   let instructions = raw.instructions;
   let llmServings: number | null = null;
 
   if (deps.openaiKey) {
     const llm = await deps.openai.promptWithJsonSchema({
-      prompt: buildInstacartIngredientPrompt({
-        name: title,
-        description,
+      prompt: buildInstacartRecipePrompt({
+        name: input.title,
+        description: input.description,
         ingredients: names,
-        preparation: description,
+        servings: input.servings,
+        method: input.method,
       }),
-      jsonSchema: INSTACART_INGREDIENTS_JSON_SCHEMA,
+      jsonSchema: INSTACART_RECIPE_JSON_SCHEMA,
+      timeoutMs: INSTACART_LLM_TIMEOUT_MS,
+      reasoningEffort: INSTACART_LLM_REASONING_EFFORT,
     });
     const parsed = parseLlmRecipeIngredients(llm.result);
     if (parsed) {
@@ -102,11 +137,11 @@ export async function createInstacartRecipeLink(
   }
 
   const payload = buildInstacartRecipePayload({
-    title,
+    title: input.title,
     ingredients,
     instructions,
-    servings: resolveInstacartServings(object.fields.servings, llmServings),
-    imageUrl: readRecipeImageUrl(object.fields),
+    servings: resolveInstacartServings(input.servings, llmServings),
+    imageUrl: input.imageUrl,
   });
   const created = await deps.createRecipe(payload);
   if ('error' in created) {
@@ -114,13 +149,6 @@ export async function createInstacartRecipeLink(
   }
 
   const bare = stripQueryParams(created.url);
-  await deps.cacheSet(object.object_id, bare, INSTACART_RECIPE_LINK_CACHE_TTL_SEC);
-  return {
-    url: finalizeInstacartUrl({
-      baseUrl: bare,
-      countryCode: deps.countryCode,
-      affiliateCode: deps.affiliateCode,
-      fallbackOrigin: deps.fallbackOrigin,
-    }),
-  };
+  await deps.cacheSet(object.object_id, fingerprint, bare, INSTACART_RECIPE_LINK_CACHE_TTL_SEC);
+  return { url: finalize(bare) };
 }

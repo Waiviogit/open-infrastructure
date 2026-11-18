@@ -47,8 +47,9 @@ export const redisKey = {
       governanceObjectId || 'none',
       headerObjectId || 'none',
     ),
-  instacartRecipeLink: (objectId: string) =>
-    buildRedisKey(APP, 'cache', 'instacart-recipe', objectId),
+  /** `fingerprint` hashes the generation inputs, so recipe or featured-post edits get a new link. */
+  instacartRecipeLink: (objectId: string, fingerprint: string) =>
+    buildRedisKey(APP, 'cache', 'instacart-recipe', objectId, fingerprint),
   /** `queryHash` is a sha256 of the normalized query (raw text never becomes a key segment). */
   placesSearch: (queryHash: string, languageCode: string, biasSegment: string) =>
     buildRedisKey(APP, 'cache', 'places', 'search', languageCode, biasSegment, queryHash),

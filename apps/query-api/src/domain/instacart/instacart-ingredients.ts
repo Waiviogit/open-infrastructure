@@ -1,5 +1,3 @@
-import type { OpenAiJsonSchema } from '../openai';
-
 export type InstacartIngredient = {
   name: string;
   measurements?: { quantity: number; unit: string }[];
@@ -39,67 +37,6 @@ export function resolveInstacartServings(
   return parseServingsCount(fieldValue) ?? llmServings ?? DEFAULT_INSTACART_SERVINGS;
 }
 
-export const INSTACART_INGREDIENTS_JSON_SCHEMA: OpenAiJsonSchema = {
-  name: 'instacart_ingredients_schema',
-  schema: {
-    type: 'object',
-    properties: {
-      ingredients: {
-        type: 'array',
-        description: 'List of product ingredients.',
-        items: {
-          type: 'object',
-          description: 'A single product ingredient.',
-          properties: {
-            name: {
-              type: 'string',
-              description: 'The product name. Instacart uses it as a search term.',
-              minLength: 1,
-            },
-            measurements: {
-              type: 'array',
-              description:
-                'Measurement units used to specify the ingredient quantity in multiple ways.',
-              items: {
-                type: 'object',
-                properties: {
-                  quantity: {
-                    type: 'number',
-                    description:
-                      'The product quantity. Represents item count or measurement based on the unit. Defaults to 1.0. must be gt than 0',
-                  },
-                  unit: {
-                    type: 'string',
-                    description:
-                      "The unit of measurement. Examples: each, package, tablespoon, teaspoon, ounce, kilogram. Defaults to 'each'.",
-                  },
-                },
-              },
-            },
-          },
-          required: ['name', 'measurements'],
-        },
-      },
-      instructions: {
-        type: 'array',
-        description: 'preparation instructions',
-        minLength: 1,
-        items: {
-          type: 'string',
-          description: 'preparation step',
-        },
-      },
-      servings: {
-        type: 'integer',
-        description:
-          'How many servings the recipe yields. Infer from the description when possible. Minimum 1.',
-        minimum: 1,
-      },
-    },
-    required: ['ingredients', 'instructions'],
-  },
-};
-
 export function readIngredientNames(fields: Record<string, unknown>): string[] {
   const raw = fields.ingredients;
   if (!Array.isArray(raw)) {
@@ -130,32 +67,15 @@ export function readRecipeImageUrl(fields: Record<string, unknown>): string | un
   return undefined;
 }
 
+/** Fallback without OpenAI: names as search terms, the description as a single step. */
 export function rawInstacartIngredients(
   names: string[],
-  preparation: string,
+  description: string,
 ): { ingredients: InstacartIngredient[]; instructions: string[] } {
   return {
     ingredients: names.map((name) => ({ name })),
-    instructions: [preparation],
+    instructions: description ? [description] : [],
   };
-}
-
-export function buildInstacartIngredientPrompt(input: {
-  name: string;
-  description: string;
-  ingredients: string[];
-  preparation: string;
-}): string {
-  return `Based on recipe description and ingredients format ingredients according to schema;
-  name: ${input.name}
-  description: ${input.description}
-  ingredients: ${JSON.stringify(input.ingredients)}
-  if ingredients says this amount or that amount in terms of quantity pick one with bigger quantity
-  if description says use this ore that make each as ingredient pick both;
-  
-  Divide recipe preparation into steps: ${input.preparation}
-  If the text mentions how many people or servings the recipe yields, set servings to that integer (minimum 1).
-  `;
 }
 
 export function parseLlmRecipeIngredients(

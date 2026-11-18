@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { DEFAULT_OPENAI_MODEL } from './openai.constants';
-import type { OpenAiJsonSchema, OpenAiJsonSchemaResult } from './openai.types';
+import type { OpenAiJsonPromptInput, OpenAiJsonSchemaResult } from './openai.types';
 
 @Injectable()
 export class OpenAiJsonClient {
@@ -10,29 +10,30 @@ export class OpenAiJsonClient {
 
   constructor(private readonly config: ConfigService) {}
 
-  async promptWithJsonSchema<T = unknown>(input: {
-    prompt: string;
-    jsonSchema: OpenAiJsonSchema;
-  }): Promise<OpenAiJsonSchemaResult<T>> {
+  async promptWithJsonSchema<T = unknown>(
+    input: OpenAiJsonPromptInput,
+  ): Promise<OpenAiJsonSchemaResult<T>> {
     const apiKey = this.config.get<string>('openai.apiKey')?.trim();
     if (!apiKey) {
       return { error: 'OPENAI_API_KEY is not configured' };
     }
 
     const model = this.config.get<string>('openai.model')?.trim() || DEFAULT_OPENAI_MODEL;
-    const timeout = this.config.get<number>('openai.requestTimeoutMs') ?? 12_000;
+    const timeout =
+      input.timeoutMs ?? this.config.get<number>('openai.requestTimeoutMs') ?? 12_000;
 
     try {
       const client = new OpenAI({ apiKey, timeout });
       const response = await client.chat.completions.create({
         model,
         messages: [{ role: 'user', content: input.prompt }],
+        ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
         response_format: {
           type: 'json_schema',
           json_schema: {
             name: input.jsonSchema.name,
             schema: input.jsonSchema.schema,
-            strict: false,
+            strict: input.jsonSchema.strict ?? false,
           },
         },
       });
