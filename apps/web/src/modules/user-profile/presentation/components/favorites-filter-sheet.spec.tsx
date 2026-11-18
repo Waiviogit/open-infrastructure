@@ -19,7 +19,16 @@ jest.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
 }));
 
-jest.mock('@/shared/presentation', () => ({
+jest.mock('@/shared/presentation', () => {
+  const sheet = jest.requireActual('@/shared/presentation/components/mobile-filter-sheet');
+  return {
+    MobileFilterButton: sheet.MobileFilterButton,
+    MobileFilterSheet: sheet.MobileFilterSheet,
+    useInstantNavigation: () => ({ navigateInstant: mockNavigateInstant }),
+  };
+});
+
+jest.mock('@/shared/presentation/components/modal-shell', () => ({
   ModalShell: ({
     open,
     header,
@@ -38,7 +47,6 @@ jest.mock('@/shared/presentation', () => ({
         {footer}
       </div>
     ) : null,
-  useInstantNavigation: () => ({ navigateInstant: mockNavigateInstant }),
 }));
 
 jest.mock('./profile-shop-filters', () => ({
@@ -46,8 +54,6 @@ jest.mock('./profile-shop-filters', () => ({
     <p>facets ({variant})</p>
   ),
 }));
-
-jest.mock('@/icons', () => ({ FilterIcon: () => null }));
 
 const messages = {
   discover_add_filter: 'Filter',

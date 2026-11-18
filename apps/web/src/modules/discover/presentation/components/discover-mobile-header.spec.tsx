@@ -9,6 +9,8 @@ import type { LocaleId, Messages } from '@/i18n/types';
 import { DiscoverMobileHeader } from './discover-mobile-header';
 
 jest.mock('@/shared/presentation', () => ({
+  MobileFilterButton: jest.requireActual('@/shared/presentation/components/mobile-filter-sheet')
+    .MobileFilterButton,
   useInstantNavigation: () => ({ navigateInstant: jest.fn() }),
   profileSectionTabClass: (active: boolean) => (active ? 'tab-active' : 'tab-inactive'),
 }));

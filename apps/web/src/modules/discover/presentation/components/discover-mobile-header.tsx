@@ -4,9 +4,8 @@ import { useCallback } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { formatObjectTypeLabel } from '@/modules/app-header/domain/search-nav-list';
-import { ChevronDownIcon, CloseIcon, PlusIcon } from '@/icons';
-import { profileSectionTabClass } from '@/shared/presentation';
-import { useInstantNavigation } from '@/shared/presentation';
+import { ChevronDownIcon, CloseIcon } from '@/icons';
+import { MobileFilterButton, profileSectionTabClass, useInstantNavigation } from '@/shared/presentation';
 
 import { buildDiscoverHref, decodeTagFilter, type DiscoverBox, type DiscoverMapView } from '../../domain/discover-url';
 import { DISCOVER_ACTIVE_CHIP_CLASS } from './discover-active-chips';
@@ -146,14 +145,7 @@ export function DiscoverMobileHeader({
             </span>
           ) : null}
           {showFilters ? (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 rounded-pill border border-accent px-2 py-0.5 text-caption font-weight-label text-accent"
-              onClick={onOpenFilterSheet}
-            >
-              <PlusIcon size={14} />
-              {t('discover_add_filter')}
-            </button>
+            <MobileFilterButton onClick={onOpenFilterSheet} />
           ) : null}
         </div>
       ) : null}

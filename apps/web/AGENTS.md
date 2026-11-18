@@ -167,7 +167,7 @@ Use **`header`** / **`footer`** slots on `ModalShell` for chrome that must stay 
 |-----------|------|
 | `dialog` (default) | Centered card; optional `aside` (e.g. post modal action pills) |
 | `fullscreen` | Gallery viewer, expanded geo map — set `scrollBody={false}` when layout is flex/media, not a scrolling list |
-| `sheet` | Mobile bottom sheet (e.g. discover and favorites filter panels) — slides up from bottom, `max-h-[92dvh]` |
+| `sheet` | Mobile bottom sheet — slides up from bottom, `max-h-[92dvh]`. Mobile filter panels (Discover, Favorites) use **`MobileFilterButton`** + **`MobileFilterSheet`** from `@/shared/presentation` — no per-page filter pill or sheet chrome |
 
 ### Forbidden in modals
 

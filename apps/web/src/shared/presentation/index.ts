@@ -46,6 +46,8 @@ export {
   ModalShellCloseButton,
 } from './components/modal-shell';
 export type { ModalShellProps, ModalShellVariant, ModalShellCloseButtonProps } from './components/modal-shell';
+export { MobileFilterButton, MobileFilterSheet } from './components/mobile-filter-sheet';
+export type { MobileFilterButtonProps, MobileFilterSheetProps } from './components/mobile-filter-sheet';
 export {
   MODAL_Z_INDEX_DEFAULT,
   MODAL_Z_INDEX_EDITOR_OVERLAY,

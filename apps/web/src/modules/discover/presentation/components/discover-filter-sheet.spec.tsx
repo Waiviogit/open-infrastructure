@@ -11,6 +11,12 @@ import { DiscoverFilterSheet } from './discover-filter-sheet';
 const navigateInstant = jest.fn();
 
 jest.mock('@/shared/presentation', () => ({
+  MobileFilterSheet: jest.requireActual('@/shared/presentation/components/mobile-filter-sheet')
+    .MobileFilterSheet,
+  useInstantNavigation: () => ({ navigateInstant }),
+}));
+
+jest.mock('@/shared/presentation/components/modal-shell', () => ({
   ModalShell: ({
     open,
     children,
@@ -29,7 +35,6 @@ jest.mock('@/shared/presentation', () => ({
         {footer}
       </div>
     ) : null,
-  useInstantNavigation: () => ({ navigateInstant }),
 }));
 
 jest.mock('../hooks/use-discover-tag-categories', () => ({

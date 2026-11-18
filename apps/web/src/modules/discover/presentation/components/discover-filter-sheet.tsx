@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { SearchIcon } from '@/icons';
-import { ModalShell, useInstantNavigation } from '@/shared/presentation';
+import { MobileFilterSheet, useInstantNavigation } from '@/shared/presentation';
 
 import { buildDiscoverHref, type DiscoverBox, type DiscoverMapView } from '../../domain/discover-url';
 import { useDiscoverTagCategories } from '../hooks/use-discover-tag-categories';
@@ -80,50 +80,24 @@ export function DiscoverFilterSheet({
   };
 
   return (
-    <ModalShell
+    <MobileFilterSheet
       open={open}
       onClose={onClose}
-      variant="sheet"
-      ariaLabel={t('discover_filters_title')}
-      scrollBody
-      header={
-        <div className="border-b border-border px-gutter pb-3 pt-2">
-          <div className="mx-auto mb-3 h-1 w-10 rounded-pill bg-border" aria-hidden />
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-heading font-weight-label text-fg">{t('discover_filters_title')}</h2>
-            <button
-              type="button"
-              className="text-body-sm font-weight-label text-accent"
-              onClick={onClear}
-            >
-              {t('discover_clear')}
-            </button>
-          </div>
-          <div className="relative mt-3 flex items-center gap-2 rounded-btn border border-border bg-surface-control px-3 py-2">
-            <SearchIcon size={18} className="shrink-0 text-fg-secondary" />
-            <input
-              type="search"
-              value={filterSearch}
-              onChange={(e) => setFilterSearch(e.target.value)}
-              placeholder={t('discover_search_filters')}
-              className="min-w-0 flex-1 border-0 bg-transparent text-body text-fg outline-none placeholder:text-fg-tertiary"
-            />
-          </div>
-        </div>
-      }
-      footer={
-        <div className="border-t border-border px-gutter py-3">
-          <button
-            type="button"
-            className="w-full rounded-btn bg-accent px-4 py-3 text-body font-weight-label text-on-accent"
-            onClick={onClose}
-          >
-            {t('discover_show_results')}
-          </button>
+      onClear={onClear}
+      headerExtra={
+        <div className="relative mt-3 flex items-center gap-2 rounded-btn border border-border bg-surface-control px-3 py-2">
+          <SearchIcon size={18} className="shrink-0 text-fg-secondary" />
+          <input
+            type="search"
+            value={filterSearch}
+            onChange={(e) => setFilterSearch(e.target.value)}
+            placeholder={t('discover_search_filters')}
+            className="min-w-0 flex-1 border-0 bg-transparent text-body text-fg outline-none placeholder:text-fg-tertiary"
+          />
         </div>
       }
     >
-      <div className="px-gutter pb-gutter">
+      <div className="px-gutter py-3">
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -141,6 +115,6 @@ export function DiscoverFilterSheet({
           />
         )}
       </div>
-    </ModalShell>
+    </MobileFilterSheet>
   );
 }

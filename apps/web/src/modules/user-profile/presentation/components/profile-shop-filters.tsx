@@ -321,7 +321,7 @@ export function ProfileShopFilters({
           {showRatingFilters && ratingOptions.length > 0 ? (
             <section className="border-b border-border pb-3">
               <h3 className="mb-2 text-body-sm font-weight-label text-fg">
-                {t('profile_ratings_label')}:
+                {t('profile_ratings_label')}
               </h3>
               <ul className="flex flex-col gap-1">
                 {ratingOptions.map((rate) => {
@@ -379,7 +379,7 @@ export function ProfileShopFilters({
                       onClick={() => toggleCollapse(section.category)}
                       aria-expanded={!collapsed}
                     >
-                      <span>{section.category}:</span>
+                      <span>{section.category}</span>
                       <ChevronDownIcon
                         size={12}
                         className={`shrink-0 text-fg-secondary transition-transform duration-150 ${

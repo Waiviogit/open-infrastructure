@@ -56,7 +56,7 @@ Cookie `discover_object_type` stores the last picked registry object type (clien
 ## Mobile layout (< `lg`)
 
 - **Type button** — accent label (`text-section`) in feed header; opens a left drawer (`DiscoverTypeDrawer` → `DrawerRegion belowHeader size="wide"`) that starts under the app header and leaves it visible; same pattern as the hub feed filter drawer. Same sections as the desktop sidebar: Popular, Users, All types, each row with the same glyph. Active row uses `bg-accent-soft`. Search filters Popular and All types; Users stays visible. Picking a row navigates and closes the drawer. No duplicate "Discover" label on mobile.
-- **Filters** — `+ Filter` opens filter bottom sheet (tag categories only; same data as desktop right column). Active chips shown inline; toggles apply immediately via URL replace. No "Filters" section heading.
+- **Filters** — the `Filter` pill (shared `MobileFilterButton`, filter glyph) opens the filter bottom sheet (shared `MobileFilterSheet`) (tag categories only; same data as desktop right column). Active chips shown inline; toggles apply immediately via URL replace. No "Filters" section heading.
 - **List / Map** — geo types show underline sub-nav (`List` | `Map`) below filters. **List** shows the object feed + `Sort: …` dropdown. **Map** shows inline map (`DiscoverMapPanel variant="feed"`) with Search area, zoom, locate, and expand-to-fullscreen. Expanding opens the fullscreen map modal; **Search area** writes `box` to the URL.
 - Desktop three-column layout (sidebar / feed / filters) at `lg+`; sidebar and desktop filter column hidden on mobile. Map rail stacks above the filters column when the type supports geo.
 
