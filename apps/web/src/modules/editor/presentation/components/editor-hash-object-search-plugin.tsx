@@ -1,5 +1,6 @@
 'use client';
 
+import { $isCodeNode } from '@lexical/code';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
@@ -53,6 +54,16 @@ const MENU_VIEWPORT_MARGIN_PX = 8;
 const MENU_CARET_GAP_PX = 4;
 
 /** Caret rect in the viewport; the typeahead anchor when the selection has no measurable rect. */
+/** `#` in code is CSS colors, anchors and comments, never an object mention. */
+function $isSelectionInCodeBlock(): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const anchor = selection.anchor.getNode();
+  return $isCodeNode(anchor) || anchor.getParents().some((parent) => $isCodeNode(parent));
+}
+
 function caretViewportRect(fallback: HTMLElement): DOMRect {
   const selection = window.getSelection();
   if (selection && selection.rangeCount > 0) {
@@ -242,7 +253,8 @@ export function EditorHashObjectSearchPlugin({
   );
 
   const triggerFn = useCallback(
-    (text: string): MenuTextMatch | null => matchHashObjectQuery(text),
+    (text: string): MenuTextMatch | null =>
+      $isSelectionInCodeBlock() ? null : matchHashObjectQuery(text),
     [],
   );
 

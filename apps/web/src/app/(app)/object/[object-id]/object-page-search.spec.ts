@@ -510,6 +510,29 @@ describe('buildObjectPrimaryTabNavigation details', () => {
   });
 });
 
+describe('buildObjectPrimaryTabNavigation html', () => {
+  it('navigates to the clean object path (no /html segment)', () => {
+    const sp = new URLSearchParams();
+    sp.set(OBJECT_PAGE_VIEW_PATH_PARAM, 'nested');
+    expect(buildObjectPrimaryTabNavigation('about-us', 'html', sp)).toEqual({
+      href: '/object/about-us',
+      method: 'replace',
+    });
+  });
+});
+
+describe('resolveDefaultPrimarySegmentFromLanding html', () => {
+  it('lands on the HTML tab', () => {
+    expect(
+      resolveDefaultPrimarySegmentFromLanding({ kind: 'primaryTab', segment: 'html' }, [
+        'html',
+        'social',
+        'gallery',
+      ]),
+    ).toBe('html');
+  });
+});
+
 describe('buildObjectPrimaryTabNavigation widget', () => {
   const objectId = 'podcast-1';
 

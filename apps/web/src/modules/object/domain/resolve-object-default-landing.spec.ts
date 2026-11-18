@@ -64,6 +64,16 @@ describe('resolveObjectDefaultLanding', () => {
     expect(landing).toEqual({ kind: 'primaryTab', segment: 'widget' });
   });
 
+  it('returns primaryTab html for html host', () => {
+    const landing = resolveObjectDefaultLanding(
+      view('html', { htmlContent: '<p>page</p>' }),
+      'default',
+      'html',
+      DEPS,
+    );
+    expect(landing).toEqual({ kind: 'primaryTab', segment: 'html' });
+  });
+
   it('returns hostContent for legal_document host', () => {
     const landing = resolveObjectDefaultLanding(
       view('legal_document', { legalText: '<p>Terms</p>' }),

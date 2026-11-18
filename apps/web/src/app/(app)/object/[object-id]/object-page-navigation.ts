@@ -20,6 +20,7 @@ import {
   DETAILS_PRIMARY_TAB_SEGMENT,
 } from '@/modules/object/domain/object-page-url.constants';
 import { WIDGET_PRIMARY_TAB_SEGMENT } from '@/modules/object/domain/widget.constants';
+import { HTML_PRIMARY_TAB_SEGMENT } from '@/modules/object/domain/html-object.constants';
 
 export type ObjectPrimaryTabNavigation = {
   href: string;
@@ -128,7 +129,7 @@ export function buildObjectPrimaryTabNavigation(
     };
   }
 
-  if (segment === DETAILS_PRIMARY_TAB_SEGMENT) {
+  if (segment === DETAILS_PRIMARY_TAB_SEGMENT || segment === HTML_PRIMARY_TAB_SEGMENT) {
     u.delete(OBJECT_PAGE_PRIMARY_TAB_PARAM);
     u.delete(OBJECT_PAGE_OWNERSHIP_SUB_PARAM);
     u.delete(OBJECT_PAGE_VIEW_PATH_PARAM);

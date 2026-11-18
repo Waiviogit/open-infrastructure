@@ -30,6 +30,10 @@ jest.mock('./object-write-post-prompt', () => ({
   ObjectWritePostPrompt: () => <div data-testid="write-post-prompt" />,
 }));
 
+jest.mock('./object-html-editor', () => ({
+  ObjectHtmlEditor: () => <div data-testid="html-editor" />,
+}));
+
 jest.mock('./object-thread-compose-bar', () => ({
   ObjectThreadComposeBar: () => <div data-testid="thread-compose-bar" />,
 }));

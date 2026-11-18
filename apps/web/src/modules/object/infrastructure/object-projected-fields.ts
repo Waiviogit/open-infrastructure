@@ -2,6 +2,7 @@ import type { ProjectedObjectView } from '@/modules/feed/application/dto/object-
 import { safeHttpUrl } from '@/shared/domain/safe-http-url';
 
 import { parseAffiliateLinks } from '../domain/affiliate-link-visual';
+import { normalizeHtmlContentSource } from '../domain/html-content-source';
 import { isOptionsObjectType } from '../domain/object-left-rail-order';
 import { resolveSocialLinkHref } from '../domain/resolve-social-link-href';
 
@@ -611,6 +612,16 @@ export function projectedSkillContent(o: ProjectedObjectView): string | null {
     return raw.trim();
   }
   return null;
+}
+
+/** `htmlContent` page for `html` objects, without legacy fence / `<pre><code>` wrappers. */
+export function projectedHtmlContent(o: ProjectedObjectView): string | null {
+  const raw = o.fields.htmlContent;
+  if (typeof raw !== 'string') {
+    return null;
+  }
+  const source = normalizeHtmlContentSource(raw);
+  return source.length > 0 ? source : null;
 }
 
 export function projectedLicense(o: ProjectedObjectView): string | null {

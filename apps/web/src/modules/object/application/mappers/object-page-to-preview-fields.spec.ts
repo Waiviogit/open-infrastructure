@@ -25,6 +25,7 @@ function minimalModel(
     pageContent: null,
     legalText: null,
     skillContent: null,
+    htmlContent: null,
     widgetConfig: null,
     descriptionContent: 'A great neighborhood shop.',
     previewGallery: [],

@@ -889,6 +889,13 @@
       minmax(0, 22rem);
   }
 
+  /* Object page without a right rail (HTML tab): the center takes the right column too. */
+  html .shell-object-page-grid.shell-object-page-grid--no-right-rail {
+    grid-template-columns:
+      minmax(0, var(--shell-left-width))
+      minmax(0, 1fr);
+  }
+
   html[data-shell-mode='instagram'] .shell-hide-instagram {
     display: none;
   }

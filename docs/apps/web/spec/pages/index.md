@@ -46,6 +46,7 @@ Every App Router `page.tsx` under `apps/web/src/app/` maps to a **route area** f
 | `/object/:id/updates` | [routes/updates.md](object/routes/updates.md) | object updates feed |
 | `/object/:id/updates/:updateId` | [object-update-detail.md](../object-update-detail.md) | single update card (notification deep link) |
 | `/object/:id/gallery` | [routes/gallery.md](object/routes/gallery.md) | gallery tab |
+| `/object/:id` HTML tab (`html` objects) | [routes/html.md](object/routes/html.md) | sandboxed page + editor with preview |
 | Right rail previews | [routes/right-rail.md](object/routes/right-rail.md) | ref list previews |
 | Center ref-list tabs (related, similar, add-on) | [routes/ref-feeds.md](object/routes/ref-feeds.md) | `ObjectRefListFeed` |
 | `/object/:id/followers` | [routes/followers.md](object/routes/followers.md) | social list |

@@ -746,6 +746,28 @@ describe('projectedObjectWithCountsToPageModel product left-rail order', () => {
     });
   });
 
+  it('prepends HTML tab and unwraps legacy fenced htmlContent for html objects', () => {
+    const api: ProjectedObjectWithCountsView = {
+      object_id: 'about-us',
+      object_type: 'html',
+      semantic_type: null,
+      weight: 1,
+      fields: {
+        name: 'About Us',
+        htmlContent: '```javascript\n<!DOCTYPE html><html><body>Hi</body></html>\n```',
+      },
+      previewGallery: [],
+      galleryAlbums: [],
+      ...baseCounts,
+    };
+
+    const model = projectedObjectWithCountsToPageModel(api);
+    expect(model.primaryTabs[0]).toEqual({ segment: 'html', label: 'HTML' });
+    expect(model.primaryTabs[1]?.segment).toBe('social');
+    expect(model.defaultLanding).toEqual({ kind: 'primaryTab', segment: 'html' });
+    expect(model.htmlContent).toBe('<!DOCTYPE html><html><body>Hi</body></html>');
+  });
+
   it('does not prepend Widget tab for non-widget types', () => {
     const api: ProjectedObjectWithCountsView = {
       object_id: 'prod-1',

@@ -41,6 +41,7 @@ import {
   objectTypeHasDetailsTab,
 } from '../domain/object-page-url.constants';
 import { WIDGET_PRIMARY_TAB_SEGMENT } from '../domain/widget.constants';
+import { HTML_OBJECT_TYPE, HTML_PRIMARY_TAB_SEGMENT } from '../domain/html-object.constants';
 
 import type { ProjectedObjectWithCountsView } from './object-resolve.types';
 import type { ObjectOptionsApiResponse } from './fetch-object-options.server';
@@ -65,6 +66,7 @@ import {
   projectedPageContent,
   projectedLegalText,
   projectedSkillContent,
+  projectedHtmlContent,
   projectedLicense,
   projectedCatalogText,
   projectedCompatibility,
@@ -185,6 +187,10 @@ function buildPrimaryTabs(input: {
 
   if (input.objectTypeKey === 'widget') {
     return [{ segment: WIDGET_PRIMARY_TAB_SEGMENT, label: 'Widget' }, ...base];
+  }
+
+  if (input.objectTypeKey === HTML_OBJECT_TYPE) {
+    return [{ segment: HTML_PRIMARY_TAB_SEGMENT, label: 'HTML' }, ...base];
   }
 
   if (input.objectTypeKey === 'list') {
@@ -1075,6 +1081,7 @@ export function projectedObjectWithCountsToPageModel(
   const pageContent = projectedPageContent(viewLike);
   const legalText = projectedLegalText(viewLike);
   const skillContent = projectedSkillContent(viewLike);
+  const htmlContent = projectedHtmlContent(viewLike);
   const widgetConfig = projectedWidgetConfig(viewLike);
   const descriptionContent = projectedDescriptionContent(viewLike);
   const previewGallery = projectedPreviewGallery(viewLike);
@@ -1119,6 +1126,7 @@ export function projectedObjectWithCountsToPageModel(
     pageContent,
     legalText,
     skillContent,
+    htmlContent,
     widgetConfig,
     descriptionContent,
     previewGallery,

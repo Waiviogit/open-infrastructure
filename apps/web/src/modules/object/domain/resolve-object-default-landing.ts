@@ -4,12 +4,16 @@ import type { ProjectedMenuItem } from './projected-menu-item.types';
 import type { ProjectedSortCustom } from './projected-list-item.types';
 import type { ObjectSwitcherKind } from './object-page.types';
 import { isMenuInHostTargetType } from './object-menu.constants';
+import { HTML_OBJECT_TYPE, HTML_PRIMARY_TAB_SEGMENT } from './html-object.constants';
 
 /** Default center column / tab when opening `/object/:id` with no `?tab=` or `?path=`. */
 export type ObjectDefaultLanding =
   | { kind: 'hostContent' }
   | { kind: 'nestedInHost'; targetObjectId: string }
-  | { kind: 'primaryTab'; segment: 'social' | 'newsfeed' | 'description' | 'widget' | 'list' }
+  | {
+      kind: 'primaryTab';
+      segment: 'social' | 'newsfeed' | 'description' | 'widget' | 'list' | 'html';
+    }
   | { kind: 'routeStub'; segment: 'blog' | 'newsFilter'; ref: string };
 
 const HOST_SWITCHER_KINDS = new Set<ObjectSwitcherKind>([
@@ -230,7 +234,10 @@ function resolveHostTypeLanding(
   switcherKind: ObjectSwitcherKind,
   objectTypeKey: string,
 ): ObjectDefaultLanding | null {
-  if (objectTypeKey === 'html' || objectTypeKey === 'legal_document' || objectTypeKey === 'skill') {
+  if (objectTypeKey === HTML_OBJECT_TYPE) {
+    return { kind: 'primaryTab', segment: HTML_PRIMARY_TAB_SEGMENT };
+  }
+  if (objectTypeKey === 'legal_document' || objectTypeKey === 'skill') {
     return { kind: 'hostContent' };
   }
   if (objectTypeKey === 'widget') {

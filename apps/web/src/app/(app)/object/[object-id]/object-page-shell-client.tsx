@@ -68,6 +68,7 @@ import {
   buildObjectUpdatesFieldHref,
 } from './object-page-navigation';
 import { fetchTagApprovalStatsAction } from './tag-approval.actions';
+import { objectPageHidesRightRail } from '@/modules/object/domain/html-object.constants';
 import { ObjectPageShellProvider } from './object-page-shell-context';
 import { useObjectScopedLocation } from './use-object-scoped-location';
 
@@ -642,6 +643,7 @@ export function ObjectPageShellClient({
         leftRail={leftRail}
         mobileLayout={mobileLayout}
         mobileSocialSlot={mobileSocialSlot}
+        hideRightRail={objectPageHidesRightRail(model.objectTypeKey, activePrimarySegment)}
         center={
           <div className="relative min-h-[12rem]">
             <div

@@ -31,6 +31,7 @@ import {
 } from '../../domain/object-page-url.constants';
 import { LIST_PRIMARY_TAB_SEGMENT } from '../../domain/list.constants';
 import { WIDGET_PRIMARY_TAB_SEGMENT } from '../../domain/widget.constants';
+import { HTML_PRIMARY_TAB_SEGMENT } from '../../domain/html-object.constants';
 import { parseViewPathFromUrlSearchParams } from '../../domain/object-page-path';
 import {
   applySortCustomToListItems,
@@ -48,6 +49,7 @@ import { ObjectDescriptionBody } from './object-description-body';
 import { ObjectPageContentBody } from './object-page-content-body';
 import { ObjectWritePostPrompt } from './object-write-post-prompt';
 import { ObjectThreadComposeBar } from './object-thread-compose-bar';
+import { ObjectHtmlContent } from './object-html-content';
 import { ObjectWidgetContent } from './object-widget-content';
 
 const SOCIAL_SEGMENT = 'social';
@@ -183,6 +185,8 @@ export type ObjectPrimaryContentProps = {
   hostPageContent?: string | null;
   /** Parsed widget config for widget-type host objects. */
   hostWidgetConfig?: ProjectedWidgetConfigView | null;
+  /** Normalized `htmlContent` page for `html` host objects. */
+  hostHtmlContent?: string | null;
   descriptionContent?: string | null;
   previewGallery?: ProjectedGalleryPhotoView[];
   galleryPhotosAlbum?: ProjectedGalleryAlbumView | null;
@@ -231,6 +235,7 @@ export function ObjectPrimaryContent({
   objectFieldReferencesFeed,
   hostPageContent = null,
   hostWidgetConfig = null,
+  hostHtmlContent = null,
   descriptionContent = null,
   previewGallery = [],
   galleryPhotosAlbum = null,
@@ -611,6 +616,22 @@ export function ObjectPrimaryContent({
       <FeedColumn>
         <ObjectWidgetContent config={widgetConfig} />
       </FeedColumn>
+    );
+  }
+
+  if (activePrimarySegment === HTML_PRIMARY_TAB_SEGMENT) {
+    // Not `FeedColumn`: its `overflow-x-clip` cuts off the editor's insert button, which sits
+    // half outside the editor's start edge. Wide code scrolls inside its own code block.
+    return (
+      <div className="flex min-w-0 flex-col gap-card-padding">
+        <ObjectHtmlContent
+          objectId={objectId}
+          objectTitle={title}
+          htmlContent={hostHtmlContent}
+          isEditMode={isEditMode}
+          viewerUsername={viewerUsername ?? null}
+        />
+      </div>
     );
   }
 

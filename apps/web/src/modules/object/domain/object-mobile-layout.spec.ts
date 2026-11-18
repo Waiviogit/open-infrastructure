@@ -158,13 +158,16 @@ describe('resolveObjectMobileCenterLayout', () => {
     ).toBe('centerOnly');
   });
 
-  it.each(['html', 'newsfeed'] as const)(
+  it.each([
+    ['html', 'html'],
+    ['newsfeed', ''],
+  ] as const)(
     'maps %s host edit to specialEdit',
-    (objectTypeKey) => {
+    (objectTypeKey, activePrimarySegment) => {
       expect(
         resolveObjectMobileCenterLayout({
           objectTypeKey,
-          activePrimarySegment: '',
+          activePrimarySegment,
           hasPath: false,
           isEditMode: true,
         }),
@@ -177,6 +180,12 @@ describe('isSpecialHostLanding', () => {
   it('detects list host landing', () => {
     expect(isSpecialHostLanding('list', 'list')).toBe(true);
     expect(isSpecialHostLanding('list', 'social')).toBe(false);
+  });
+
+  it('detects html host landing on the HTML tab', () => {
+    expect(isSpecialHostLanding('html', 'html')).toBe(true);
+    expect(isSpecialHostLanding('html', '')).toBe(false);
+    expect(isSpecialHostLanding('html', 'social')).toBe(false);
   });
 
   it('detects page host landing on empty segment', () => {

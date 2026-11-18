@@ -124,6 +124,24 @@ describe('ObjectViewShell mobile stack', () => {
     expect(grid.children[0]).toHaveClass('hidden', 'lg:block');
   });
 
+  it('drops the right rail column and widens the center when hideRightRail is set', () => {
+    const { container } = render(
+      <ObjectViewShell
+        hero={<div>Hero</div>}
+        leftRail={leftRail}
+        center={center}
+        rightRail={rightRail}
+        hideRightRail
+      />,
+    );
+
+    expect(screen.queryByTestId('object-right-rail-column')).toBeNull();
+    expect(screen.queryByTestId('right-rail')).toBeNull();
+    const grid = container.querySelector('.shell-object-page-grid--no-right-rail');
+    expect(grid?.classList.contains('shell-object-page-grid')).toBe(true);
+    expect(grid?.children).toHaveLength(2);
+  });
+
   it('hides the right rail below lg outside standardView', () => {
     const { rerender } = render(
       <ObjectViewShell

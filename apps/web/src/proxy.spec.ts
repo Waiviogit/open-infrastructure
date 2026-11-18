@@ -144,6 +144,23 @@ describe('proxy signed-in routes', () => {
   });
 });
 
+describe('proxy legacy html object path', () => {
+  beforeEach(() => {
+    mockEnv.requireAuth = false;
+  });
+
+  it('redirects /object/:id/code to the clean object URL, keeping the query', async () => {
+    const response = await proxy(
+      new NextRequest('https://waiviodev.com/object/26dk4d-about-us/code?ref=x'),
+    );
+
+    expect(response.status).toBe(308);
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.pathname).toBe('/object/26dk4d-about-us');
+    expect(location.searchParams.get('ref')).toBe('x');
+  });
+});
+
 describe('proxy object activity message permalink', () => {
   beforeEach(() => {
     mockEnv.requireAuth = false;

@@ -418,6 +418,8 @@ export type ObjectPageViewModel = {
   legalText: string | null;
   /** Raw skill body (`skillContent` update) for `skill` objects. */
   skillContent: string | null;
+  /** HTML page (`htmlContent` update, legacy wrappers removed) for `html` objects. */
+  htmlContent: string | null;
   /** Parsed `widget` update JSON for widget-type objects. */
   widgetConfig: ProjectedWidgetConfigView | null;
   /** Raw description body (`description` update) for center-column `/description` route. */

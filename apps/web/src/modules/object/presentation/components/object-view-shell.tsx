@@ -16,6 +16,8 @@ export type ObjectViewShellProps = {
   mobileLayout?: ObjectMobileCenterLayout;
   /** Social preview for standard-object mobile Details landing. */
   mobileSocialSlot?: ReactNode;
+  /** Drop the right rail; the center spans its column (HTML tab of `html` objects). */
+  hideRightRail?: boolean;
 };
 
 function MobileLeftRailCopy({ leftRail }: { leftRail: ReactNode }) {
@@ -38,6 +40,7 @@ export function ObjectViewShell({
   rightRail,
   mobileLayout = 'centerOnly',
   mobileSocialSlot,
+  hideRightRail = false,
 }: ObjectViewShellProps) {
   const hideCenterOnMobile =
     mobileLayout === 'standardView' || mobileLayout === 'standardEdit';
@@ -54,7 +57,9 @@ export function ObjectViewShell({
       <div
         className={[
           'shell-profile-grid shell-object-page-grid mt-card-padding grid grid-cols-1 gap-card-padding',
-          'lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)_minmax(0,var(--shell-right-width))]',
+          hideRightRail
+            ? 'shell-object-page-grid--no-right-rail lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)]'
+            : 'lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)_minmax(0,var(--shell-right-width))]',
         ].join(' ')}
       >
         <div className="hidden lg:block">
@@ -91,12 +96,14 @@ export function ObjectViewShell({
           ) : null}
         </main>
 
-        <div
-          className={hideRightRailOnMobile ? 'hidden min-w-0 lg:block' : 'min-w-0'}
-          data-testid="object-right-rail-column"
-        >
-          <div className="shell-hide-instagram lg:contents">{rightRail}</div>
-        </div>
+        {hideRightRail ? null : (
+          <div
+            className={hideRightRailOnMobile ? 'hidden min-w-0 lg:block' : 'min-w-0'}
+            data-testid="object-right-rail-column"
+          >
+            <div className="shell-hide-instagram lg:contents">{rightRail}</div>
+          </div>
+        )}
       </div>
     </div>
   );

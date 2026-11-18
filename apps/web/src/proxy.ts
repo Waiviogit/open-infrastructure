@@ -21,6 +21,7 @@ import {
   OBJECT_PAGE_SOCIAL_SUB_PARAM,
   SOCIAL_FEED_PATH_SEGMENTS,
 } from '@/modules/object/domain/object-page-url.constants';
+import { HTML_LEGACY_CODE_PATH_SEGMENT } from '@/modules/object/domain/html-object.constants';
 import { isProfileAccountSegment } from '@/modules/user-profile/domain/profile-account-segment';
 import { isUserProfileReservedFirstSegment } from '@/modules/user-profile/presentation/components/profile-path';
 import {
@@ -39,6 +40,9 @@ const REQUIRE_AUTH_EXCLUDED_PREFIXES = [
 ] as const;
 
 const DISCOVER_PATH = '/discover';
+
+/** Retired legacy paths: browsers and crawlers should replace the old URL. */
+const PERMANENT_REDIRECT_STATUS = 308;
 
 /**
  * Public `/@account/...` → App Router paths under `/user-profile/...`.
@@ -197,6 +201,20 @@ export async function proxy(request: NextRequest) {
     url.searchParams.set('tab', 'social');
     url.searchParams.set(OBJECT_PAGE_SOCIAL_SUB_PARAM, sub);
     return finish(NextResponse.rewrite(url));
+  }
+
+  /** Legacy Waivio `/object/:id/code` (html objects): the HTML tab lives at the clean URL. */
+  const legacyHtmlCodeMatch = pathname.match(
+    new RegExp(`^/object/([^/]+)/${HTML_LEGACY_CODE_PATH_SEGMENT}/?$`),
+  );
+  if (legacyHtmlCodeMatch) {
+    const href = `/object/${legacyHtmlCodeMatch[1]}${request.nextUrl.search}`;
+    return finish(
+      NextResponse.redirect(
+        buildPublicUrl(request, href, env.publicOrigin),
+        PERMANENT_REDIRECT_STATUS,
+      ),
+    );
   }
 
   const legacyObjectMessagesMatch = pathname.match(/^\/object\/([^/]+)\/messages\/?$/);
