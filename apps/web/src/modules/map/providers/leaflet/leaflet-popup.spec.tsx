@@ -9,7 +9,10 @@ import { LeafletAppPopup } from './leaflet-popup';
 
 type PopupHandlers = { add: () => void; remove: () => void };
 
-const map = new Evented();
+/** `Evented` is abstract in Leaflet's types; a concrete subclass is a map that only fires events. */
+class TestMap extends Evented {}
+
+const map = new TestMap();
 const popupInstance = { options: { autoPan: true } };
 let popupHandlers: PopupHandlers | null = null;
 
