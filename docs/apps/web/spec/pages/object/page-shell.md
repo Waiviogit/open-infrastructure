@@ -90,7 +90,7 @@ Gated by hero Edit toggle + `viewerUsername` from server.
 | Category objects feed | [routes/category-feed.md](routes/category-feed.md) |
 | Recipe left rail | [routes/recipe-left-rail.md](routes/recipe-left-rail.md) |
 | Featured post on Details (recipe) | [routes/featured-post.md](routes/featured-post.md) |
-| HTML tab (`html` objects) | [routes/html.md](routes/html.md) |
+| HTML / Page / Document tab (`html`, `page`, `legal_document`) | [routes/host-body-tabs.md](routes/host-body-tabs.md) |
 | Social links (left rail) | [routes/social-links.md](routes/social-links.md) |
 | Governance left rail | [routes/governance-left-rail.md](routes/governance-left-rail.md) |
 | Edit mode | [routes/edit-mode.md](routes/edit-mode.md) |

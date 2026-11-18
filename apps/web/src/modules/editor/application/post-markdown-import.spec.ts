@@ -97,6 +97,34 @@ describe('importing a published post body', () => {
 
     expect(markdown).toBe('|  |  |\n| --- | --- |\n| a | b |\n| c | d |');
   });
+
+  it('accepts a short GFM divider row (`|-|--|`) as the header divider', () => {
+    const { markdown } = importMarkdown('|Name|Value|\n|-|--|\n|a|b|');
+
+    expect(markdown).toBe('| Name | Value |\n| --- | --- |\n| a | b |');
+  });
+
+  it('keeps a row of dashes below the header as data', () => {
+    const { markdown } = importMarkdown('| a | b |\n| --- | --- |\n| - | - |');
+
+    expect(markdown).toBe('| a | b |\n| --- | --- |\n| - | - |');
+  });
+
+  it('keeps bold, code and links inside table cells', () => {
+    const source = [
+      '| Operation | Note |',
+      '| --- | --- |',
+      '| `tokens_delegate` | **bold** and [docs](https://example.com/docs) |',
+    ].join('\n');
+
+    expect(importMarkdown(source).markdown).toBe(source);
+  });
+
+  it('keeps line breaks inside a table cell', () => {
+    const source = '| a | b |\n| --- | --- |\n| one<br><br>two | x |';
+
+    expect(importMarkdown(source).markdown).toBe(source);
+  });
 });
 
 describe('importing video links', () => {
@@ -117,9 +145,21 @@ describe('importing video links', () => {
   });
 
   it('keeps a non-video link as a normal paragraph link', () => {
-    const { types } = importMarkdown('https://example.com/article');
+    const { types, markdown } = importMarkdown('https://example.com/article');
 
     expect(types).toEqual(['paragraph']);
+    expect(markdown).toBe('https://example.com/article');
+  });
+
+  it('keeps a link line the embed does not support between paragraphs', () => {
+    const { types, markdown } = importMarkdown(
+      'Intro\n\nhttps://example.com/article\n\n[Docs](https://example.com/docs)\n\nOutro',
+    );
+
+    expect(types).toEqual(['paragraph', 'paragraph', 'paragraph', 'paragraph']);
+    expect(markdown).toBe(
+      'Intro\n\nhttps://example.com/article\n\n[Docs](https://example.com/docs)\n\nOutro',
+    );
   });
 });
 

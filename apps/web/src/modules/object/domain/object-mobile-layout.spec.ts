@@ -85,7 +85,7 @@ describe('resolveObjectMobileCenterLayout', () => {
     expect(
       resolveObjectMobileCenterLayout({
         objectTypeKey: 'page',
-        activePrimarySegment: '',
+        activePrimarySegment: 'page',
         hasPath: false,
         isEditMode: true,
       }),
@@ -188,8 +188,15 @@ describe('isSpecialHostLanding', () => {
     expect(isSpecialHostLanding('html', 'social')).toBe(false);
   });
 
-  it('detects page host landing on empty segment', () => {
-    expect(isSpecialHostLanding('page', '')).toBe(true);
+  it('detects page and legal_document host landing on their tabs', () => {
+    expect(isSpecialHostLanding('page', 'page')).toBe(true);
+    expect(isSpecialHostLanding('page', '')).toBe(false);
     expect(isSpecialHostLanding('page', 'social')).toBe(false);
+    expect(isSpecialHostLanding('legal_document', 'document')).toBe(true);
+  });
+
+  it('detects other non-Details host landing on empty segment', () => {
+    expect(isSpecialHostLanding('skill', '')).toBe(true);
+    expect(isSpecialHostLanding('skill', 'social')).toBe(false);
   });
 });

@@ -2,7 +2,7 @@ import {
   DETAILS_PRIMARY_TAB_SEGMENT,
   objectTypeHasDetailsTab,
 } from './object-page-url.constants';
-import { HTML_OBJECT_TYPE, HTML_PRIMARY_TAB_SEGMENT } from './html-object.constants';
+import { hostBodyTabForObjectType } from './host-body-tab';
 
 /** Mobile center-column stacking mode below `lg`. */
 export type ObjectMobileCenterLayout =
@@ -29,8 +29,9 @@ export function isSpecialHostLanding(
   if (objectTypeKey === 'widget') {
     return activePrimarySegment === 'widget';
   }
-  if (objectTypeKey === HTML_OBJECT_TYPE) {
-    return activePrimarySegment === HTML_PRIMARY_TAB_SEGMENT;
+  const hostBodyTab = hostBodyTabForObjectType(objectTypeKey);
+  if (hostBodyTab) {
+    return activePrimarySegment === hostBodyTab.segment;
   }
   if (!objectTypeHasDetailsTab(objectTypeKey)) {
     return activePrimarySegment === '';

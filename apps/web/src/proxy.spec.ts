@@ -144,7 +144,7 @@ describe('proxy signed-in routes', () => {
   });
 });
 
-describe('proxy legacy html object path', () => {
+describe('proxy legacy host body paths', () => {
   beforeEach(() => {
     mockEnv.requireAuth = false;
   });
@@ -158,6 +158,17 @@ describe('proxy legacy html object path', () => {
     const location = new URL(response.headers.get('location') ?? '');
     expect(location.pathname).toBe('/object/26dk4d-about-us');
     expect(location.searchParams.get('ref')).toBe('x');
+  });
+
+  it('redirects /object/:id/page to the clean object URL', async () => {
+    const response = await proxy(
+      new NextRequest('https://waiviodev.com/object/lbl-about-luxita-solutions/page'),
+    );
+
+    expect(response.status).toBe(308);
+    expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+      '/object/lbl-about-luxita-solutions',
+    );
   });
 });
 

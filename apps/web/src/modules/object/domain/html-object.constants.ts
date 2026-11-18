@@ -7,17 +7,6 @@ export const HTML_OBJECT_TYPE = 'html';
  */
 export const HTML_PRIMARY_TAB_SEGMENT = 'html';
 
-/** The HTML tab shows the page wide: no right rail, the center spans its column. */
-export function objectPageHidesRightRail(
-  objectTypeKey: string,
-  activePrimarySegment: string,
-): boolean {
-  return objectTypeKey === HTML_OBJECT_TYPE && activePrimarySegment === HTML_PRIMARY_TAB_SEGMENT;
-}
-
-/** Legacy Waivio path segment (`/object/:id/code`); the proxy redirects it (308) to the clean URL. */
-export const HTML_LEGACY_CODE_PATH_SEGMENT = 'code';
-
 /**
  * iframe sandbox for on-chain HTML. Never `allow-same-origin`: the page runs in an opaque origin,
  * so its scripts cannot read the app's cookies, storage or DOM. Popups escape the sandbox so

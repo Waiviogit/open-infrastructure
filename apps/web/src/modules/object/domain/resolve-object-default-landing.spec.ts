@@ -42,14 +42,14 @@ describe('resolveObjectDefaultLanding', () => {
     expect(landing).toEqual({ kind: 'primaryTab', segment: 'list' });
   });
 
-  it('returns hostContent for page host', () => {
+  it('returns primaryTab page for page host', () => {
     const landing = resolveObjectDefaultLanding(
       view('page', { pageContent: 'hello' }),
       'page',
       'page',
       DEPS,
     );
-    expect(landing).toEqual({ kind: 'hostContent' });
+    expect(landing).toEqual({ kind: 'primaryTab', segment: 'page' });
   });
 
   it('returns primaryTab widget for widget host', () => {
@@ -74,14 +74,14 @@ describe('resolveObjectDefaultLanding', () => {
     expect(landing).toEqual({ kind: 'primaryTab', segment: 'html' });
   });
 
-  it('returns hostContent for legal_document host', () => {
+  it('returns primaryTab document for legal_document host', () => {
     const landing = resolveObjectDefaultLanding(
       view('legal_document', { legalText: '<p>Terms</p>' }),
       'default',
       'legal_document',
       DEPS,
     );
-    expect(landing).toEqual({ kind: 'hostContent' });
+    expect(landing).toEqual({ kind: 'primaryTab', segment: 'document' });
   });
 
   it('returns nestedInHost for business with first menuItem list target', () => {

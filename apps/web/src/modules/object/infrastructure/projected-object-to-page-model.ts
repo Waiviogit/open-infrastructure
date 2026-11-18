@@ -41,7 +41,7 @@ import {
   objectTypeHasDetailsTab,
 } from '../domain/object-page-url.constants';
 import { WIDGET_PRIMARY_TAB_SEGMENT } from '../domain/widget.constants';
-import { HTML_OBJECT_TYPE, HTML_PRIMARY_TAB_SEGMENT } from '../domain/html-object.constants';
+import { hostBodyTabForObjectType } from '../domain/host-body-tab';
 
 import type { ProjectedObjectWithCountsView } from './object-resolve.types';
 import type { ObjectOptionsApiResponse } from './fetch-object-options.server';
@@ -189,8 +189,9 @@ function buildPrimaryTabs(input: {
     return [{ segment: WIDGET_PRIMARY_TAB_SEGMENT, label: 'Widget' }, ...base];
   }
 
-  if (input.objectTypeKey === HTML_OBJECT_TYPE) {
-    return [{ segment: HTML_PRIMARY_TAB_SEGMENT, label: 'HTML' }, ...base];
+  const hostBodyTab = hostBodyTabForObjectType(input.objectTypeKey);
+  if (hostBodyTab) {
+    return [{ segment: hostBodyTab.segment, label: hostBodyTab.label }, ...base];
   }
 
   if (input.objectTypeKey === 'list') {

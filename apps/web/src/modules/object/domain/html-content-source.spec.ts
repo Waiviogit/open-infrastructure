@@ -1,4 +1,3 @@
-import { objectPageHidesRightRail } from './html-object.constants';
 import {
   buildHtmlEditorMarkdown,
   extractHtmlFromEditorMarkdown,
@@ -94,13 +93,5 @@ describe('extractHtmlFromEditorMarkdown', () => {
       ok: false,
       error: 'not_html',
     });
-  });
-});
-
-describe('objectPageHidesRightRail', () => {
-  it('hides the right rail only on the HTML tab of html objects', () => {
-    expect(objectPageHidesRightRail('html', 'html')).toBe(true);
-    expect(objectPageHidesRightRail('html', 'social')).toBe(false);
-    expect(objectPageHidesRightRail('page', 'html')).toBe(false);
   });
 });

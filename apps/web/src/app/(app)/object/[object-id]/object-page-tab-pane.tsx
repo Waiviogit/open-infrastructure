@@ -52,6 +52,7 @@ import {
   isAllowedFieldReferenceObjectType,
   isFieldReferenceSourceType,
 } from '@/modules/object/domain/field-reference-rules';
+import { hostBodySourceFromModel } from '@/modules/object/domain/host-body-tab';
 import { resolveHostPageContent } from '@/modules/object/domain/resolve-host-page-content';
 import { resolveGalleryPhotosAlbum } from '@/modules/object/domain/resolve-gallery-photos-album';
 
@@ -451,7 +452,7 @@ export function ObjectPageTabPane({
       objectFieldReferencesFeed={objectFieldReferencesFeed}
       hostPageContent={hostPageContent}
       hostWidgetConfig={model.widgetConfig}
-      hostHtmlContent={model.htmlContent}
+      hostBodySource={hostBodySourceFromModel(model)}
       descriptionContent={model.descriptionContent}
       previewGallery={model.previewGallery}
       galleryPhotosAlbum={galleryPhotosAlbum}

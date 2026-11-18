@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
 import { UPDATE_REGISTRY } from '@opden-data-layer/core/update-registry';
-import { UPDATE_TYPES } from '@opden-data-layer/core/update-types';
 import { buildOdlUpdateCreateOp } from '@opden-data-layer/hive-broadcast';
 
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
@@ -20,16 +19,42 @@ import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-aft
 import { revalidateObjectAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 
 import {
-  buildHtmlEditorMarkdown,
-  extractHtmlFromEditorMarkdown,
-  type HtmlEditorExtractError,
-} from '../../domain/html-content-source';
+  buildHostBodyEditorMarkdown,
+  extractHostBodyFromEditorMarkdown,
+  type HostBodyExtractError,
+} from '../../domain/host-body-editor';
+import type { HostBodyFormat, HostBodyTabDefinition } from '../../domain/host-body-tab';
 import { HtmlSandboxFrame } from './html-sandbox-frame';
+import { ObjectPageContentBody } from './object-page-content-body';
 
-const EXTRACT_ERROR_MESSAGE_KEYS: Record<HtmlEditorExtractError, string> = {
-  empty: 'object_html_error_empty',
-  code_block_required: 'object_html_error_code_block_required',
-  not_html: 'object_html_error_not_html',
+type FormatMessageKeys = {
+  hint: string;
+  placeholder: string;
+  previewHint: string;
+  errors: Record<HostBodyExtractError, string>;
+};
+
+const MESSAGE_KEYS: Record<HostBodyFormat, FormatMessageKeys> = {
+  html: {
+    hint: 'object_html_editor_hint',
+    placeholder: 'object_html_editor_placeholder',
+    previewHint: 'object_html_preview_hint',
+    errors: {
+      empty: 'object_html_error_empty',
+      code_block_required: 'object_html_error_code_block_required',
+      not_html: 'object_html_error_not_html',
+    },
+  },
+  markdown: {
+    hint: 'object_body_editor_hint',
+    placeholder: 'object_body_editor_placeholder',
+    previewHint: 'object_body_preview_hint',
+    errors: {
+      empty: 'object_body_error_empty',
+      code_block_required: 'object_body_error_empty',
+      not_html: 'object_body_error_empty',
+    },
+  },
 };
 
 const SECONDARY_BUTTON_CLASS =
@@ -39,35 +64,39 @@ const PRIMARY_BUTTON_CLASS =
 
 type EditorStep = 'edit' | 'preview';
 
-export type ObjectHtmlEditorProps = {
+export type ObjectHostBodyEditorProps = {
   objectId: string;
   objectTitle: string;
-  /** The page shown on the HTML tab now (normalized), or `''` when there is none. */
+  tab: HostBodyTabDefinition;
+  /** The body shown on the tab now, or `''` when there is none. */
   currentSource: string;
   viewerUsername: string;
 };
 
 /**
- * Edit → Preview → Publish for an `html` object. The page is edited in the one app editor as a
- * single `html` code block; Publish broadcasts a new `htmlContent` update (IPFS batch when the
- * page is over the custom_json limit).
+ * Edit → Preview → Publish for a host body tab (HTML, Page, Document). The body is edited in the
+ * one app editor (an HTML page as a single `html` code block, rich text as itself); the preview
+ * uses the same renderer as the tab; Publish broadcasts a new body update (IPFS batch when it is
+ * over the custom_json limit).
  */
-export function ObjectHtmlEditor({
+export function ObjectHostBodyEditor({
   objectId,
   objectTitle,
+  tab,
   currentSource,
   viewerUsername,
-}: ObjectHtmlEditorProps) {
+}: ObjectHostBodyEditorProps) {
   useHydrateWalletProvider();
   const { t, locale: uiLocale } = useI18n();
   const router = useRouter();
   const odlCustomJsonId = useOdlCustomJsonId();
   const contentBaseUrl = useIpfsContentBaseUrl();
+  const keys = MESSAGE_KEYS[tab.format];
 
-  const [initialMarkdown] = useState(() => buildHtmlEditorMarkdown(currentSource));
+  const [initialMarkdown] = useState(() => buildHostBodyEditorMarkdown(tab.format, currentSource));
   const [bodyJson, setBodyJson] = useState<string | null>(null);
   const [step, setStep] = useState<EditorStep>('edit');
-  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewBody, setPreviewBody] = useState('');
   const [locale, setLocale] = useState<string>(uiLocale);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,20 +105,20 @@ export function ObjectHtmlEditor({
   const onPreview = useCallback(() => {
     const markdown =
       bodyJson == null ? initialMarkdown : editorBodyToMarkdown(bodyJson, contentBaseUrl);
-    const extracted = extractHtmlFromEditorMarkdown(markdown);
+    const extracted = extractHostBodyFromEditorMarkdown(tab.format, markdown);
     setNotice(null);
     if (!extracted.ok) {
-      setError(t(EXTRACT_ERROR_MESSAGE_KEYS[extracted.error]));
+      setError(t(keys.errors[extracted.error]));
       return;
     }
-    if (extracted.html === currentSource) {
-      setError(t('object_html_error_unchanged'));
+    if (extracted.body === currentSource.trim()) {
+      setError(t('object_body_error_unchanged'));
       return;
     }
     setError(null);
-    setPreviewHtml(extracted.html);
+    setPreviewBody(extracted.body);
     setStep('preview');
-  }, [bodyJson, contentBaseUrl, currentSource, initialMarkdown, t]);
+  }, [bodyJson, contentBaseUrl, currentSource, initialMarkdown, keys, t, tab.format]);
 
   const onBackToEdit = useCallback(() => {
     setError(null);
@@ -97,11 +126,11 @@ export function ObjectHtmlEditor({
   }, []);
 
   const onPublish = useCallback(async () => {
-    const definition = UPDATE_REGISTRY[UPDATE_TYPES.HTML_CONTENT];
+    const definition = UPDATE_REGISTRY[tab.updateType];
     if (!definition || submitting) {
       return;
     }
-    const parsed = validateUpdateValue(definition, previewHtml);
+    const parsed = validateUpdateValue(definition, previewBody);
     if (!parsed.success) {
       setError(t('object_edit_validation_error'));
       return;
@@ -113,7 +142,7 @@ export function ObjectHtmlEditor({
       const op = buildOdlUpdateCreateOp({
         id: odlCustomJsonId,
         objectId,
-        updateType: UPDATE_TYPES.HTML_CONTENT,
+        updateType: tab.updateType,
         creator: viewerUsername,
         valueKind: definition.value_kind,
         value: parsed.value,
@@ -133,43 +162,56 @@ export function ObjectHtmlEditor({
       }
       setSubmitting(false);
       setStep('edit');
-      setNotice(t('object_html_published'));
+      setNotice(t('object_body_published'));
       void refreshAfterBroadcast(router, () => revalidateObjectAfterBroadcast(objectId));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('object_edit_validation_error'));
       setSubmitting(false);
     }
-  }, [locale, objectId, odlCustomJsonId, previewHtml, router, submitting, t, viewerUsername]);
+  }, [
+    locale,
+    objectId,
+    odlCustomJsonId,
+    previewBody,
+    router,
+    submitting,
+    t,
+    tab.updateType,
+    viewerUsername,
+  ]);
 
   const inPreview = step === 'preview';
 
   return (
     <div className="space-y-4">
-      {inPreview ? null : (
-        <p className="text-body-sm text-muted">{t('object_html_editor_hint')}</p>
-      )}
+      {inPreview ? null : <p className="text-body-sm text-muted">{t(keys.hint)}</p>}
 
       <div className={inPreview ? 'hidden' : undefined}>
         <LexicalPostEditor
           variant="document"
-          bodyPlaceholder={t('object_html_editor_placeholder')}
+          bodyPlaceholder={t(keys.placeholder)}
           initialBody={initialMarkdown}
           onBodyChange={setBodyJson}
+          hashObjectSearch={{ username: viewerUsername, googlePlaces: false }}
         />
       </div>
 
       {inPreview ? (
-        <section aria-labelledby="object-html-preview-title" className="space-y-2">
+        <section aria-labelledby="object-host-body-preview-title" className="space-y-2">
           <h2
-            id="object-html-preview-title"
+            id="object-host-body-preview-title"
             className="text-section font-display font-weight-display text-heading"
           >
-            {t('object_html_preview')}
+            {t('object_body_preview')}
           </h2>
-          <p className="text-body-sm text-muted">{t('object_html_preview_hint')}</p>
-          <div className="overflow-hidden rounded-card border border-border">
-            <HtmlSandboxFrame source={previewHtml} title={objectTitle} />
-          </div>
+          <p className="text-body-sm text-muted">{t(keys.previewHint)}</p>
+          {tab.format === 'html' ? (
+            <div className="overflow-hidden rounded-card border border-border">
+              <HtmlSandboxFrame source={previewBody} title={objectTitle} />
+            </div>
+          ) : (
+            <ObjectPageContentBody rawContent={previewBody} />
+          )}
         </section>
       ) : null}
 
@@ -207,7 +249,7 @@ export function ObjectHtmlEditor({
             disabled={submitting}
             className={SECONDARY_BUTTON_CLASS}
           >
-            {t('object_html_back_to_edit')}
+            {t('object_body_back_to_edit')}
           </button>
           <button
             type="button"
@@ -215,13 +257,13 @@ export function ObjectHtmlEditor({
             disabled={submitting}
             className={PRIMARY_BUTTON_CLASS}
           >
-            {submitting ? t('object_html_publishing') : t('object_html_publish')}
+            {submitting ? t('object_body_publishing') : t('object_body_publish')}
           </button>
         </div>
       ) : (
         <div className="flex justify-end">
           <button type="button" onClick={onPreview} className={PRIMARY_BUTTON_CLASS}>
-            {t('object_html_preview')}
+            {t('object_body_preview')}
           </button>
         </div>
       )}

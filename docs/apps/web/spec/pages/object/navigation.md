@@ -28,7 +28,7 @@ Covers all navigation behaviour on the object detail page (`/object/[object-id]`
 
 | Visible URL | Meaning | Active tab |
 |---|---|---|
-| `/object/:id` | Default landing (see §4) — description, SSR nested menu, or host content | **Details** on standard objects; **Widget** when `object_type: widget`; **List** when `object_type: list`; **HTML** when `object_type: html` ([routes/html.md](routes/html.md)); none on other host types (`page`, …) |
+| `/object/:id` | Default landing (see §4) — description, SSR nested menu, or host content | **Details** on standard objects; **Widget** when `object_type: widget`; **List** when `object_type: list`; **HTML** / **Page** / **Document** when `object_type` is `html` / `page` / `legal_document` ([routes/host-body-tabs.md](routes/host-body-tabs.md)); none on other host types (`skill`, …) |
 | `/object/:id?path=a,b` | User navigated nested stack `[a, b]` (not default SSR nested) | **Details** when Details tab exists; otherwise none |
 | `/object/:id/widget` | Widget embed (widget host objects) | Widget |
 | `/object/:id/list` | List catalog (list host objects) | List |
@@ -122,7 +122,7 @@ When the URL has **no** `?tab=` and **no** `?path=`, SSR derives tab + center co
 Priority (matches processor):
 
 1. `sortCustom.include[0]` → menu / listItem / blog / newsFilter target
-2. Host type (`list`, `page`, `widget`, `newsfeed`, `shop`, `webpage`, `map`, `group`) → `hostContent`; `html` → `primaryTab: html`
+2. Host type (`list`, `widget`, `newsfeed`, `shop`, `webpage`, `map`, `group`, `skill`) → `hostContent`; `html` / `page` / `legal_document` → `primaryTab: html` / `page` / `document`
 3. Business-like types (`business`, `restaurant`, `place`, …) → `getDefaultLink` chain: first `menuItem`, then legacy `listItem`, then `newsFilter` / `blog`, else reviews
 4. When step 3 yields Social and `posts_count === 0` and description text or gallery exists → **Description** (legacy waivio [#5205](https://github.com/Waiviogit/waivio/issues/5205))
 5. Other types → `primaryTab: social`
@@ -272,7 +272,7 @@ Menu order follows `sortCustom.include`, then remaining `menuItem` rows (`sortLi
 | Nested menu in host | `#hash` on `/menu`, `/page`, … | `?path=` stack when user navigates; default nested uses SSR only (clean URL) |
 | List host landing tab | List tab active | **List** tab prepended before Social; default landing `primaryTab: list`; center catalog only (no left-rail listItem menu fallback) |
 | Widget host landing tab | Widget tab active | **Widget** tab prepended before Social; default landing `primaryTab: widget` |
-| HTML host landing tab | Code tab at `/object/:id/code` | **HTML** tab prepended before Social at the clean URL; `/code` → 308 to `/object/:id` ([routes/html.md](routes/html.md)) |
+| HTML / Page / Document host landing tab | Code tab at `/object/:id/code`; page body on `/object/:id/page` | **HTML** / **Page** / **Document** tab prepended before Social at the clean URL, no right rail; `/code` and `/page` → 308 to `/object/:id` ([routes/host-body-tabs.md](routes/host-body-tabs.md)) |
 | `blog` / `newsFilter` default | Dedicated routes | `routeStub` → reviews fallback until routes exist |
 
 ---

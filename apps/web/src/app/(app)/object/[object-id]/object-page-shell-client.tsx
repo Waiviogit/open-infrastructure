@@ -68,7 +68,7 @@ import {
   buildObjectUpdatesFieldHref,
 } from './object-page-navigation';
 import { fetchTagApprovalStatsAction } from './tag-approval.actions';
-import { objectPageHidesRightRail } from '@/modules/object/domain/html-object.constants';
+import { objectPageHidesRightRail } from '@/modules/object/domain/host-body-tab';
 import { ObjectPageShellProvider } from './object-page-shell-context';
 import { useObjectScopedLocation } from './use-object-scoped-location';
 

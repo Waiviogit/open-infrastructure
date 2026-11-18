@@ -4,7 +4,7 @@ import type { ProjectedMenuItem } from './projected-menu-item.types';
 import type { ProjectedSortCustom } from './projected-list-item.types';
 import type { ObjectSwitcherKind } from './object-page.types';
 import { isMenuInHostTargetType } from './object-menu.constants';
-import { HTML_OBJECT_TYPE, HTML_PRIMARY_TAB_SEGMENT } from './html-object.constants';
+import { hostBodyTabForObjectType, type HostBodyTabSegment } from './host-body-tab';
 
 /** Default center column / tab when opening `/object/:id` with no `?tab=` or `?path=`. */
 export type ObjectDefaultLanding =
@@ -12,7 +12,7 @@ export type ObjectDefaultLanding =
   | { kind: 'nestedInHost'; targetObjectId: string }
   | {
       kind: 'primaryTab';
-      segment: 'social' | 'newsfeed' | 'description' | 'widget' | 'list' | 'html';
+      segment: 'social' | 'newsfeed' | 'description' | 'widget' | 'list' | HostBodyTabSegment;
     }
   | { kind: 'routeStub'; segment: 'blog' | 'newsFilter'; ref: string };
 
@@ -234,10 +234,11 @@ function resolveHostTypeLanding(
   switcherKind: ObjectSwitcherKind,
   objectTypeKey: string,
 ): ObjectDefaultLanding | null {
-  if (objectTypeKey === HTML_OBJECT_TYPE) {
-    return { kind: 'primaryTab', segment: HTML_PRIMARY_TAB_SEGMENT };
+  const hostBodyTab = hostBodyTabForObjectType(objectTypeKey);
+  if (hostBodyTab) {
+    return { kind: 'primaryTab', segment: hostBodyTab.segment };
   }
-  if (objectTypeKey === 'legal_document' || objectTypeKey === 'skill') {
+  if (objectTypeKey === 'skill') {
     return { kind: 'hostContent' };
   }
   if (objectTypeKey === 'widget') {

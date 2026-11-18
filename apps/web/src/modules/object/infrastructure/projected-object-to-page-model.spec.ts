@@ -804,7 +804,7 @@ describe('projectedObjectWithCountsToPageModel product left-rail order', () => {
     expect(model.primaryTabs[1]?.segment).toBe('social');
   });
 
-  it('does not prepend Details tab for page host type', () => {
+  it('prepends Page tab (not Details) for page host type', () => {
     const api: ProjectedObjectWithCountsView = {
       object_id: 'page-1',
       object_type: 'page',
@@ -817,8 +817,27 @@ describe('projectedObjectWithCountsToPageModel product left-rail order', () => {
     };
 
     const model = projectedObjectWithCountsToPageModel(api);
-    expect(model.primaryTabs[0]?.segment).toBe('social');
+    expect(model.primaryTabs[0]).toEqual({ segment: 'page', label: 'Page' });
+    expect(model.primaryTabs[1]?.segment).toBe('social');
     expect(model.primaryTabs.some((tab) => tab.segment === 'details')).toBe(false);
+    expect(model.defaultLanding).toEqual({ kind: 'primaryTab', segment: 'page' });
+  });
+
+  it('prepends Document tab for legal_document host type', () => {
+    const api: ProjectedObjectWithCountsView = {
+      object_id: 'terms-1',
+      object_type: 'legal_document',
+      semantic_type: null,
+      weight: 1,
+      fields: { name: 'Terms', legalText: '# Terms' },
+      previewGallery: [],
+      galleryAlbums: [],
+      ...baseCounts,
+    };
+
+    const model = projectedObjectWithCountsToPageModel(api);
+    expect(model.primaryTabs[0]).toEqual({ segment: 'document', label: 'Document' });
+    expect(model.defaultLanding).toEqual({ kind: 'primaryTab', segment: 'document' });
   });
 
   it('prepends List tab for list object type', () => {

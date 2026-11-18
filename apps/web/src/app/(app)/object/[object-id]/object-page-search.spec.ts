@@ -510,11 +510,11 @@ describe('buildObjectPrimaryTabNavigation details', () => {
   });
 });
 
-describe('buildObjectPrimaryTabNavigation html', () => {
-  it('navigates to the clean object path (no /html segment)', () => {
+describe('buildObjectPrimaryTabNavigation host body tabs', () => {
+  it.each(['html', 'page', 'document'])('navigates %s to the clean object path', (segment) => {
     const sp = new URLSearchParams();
     sp.set(OBJECT_PAGE_VIEW_PATH_PARAM, 'nested');
-    expect(buildObjectPrimaryTabNavigation('about-us', 'html', sp)).toEqual({
+    expect(buildObjectPrimaryTabNavigation('about-us', segment, sp)).toEqual({
       href: '/object/about-us',
       method: 'replace',
     });

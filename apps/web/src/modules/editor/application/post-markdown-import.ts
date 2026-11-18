@@ -1,5 +1,7 @@
 import {
   $convertFromMarkdownString,
+  TEXT_FORMAT_TRANSFORMERS,
+  TEXT_MATCH_TRANSFORMERS,
   TRANSFORMERS,
   type ElementTransformer,
   type Transformer,
@@ -19,7 +21,10 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $isElementNode,
+  $isTextNode,
   type ElementNode,
+  type LexicalNode,
 } from 'lexical';
 
 import { extractCidFromContentGatewayUrl } from '@/config/ipfs-content-url';
@@ -38,7 +43,8 @@ const LINKED_IMAGE_LINE_REGEX =
 const BARE_IMAGE_URL_REGEX = /^(https?:\/\/\S+\.(?:png|jpe?g|gif|webp|avif)(?:\?\S*)?)\s*$/i;
 const HORIZONTAL_RULE_REGEX = /^(?:---|\*\*\*|___)\s*$/;
 const TABLE_ROW_REGEX = /^\|(.+)\|\s*$/;
-const TABLE_DIVIDER_CELL_REGEX = /^\s*:?-{3,}:?\s*$/;
+/** GFM delimiter cell: one or more dashes, optional alignment colons (`-`, `:--`, `---:`). */
+const TABLE_DIVIDER_CELL_REGEX = /^\s*:?-+:?\s*$/;
 const CELL_LINE_BREAK_REGEX = /<br\s*\/?>/i;
 
 function imageNodeForUrl(url: string, altText: string, linkUrl = '') {
@@ -50,9 +56,16 @@ const VIDEO_LINE: ElementTransformer = {
   dependencies: [VideoNode],
   export: () => null,
   regExp: VIDEO_LINE_REGEX,
-  replace: (parentNode, _children, match) => {
+  replace: (parentNode, children, match) => {
     const video = $createVideoNodeForUrl(match[1] ?? match[2] ?? '');
     if (!video) {
+      // Lexical strips the matched text before calling `replace`; put the line back (the regex
+      // spans the whole line) so a link the embed does not support (vimeo, any page URL) stays a
+      // normal paragraph link.
+      const line = children[0];
+      if ($isTextNode(line) && match[0]) {
+        line.setTextContent(match[0]);
+      }
       return false;
     }
     parentNode.replace(video);
@@ -128,6 +141,23 @@ export function splitMarkdownTableRow(inner: string): string[] {
   return cells;
 }
 
+/** Inline markdown a table cell may hold: bold, italic, strikethrough, code, links. */
+const CELL_INLINE_TRANSFORMERS: Transformer[] = [
+  ...TEXT_FORMAT_TRANSFORMERS,
+  ...TEXT_MATCH_TRANSFORMERS,
+];
+
+/** Inline nodes of one line of cell markdown (`**bold**`, `` `code` ``, `[text](url)`). */
+function $importCellLine(line: string): LexicalNode[] {
+  const holder = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
+  $convertFromMarkdownString(line, CELL_INLINE_TRANSFORMERS, holder, false, false);
+  const block = holder.getFirstChild();
+  if (!$isElementNode(block)) {
+    return [$createTextNode(line)];
+  }
+  return block.getChildren();
+}
+
 function tableCell(text: string, header: boolean) {
   const cell = $createTableCellNode(
     header ? TableCellHeaderStates.ROW : TableCellHeaderStates.NO_STATUS,
@@ -138,11 +168,27 @@ function tableCell(text: string, header: boolean) {
       paragraph.append($createLineBreakNode());
     }
     if (line) {
-      paragraph.append($createTextNode(line));
+      paragraph.append(...$importCellLine(line));
     }
   });
   cell.append(paragraph);
   return cell;
+}
+
+/** A table whose only row is not a header yet: the next row may be its GFM divider. */
+function isAwaitingHeaderDivider(table: TableNode | null): boolean {
+  if (!table || table.getChildrenSize() !== 1) {
+    return false;
+  }
+  const firstRow = table.getFirstChild();
+  if (!$isTableRowNode(firstRow)) {
+    return false;
+  }
+  return firstRow
+    .getChildren()
+    .every(
+      (cell) => (cell as TableCellNode).getHeaderStyles() === TableCellHeaderStates.NO_STATUS,
+    );
 }
 
 /**
@@ -158,9 +204,10 @@ const TABLE_ROW: ElementTransformer = {
     const previous = parentNode.getPreviousSibling();
     const table = $isTableNode(previous) ? previous : null;
 
-    if (cells.every((c) => TABLE_DIVIDER_CELL_REGEX.test(c))) {
+    // Only the second line of a table is its divider; a dash row further down is data.
+    if (isAwaitingHeaderDivider(table) && cells.every((c) => TABLE_DIVIDER_CELL_REGEX.test(c))) {
       const firstRow = table?.getFirstChild();
-      if (table && $isTableRowNode(firstRow) && table.getChildrenSize() === 1) {
+      if ($isTableRowNode(firstRow)) {
         for (const cell of firstRow.getChildren()) {
           (cell as TableCellNode).setHeaderStyles(TableCellHeaderStates.ROW);
         }

@@ -21,7 +21,7 @@ import {
   OBJECT_PAGE_SOCIAL_SUB_PARAM,
   SOCIAL_FEED_PATH_SEGMENTS,
 } from '@/modules/object/domain/object-page-url.constants';
-import { HTML_LEGACY_CODE_PATH_SEGMENT } from '@/modules/object/domain/html-object.constants';
+import { LEGACY_HOST_BODY_PATH_SEGMENTS } from '@/modules/object/domain/host-body-tab';
 import { isProfileAccountSegment } from '@/modules/user-profile/domain/profile-account-segment';
 import { isUserProfileReservedFirstSegment } from '@/modules/user-profile/presentation/components/profile-path';
 import {
@@ -203,12 +203,12 @@ export async function proxy(request: NextRequest) {
     return finish(NextResponse.rewrite(url));
   }
 
-  /** Legacy Waivio `/object/:id/code` (html objects): the HTML tab lives at the clean URL. */
-  const legacyHtmlCodeMatch = pathname.match(
-    new RegExp(`^/object/([^/]+)/${HTML_LEGACY_CODE_PATH_SEGMENT}/?$`),
+  /** Legacy Waivio `/object/:id/code` and `/object/:id/page`: the body tabs live at the clean URL. */
+  const legacyHostBodyMatch = pathname.match(
+    new RegExp(`^/object/([^/]+)/(?:${LEGACY_HOST_BODY_PATH_SEGMENTS.join('|')})/?$`),
   );
-  if (legacyHtmlCodeMatch) {
-    const href = `/object/${legacyHtmlCodeMatch[1]}${request.nextUrl.search}`;
+  if (legacyHostBodyMatch) {
+    const href = `/object/${legacyHostBodyMatch[1]}${request.nextUrl.search}`;
     return finish(
       NextResponse.redirect(
         buildPublicUrl(request, href, env.publicOrigin),
