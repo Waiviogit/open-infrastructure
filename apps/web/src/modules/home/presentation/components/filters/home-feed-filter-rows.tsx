@@ -3,25 +3,24 @@
 import type { ReactNode } from 'react';
 
 import { Icon, type IconName } from '@/icons';
-import { OptimisticNavLink } from '@/shared/presentation';
-
-/** Shared look of every rail row: same as the Discover type list. */
-export function railItemClass(active: boolean): string {
-  return [
-    'flex w-full min-w-0 items-center gap-2 rounded-btn px-2 py-1.5 text-body-sm transition-colors',
-    active
-      ? 'bg-accent-soft font-weight-label text-accent'
-      : 'text-fg-secondary hover:bg-ghost-surface hover:text-fg',
-  ].join(' ');
-}
+import { OptimisticNavLink, railItemClass } from '@/shared/presentation';
 
 /** `+N` new items, shown only when there is something new. */
-export function HomeFeedFilterCount({ count, label }: { count: number | null; label: string }) {
+export function HomeFeedFilterCount({
+  count,
+  label,
+}: {
+  count: number | null;
+  label: string;
+}) {
   if (count == null || count <= 0) {
     return null;
   }
   return (
-    <span className="ml-auto shrink-0 text-caption tabular-nums text-accent" aria-label={label}>
+    <span
+      className="ml-auto shrink-0 text-caption tabular-nums text-accent"
+      aria-label={label}
+    >
       +{count}
     </span>
   );
@@ -102,7 +101,11 @@ export function HomeFeedFilterSection({
         <Icon
           name="chevron-down"
           size={16}
-          className={['shrink-0 transition-transform', count ? '' : 'ml-auto', collapsed ? '-rotate-90' : ''].join(' ')}
+          className={[
+            'shrink-0 transition-transform',
+            count ? '' : 'ml-auto',
+            collapsed ? '-rotate-90' : '',
+          ].join(' ')}
         />
       </button>
       {collapsed ? null : (

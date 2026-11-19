@@ -5,9 +5,16 @@ import { useMemo, useState } from 'react';
 import { ChevronDownIcon, Icon, SearchIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { formatObjectTypeLabel } from '@/modules/app-header/domain/search-nav-list';
-import { OptimisticNavLink, useEffectiveNav } from '@/shared/presentation';
+import {
+  OptimisticNavLink,
+  railItemClass,
+  useEffectiveNav,
+} from '@/shared/presentation';
 
-import { buildDiscoverHref, parseDiscoverPageState } from '../../domain/discover-url';
+import {
+  buildDiscoverHref,
+  parseDiscoverPageState,
+} from '../../domain/discover-url';
 import {
   listDiscoverObjectTypes,
   listDiscoverPopularObjectTypes,
@@ -28,15 +35,6 @@ export type DiscoverSidebarProps = {
   sort: 'newest' | 'oldest' | 'rank';
 };
 
-function typeLinkClassName(active: boolean): string {
-  return [
-    'flex w-full items-center gap-2 rounded-btn px-2 py-1.5 text-body-sm transition-colors',
-    active
-      ? 'bg-accent-soft font-weight-label text-accent'
-      : 'text-fg-secondary hover:bg-ghost-surface hover:text-fg',
-  ].join(' ');
-}
-
 function DiscoverTypeNavLink({
   type,
   q,
@@ -53,11 +51,15 @@ function DiscoverTypeNavLink({
       href={buildDiscoverHref({ type, q, sort })}
       method="replace"
       suppressHydrationWarning
-      className={typeLinkClassName(active)}
+      className={railItemClass(active)}
       aria-current={active ? 'page' : undefined}
       onClick={() => writeDiscoverObjectTypeCookie(type)}
     >
-      <Icon name={iconForDiscoverObjectType(type)} size="sm" className="shrink-0" />
+      <Icon
+        name={iconForDiscoverObjectType(type)}
+        size="sm"
+        className="shrink-0"
+      />
       {formatObjectTypeLabel(type)}
     </OptimisticNavLink>
   );
@@ -79,7 +81,10 @@ export function DiscoverSidebar(_props: DiscoverSidebarProps) {
 
   const hasSearch = searchQuery.trim().length > 0;
   const filteredPopular = useMemo(
-    () => popularTypes.filter((type) => matchesDiscoverTypeSearch(type, searchQuery)),
+    () =>
+      popularTypes.filter((type) =>
+        matchesDiscoverTypeSearch(type, searchQuery),
+      ),
     [popularTypes, searchQuery],
   );
   const filteredAll = useMemo(
@@ -87,8 +92,7 @@ export function DiscoverSidebar(_props: DiscoverSidebarProps) {
     [types, searchQuery],
   );
 
-  const activeIndex =
-    !usersMode && objectType ? types.indexOf(objectType) : -1;
+  const activeIndex = !usersMode && objectType ? types.indexOf(objectType) : -1;
   const activeInPopular = objectType != null && popularSet.has(objectType);
   const activeBeyondInitial = activeIndex >= TYPES_INITIAL && !activeInPopular;
 
@@ -99,7 +103,9 @@ export function DiscoverSidebar(_props: DiscoverSidebarProps) {
     return filteredAll.slice(0, TYPES_INITIAL);
   }, [filteredAll, hasSearch, showAllTypes, activeBeyondInitial]);
 
-  const hiddenCount = hasSearch ? 0 : Math.max(0, filteredAll.length - TYPES_INITIAL);
+  const hiddenCount = hasSearch
+    ? 0
+    : Math.max(0, filteredAll.length - TYPES_INITIAL);
   const showMoreButton =
     hiddenCount > 0 && !showAllTypes && !activeBeyondInitial && !hasSearch;
 
@@ -151,7 +157,7 @@ export function DiscoverSidebar(_props: DiscoverSidebarProps) {
               href={buildDiscoverHref({ users: true, q, sort })}
               method="replace"
               suppressHydrationWarning
-              className={typeLinkClassName(usersMode)}
+              className={railItemClass(usersMode)}
               aria-current={usersMode ? 'page' : undefined}
             >
               <Icon name={DISCOVER_USERS_ICON} size="sm" className="shrink-0" />
@@ -192,7 +198,9 @@ export function DiscoverSidebar(_props: DiscoverSidebarProps) {
       ) : null}
 
       {showNoResults ? (
-        <p className="px-2 text-body-sm text-fg-secondary">{t('discover_no_results')}</p>
+        <p className="px-2 text-body-sm text-fg-secondary">
+          {t('discover_no_results')}
+        </p>
       ) : null}
     </aside>
   );

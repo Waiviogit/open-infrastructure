@@ -32,7 +32,10 @@ export type { CaseTransformTextFieldProps } from './components/case-transform-te
 export { IpfsImageDropZone } from './components/ipfs-image-drop-zone';
 export type { IpfsImageDropZoneProps } from './components/ipfs-image-drop-zone';
 export { ImageEditorPanel } from './components/image-editor';
-export type { ImageEditorConfig, ImageEditorPanelProps } from './components/image-editor';
+export type {
+  ImageEditorConfig,
+  ImageEditorPanelProps,
+} from './components/image-editor';
 export {
   AppModal,
   AppModalCloseButton,
@@ -41,13 +44,20 @@ export {
 export type { AppModalProps } from './components/app-modal';
 export { AppLoader } from './components/app-loader';
 export type { AppLoaderProps } from './components/app-loader';
-export {
-  ModalShell,
-  ModalShellCloseButton,
+export { ModalShell, ModalShellCloseButton } from './components/modal-shell';
+export type {
+  ModalShellProps,
+  ModalShellVariant,
+  ModalShellCloseButtonProps,
 } from './components/modal-shell';
-export type { ModalShellProps, ModalShellVariant, ModalShellCloseButtonProps } from './components/modal-shell';
-export { MobileFilterButton, MobileFilterSheet } from './components/mobile-filter-sheet';
-export type { MobileFilterButtonProps, MobileFilterSheetProps } from './components/mobile-filter-sheet';
+export {
+  MobileFilterButton,
+  MobileFilterSheet,
+} from './components/mobile-filter-sheet';
+export type {
+  MobileFilterButtonProps,
+  MobileFilterSheetProps,
+} from './components/mobile-filter-sheet';
 export {
   MODAL_Z_INDEX_DEFAULT,
   MODAL_Z_INDEX_EDITOR_OVERLAY,
@@ -67,6 +77,7 @@ export {
   profileSectionTabClass,
   profileSectionVerticalLinkClass,
 } from './components/profile-section-tab-classes';
+export { railItemClass } from './components/rail-item-class';
 export type { ProfileSectionTabSize } from './components/profile-section-tab-classes';
 export { PlaceholderSlot } from './components/placeholder-slot';
 export { ShellModeSwitcher } from './components/shell-mode-switcher';
