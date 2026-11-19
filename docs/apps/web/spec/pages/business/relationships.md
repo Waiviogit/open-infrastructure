@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, business, relationships]
-updated_at: 2026-11-04
+updated_at: 2026-11-19
 related:
   - docs/apps/web/spec/pages/business/overview.md
   - docs/spec/obl/mutual-ledger.md
@@ -22,7 +22,7 @@ related:
 
 `GET /query/v1/obl/relationships?account=&limit=&offset=` — paginated `{ items, hasMore }`; infinite scroll on the client.
 
-Each row shows the **confirmed** balance summary (`DirectionalUsd`). When confirmed net is settled (zero) but the **pending** bucket is non-zero, a second caption line shows the pending amount and direction (e.g. settled + “Pending: you owe @counterparty $10.00”).
+Each row is a link to the ledger: avatar, `@counterparty`, translated roles, `Contracts: N`, last activity, and the **confirmed** balance summary (`DirectionalUsd`; owed to the viewer in the success colour). A failed load shows `BusinessErrorState`, not the empty state. When confirmed net is settled (zero) but the **pending** bucket is non-zero, a second caption line shows the pending amount and direction (e.g. settled + “Pending: you owe @counterparty $10.00”).
 
 ## Detail (`/business/relationships/:account`)
 
@@ -30,18 +30,18 @@ Each row shows the **confirmed** balance summary (`DirectionalUsd`). When confir
 - Tabs (default **Payments**): Payments, Contracts, Service orders, Reports, Invoices, Disputes — no Overview tab.
 - Tab selection is URL-synced via `?tab=payments|contracts|service-orders|reports|invoices|disputes` (default omits query). Example: `/business/relationships/flowmaster?tab=service-orders`.
 - All tab lists are ordered **newest first** by `created_at` (API + client sort).
-- Broadcast errors shown below balance cards on all tabs.
-- Header actions open modals (no inline forms on tabs):
-  - **Create invoice** — `BusinessIssueInvoiceModal`: issuer fixed to viewer; optional governing `contract_id`; optional `service_order_id` / `report_id` text fields; client blocks submit when the typed `service_order_id` matches a loaded cancelled SO; **Simple** / **Split payment** modes (see existing split/attestor rules); optional supporting info via **Object Builder** (`details`).
+- Balance cards show every bucket with a direction ("@alice owes you $2,101.00" / "You owe @alice …"); amounts go through `formatUsd` (`$1,234,567.89`, `−` for negatives).
+- Header actions open modals (no inline forms on tabs). Every modal is a `BusinessFormModal`: it closes only when the broadcast returned a transaction id; a failure keeps the input and shows `BusinessActionError` above the footer; Escape, backdrop and Cancel are disabled while the broadcast is in flight. Amount fields start empty (no prefilled `5` / `10`).
+  - **Create invoice** — `BusinessIssueInvoiceModal`: issuer fixed to viewer; optional governing `contract_id`; optional service order and report as selects (active service orders and reports of the pair, narrowed to the chosen contract); **Simple** / **Split payment** modes (see existing split/attestor rules); optional supporting info via **Object Builder** (`details`).
   - **Create service order** — `BusinessCreateServiceOrderModal`: contract dropdown (signed pair contracts whose **offer is `active`**; retired offers omitted), optional `details` via **Object Builder** (prefill from contract `service_order_schema` when present); `service_order_create`. On submit `compactServiceOrderDetails` drops fields left blank (`''`, whitespace, `null`, empty arrays and objects, recursively; `false` and `0` stay), so untouched optional schema fields never reach the chain; all blank → no `details`.
-  - **Create report** — `BusinessCreateReportModal`: optional contract and/or service order id (at least one required on chain), optional `details` via **Object Builder**; `report_create`. Client blocks submit when the typed `service_order_id` matches a loaded cancelled SO.
+  - **Create report** — `BusinessCreateReportModal`: optional contract and/or service order (selects; only active service orders; at least one link required on chain), optional `details` via **Object Builder**; `report_create`.
   - **Record payment** — `BusinessDeclarePaymentModal` (unchanged).
   - **Copy payment link** — copies `/business/pay?for=<viewer>&to=<counterparty>` so another account can pay on the viewer's behalf.
 - **Pay on behalf** page `/business/pay?for=&to=` (`BusinessPayOnBehalfClient`): editable debtor/receiver prefilled from the query, USD amount, **Pay with WAIV** (Hive Engine transfer with memo `obl:on-behalf:<debtor>`, USD→WAIV via `/api/business/convert-usd-to-waiv`) and **Declare off-chain payment** (`payment_declare` with `payer = debtor`, signed by viewer). Client mirrors indexer rules (`validatePayOnBehalfParties`) and warns, without blocking, when the debtor has no confirmed debt. See [payment on behalf](../../../../spec/obl/payment-on-behalf.md).
 - Payments rows show **Paid by @account** when `paid_by` is set.
 - **Confirm payment**, **Payments tab**, **Dispute invoice** — unchanged (see prior spec text in git history if needed).
 - **Contracts tab** — cards with offer name, description (truncated to 300 chars), `contract_id`, `created_at`; link to contract detail.
-- **Service orders tab** — cards link to `/business/service-orders/:id`; contract label when known; **Cancel** button (not nested in the link) when the SO is `active` and the viewer is provider or client.
+- **Service orders tab** — cards link to `/business/service-orders/:id`; contract label when known; destructive **Cancel** button (not nested in the link) when the SO is `active` and the viewer is provider or client — it opens a confirmation dialog before `service_order_cancel`.
 - **Reports tab** — cards link to `/business/reports/:id`; author, contract, optional service order id.
 - **Invoices tab** — each row shows linked contract; optional links to service order and report when `service_order_id` / `report_id` present; `invoice_id` links to invoice detail; `created_at`, state badge.
 - **Disputes tab** — unchanged.
@@ -52,7 +52,7 @@ Each row shows the **confirmed** balance summary (`DirectionalUsd`). When confir
 
 ## Service order (`/business/service-orders/:serviceOrderId`)
 
-`GET /query/v1/obl/service-orders/:serviceOrderId` — parties, contract, `details`, `status`, `cancelled_by` / `cancelled_at` when cancelled, relationship links. Viewer who is a party can **Cancel** an active SO (`service_order_cancel`; signer is posting auth, not a payload field).
+`GET /query/v1/obl/service-orders/:serviceOrderId` — parties, contract, `details`, `status`, `cancelled_by` / `cancelled_at` when cancelled, relationship links. Viewer who is a party can **Cancel** an active SO after a confirmation dialog (`service_order_cancel`; signer is posting auth, not a payload field).
 
 ## Report (`/business/reports/:reportId`)
 

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { UserRefSearchField } from '@/modules/object-updates/presentation/components/user-ref-search-field';
-import { ModalShell, ModalShellCloseButton } from '@/shared/presentation';
 
 import type { InvoiceIssueSubmitPayload } from '../../../domain/invoice-issue';
 import {
@@ -20,9 +19,25 @@ import {
   type BeneficiaryLineDraft,
   type InvoiceIssueMode,
 } from '../../../domain/invoice-issue';
-import type { LedgerContractRow, LedgerServiceOrderRow } from '../../../domain/ledger.types';
-import { isCancelledServiceOrderId } from '../../../domain/service-order-cancel';
-import { shortContractId } from '../../../domain/dispute-resolution';
+import type {
+  LedgerContractRow,
+  LedgerReportRow,
+  LedgerServiceOrderRow,
+} from '../../../domain/ledger.types';
+import {
+  contractDisplayLabel,
+  reportDisplayLabel,
+  serviceOrderDisplayLabel,
+} from '../../../domain/contract-label';
+import { formatUsd } from '../../../domain/usd-format';
+import {
+  BUSINESS_CALLOUT_CLASS,
+  BUSINESS_FIELD_CLASS,
+  BUSINESS_FOCUS_RING,
+} from '../../ui/classes';
+import { BusinessButton } from '../../ui/business-button';
+import { BusinessField } from '../../ui/business-field';
+import { BusinessFormModal } from '../../ui/business-form-modal';
 import { ObjectBuilder } from '../object-builder';
 import { StateBadge } from '../state-badge';
 import {
@@ -35,46 +50,49 @@ export type BusinessIssueInvoiceModalProps = {
   open: boolean;
   onClose: () => void;
   isBusy: boolean;
+  error?: string | null;
   issuer: string;
   counterparty: string;
   debtor: string;
   creditor: string;
   contracts: LedgerContractRow[];
   serviceOrders: LedgerServiceOrderRow[];
-  onSubmit: (payload: InvoiceIssueSubmitPayload) => Promise<void>;
+  reports: LedgerReportRow[];
+  /** Resolves `true` when the broadcast succeeded. */
+  onSubmit: (payload: InvoiceIssueSubmitPayload) => Promise<boolean>;
 };
 
 type ModalStep = 'form' | 'confirm';
 
 function emptyBeneficiaryLine(): BeneficiaryLineDraft {
-  return { beneficiary: '', amountUsd: '10', role: '' };
+  return { beneficiary: '', amountUsd: '', role: '' };
 }
 
 export function BusinessIssueInvoiceModal({
   open,
   onClose,
   isBusy,
+  error,
   issuer,
   counterparty,
   debtor,
   creditor,
   contracts,
   serviceOrders,
+  reports,
   onSubmit,
 }: BusinessIssueInvoiceModalProps) {
   const { t } = useI18n();
-  const titleId = 'business-issue-invoice-modal-title';
   const [step, setStep] = useState<ModalStep>('form');
   const [ack, setAck] = useState(false);
   const [mode, setMode] = useState<InvoiceIssueMode>('simple');
-  const [amount, setAmount] = useState('10');
+  const [amount, setAmount] = useState('');
   const [details, setDetails] = useState<Record<string, unknown>>({});
   const [detailsValid, setDetailsValid] = useState(true);
   const [detailsBuilderKey, setDetailsBuilderKey] = useState(0);
   const [contractId, setContractId] = useState('');
   const [serviceOrderId, setServiceOrderId] = useState('');
   const [reportId, setReportId] = useState('');
-  const [soError, setSoError] = useState<string | null>(null);
   const [parties, setParties] = useState({ debtor, creditor });
   const [splitDebtor, setSplitDebtor] = useState(debtor);
   const [beneficiaries, setBeneficiaries] = useState<BeneficiaryLineDraft[]>([
@@ -86,12 +104,12 @@ export function BusinessIssueInvoiceModal({
       setStep('form');
       setAck(false);
       setMode('simple');
+      setAmount('');
       setParties({ debtor, creditor });
       setSplitDebtor(debtor);
       setContractId(contracts[0]?.contract_id ?? '');
       setServiceOrderId('');
       setReportId('');
-      setSoError(null);
       setBeneficiaries([emptyBeneficiaryLine()]);
       setDetails({});
       setDetailsValid(true);
@@ -119,7 +137,9 @@ export function BusinessIssueInvoiceModal({
     const current = normalizeHiveAccountInput(splitDebtor);
     if (!contractParties.includes(current)) {
       const issuerNorm = normalizeHiveAccountInput(issuer);
-      const fallback = contractParties.find((party) => party !== issuerNorm) ?? contractParties[0];
+      const fallback =
+        contractParties.find((party) => party !== issuerNorm) ??
+        contractParties[0];
       if (fallback) {
         setSplitDebtor(fallback);
       }
@@ -154,7 +174,8 @@ export function BusinessIssueInvoiceModal({
   const attestor =
     mode === 'split' && isAttestorIssue(issuer, splitDebtor, beneficiaries);
   const contractRequired =
-    mode === 'split' && requiresGoverningContract(issuer, splitDebtor, beneficiaries);
+    mode === 'split' &&
+    requiresGoverningContract(issuer, splitDebtor, beneficiaries);
   const splitTotal = sumBeneficiaryAmounts(beneficiaries);
   const predictedLines = useMemo(
     () =>
@@ -171,7 +192,6 @@ export function BusinessIssueInvoiceModal({
 
   const canSubmitSimple =
     mode === 'simple' &&
-    !isBusy &&
     detailsValid &&
     validateSimpleIssue({
       viewer: issuer,
@@ -183,7 +203,6 @@ export function BusinessIssueInvoiceModal({
 
   const canSubmitSplit =
     mode === 'split' &&
-    !isBusy &&
     detailsValid &&
     validateSplitIssue({
       issuer,
@@ -195,21 +214,31 @@ export function BusinessIssueInvoiceModal({
 
   const canSubmit = mode === 'simple' ? canSubmitSimple : canSubmitSplit;
 
-  async function handleSubmit() {
+  /** Only active service orders, narrowed to the chosen contract. */
+  const linkableServiceOrders = useMemo(
+    () =>
+      serviceOrders.filter(
+        (so) =>
+          so.status !== 'cancelled' &&
+          (!contractId || so.contract_id === contractId),
+      ),
+    [serviceOrders, contractId],
+  );
+  const linkableReports = useMemo(
+    () =>
+      reports.filter((rep) => !contractId || rep.contract_id === contractId),
+    [reports, contractId],
+  );
+
+  async function handleSubmit(): Promise<boolean> {
     const detailsPayload =
       Object.keys(details).length > 0 ? details : undefined;
-    const trimmedSo = serviceOrderId.trim();
-    if (isCancelledServiceOrderId(trimmedSo, serviceOrders)) {
-      setSoError(t('business_service_order_cancelled_ref'));
-      return;
-    }
-    setSoError(null);
 
     if (mode === 'simple') {
       if (!parsePositiveUsdAmount(amount)) {
-        return;
+        return false;
       }
-      await onSubmit({
+      return onSubmit({
         mode: 'simple',
         amountUsd: amount,
         parties,
@@ -218,37 +247,35 @@ export function BusinessIssueInvoiceModal({
         reportId: reportId.trim() || undefined,
         details: detailsPayload,
       });
-    } else {
-      await onSubmit({
-        mode: 'split',
-        debtor: normalizeHiveAccountInput(splitDebtor),
-        beneficiaries: beneficiaries.map((line) => ({
-          beneficiary: normalizeHiveAccountInput(line.beneficiary),
-          amountUsd: line.amountUsd,
-          role: line.role?.trim() || undefined,
-        })),
-        contractId: contractId || undefined,
-        serviceOrderId: serviceOrderId.trim() || undefined,
-        reportId: reportId.trim() || undefined,
-        details: detailsPayload,
-      });
     }
-    onClose();
+    return onSubmit({
+      mode: 'split',
+      debtor: normalizeHiveAccountInput(splitDebtor),
+      beneficiaries: beneficiaries.map((line) => ({
+        beneficiary: normalizeHiveAccountInput(line.beneficiary),
+        amountUsd: line.amountUsd,
+        role: line.role?.trim() || undefined,
+      })),
+      contractId: contractId || undefined,
+      serviceOrderId: serviceOrderId.trim() || undefined,
+      reportId: reportId.trim() || undefined,
+      details: detailsPayload,
+    });
   }
 
-  function onPrimaryAction() {
-    if (step === 'confirm') {
-      void handleSubmit();
-      return;
-    }
-    if (mode === 'split' && selfBeneficiary) {
+  /** Self-beneficiary splits pass through an explicit confirmation step first. */
+  async function onPrimaryAction(): Promise<boolean> {
+    if (step === 'form' && mode === 'split' && selfBeneficiary) {
       setStep('confirm');
-      return;
+      return false;
     }
-    void handleSubmit();
+    return handleSubmit();
   }
 
-  function updateBeneficiary(index: number, patch: Partial<BeneficiaryLineDraft>) {
+  function updateBeneficiary(
+    index: number,
+    patch: Partial<BeneficiaryLineDraft>,
+  ) {
     setBeneficiaries((rows) =>
       rows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
     );
@@ -260,83 +287,83 @@ export function BusinessIssueInvoiceModal({
       : t('business_modal_issue_invoice_title');
 
   return (
-    <ModalShell
+    <BusinessFormModal
       open={open}
       onClose={onClose}
-      closeOnBackdrop={!isBusy}
-      labelledBy={titleId}
-      maxWidthClass="max-w-lg"
-      header={
-        <div className="flex items-center justify-between gap-3 border-b border-border px-card-padding py-3">
-          <h2 id={titleId} className="text-body font-weight-strong text-heading">
-            {modalTitle}
-          </h2>
-          <ModalShellCloseButton onClose={onClose} disabled={isBusy} ariaLabel={t('business_modal_close')} />
-        </div>
+      title={modalTitle}
+      busy={isBusy}
+      error={error}
+      submitLabel={
+        step === 'confirm'
+          ? t('business_invoice_split_confirm_broadcast')
+          : t('business_create_invoice')
       }
-      footer={
-        <div className="flex justify-end gap-2 border-t border-border px-card-padding py-3">
-          {step === 'confirm' ? (
-            <button
-              type="button"
-              onClick={() => {
-                setStep('form');
-                setAck(false);
-              }}
-              disabled={isBusy}
-              className="rounded-btn border border-border px-4 py-2 text-body-sm disabled:opacity-50"
-            >
-              {t('business_invoice_split_confirm_back')}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isBusy}
-              className="rounded-btn border border-border px-4 py-2 text-body-sm disabled:opacity-50"
-            >
-              {t('business_modal_cancel')}
-            </button>
-          )}
-          <button
-            type="button"
-            disabled={step === 'confirm' ? isBusy || !ack : !canSubmit}
-            onClick={() => void onPrimaryAction()}
-            className="rounded-btn bg-accent px-4 py-2 text-body-sm font-weight-label text-accent-fg disabled:opacity-50"
+      canSubmit={step === 'confirm' ? ack : canSubmit}
+      onSubmit={onPrimaryAction}
+      maxWidthClass="max-w-lg"
+      footerStart={
+        step === 'confirm' ? (
+          <BusinessButton
+            variant="ghost"
+            disabled={isBusy}
+            onClick={() => {
+              setStep('form');
+              setAck(false);
+            }}
           >
-            {step === 'confirm'
-              ? t('business_invoice_split_confirm_broadcast')
-              : t('business_create_invoice')}
-          </button>
-        </div>
+            {t('business_invoice_split_confirm_back')}
+          </BusinessButton>
+        ) : null
       }
     >
       {step === 'confirm' ? (
-        <div className="flex flex-col gap-4 p-card-padding">
-          <p className="text-body-sm text-fg-secondary">{t('business_invoice_split_confirm_body')}</p>
+        <>
+          <p className="text-body-sm text-fg">
+            {t('business_invoice_split_confirm_body')}
+          </p>
           <div className="overflow-x-auto rounded-card border border-border">
             <table className="w-full text-body-sm">
               <thead>
-                <tr className="border-b border-border bg-surface-alt text-left text-caption text-fg-secondary">
-                  <th className="px-3 py-2 font-weight-label">
+                <tr className="border-b border-border bg-surface-control text-caption text-fg-secondary">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-start font-weight-label"
+                  >
                     {t('business_invoice_split_confirm_row_beneficiary')}
                   </th>
-                  <th className="px-3 py-2 font-weight-label">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-end font-weight-label"
+                  >
                     {t('business_invoice_split_confirm_row_amount')}
                   </th>
-                  <th className="px-3 py-2 font-weight-label">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-start font-weight-label"
+                  >
                     {t('business_invoice_split_confirm_row_status')}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {predictedLines.map((line) => (
-                  <tr key={line.beneficiary} className="border-b border-border last:border-b-0">
-                    <td className="px-3 py-2 font-mono">@{line.beneficiary}</td>
-                    <td className="px-3 py-2">${line.amountUsd}</td>
+                  <tr
+                    key={line.beneficiary}
+                    className="border-b border-border last:border-b-0"
+                  >
+                    <td className="break-words px-3 py-2 [overflow-wrap:anywhere]">
+                      @{line.beneficiary}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-end tabular-nums">
+                      {formatUsd(line.amountUsd)}
+                    </td>
                     <td className="px-3 py-2">
                       <StateBadge
-                        variant={line.expectedState === 'confirmed' ? 'confirmed' : 'pending'}
+                        variant={
+                          line.expectedState === 'confirmed'
+                            ? 'confirmed'
+                            : 'pending'
+                        }
                       />
                     </td>
                   </tr>
@@ -350,23 +377,31 @@ export function BusinessIssueInvoiceModal({
               checked={ack}
               onChange={(e) => setAck(e.target.checked)}
               disabled={isBusy}
-              className="mt-1"
+              className="mt-1 size-4 shrink-0 accent-accent"
             />
             <span>{t('business_invoice_split_confirm_ack')}</span>
           </label>
-        </div>
+        </>
       ) : (
-        <div className="flex flex-col gap-4 p-card-padding">
-          <div className="flex gap-2 rounded-btn border border-border p-1">
+        <>
+          <div
+            className="flex gap-1 rounded-btn border border-border bg-surface-control p-1"
+            role="group"
+            aria-label={t('business_invoice_mode_label')}
+          >
             {(['simple', 'split'] as const).map((value) => (
               <button
                 key={value}
                 type="button"
                 disabled={isBusy}
+                aria-pressed={mode === value}
                 onClick={() => setMode(value)}
                 className={[
-                  'flex-1 rounded-btn px-3 py-2 text-body-sm',
-                  mode === value ? 'bg-accent text-accent-fg' : 'text-fg-secondary hover:bg-surface-alt',
+                  'min-h-9 flex-1 rounded-btn px-3 py-1.5 text-body-sm transition-colors',
+                  BUSINESS_FOCUS_RING,
+                  mode === value
+                    ? 'bg-surface font-weight-label text-heading shadow-whisper'
+                    : 'text-fg-secondary hover:text-fg',
                 ].join(' ')}
               >
                 {value === 'simple'
@@ -376,7 +411,10 @@ export function BusinessIssueInvoiceModal({
             ))}
           </div>
 
-          <RelationshipReadonlyField label={t('business_field_issuer')} value={`@${issuer}`} />
+          <RelationshipReadonlyField
+            label={t('business_field_issuer')}
+            value={`@${issuer}`}
+          />
 
           {mode === 'simple' ? (
             <>
@@ -394,16 +432,16 @@ export function BusinessIssueInvoiceModal({
                   }))
                 }
               />
-              <label className="flex flex-col gap-1 text-body-sm">
-                {t('business_field_amount_usd')}
+              <BusinessField label={t('business_field_amount_usd')} required>
                 <input
                   type="text"
                   inputMode="decimal"
+                  placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="rounded-btn border border-border px-3 py-2"
+                  className={BUSINESS_FIELD_CLASS}
                 />
-              </label>
+              </BusinessField>
             </>
           ) : (
             <>
@@ -417,28 +455,40 @@ export function BusinessIssueInvoiceModal({
                 onSwap={swapSplitDebtor}
               />
               {contracts.length === 0 ? (
-                <p className="text-caption text-error" role="alert">
+                <p className="text-body-sm text-error" role="alert">
                   {t('business_invoice_debtor_contract_required')}
                 </p>
               ) : null}
-              <div className="flex flex-col gap-2">
+              <fieldset className="flex min-w-0 flex-col gap-2">
+                <legend className="sr-only">
+                  {t('business_invoice_beneficiaries')}
+                </legend>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-body-sm font-weight-label">{t('business_invoice_beneficiaries')}</span>
-                  <button
-                    type="button"
+                  <span
+                    className="text-body-sm font-weight-label text-fg"
+                    aria-hidden
+                  >
+                    {t('business_invoice_beneficiaries')}
+                  </span>
+                  <BusinessButton
+                    size="sm"
                     disabled={isBusy}
-                    onClick={() => setBeneficiaries((rows) => [...rows, emptyBeneficiaryLine()])}
-                    className="rounded-btn border border-border px-3 py-1 text-caption disabled:opacity-50"
+                    onClick={() =>
+                      setBeneficiaries((rows) => [
+                        ...rows,
+                        emptyBeneficiaryLine(),
+                      ])
+                    }
                   >
                     {t('business_invoice_add_beneficiary')}
-                  </button>
+                  </BusinessButton>
                 </div>
                 {beneficiaries.map((line, index) => (
                   <div
                     key={index}
-                    className="flex flex-col gap-2 rounded-btn border border-border p-3"
+                    className="flex min-w-0 flex-col gap-2 rounded-card border border-border p-3"
                   >
-                    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_auto] items-end">
+                    <div className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_7rem]">
                       <UserRefSearchField
                         label={t('business_field_beneficiary')}
                         value={line.beneficiary}
@@ -446,50 +496,62 @@ export function BusinessIssueInvoiceModal({
                           updateBeneficiary(index, { beneficiary: accountName })
                         }
                         fieldLabel={t('business_field_beneficiary')}
-                        searchPlaceholder={t('business_hive_account_search_placeholder')}
+                        searchPlaceholder={t(
+                          'business_hive_account_search_placeholder',
+                        )}
                         excludeAccountNames={beneficiaryExcludeForRow(index)}
                       />
-                      <label className="flex flex-col gap-1 text-caption">
-                        {t('business_field_amount_usd')}
+                      <BusinessField label={t('business_field_amount_usd')}>
                         <input
                           type="text"
                           inputMode="decimal"
+                          placeholder="0.00"
                           value={line.amountUsd}
-                          onChange={(e) => updateBeneficiary(index, { amountUsd: e.target.value })}
-                          className="rounded-btn border border-border px-2 py-1.5 text-body-sm"
+                          onChange={(e) =>
+                            updateBeneficiary(index, {
+                              amountUsd: e.target.value,
+                            })
+                          }
+                          className={BUSINESS_FIELD_CLASS}
                         />
-                      </label>
-                      <button
-                        type="button"
-                        disabled={isBusy || beneficiaries.length <= 1}
-                        onClick={() =>
-                          setBeneficiaries((rows) => rows.filter((_, i) => i !== index))
-                        }
-                        className="rounded-btn border border-border px-2 py-1.5 text-caption disabled:opacity-50"
-                      >
-                        {t('business_invoice_remove_beneficiary')}
-                      </button>
+                      </BusinessField>
                     </div>
-                    <label className="flex flex-col gap-1 text-caption">
-                      {t('business_field_role')}
+                    <BusinessField label={t('business_field_role')}>
                       <input
                         type="text"
                         value={line.role ?? ''}
-                        onChange={(e) => updateBeneficiary(index, { role: e.target.value })}
-                        className="rounded-btn border border-border px-2 py-1.5 text-body-sm"
+                        onChange={(e) =>
+                          updateBeneficiary(index, { role: e.target.value })
+                        }
+                        className={BUSINESS_FIELD_CLASS}
                         placeholder={t('business_invoice_role_optional')}
                       />
-                    </label>
+                    </BusinessField>
+                    {beneficiaries.length > 1 ? (
+                      <BusinessButton
+                        variant="ghost"
+                        size="sm"
+                        className="self-start"
+                        disabled={isBusy}
+                        onClick={() =>
+                          setBeneficiaries((rows) =>
+                            rows.filter((_, i) => i !== index),
+                          )
+                        }
+                      >
+                        {t('business_invoice_remove_beneficiary')}
+                      </BusinessButton>
+                    ) : null}
                   </div>
                 ))}
                 <RelationshipReadonlyField
                   label={t('business_invoice_total')}
-                  value={`$${splitTotal}`}
+                  value={formatUsd(splitTotal)}
                 />
-              </div>
+              </fieldset>
               {selfBeneficiary ? (
                 <p
-                  className="rounded-btn border border-border bg-surface-alt px-3 py-2 text-caption text-warning"
+                  className={`${BUSINESS_CALLOUT_CLASS} border-error`}
                   role="alert"
                 >
                   {t('business_invoice_self_beneficiary_warning').replace(
@@ -499,7 +561,7 @@ export function BusinessIssueInvoiceModal({
                 </p>
               ) : null}
               {attestor ? (
-                <p className="rounded-btn border border-border bg-surface-alt px-3 py-2 text-caption text-fg-secondary">
+                <p className={BUSINESS_CALLOUT_CLASS}>
                   {t('business_invoice_attestor_hint')}
                 </p>
               ) : null}
@@ -507,62 +569,81 @@ export function BusinessIssueInvoiceModal({
           )}
 
           {contracts.length > 0 ? (
-            <label className="flex flex-col gap-1 text-body-sm">
-              {t('business_field_contract')}
-              {contractRequired ? (
-                <span className="text-caption text-fg-secondary">
-                  {t('business_invoice_contract_required')}
-                </span>
-              ) : null}
+            <BusinessField
+              label={t('business_field_contract')}
+              hint={
+                contractRequired
+                  ? t('business_invoice_contract_required')
+                  : undefined
+              }
+            >
               <select
                 value={contractId}
-                onChange={(e) => setContractId(e.target.value)}
-                className="rounded-btn border border-border px-3 py-2"
+                onChange={(e) => {
+                  setContractId(e.target.value);
+                  setServiceOrderId('');
+                  setReportId('');
+                }}
+                className={BUSINESS_FIELD_CLASS}
               >
-                {!contractRequired ? <option value="">{t('business_invoice_no_contract_option')}</option> : null}
+                {!contractRequired ? (
+                  <option value="">
+                    {t('business_invoice_no_contract_option')}
+                  </option>
+                ) : null}
                 {contracts.map((c) => (
                   <option key={c.contract_id} value={c.contract_id}>
-                    {c.offer_name} · {shortContractId(c.contract_id)}
+                    {contractDisplayLabel(c)}
                   </option>
                 ))}
               </select>
-            </label>
+            </BusinessField>
           ) : contractRequired ? (
-            <p className="text-caption text-error" role="alert">
+            <p className="text-body-sm text-error" role="alert">
               {t('business_invoice_contract_required_missing')}
             </p>
           ) : (
-            <p className="text-caption text-fg-secondary">{t('business_field_no_contract')}</p>
+            <p className="text-body-sm text-fg-secondary">
+              {t('business_field_no_contract')}
+            </p>
           )}
 
-          <label className="flex flex-col gap-1 text-body-sm">
-            {t('business_field_service_order')}
-            <input
-              type="text"
-              value={serviceOrderId}
-              onChange={(e) => {
-                setServiceOrderId(e.target.value);
-                setSoError(null);
-              }}
-              className="rounded-btn border border-border px-3 py-2 font-mono text-caption"
-              placeholder={t('business_invoice_optional_link_placeholder')}
-            />
-          </label>
-          {soError ? (
-            <p className="text-caption text-error" role="alert">
-              {soError}
-            </p>
+          {linkableServiceOrders.length > 0 ? (
+            <BusinessField label={t('business_field_service_order')}>
+              <select
+                value={serviceOrderId}
+                onChange={(e) => setServiceOrderId(e.target.value)}
+                className={BUSINESS_FIELD_CLASS}
+              >
+                <option value="">
+                  {t('business_report_no_service_order_option')}
+                </option>
+                {linkableServiceOrders.map((so) => (
+                  <option key={so.service_order_id} value={so.service_order_id}>
+                    {serviceOrderDisplayLabel(so, contracts)}
+                  </option>
+                ))}
+              </select>
+            </BusinessField>
           ) : null}
-          <label className="flex flex-col gap-1 text-body-sm">
-            {t('business_field_report')}
-            <input
-              type="text"
-              value={reportId}
-              onChange={(e) => setReportId(e.target.value)}
-              className="rounded-btn border border-border px-3 py-2 font-mono text-caption"
-              placeholder={t('business_invoice_optional_link_placeholder')}
-            />
-          </label>
+          {linkableReports.length > 0 ? (
+            <BusinessField label={t('business_field_report')}>
+              <select
+                value={reportId}
+                onChange={(e) => setReportId(e.target.value)}
+                className={BUSINESS_FIELD_CLASS}
+              >
+                <option value="">
+                  {t('business_invoice_no_report_option')}
+                </option>
+                {linkableReports.map((rep) => (
+                  <option key={rep.report_id} value={rep.report_id}>
+                    {reportDisplayLabel(rep, contracts)}
+                  </option>
+                ))}
+              </select>
+            </BusinessField>
+          ) : null}
 
           <ObjectBuilder
             key={detailsBuilderKey}
@@ -574,8 +655,8 @@ export function BusinessIssueInvoiceModal({
               setDetailsValid(valid);
             }}
           />
-        </div>
+        </>
       )}
-    </ModalShell>
+    </BusinessFormModal>
   );
 }

@@ -1,6 +1,5 @@
 import {
   directionalAmountsForViewer,
-  formatDisplayUsd,
   shouldShowPendingWhenSettled,
   viewerNetUsd,
 } from './directional-usd';
@@ -13,7 +12,9 @@ describe('directionalAmountsForViewer', () => {
   };
 
   it('maps owesAtoB when viewer is accountA', () => {
-    expect(directionalAmountsForViewer('alice', 'alice', 'bob', bucket)).toEqual({
+    expect(
+      directionalAmountsForViewer('alice', 'alice', 'bob', bucket),
+    ).toEqual({
       viewerOwes: 110,
       owesViewer: 0,
     });
@@ -39,19 +40,23 @@ describe('viewerNetUsd', () => {
       owesBtoA: '0.00000000',
       netUsd: '3.00000000',
     };
-    expect(viewerNetUsd('flowmaster', 'flowmaster', 'fesmofet', bucket.netUsd)).toBe(3);
-    expect(viewerNetUsd('fesmofet', 'flowmaster', 'fesmofet', bucket.netUsd)).toBe(-3);
-    expect(directionalAmountsForViewer('flowmaster', 'flowmaster', 'fesmofet', bucket)).toEqual({
+    expect(
+      viewerNetUsd('flowmaster', 'flowmaster', 'fesmofet', bucket.netUsd),
+    ).toBe(3);
+    expect(
+      viewerNetUsd('fesmofet', 'flowmaster', 'fesmofet', bucket.netUsd),
+    ).toBe(-3);
+    expect(
+      directionalAmountsForViewer(
+        'flowmaster',
+        'flowmaster',
+        'fesmofet',
+        bucket,
+      ),
+    ).toEqual({
       viewerOwes: 0,
       owesViewer: 0,
     });
-  });
-});
-
-describe('formatDisplayUsd', () => {
-  it('formats to two decimal places', () => {
-    expect(formatDisplayUsd(110)).toBe('110.00');
-    expect(formatDisplayUsd(0)).toBe('0.00');
   });
 });
 

@@ -18,7 +18,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** Body streams behind the skeleton: `business/loading.tsx` is shared with the sibling tab. */
-export default function BusinessDiscoverRequestsPage({ searchParams }: { searchParams: SearchParams }) {
+export default function BusinessDiscoverRequestsPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   return (
     <Suspense fallback={<BusinessContentSkeleton />}>
       <BusinessDiscoverRequestsBody searchParams={searchParams} />
@@ -26,7 +30,11 @@ export default function BusinessDiscoverRequestsPage({ searchParams }: { searchP
   );
 }
 
-async function BusinessDiscoverRequestsBody({ searchParams }: { searchParams: SearchParams }) {
+async function BusinessDiscoverRequestsBody({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const filters = parsePublicOffersPageState(await searchParams);
   const page = await searchOblOffers({
     kind: 'request',
@@ -37,6 +45,7 @@ async function BusinessDiscoverRequestsBody({ searchParams }: { searchParams: Se
   return (
     <PublicOffersListClient
       initialPage={page ?? { items: [], hasMore: false }}
+      loadFailed={page === null}
       kind="request"
       filters={filters}
     />

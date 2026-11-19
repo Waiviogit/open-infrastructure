@@ -5,11 +5,16 @@ import Link from 'next/link';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { formatAbsoluteDateTime } from '@/shared/utils/format-relative-time';
 
+import { disputeRuleLabelKey } from '../../domain/contract-label';
 import { businessRoutes } from '../../domain/routes';
 import type { OblContractApiRow } from '../../infrastructure/clients/obl-ledger.server';
 import { BusinessPageShell } from '../layout/business-page-shell';
 
-export function BusinessContractClient({ contract }: { contract: OblContractApiRow }) {
+export function BusinessContractClient({
+  contract,
+}: {
+  contract: OblContractApiRow;
+}) {
   const { t, locale } = useI18n();
   const hasMetadata = Object.keys(contract.metadata ?? {}).length > 0;
   const offerName = contract.offer_name?.trim() || null;
@@ -30,7 +35,9 @@ export function BusinessContractClient({ contract }: { contract: OblContractApiR
         ) : null}
         {offerDescription ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_description')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_field_description')}
+            </dt>
             <dd className="whitespace-pre-wrap">{offerDescription}</dd>
           </div>
         ) : null}
@@ -58,8 +65,10 @@ export function BusinessContractClient({ contract }: { contract: OblContractApiR
           <dd>@{contract.client}</dd>
         </div>
         <div>
-          <dt className="text-fg-secondary">{t('business_field_dispute_rule')}</dt>
-          <dd>{contract.dispute_rule}</dd>
+          <dt className="text-fg-secondary">
+            {t('business_field_dispute_rule')}
+          </dt>
+          <dd>{t(disputeRuleLabelKey(contract.dispute_rule))}</dd>
         </div>
         {contract.arbiter ? (
           <div>
@@ -76,7 +85,9 @@ export function BusinessContractClient({ contract }: { contract: OblContractApiR
         ) : null}
         {contract.created_at ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_created_at')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_field_created_at')}
+            </dt>
             <dd>
               <time dateTime={contract.created_at}>
                 {formatAbsoluteDateTime(contract.created_at, locale)}
@@ -86,13 +97,19 @@ export function BusinessContractClient({ contract }: { contract: OblContractApiR
         ) : null}
         {contract.transaction_id ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_transaction_id')}</dt>
-            <dd className="font-mono text-caption break-all">{contract.transaction_id}</dd>
+            <dt className="text-fg-secondary">
+              {t('business_field_transaction_id')}
+            </dt>
+            <dd className="font-mono text-caption break-all">
+              {contract.transaction_id}
+            </dd>
           </div>
         ) : null}
         {hasMetadata ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_sign_metadata_label')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_sign_metadata_label')}
+            </dt>
             <dd>
               <pre className="mt-1 whitespace-pre-wrap rounded-btn border border-border bg-surface-alt p-2 font-mono text-caption">
                 {JSON.stringify(contract.metadata, null, 2)}

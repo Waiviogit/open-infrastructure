@@ -1,6 +1,9 @@
 'use client';
 
-import { isOblUsdAmount, parseOblUsdAmount } from '@opden-data-layer/core/utils/obl-usd-amount';
+import {
+  isOblUsdAmount,
+  parseOblUsdAmount,
+} from '@opden-data-layer/core/utils/obl-usd-amount';
 
 import { ArrowUpDownIcon } from '@/icons';
 export function RelationshipReadonlyField({
@@ -11,9 +14,11 @@ export function RelationshipReadonlyField({
   value: string;
 }) {
   return (
-    <div className="text-body-sm">
-      <dt className="text-caption text-fg-secondary">{label}</dt>
-      <dd className="mt-0.5 font-mono text-body-sm text-fg">{value}</dd>
+    <div className="min-w-0 text-body-sm">
+      <p className="text-caption text-fg-secondary">{label}</p>
+      <p className="mt-0.5 break-words text-body-sm tabular-nums text-fg [overflow-wrap:anywhere]">
+        {value}
+      </p>
     </div>
   );
 }

@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, business, obl, disputes]
-updated_at: 2026-07-16
+updated_at: 2026-11-19
 related:
   - docs/apps/web/spec/pages/business/overview.md
   - docs/spec/obl/disputes.md
@@ -28,10 +28,11 @@ Nav item **Arbitration** is always visible in the Business shell (after Relation
 
 ## UX
 
-- Filter pills: **Open** / **Resolved** (`arbitration-status-url.ts`, URL-synced).
+- Status tabs: **Open** / **Resolved** (`BusinessSubTabs`, underlined, optimistic; `arbitration-status-url.ts`, URL-synced).
 - Infinite scroll via `useSyncedPaginatedList` + `loadMoreOblArbitrationAction`.
-- Each card: `@provider ↔ @client`, offer name, `DisputeSettlementSummary`, optional **View relationship** → disputes tab.
-- Open cards: **Resolve dispute** opens shared `BusinessResolveDisputeModal` (`dispute_resolve` broadcast).
+- Each card (`DisputeInboxCard`, shared with dispute resolution): offer name (link to the dispute), status badge, `@provider and @client`, `DisputeSettlementSummary`, **View dispute** (the arbiter is not a party, so there is no relationship link).
+- Open cards: **Resolve dispute** opens shared `BusinessResolveDisputeModal` (`dispute_resolve` broadcast). For multi-beneficiary invoices **Reject all** needs a second, destructive confirmation. Failures stay in the modal; the indexing badge shows while waiting for confirmation.
+- A failed load shows `BusinessErrorState`, not the empty state.
 - Empty copy: “No disputes assigned to you”.
 
 ## Data

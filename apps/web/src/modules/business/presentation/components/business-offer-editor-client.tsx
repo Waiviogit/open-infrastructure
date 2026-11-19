@@ -22,6 +22,7 @@ import { OfferEditorTerminationStep } from './offer-editor/offer-editor-terminat
 import { OfferFullPreview } from './offer-full-preview';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessSaveStatus } from '../ui/business-save-status';
 
 export type BusinessOfferEditorClientProps = {
   username: string;
@@ -53,13 +54,10 @@ export function BusinessOfferEditorClient({
             >
               {t('business_full_preview')}
             </button>
-            <span className="text-caption text-fg-secondary">
-              {editor.saveState === 'saving'
-                ? t('business_saving')
-                : editor.saveState === 'saved'
-                  ? t('business_saved')
-                  : ''}
-            </span>
+            <BusinessSaveStatus
+              state={editor.saveState}
+              onRetry={() => void editor.retrySave()}
+            />
           </div>
         }
       >
@@ -195,7 +193,10 @@ export function BusinessOfferEditorClient({
         panelClassName="p-card-padding"
         header={
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-card-padding py-3">
-            <h2 id={previewTitleId} className="text-body font-weight-strong text-heading">
+            <h2
+              id={previewTitleId}
+              className="text-body font-weight-strong text-heading"
+            >
               {t('business_full_preview')}
             </h2>
             <div className="flex flex-wrap items-center gap-2">

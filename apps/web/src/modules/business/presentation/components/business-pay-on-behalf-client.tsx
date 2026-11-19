@@ -17,9 +17,9 @@ import {
   type PayOnBehalfParties,
   validatePayOnBehalfParties,
 } from '../../domain/pay-on-behalf';
+import { formatUsd } from '../../domain/usd-format';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
-import { formatDisplayUsd } from './directional-usd';
 import { parsePositiveUsdAmount } from './relationship/relationship-modal-fields';
 import { StateBadge } from './state-badge';
 
@@ -34,12 +34,16 @@ export type BusinessPayOnBehalfClientProps = {
 
 async function fetchAmountWaiv(amountUsd: string): Promise<number | null> {
   const q = new URLSearchParams({ amountUsd });
-  const res = await fetch(`${CONVERT_USD_TO_WAIV_PATH}?${q.toString()}`, { cache: 'no-store' });
+  const res = await fetch(`${CONVERT_USD_TO_WAIV_PATH}?${q.toString()}`, {
+    cache: 'no-store',
+  });
   if (!res.ok) {
     return null;
   }
   const body = (await res.json()) as { amountWaiv?: number | null };
-  return typeof body.amountWaiv === 'number' && body.amountWaiv > 0 ? body.amountWaiv : null;
+  return typeof body.amountWaiv === 'number' && body.amountWaiv > 0
+    ? body.amountWaiv
+    : null;
 }
 
 export function BusinessPayOnBehalfClient({
@@ -49,7 +53,8 @@ export function BusinessPayOnBehalfClient({
 }: BusinessPayOnBehalfClientProps) {
   const { t } = useI18n();
   const oblCustomJsonId = useOblCustomJsonId();
-  const { broadcast, isBusy, phase, error, setError } = useOblBroadcast(username);
+  const { broadcast, isBusy, phase, error, setError } =
+    useOblBroadcast(username);
   const [debtorInput, setDebtorInput] = useState(initialParties.debtor);
   const [receiverInput, setReceiverInput] = useState(initialParties.receiver);
   const [amount, setAmount] = useState('');
@@ -64,9 +69,14 @@ export function BusinessPayOnBehalfClient({
   );
   const partiesError = validatePayOnBehalfParties(parties, username);
   const isInitialPair =
-    parties.debtor === initialParties.debtor && parties.receiver === initialParties.receiver;
-  const debtUsd = initialBalance && isInitialPair ? confirmedDebtUsd(initialBalance, parties) : null;
-  const canSubmit = !isBusy && partiesError === null && parsePositiveUsdAmount(amount);
+    parties.debtor === initialParties.debtor &&
+    parties.receiver === initialParties.receiver;
+  const debtUsd =
+    initialBalance && isInitialPair
+      ? confirmedDebtUsd(initialBalance, parties)
+      : null;
+  const canSubmit =
+    !isBusy && partiesError === null && parsePositiveUsdAmount(amount);
 
   function fillAccount(template: string): string {
     return template
@@ -160,12 +170,14 @@ export function BusinessPayOnBehalfClient({
               <p>
                 {fillAccount(t('business_pay_on_behalf_debt_hint')).replace(
                   '{amount}',
-                  formatDisplayUsd(debtUsd),
+                  formatUsd(debtUsd),
                 )}
               </p>
             ) : null}
             {debtUsd === 0 ? (
-              <p role="alert">{fillAccount(t('business_pay_on_behalf_no_debt_warning'))}</p>
+              <p role="alert">
+                {fillAccount(t('business_pay_on_behalf_no_debt_warning'))}
+              </p>
             ) : null}
           </aside>
         )}

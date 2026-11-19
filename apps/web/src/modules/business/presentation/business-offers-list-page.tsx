@@ -7,8 +7,12 @@ export type BusinessOffersListPageProps = {
   tab: OffersListTab;
 };
 
-export async function BusinessOffersListPage({ kind, tab }: BusinessOffersListPageProps) {
-  const { username, drafts, published } = await loadBusinessOffersList(tab);
+export async function BusinessOffersListPage({
+  kind,
+  tab,
+}: BusinessOffersListPageProps) {
+  const { username, drafts, published, loadFailed } =
+    await loadBusinessOffersList(kind, tab);
   return (
     <BusinessOffersListClient
       username={username}
@@ -16,6 +20,7 @@ export async function BusinessOffersListPage({ kind, tab }: BusinessOffersListPa
       tab={tab}
       initialDrafts={drafts}
       initialPublished={published}
+      loadFailed={loadFailed}
     />
   );
 }

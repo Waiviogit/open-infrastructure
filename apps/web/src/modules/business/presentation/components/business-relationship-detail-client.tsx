@@ -24,10 +24,10 @@ import {
   canViewerResolveDispute,
   disputeAuthorityForInvoice,
   findInvoiceForDispute,
-  formatUsdDisplay,
-  shortContractId,
   truncateText,
 } from '../../domain/dispute-resolution';
+import { contractDisplayLabel } from '../../domain/contract-label';
+import { formatUsd } from '../../domain/usd-format';
 import type {
   LedgerContractRow,
   LedgerDisputeRow,
@@ -37,7 +37,10 @@ import type {
   LedgerServiceOrderRow,
   PairBalanceView,
 } from '../../domain/ledger.types';
-import { groupLedgerInvoiceRows, type InvoiceIssueSubmitPayload } from '../../domain/invoice-issue';
+import {
+  groupLedgerInvoiceRows,
+  type InvoiceIssueSubmitPayload,
+} from '../../domain/invoice-issue';
 import { sortByCreatedAtDesc } from '../../domain/ledger-sort';
 import {
   newOblDisputeId,
@@ -72,12 +75,17 @@ import { StateBadge } from './state-badge';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { useOblLedgerTabLists } from '../hooks/use-obl-ledger-tab-lists';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessConfirmDialog } from '../ui/business-confirm-dialog';
+
+const COPIED_RESET_MS = 2000;
 
 type TabId = RelationshipTab;
 
 const CONTRACT_DESCRIPTION_MAX = 300;
 
-function invoiceDetailSummary(details: Record<string, unknown> | undefined): string | null {
+function invoiceDetailSummary(
+  details: Record<string, unknown> | undefined,
+): string | null {
   if (!details || Object.keys(details).length === 0) {
     return null;
   }
@@ -115,7 +123,9 @@ function hasOpenDisputeForInvoice(
   disputes: readonly LedgerDisputeRow[],
   invoiceId: string,
 ): boolean {
-  return disputes.some((d) => d.invoice_id === invoiceId && d.status === 'open');
+  return disputes.some(
+    (d) => d.invoice_id === invoiceId && d.status === 'open',
+  );
 }
 
 function canDisputeInvoice(
@@ -146,7 +156,7 @@ function contractLabel(
   if (!contract) {
     return contractId;
   }
-  return `${contract.offer_name} · ${shortContractId(contract.contract_id)}`;
+  return contractDisplayLabel(contract);
 }
 
 function contractHref(contractId: string | null | undefined): string | null {
@@ -174,7 +184,10 @@ export function BusinessRelationshipDetailClient({
   const { t } = useI18n();
   const searchParams = useSearchParams();
   const oblCustomJsonId = useOblCustomJsonId();
-  const { broadcast, isBusy, phase, error } = useOblBroadcast(username, counterparty);
+  const { broadcast, isBusy, phase, error, setError } = useOblBroadcast(
+    username,
+    counterparty,
+  );
   const [tab, setTab] = useState<RelationshipTab>(initialTab);
   useEffect(() => {
     setTab(parseRelationshipTab(searchParams));
@@ -184,9 +197,33 @@ export function BusinessRelationshipDetailClient({
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [declareModalOpen, setDeclareModalOpen] = useState(false);
   const [payLinkCopied, setPayLinkCopied] = useState(false);
-  const [confirmPaymentRow, setConfirmPaymentRow] = useState<LedgerPaymentRow | null>(null);
-  const [disputeInvoice, setDisputeInvoice] = useState<LedgerInvoiceRow | null>(null);
-  const [resolveDisputeRow, setResolveDisputeRow] = useState<LedgerDisputeRow | null>(null);
+  const [confirmPaymentRow, setConfirmPaymentRow] =
+    useState<LedgerPaymentRow | null>(null);
+  const [disputeInvoice, setDisputeInvoice] = useState<LedgerInvoiceRow | null>(
+    null,
+  );
+  const [resolveDisputeRow, setResolveDisputeRow] =
+    useState<LedgerDisputeRow | null>(null);
+  const [cancelServiceOrderId, setCancelServiceOrderId] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!payLinkCopied) {
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setPayLinkCopied(false),
+      COPIED_RESET_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [payLinkCopied]);
+
+  /** Every action dialog starts without the previous action's error. */
+  function openAction(open: () => void) {
+    setError(null);
+    open();
+  }
 
   const { lists, sentinelRef } = useOblLedgerTabLists({
     accountA: username,
@@ -213,25 +250,32 @@ export function BusinessRelationshipDetailClient({
   const invoices = useMemo(
     () =>
       groupLedgerInvoiceRows(
-        sortByCreatedAtDesc(castTabRows<LedgerInvoiceRow>(lists.invoices.items)),
+        sortByCreatedAtDesc(
+          castTabRows<LedgerInvoiceRow>(lists.invoices.items),
+        ),
       ),
     [lists.invoices.items],
   );
   const payments = useMemo(
-    () => sortByCreatedAtDesc(castTabRows<LedgerPaymentRow>(lists.payments.items)),
+    () =>
+      sortByCreatedAtDesc(castTabRows<LedgerPaymentRow>(lists.payments.items)),
     [lists.payments.items],
   );
   const disputes = useMemo(
-    () => sortByCreatedAtDesc(castTabRows<LedgerDisputeRow>(lists.disputes.items)),
+    () =>
+      sortByCreatedAtDesc(castTabRows<LedgerDisputeRow>(lists.disputes.items)),
     [lists.disputes.items],
   );
   const serviceOrders = useMemo(
     () =>
-      sortByCreatedAtDesc(castTabRows<LedgerServiceOrderRow>(lists['service-orders'].items)),
+      sortByCreatedAtDesc(
+        castTabRows<LedgerServiceOrderRow>(lists['service-orders'].items),
+      ),
     [lists['service-orders'].items],
   );
   const reports = useMemo(
-    () => sortByCreatedAtDesc(castTabRows<LedgerReportRow>(lists.reports.items)),
+    () =>
+      sortByCreatedAtDesc(castTabRows<LedgerReportRow>(lists.reports.items)),
     [lists.reports.items],
   );
 
@@ -256,7 +300,9 @@ export function BusinessRelationshipDetailClient({
     return findInvoiceForDispute(resolveDisputeRow, invoices) ?? null;
   }, [resolveDisputeRow, invoices]);
 
-  async function issueInvoice(payload: InvoiceIssueSubmitPayload) {
+  async function issueInvoice(
+    payload: InvoiceIssueSubmitPayload,
+  ): Promise<boolean> {
     const invoiceId = newOblInvoiceId();
     const revalidateOverride = {
       invoiceId,
@@ -265,7 +311,7 @@ export function BusinessRelationshipDetailClient({
       reportId: payload.reportId,
     };
     if (payload.mode === 'simple') {
-      await broadcast(
+      const txId = await broadcast(
         [
           buildIssueInvoiceOp({
             oblCustomJsonId,
@@ -282,9 +328,9 @@ export function BusinessRelationshipDetailClient({
         ],
         revalidateOverride,
       );
-      return;
+      return txId !== null;
     }
-    await broadcast(
+    const txId = await broadcast(
       [
         buildIssueSplitInvoiceOp({
           oblCustomJsonId,
@@ -300,14 +346,15 @@ export function BusinessRelationshipDetailClient({
       ],
       revalidateOverride,
     );
+    return txId !== null;
   }
 
   async function createServiceOrder(input: {
     contractId: string;
     details?: Record<string, unknown>;
-  }) {
+  }): Promise<boolean> {
     const serviceOrderId = newOblServiceOrderId();
-    await broadcast(
+    const txId = await broadcast(
       [
         buildCreateServiceOrderOp({
           oblCustomJsonId,
@@ -319,10 +366,11 @@ export function BusinessRelationshipDetailClient({
       ],
       { serviceOrderId, contractId: input.contractId },
     );
+    return txId !== null;
   }
 
   async function cancelServiceOrder(serviceOrderId: string) {
-    await broadcast(
+    const txId = await broadcast(
       [
         buildCancelServiceOrderOp({
           oblCustomJsonId,
@@ -332,15 +380,18 @@ export function BusinessRelationshipDetailClient({
       ],
       { serviceOrderId },
     );
+    if (txId !== null) {
+      setCancelServiceOrderId(null);
+    }
   }
 
   async function createReport(input: {
     contractId?: string;
     serviceOrderId?: string;
     details?: Record<string, unknown>;
-  }) {
+  }): Promise<boolean> {
     const reportId = newOblReportId();
-    await broadcast(
+    const txId = await broadcast(
       [
         buildCreateReportOp({
           oblCustomJsonId,
@@ -357,21 +408,31 @@ export function BusinessRelationshipDetailClient({
         serviceOrderId: input.serviceOrderId,
       },
     );
+    return txId !== null;
   }
 
   async function copyPayOnBehalfLink() {
-    const href = buildPayOnBehalfHref({ debtor: username, receiver: counterparty });
-    await navigator.clipboard.writeText(new URL(href, window.location.origin).toString());
-    setPayLinkCopied(true);
+    const href = buildPayOnBehalfHref({
+      debtor: username,
+      receiver: counterparty,
+    });
+    try {
+      await navigator.clipboard.writeText(
+        new URL(href, window.location.origin).toString(),
+      );
+      setPayLinkCopied(true);
+    } catch {
+      setPayLinkCopied(false);
+    }
   }
 
   async function recordPayment(
     amountUsd: string,
     parties: { payer: string; receiver: string },
     ref?: Record<string, unknown>,
-  ) {
+  ): Promise<boolean> {
     if (parties.receiver === username) {
-      await broadcast([
+      const confirmTxId = await broadcast([
         buildConfirmPaymentOp({
           oblCustomJsonId,
           paymentId: newOblPaymentConfirmId(),
@@ -381,10 +442,10 @@ export function BusinessRelationshipDetailClient({
           ref,
         }),
       ]);
-      return;
+      return confirmTxId !== null;
     }
 
-    await broadcast([
+    const txId = await broadcast([
       buildDeclarePaymentOp({
         oblCustomJsonId,
         paymentId: newOblPaymentDeclareId(),
@@ -394,10 +455,14 @@ export function BusinessRelationshipDetailClient({
         ref,
       }),
     ]);
+    return txId !== null;
   }
 
-  async function submitPaymentConfirm(pay: LedgerPaymentRow, amountUsd: string) {
-    await broadcast([
+  async function submitPaymentConfirm(
+    pay: LedgerPaymentRow,
+    amountUsd: string,
+  ): Promise<boolean> {
+    const txId = await broadcast([
       buildConfirmPaymentOp({
         oblCustomJsonId,
         paymentId: newOblPaymentConfirmId(),
@@ -407,10 +472,14 @@ export function BusinessRelationshipDetailClient({
         declarePaymentId: pay.payment_id,
       }),
     ]);
+    return txId !== null;
   }
 
-  async function openDispute(invoice: LedgerInvoiceRow, proposedAmountUsd: string) {
-    await broadcast([
+  async function openDispute(
+    invoice: LedgerInvoiceRow,
+    proposedAmountUsd: string,
+  ): Promise<boolean> {
+    const txId = await broadcast([
       buildOpenDisputeOp({
         oblCustomJsonId,
         disputeId: newOblDisputeId(),
@@ -419,10 +488,14 @@ export function BusinessRelationshipDetailClient({
         proposedAmountUsd,
       }),
     ]);
+    return txId !== null;
   }
 
-  async function resolveDispute(dispute: LedgerDisputeRow, finalAmountUsd: string) {
-    await broadcast([
+  async function resolveDispute(
+    dispute: LedgerDisputeRow,
+    finalAmountUsd: string,
+  ): Promise<boolean> {
+    const txId = await broadcast([
       buildResolveDisputeOp({
         oblCustomJsonId,
         disputeId: dispute.dispute_id,
@@ -430,6 +503,7 @@ export function BusinessRelationshipDetailClient({
         finalAmountUsd,
       }),
     ]);
+    return txId !== null;
   }
 
   const tabs: TabId[] = [
@@ -452,7 +526,7 @@ export function BusinessRelationshipDetailClient({
             <button
               type="button"
               disabled={isBusy}
-              onClick={() => setInvoiceModalOpen(true)}
+              onClick={() => openAction(() => setInvoiceModalOpen(true))}
               className="rounded-btn bg-accent px-3 py-1 text-body-sm text-accent-fg disabled:opacity-50"
             >
               {t('business_create_invoice')}
@@ -460,7 +534,7 @@ export function BusinessRelationshipDetailClient({
             <button
               type="button"
               disabled={isBusy}
-              onClick={() => setServiceOrderModalOpen(true)}
+              onClick={() => openAction(() => setServiceOrderModalOpen(true))}
               className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
             >
               {t('business_create_service_order')}
@@ -468,7 +542,7 @@ export function BusinessRelationshipDetailClient({
             <button
               type="button"
               disabled={isBusy}
-              onClick={() => setReportModalOpen(true)}
+              onClick={() => openAction(() => setReportModalOpen(true))}
               className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
             >
               {t('business_create_report')}
@@ -476,7 +550,7 @@ export function BusinessRelationshipDetailClient({
             <button
               type="button"
               disabled={isBusy}
-              onClick={() => setDeclareModalOpen(true)}
+              onClick={() => openAction(() => setDeclareModalOpen(true))}
               className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
             >
               {t('business_record_payment')}
@@ -493,13 +567,16 @@ export function BusinessRelationshipDetailClient({
           </div>
         }
       >
-        <BalanceCards viewer={username} counterparty={counterparty} balance={balance} />
+        <BalanceCards
+          viewer={username}
+          counterparty={counterparty}
+          balance={balance}
+        />
         {phase === 'indexing' ? (
           <div className="mt-2">
             <StateBadge variant="indexing" />
           </div>
         ) : null}
-        {error ? <p className="mt-2 text-body-sm text-error">{error}</p> : null}
 
         <div className="mt-6 flex flex-wrap gap-2 border-b border-border pb-2">
           {tabs.map((id) => (
@@ -509,7 +586,9 @@ export function BusinessRelationshipDetailClient({
               method="replace"
               className={[
                 'rounded-btn px-3 py-1 text-body-sm',
-                tab === id ? 'bg-surface-alt font-weight-label text-heading' : 'text-fg-secondary',
+                tab === id
+                  ? 'bg-surface-alt font-weight-label text-heading'
+                  : 'text-fg-secondary',
               ].join(' ')}
             >
               {t(`business_tab_${id}`)}
@@ -521,21 +600,30 @@ export function BusinessRelationshipDetailClient({
           {tab === 'contracts' ? (
             <div className="flex flex-col gap-3">
               {contracts.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">{t('business_contracts_empty')}</p>
+                <p className="text-body-sm text-fg-secondary">
+                  {t('business_contracts_empty')}
+                </p>
               ) : null}
               {contracts.map((c) => (
                 <Link
                   key={c.contract_id}
                   href={businessRoutes.contract(c.contract_id)}
-                  className="rounded-card border border-border bg-surface/80 p-card-padding text-body-sm hover:bg-surface-alt"
+                  className="rounded-card border border-border bg-surface p-card-padding text-body-sm hover:bg-surface-alt"
                 >
-                  <h3 className="font-weight-label text-heading">{c.offer_name}</h3>
+                  <h3 className="font-weight-label text-heading">
+                    {c.offer_name}
+                  </h3>
                   {c.offer_description ? (
                     <p className="mt-2 text-caption text-fg-secondary">
-                      {truncateText(c.offer_description, CONTRACT_DESCRIPTION_MAX)}
+                      {truncateText(
+                        c.offer_description,
+                        CONTRACT_DESCRIPTION_MAX,
+                      )}
                     </p>
                   ) : null}
-                  <p className="mt-2 font-mono text-caption text-fg-secondary">{c.contract_id}</p>
+                  <p className="mt-2 font-mono text-caption text-fg-secondary">
+                    {c.contract_id}
+                  </p>
                   <p className="mt-1 text-caption text-fg-secondary">
                     {t('business_field_created_at')}:{' '}
                     <ActivityTimestamp timestamp={c.created_at} />
@@ -563,7 +651,9 @@ export function BusinessRelationshipDetailClient({
                     linkedContract={linkedContract}
                     linkedContractUrl={linkedContractUrl}
                     isBusy={isBusy}
-                    onCancel={(serviceOrderId) => void cancelServiceOrder(serviceOrderId)}
+                    onCancel={(serviceOrderId) =>
+                      openAction(() => setCancelServiceOrderId(serviceOrderId))
+                    }
                   />
                 );
               })}
@@ -573,18 +663,25 @@ export function BusinessRelationshipDetailClient({
           {tab === 'reports' ? (
             <div className="flex flex-col gap-3">
               {reports.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">{t('business_reports_empty')}</p>
+                <p className="text-body-sm text-fg-secondary">
+                  {t('business_reports_empty')}
+                </p>
               ) : null}
               {reports.map((rep) => {
-                const linkedContract = contractLabel(rep.contract_id, contracts);
+                const linkedContract = contractLabel(
+                  rep.contract_id,
+                  contracts,
+                );
                 const linkedContractUrl = contractHref(rep.contract_id);
                 return (
                   <Link
                     key={rep.report_id}
                     href={businessRoutes.report(rep.report_id)}
-                    className="rounded-card border border-border bg-surface/80 p-card-padding text-body-sm hover:bg-surface-alt"
+                    className="rounded-card border border-border bg-surface p-card-padding text-body-sm hover:bg-surface-alt"
                   >
-                    <h3 className="font-weight-label text-heading">{rep.report_id}</h3>
+                    <h3 className="font-weight-label text-heading">
+                      {rep.report_id}
+                    </h3>
                     <p className="mt-1 text-caption text-fg-secondary">
                       {t('business_field_author')}: @{rep.author}
                     </p>
@@ -600,7 +697,8 @@ export function BusinessRelationshipDetailClient({
                     ) : null}
                     {rep.service_order_id ? (
                       <p className="mt-1 text-caption text-fg-secondary">
-                        {t('business_field_service_order')}: {rep.service_order_id}
+                        {t('business_field_service_order')}:{' '}
+                        {rep.service_order_id}
                       </p>
                     ) : null}
                     <p className="mt-1 text-caption text-fg-secondary">
@@ -616,12 +714,17 @@ export function BusinessRelationshipDetailClient({
           {tab === 'invoices' ? (
             <div className="flex flex-col gap-3">
               {invoices.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">{t('business_invoices_empty')}</p>
+                <p className="text-body-sm text-fg-secondary">
+                  {t('business_invoices_empty')}
+                </p>
               ) : null}
               {invoices.map((inv) => {
                 const detailSummary = invoiceDetailSummary(inv.details);
                 const disputable = canDisputeInvoice(inv, username, disputes);
-                const linkedContract = contractLabel(inv.contract_id, contracts);
+                const linkedContract = contractLabel(
+                  inv.contract_id,
+                  contracts,
+                );
                 const linkedContractUrl = contractHref(inv.contract_id);
                 const showSettled =
                   inv.state === 'resolved' &&
@@ -630,7 +733,7 @@ export function BusinessRelationshipDetailClient({
                 return (
                   <div
                     key={inv.invoice_id}
-                    className="rounded-card border border-border bg-surface/80 p-card-padding text-body-sm"
+                    className="rounded-card border border-border bg-surface p-card-padding text-body-sm"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span>
@@ -640,22 +743,21 @@ export function BusinessRelationshipDetailClient({
                         >
                           {inv.invoice_id}
                         </Link>
-                        {showSettled ? (
-                          <>
-                            {' '}
-                            · ${formatUsdDisplay(inv.amount_usd)} → $
-                            {formatUsdDisplay(inv.final_amount_usd)}
-                          </>
-                        ) : (
-                          <> · ${inv.amount_usd}</>
-                        )}
+                        <span className="tabular-nums">
+                          {' · '}
+                          {showSettled
+                            ? `${formatUsd(inv.amount_usd)} → ${formatUsd(inv.final_amount_usd)}`
+                            : formatUsd(inv.amount_usd)}
+                        </span>
                       </span>
-                        <StateBadge variant={invoiceStateBadgeVariant(inv.state)} />
-                        {inv.kind === 'multi' ? (
-                          <span className="text-caption text-fg-secondary">
-                            {t('business_invoice_kind_multi')}
-                          </span>
-                        ) : null}
+                      <StateBadge
+                        variant={invoiceStateBadgeVariant(inv.state)}
+                      />
+                      {inv.kind === 'multi' ? (
+                        <span className="text-caption text-fg-secondary">
+                          {t('business_invoice_kind_multi')}
+                        </span>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-caption text-fg-secondary">
                       @{inv.debtor} → @{inv.creditor}
@@ -676,7 +778,9 @@ export function BusinessRelationshipDetailClient({
                       <p className="mt-1 text-caption text-fg-secondary">
                         {t('business_field_service_order')}:{' '}
                         <Link
-                          href={businessRoutes.serviceOrder(inv.service_order_id)}
+                          href={businessRoutes.serviceOrder(
+                            inv.service_order_id,
+                          )}
                           className="text-link"
                         >
                           {inv.service_order_id}
@@ -686,7 +790,10 @@ export function BusinessRelationshipDetailClient({
                     {inv.report_id ? (
                       <p className="mt-1 text-caption text-fg-secondary">
                         {t('business_field_report')}:{' '}
-                        <Link href={businessRoutes.report(inv.report_id)} className="text-link">
+                        <Link
+                          href={businessRoutes.report(inv.report_id)}
+                          className="text-link"
+                        >
                           {inv.report_id}
                         </Link>
                       </p>
@@ -696,13 +803,15 @@ export function BusinessRelationshipDetailClient({
                       <ActivityTimestamp timestamp={inv.created_at} />
                     </p>
                     {detailSummary ? (
-                      <p className="mt-2 text-caption text-fg-secondary">{detailSummary}</p>
+                      <p className="mt-2 text-caption text-fg-secondary">
+                        {detailSummary}
+                      </p>
                     ) : null}
                     {disputable ? (
                       <button
                         type="button"
                         disabled={isBusy}
-                        onClick={() => setDisputeInvoice(inv)}
+                        onClick={() => openAction(() => setDisputeInvoice(inv))}
                         className="mt-2 text-body-sm text-link disabled:opacity-50"
                       >
                         {t('business_invoice_dispute_action')}
@@ -722,7 +831,9 @@ export function BusinessRelationshipDetailClient({
           {tab === 'payments' ? (
             <div className="flex flex-col gap-3">
               {payments.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">{t('business_payments_empty')}</p>
+                <p className="text-body-sm text-fg-secondary">
+                  {t('business_payments_empty')}
+                </p>
               ) : null}
               {payments.map((pay) => (
                 <RelationshipPaymentRow
@@ -730,7 +841,9 @@ export function BusinessRelationshipDetailClient({
                   payment={pay}
                   viewer={username}
                   isBusy={isBusy}
-                  onConfirm={setConfirmPaymentRow}
+                  onConfirm={(row) =>
+                    openAction(() => setConfirmPaymentRow(row))
+                  }
                 />
               ))}
             </div>
@@ -739,23 +852,38 @@ export function BusinessRelationshipDetailClient({
           {tab === 'disputes' ? (
             <div className="flex flex-col gap-3">
               {disputes.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">{t('business_disputes_empty')}</p>
+                <p className="text-body-sm text-fg-secondary">
+                  {t('business_disputes_empty')}
+                </p>
               ) : null}
               {disputes.map((d) => {
                 const linkedInvoice = findInvoiceForDispute(d, invoices);
                 const governingContract = linkedInvoice?.contract_id
-                  ? contracts.find((c) => c.contract_id === linkedInvoice.contract_id)
+                  ? contracts.find(
+                      (c) => c.contract_id === linkedInvoice.contract_id,
+                    )
                   : undefined;
-                const resolvable = canViewerResolveDispute(username, d, invoices, contracts, {
-                  invoice: linkedInvoice,
-                  governingContract,
-                });
-                const linkedContract = contractLabel(linkedInvoice?.contract_id, contracts);
-                const linkedContractUrl = contractHref(linkedInvoice?.contract_id);
+                const resolvable = canViewerResolveDispute(
+                  username,
+                  d,
+                  invoices,
+                  contracts,
+                  {
+                    invoice: linkedInvoice,
+                    governingContract,
+                  },
+                );
+                const linkedContract = contractLabel(
+                  linkedInvoice?.contract_id,
+                  contracts,
+                );
+                const linkedContractUrl = contractHref(
+                  linkedInvoice?.contract_id,
+                );
                 return (
                   <div
                     key={d.dispute_id}
-                    className="rounded-card border border-border bg-surface/80 p-card-padding text-body-sm"
+                    className="rounded-card border border-border bg-surface p-card-padding text-body-sm"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <Link
@@ -764,11 +892,16 @@ export function BusinessRelationshipDetailClient({
                       >
                         {d.dispute_id}
                       </Link>
-                      <StateBadge variant={d.status === 'open' ? 'disputed' : 'resolved'} />
+                      <StateBadge
+                        variant={d.status === 'open' ? 'disputed' : 'resolved'}
+                      />
                     </div>
                     <p className="mt-1 text-caption text-fg-secondary">
                       {t('business_field_invoice')}:{' '}
-                      <Link href={businessRoutes.invoice(d.invoice_id)} className="text-link">
+                      <Link
+                        href={businessRoutes.invoice(d.invoice_id)}
+                        className="text-link"
+                      >
                         {d.invoice_id}
                       </Link>
                     </p>
@@ -784,7 +917,10 @@ export function BusinessRelationshipDetailClient({
                         )}
                       </p>
                     ) : null}
-                    <DisputeSettlementSummary dispute={d} invoice={linkedInvoice} />
+                    <DisputeSettlementSummary
+                      dispute={d}
+                      invoice={linkedInvoice}
+                    />
                     <p className="mt-2 text-caption text-fg-secondary">
                       {t('business_field_created_at')}:{' '}
                       <ActivityTimestamp timestamp={d.created_at} />
@@ -793,7 +929,9 @@ export function BusinessRelationshipDetailClient({
                       <button
                         type="button"
                         disabled={isBusy}
-                        onClick={() => setResolveDisputeRow(d)}
+                        onClick={() =>
+                          openAction(() => setResolveDisputeRow(d))
+                        }
                         className="mt-2 text-body-sm text-link disabled:opacity-50"
                       >
                         {t('business_dispute_resolve_action')}
@@ -818,6 +956,8 @@ export function BusinessRelationshipDetailClient({
         creditor={username}
         contracts={contracts}
         serviceOrders={serviceOrders}
+        reports={reports}
+        error={error}
         onSubmit={issueInvoice}
       />
       <BusinessCreateServiceOrderModal
@@ -825,6 +965,7 @@ export function BusinessRelationshipDetailClient({
         onClose={() => setServiceOrderModalOpen(false)}
         isBusy={isBusy}
         contracts={serviceOrderContracts}
+        error={error}
         onSubmit={createServiceOrder}
       />
       <BusinessCreateReportModal
@@ -833,6 +974,7 @@ export function BusinessRelationshipDetailClient({
         isBusy={isBusy}
         contracts={contracts}
         serviceOrders={serviceOrders}
+        error={error}
         onSubmit={createReport}
       />
       <BusinessDeclarePaymentModal
@@ -842,6 +984,7 @@ export function BusinessRelationshipDetailClient({
         viewer={username}
         payer={username}
         receiver={counterparty}
+        error={error}
         onSubmit={recordPayment}
       />
       <BusinessConfirmPaymentModal
@@ -849,6 +992,7 @@ export function BusinessRelationshipDetailClient({
         payment={confirmPaymentRow}
         onClose={() => setConfirmPaymentRow(null)}
         isBusy={isBusy}
+        error={error}
         onSubmit={submitPaymentConfirm}
       />
       <BusinessOpenDisputeModal
@@ -856,6 +1000,7 @@ export function BusinessRelationshipDetailClient({
         invoice={disputeInvoice}
         onClose={() => setDisputeInvoice(null)}
         isBusy={isBusy}
+        error={error}
         onSubmit={openDispute}
       />
       <BusinessResolveDisputeModal
@@ -865,7 +1010,23 @@ export function BusinessRelationshipDetailClient({
         authority={resolveAuthority}
         onClose={() => setResolveDisputeRow(null)}
         isBusy={isBusy}
+        error={error}
         onSubmit={resolveDispute}
+      />
+      <BusinessConfirmDialog
+        open={cancelServiceOrderId !== null}
+        title={t('business_service_order_cancel_confirm_title')}
+        description={t('business_service_order_cancel_confirm_body')}
+        confirmLabel={t('business_cancel_service_order')}
+        destructive
+        busy={isBusy}
+        error={error}
+        onConfirm={() => {
+          if (cancelServiceOrderId) {
+            void cancelServiceOrder(cancelServiceOrderId);
+          }
+        }}
+        onClose={() => setCancelServiceOrderId(null)}
       />
     </>
   );

@@ -73,7 +73,9 @@ export function OfferEditorReviewStep({
       </h3>
       <ul className="flex flex-col gap-2">
         {CHECKLIST_STEPS.map((step) => {
-          const stepErrors = !validation.ok ? (validation.errors[step] ?? []) : [];
+          const stepErrors = !validation.ok
+            ? (validation.errors[step] ?? [])
+            : [];
           const status = stepStatus(step, state, stepErrors);
           const statusClass =
             status === 'blocked' || status === 'incomplete'
@@ -88,12 +90,14 @@ export function OfferEditorReviewStep({
               className={[
                 'rounded-btn border px-3 py-2 text-body-sm',
                 status === 'blocked' || status === 'incomplete'
-                  ? 'border-error/40 bg-error/5'
-                  : 'border-border',
+                  ? 'border-error bg-surface'
+                  : 'border-border bg-surface',
               ].join(' ')}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-weight-label">{t(`business_editor_step_${step}`)}</span>
+                <span className="font-weight-label">
+                  {t(`business_editor_step_${step}`)}
+                </span>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={statusClass}>
                     {status === 'ready'
@@ -104,7 +108,8 @@ export function OfferEditorReviewStep({
                           ? t('business_review_checklist_blocked')
                           : t('business_step_incomplete')}
                   </span>
-                  {(status === 'blocked' || status === 'incomplete') && onGoToStep ? (
+                  {(status === 'blocked' || status === 'incomplete') &&
+                  onGoToStep ? (
                     <button
                       type="button"
                       onClick={() => onGoToStep(step)}
@@ -127,10 +132,13 @@ export function OfferEditorReviewStep({
         })}
       </ul>
       {!canPublish ? (
-        <div className="rounded-btn border border-error/40 bg-error/5 px-3 py-2 text-body-sm text-error">
+        <div
+          className="rounded-btn border border-error bg-surface px-3 py-2 text-body-sm text-error"
+          role="alert"
+        >
           <p className="font-weight-label">{t('business_publish_blocked')}</p>
           {blockingIssues.length > 0 ? (
-            <ul className="mt-2 list-disc pl-5">
+            <ul className="mt-2 list-disc ps-5">
               {blockingIssues.map((issue) => (
                 <li key={`${issue.step}-${issue.code}`}>
                   <span className="font-weight-label">

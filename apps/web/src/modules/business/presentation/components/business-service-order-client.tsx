@@ -1,18 +1,25 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
 import { formatAbsoluteDateTime } from '@/shared/utils/format-relative-time';
 
 import { buildCancelServiceOrderOp } from '../../application/build-obl-ops';
-import { shortContractId } from '../../domain/dispute-resolution';
+import { contractDisplayLabel } from '../../domain/contract-label';
 import { businessRoutes } from '../../domain/routes';
-import { canCancelServiceOrder, serviceOrderStatus } from '../../domain/service-order-cancel';
+import {
+  canCancelServiceOrder,
+  serviceOrderStatus,
+} from '../../domain/service-order-cancel';
 import type { OblServiceOrderDetailApiResponse } from '../../infrastructure/clients/obl-ledger.server';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessButton } from '../ui/business-button';
+import { BusinessConfirmDialog } from '../ui/business-confirm-dialog';
+import { BusinessActionError } from '../ui/business-states';
 import { StateBadge } from './state-badge';
 
 export function BusinessServiceOrderClient({
@@ -25,14 +32,20 @@ export function BusinessServiceOrderClient({
   const { t, locale } = useI18n();
   const { serviceOrder, contract } = detail;
   const counterparty =
-    username === serviceOrder.provider ? serviceOrder.client : serviceOrder.provider;
+    username === serviceOrder.provider
+      ? serviceOrder.client
+      : serviceOrder.provider;
   const oblCustomJsonId = useOblCustomJsonId();
-  const { broadcast, isBusy, phase, error } = useOblBroadcast(username, counterparty);
+  const { broadcast, isBusy, phase, error, setError } = useOblBroadcast(
+    username,
+    counterparty,
+  );
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const cancelled = serviceOrderStatus(serviceOrder) === 'cancelled';
   const showCancel = canCancelServiceOrder(serviceOrder, username);
 
   async function onCancel() {
-    await broadcast(
+    const txId = await broadcast(
       [
         buildCancelServiceOrderOp({
           oblCustomJsonId,
@@ -42,6 +55,9 @@ export function BusinessServiceOrderClient({
       ],
       { serviceOrderId: serviceOrder.service_order_id },
     );
+    if (txId !== null) {
+      setConfirmOpen(false);
+    }
   }
 
   return (
@@ -51,14 +67,17 @@ export function BusinessServiceOrderClient({
       subtitle={t('business_service_order_subtitle')}
       actions={
         showCancel ? (
-          <button
-            type="button"
+          <BusinessButton
+            variant="destructive"
+            size="sm"
             disabled={isBusy}
-            onClick={() => void onCancel()}
-            className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
+            onClick={() => {
+              setError(null);
+              setConfirmOpen(true);
+            }}
           >
             {t('business_cancel_service_order')}
-          </button>
+          </BusinessButton>
         ) : null
       }
     >
@@ -82,13 +101,17 @@ export function BusinessServiceOrderClient({
         </div>
         {cancelled && serviceOrder.cancelled_by ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_cancelled_by')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_field_cancelled_by')}
+            </dt>
             <dd>@{serviceOrder.cancelled_by}</dd>
           </div>
         ) : null}
         {cancelled && serviceOrder.cancelled_at ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_cancelled_at')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_field_cancelled_at')}
+            </dt>
             <dd>
               <time dateTime={serviceOrder.cancelled_at}>
                 {formatAbsoluteDateTime(serviceOrder.cancelled_at, locale)}
@@ -98,22 +121,32 @@ export function BusinessServiceOrderClient({
         ) : null}
         {contract ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_contract')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_field_contract')}
+            </dt>
             <dd>
-              <Link href={businessRoutes.contract(contract.contract_id)} className="text-link">
-                {contract.offer_name ?? contract.contract_id} ·{' '}
-                {shortContractId(contract.contract_id)}
+              <Link
+                href={businessRoutes.contract(contract.contract_id)}
+                className="text-link"
+              >
+                {contractDisplayLabel(contract)}
               </Link>
             </dd>
           </div>
         ) : (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_contract')}</dt>
-            <dd className="font-mono text-caption">{serviceOrder.contract_id}</dd>
+            <dt className="text-fg-secondary">
+              {t('business_field_contract')}
+            </dt>
+            <dd className="font-mono text-caption">
+              {serviceOrder.contract_id}
+            </dd>
           </div>
         )}
         <div>
-          <dt className="text-fg-secondary">{t('business_field_created_at')}</dt>
+          <dt className="text-fg-secondary">
+            {t('business_field_created_at')}
+          </dt>
           <dd>
             <time dateTime={serviceOrder.created_at}>
               {formatAbsoluteDateTime(serviceOrder.created_at, locale)}
@@ -122,7 +155,9 @@ export function BusinessServiceOrderClient({
         </div>
         {Object.keys(serviceOrder.details ?? {}).length > 0 ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_sign_metadata_label')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_sign_metadata_label')}
+            </dt>
             <dd>
               <pre className="mt-1 whitespace-pre-wrap rounded-btn border border-border bg-surface-alt p-2 font-mono text-caption">
                 {JSON.stringify(serviceOrder.details, null, 2)}
@@ -132,7 +167,7 @@ export function BusinessServiceOrderClient({
         ) : null}
       </dl>
       {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
-      {error ? <p className="text-body-sm text-error">{error}</p> : null}
+      {confirmOpen ? null : <BusinessActionError message={error} />}
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href={businessRoutes.relationship(serviceOrder.provider)}
@@ -147,6 +182,17 @@ export function BusinessServiceOrderClient({
           @{serviceOrder.client}
         </Link>
       </div>
+      <BusinessConfirmDialog
+        open={confirmOpen}
+        title={t('business_service_order_cancel_confirm_title')}
+        description={t('business_service_order_cancel_confirm_body')}
+        confirmLabel={t('business_cancel_service_order')}
+        destructive
+        busy={isBusy}
+        error={error}
+        onConfirm={() => void onCancel()}
+        onClose={() => setConfirmOpen(false)}
+      />
     </BusinessPageShell>
   );
 }

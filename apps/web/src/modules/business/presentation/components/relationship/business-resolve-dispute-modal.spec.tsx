@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { I18nProvider } from '@/i18n/providers/i18n-provider';
 
@@ -32,7 +32,10 @@ jest.mock('../../../infrastructure/clients/obl-ledger.client', () => ({
 }));
 
 import { fetchOblInvoiceDetailClient } from '../../../infrastructure/clients/obl-ledger.client';
-import type { LedgerDisputeRow, LedgerInvoiceRow } from '../../../domain/ledger.types';
+import type {
+  LedgerDisputeRow,
+  LedgerInvoiceRow,
+} from '../../../domain/ledger.types';
 import { BusinessResolveDisputeModal } from './business-resolve-dispute-modal';
 
 const messages = {
@@ -58,6 +61,9 @@ const messages = {
   business_field_amount_usd: 'Amount',
   business_field_role: 'Role',
   business_invoice_total: 'Total',
+  business_dispute_reject_all_confirm: 'Reject all lines',
+  business_dispute_reject_all_warning: 'Every line will be settled at zero.',
+  business_back: 'Back',
 };
 
 const dispute: LedgerDisputeRow = {
@@ -175,22 +181,34 @@ describe('BusinessResolveDisputeModal', () => {
       expect(screen.getByRole('button', { name: 'Accept all' })).toBeEnabled();
     });
     expect(screen.getByRole('button', { name: 'Reject all' })).toBeEnabled();
-    expect(screen.queryByRole('button', { name: 'Resolve dispute' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Resolve dispute' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText('Original amount')).toBeInTheDocument();
     expect(screen.getAllByText('$6.00').length).toBeGreaterThanOrEqual(1);
   });
 
   it('blocks resolve actions when multi invoice lines fail to load', async () => {
-    jest.mocked(fetchOblInvoiceDetailClient).mockRejectedValue(new Error('network'));
+    jest
+      .mocked(fetchOblInvoiceDetailClient)
+      .mockRejectedValue(new Error('network'));
 
     renderModal(multiInvoice);
 
     await waitFor(() => {
-      expect(screen.getByText('Could not load invoice lines.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Could not load invoice lines.'),
+      ).toBeInTheDocument();
     });
-    expect(screen.queryByRole('button', { name: 'Resolve dispute' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Accept all' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Reject all' })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Resolve dispute' }),
+    ).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'Accept all' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Reject all' }),
+    ).not.toBeInTheDocument();
   });
 
   it('keeps editable final amount for single invoice', async () => {
@@ -237,7 +255,76 @@ describe('BusinessResolveDisputeModal', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('6.00000000')).toBeInTheDocument();
     });
-    expect(screen.getByRole('button', { name: 'Resolve dispute' })).toBeEnabled();
-    expect(screen.queryByRole('button', { name: 'Accept all' })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Resolve dispute' }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole('button', { name: 'Accept all' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('asks for a second confirmation before rejecting every line', async () => {
+    const line = (index: number, beneficiary: string, amount: string) => ({
+      line_id: `inv-1:${index}`,
+      invoice_id: 'inv-1',
+      debtor: 'sponsor',
+      beneficiary,
+      creditor: beneficiary,
+      amount_usd: amount,
+      final_amount_usd: null,
+      state: 'disputed',
+      dispute_group: 'inv-1',
+      role: null,
+      created_event_seq: '1',
+      transaction_id: 'tx-1',
+      created_at: '2026-01-01T00:00:00.000Z',
+    });
+    jest.mocked(fetchOblInvoiceDetailClient).mockResolvedValue({
+      invoice: {
+        ...multiInvoice,
+        final_amount_usd: null,
+        details: {},
+        created_event_seq: '1',
+        transaction_id: 'tx-1',
+        lines: [line(0, 'winner', '5'), line(1, 'referral', '1')],
+      },
+      contract: null,
+      serviceOrder: null,
+      report: null,
+    });
+    const onSubmit = jest.fn().mockResolvedValue(false);
+    render(
+      <I18nProvider locale="en-US" messages={messages}>
+        <BusinessResolveDisputeModal
+          open
+          dispute={dispute}
+          invoice={multiInvoice}
+          authority={{
+            rule: 'client',
+            resolverAccount: 'sponsor',
+            provider: 'winner',
+            client: 'sponsor',
+            arbiter: null,
+          }}
+          onClose={jest.fn()}
+          isBusy={false}
+          onSubmit={onSubmit}
+        />
+      </I18nProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Reject all' })).toBeEnabled();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Reject all' }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('Every line will be settled at zero.'),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Reject all lines' }));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(dispute, '0');
+    });
   });
 });

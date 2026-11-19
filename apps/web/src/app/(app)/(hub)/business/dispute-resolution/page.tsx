@@ -20,7 +20,9 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function BusinessDisputeResolutionPage({ searchParams }: PageProps) {
+export default async function BusinessDisputeResolutionPage({
+  searchParams,
+}: PageProps) {
   const { username } = await requireBusinessUser();
   const status = parseDisputeResolutionStatus(await searchParams);
   const page = await fetchOblDisputeResolution(username, {
@@ -32,6 +34,7 @@ export default async function BusinessDisputeResolutionPage({ searchParams }: Pa
       username={username}
       status={status}
       initialPage={page ?? { items: [], hasMore: false, nextCursor: null }}
+      loadFailed={page === null}
     />
   );
 }

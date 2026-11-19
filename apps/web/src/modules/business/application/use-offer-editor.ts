@@ -31,9 +31,13 @@ export type UseOfferEditorOptions = {
   broadcast: (operations: readonly HiveOperation[]) => Promise<string | null>;
 };
 
-export type SaveState = 'idle' | 'saving' | 'saved';
+export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-export function useOfferEditor({ username, draft, broadcast }: UseOfferEditorOptions) {
+export function useOfferEditor({
+  username,
+  draft,
+  broadcast,
+}: UseOfferEditorOptions) {
   const router = useRouter();
   const oblCustomJsonId = useOblCustomJsonId();
   const [step, setStep] = useState<OfferEditorStep>('basics');
@@ -53,14 +57,21 @@ export function useOfferEditor({ username, draft, broadcast }: UseOfferEditorOpt
     [kind, fields, legalText],
   );
 
-  const persist = useCallback(async () => {
+  /** Saves the draft; the status reflects the real result (a failed PATCH never shows "Saved"). */
+  const persist = useCallback(async (): Promise<boolean> => {
     setSaveState('saving');
-    await patchOblDraftAction(username, draft.draftId, {
-      kind,
-      fields,
-      legalText: legalText || null,
-    });
-    setSaveState('saved');
+    try {
+      const result = await patchOblDraftAction(username, draft.draftId, {
+        kind,
+        fields,
+        legalText: legalText || null,
+      });
+      setSaveState(result.ok ? 'saved' : 'error');
+      return result.ok;
+    } catch {
+      setSaveState('error');
+      return false;
+    }
   }, [username, draft.draftId, kind, fields, legalText]);
 
   useEffect(() => {
@@ -89,7 +100,9 @@ export function useOfferEditor({ username, draft, broadcast }: UseOfferEditorOpt
     if (!validation.ok) {
       return;
     }
-    await persist();
+    if (!(await persist())) {
+      return;
+    }
     const normalized = normalizeOfferDraftForPublish(state);
     const publishFields = { ...normalized.fields };
     const offerId = resolvePublishOfferId(publishFields, draft.draftId);
@@ -135,6 +148,7 @@ export function useOfferEditor({ username, draft, broadcast }: UseOfferEditorOpt
     legalText,
     setLegalText,
     saveState,
+    retrySave: persist,
     previewOpen,
     setPreviewOpen,
     state,

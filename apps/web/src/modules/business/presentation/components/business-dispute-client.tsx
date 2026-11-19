@@ -11,9 +11,10 @@ import { buildResolveDisputeOp } from '../../application/build-obl-ops';
 import {
   canViewerResolveDispute,
   disputeAuthorityForInvoice,
-  shortContractId,
 } from '../../domain/dispute-resolution';
-import type { LedgerContractRow, LedgerInvoiceRow } from '../../domain/ledger.types';
+import { contractDisplayLabel } from '../../domain/contract-label';
+import { toLedgerContractRow } from '../../domain/ledger-contract';
+import type { LedgerInvoiceRow } from '../../domain/ledger.types';
 import { businessRoutes } from '../../domain/routes';
 import type { OblDisputeDetailApiResponse } from '../../infrastructure/clients/obl-ledger.server';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
@@ -21,24 +22,8 @@ import { BusinessPageShell } from '../layout/business-page-shell';
 import { BusinessResolveDisputeModal } from './relationship/business-resolve-dispute-modal';
 import { DisputeSettlementSummary } from './relationship/dispute-settlement-summary';
 import { StateBadge } from './state-badge';
-
-function toLedgerContract(
-  contract: NonNullable<OblDisputeDetailApiResponse['contract']>,
-): LedgerContractRow {
-  return {
-    contract_id: contract.contract_id,
-    offer_id: contract.offer_id,
-    offer_version: contract.offer_version,
-    provider: contract.provider,
-    client: contract.client,
-    dispute_rule: contract.dispute_rule,
-    arbiter: contract.arbiter,
-    offer_name: contract.offer_name ?? contract.contract_id,
-    offer_description: contract.offer_description ?? null,
-    service_order_schema: contract.service_order_schema ?? null,
-    created_at: contract.created_at,
-  };
-}
+import { BusinessButton } from '../ui/business-button';
+import { BusinessActionError } from '../ui/business-states';
 
 export function BusinessDisputeClient({
   username,
@@ -51,11 +36,12 @@ export function BusinessDisputeClient({
   const oblCustomJsonId = useOblCustomJsonId();
   const { dispute, invoice, contract } = detail;
   const [resolveOpen, setResolveOpen] = useState(false);
-  const { broadcast, isBusy } = useOblBroadcast(username);
+  const { broadcast, isBusy, phase, error, setError } =
+    useOblBroadcast(username);
 
   const ledgerInvoice = invoice as LedgerInvoiceRow;
   const ledgerContract = useMemo(
-    () => (contract ? toLedgerContract(contract) : null),
+    () => (contract ? toLedgerContractRow(contract) : null),
     [contract],
   );
   const canResolve = useMemo(
@@ -73,8 +59,8 @@ export function BusinessDisputeClient({
     return disputeAuthorityForInvoice(ledgerInvoice, [], ledgerContract);
   }, [ledgerContract, ledgerInvoice]);
 
-  async function submitResolve(finalAmountUsd: string) {
-    await broadcast(
+  async function submitResolve(finalAmountUsd: string): Promise<boolean> {
+    const txId = await broadcast(
       [
         buildResolveDisputeOp({
           oblCustomJsonId,
@@ -93,7 +79,7 @@ export function BusinessDisputeClient({
           : undefined,
       },
     );
-    setResolveOpen(false);
+    return txId !== null;
   }
 
   return (
@@ -104,42 +90,57 @@ export function BusinessDisputeClient({
         subtitle={t('business_dispute_subtitle')}
         actions={
           canResolve ? (
-            <button
-              type="button"
+            <BusinessButton
+              variant="primary"
               disabled={isBusy}
-              onClick={() => setResolveOpen(true)}
-              className="rounded-btn bg-accent px-3 py-1.5 text-body-sm text-accent-fg disabled:opacity-50"
+              onClick={() => {
+                setError(null);
+                setResolveOpen(true);
+              }}
             >
               {t('business_dispute_resolve_action')}
-            </button>
+            </BusinessButton>
           ) : null
         }
       >
-        <div className="mb-4">
-          <StateBadge variant={dispute.status === 'open' ? 'disputed' : 'resolved'} />
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <StateBadge
+            variant={dispute.status === 'open' ? 'disputed' : 'resolved'}
+          />
+          {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
         </div>
+        {resolveOpen ? null : <BusinessActionError message={error} />}
         <dl className="grid gap-3 text-body-sm">
           <div>
             <dt className="text-fg-secondary">{t('business_field_invoice')}</dt>
             <dd>
-              <Link href={businessRoutes.invoice(invoice.invoice_id)} className="text-link">
+              <Link
+                href={businessRoutes.invoice(invoice.invoice_id)}
+                className="text-link"
+              >
                 {invoice.invoice_id}
               </Link>
             </dd>
           </div>
           {contract ? (
             <div>
-              <dt className="text-fg-secondary">{t('business_field_contract')}</dt>
+              <dt className="text-fg-secondary">
+                {t('business_field_contract')}
+              </dt>
               <dd>
-                <Link href={businessRoutes.contract(contract.contract_id)} className="text-link">
-                  {contract.offer_name ?? contract.contract_id} ·{' '}
-                  {shortContractId(contract.contract_id)}
+                <Link
+                  href={businessRoutes.contract(contract.contract_id)}
+                  className="text-link"
+                >
+                  {contractDisplayLabel(contract)}
                 </Link>
               </dd>
             </div>
           ) : null}
           <div>
-            <dt className="text-fg-secondary">{t('business_field_created_at')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_field_created_at')}
+            </dt>
             <dd>
               <time dateTime={dispute.created_at}>
                 {formatAbsoluteDateTime(dispute.created_at, locale)}
@@ -187,7 +188,8 @@ export function BusinessDisputeClient({
         authority={resolveAuthority}
         onClose={() => setResolveOpen(false)}
         isBusy={isBusy}
-        onSubmit={async (_dispute, finalAmountUsd) => submitResolve(finalAmountUsd)}
+        error={error}
+        onSubmit={(_dispute, finalAmountUsd) => submitResolve(finalAmountUsd)}
       />
     </>
   );

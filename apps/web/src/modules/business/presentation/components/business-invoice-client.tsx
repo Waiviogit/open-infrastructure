@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { formatAbsoluteDateTime } from '@/shared/utils/format-relative-time';
 
-import { formatUsdDisplay, shortContractId } from '../../domain/dispute-resolution';
+import { contractDisplayLabel } from '../../domain/contract-label';
+import { formatUsd } from '../../domain/usd-format';
 import { businessRoutes } from '../../domain/routes';
 import type { OblInvoiceDetailApiResponse } from '../../infrastructure/clients/obl-ledger.server';
 import { InvoiceObligationLinesTable } from './relationship/invoice-obligation-lines-table';
@@ -27,11 +28,15 @@ function invoiceStateBadgeVariant(
   return 'confirmed';
 }
 
-export function BusinessInvoiceClient({ detail }: { detail: OblInvoiceDetailApiResponse }) {
+export function BusinessInvoiceClient({
+  detail,
+}: {
+  detail: OblInvoiceDetailApiResponse;
+}) {
   const { t, locale } = useI18n();
   const { invoice, contract, serviceOrder, report } = detail;
   const lines = invoice.lines ?? [];
-  const isMulti = (invoice.kind === 'multi' || lines.length > 1);
+  const isMulti = invoice.kind === 'multi' || lines.length > 1;
   const showSettled =
     invoice.state === 'resolved' &&
     invoice.final_amount_usd != null &&
@@ -61,42 +66,57 @@ export function BusinessInvoiceClient({ detail }: { detail: OblInvoiceDetailApiR
         </div>
         {isMulti ? (
           <div className="sm:col-span-2">
-            <dt className="mb-2 text-fg-secondary">{t('business_invoice_beneficiaries')}</dt>
+            <dt className="mb-2 text-fg-secondary">
+              {t('business_invoice_beneficiaries')}
+            </dt>
             <dd>
-              <InvoiceObligationLinesTable lines={lines} totalUsd={invoice.amount_usd} />
+              <InvoiceObligationLinesTable
+                lines={lines}
+                totalUsd={invoice.amount_usd}
+              />
             </dd>
           </div>
         ) : null}
         <div>
-          <dt className="text-fg-secondary">{t('business_field_amount_usd')}</dt>
+          <dt className="text-fg-secondary">
+            {t('business_field_amount_usd')}
+          </dt>
           <dd>
             {showSettled ? (
               <>
-                ${formatUsdDisplay(invoice.amount_usd)} → $
-                {formatUsdDisplay(invoice.final_amount_usd)}
+                {formatUsd(invoice.amount_usd)} →{' '}
+                {formatUsd(invoice.final_amount_usd)}
               </>
             ) : (
-              <>${formatUsdDisplay(invoice.amount_usd)}</>
+              formatUsd(invoice.amount_usd)
             )}
           </dd>
         </div>
         {contract ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_contract')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_field_contract')}
+            </dt>
             <dd>
-              <Link href={businessRoutes.contract(contract.contract_id)} className="text-link">
-                {contract.offer_name ?? contract.contract_id} ·{' '}
-                {shortContractId(contract.contract_id)}
+              <Link
+                href={businessRoutes.contract(contract.contract_id)}
+                className="text-link"
+              >
+                {contractDisplayLabel(contract)}
               </Link>
             </dd>
           </div>
         ) : null}
         {serviceOrder ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_service_order')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_field_service_order')}
+            </dt>
             <dd>
               <Link
-                href={businessRoutes.serviceOrder(serviceOrder.service_order_id)}
+                href={businessRoutes.serviceOrder(
+                  serviceOrder.service_order_id,
+                )}
                 className="text-link"
               >
                 {serviceOrder.service_order_id}
@@ -105,15 +125,22 @@ export function BusinessInvoiceClient({ detail }: { detail: OblInvoiceDetailApiR
           </div>
         ) : invoice.service_order_id ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_service_order')}</dt>
-            <dd className="font-mono text-caption">{invoice.service_order_id}</dd>
+            <dt className="text-fg-secondary">
+              {t('business_field_service_order')}
+            </dt>
+            <dd className="font-mono text-caption">
+              {invoice.service_order_id}
+            </dd>
           </div>
         ) : null}
         {report ? (
           <div>
             <dt className="text-fg-secondary">{t('business_field_report')}</dt>
             <dd>
-              <Link href={businessRoutes.report(report.report_id)} className="text-link">
+              <Link
+                href={businessRoutes.report(report.report_id)}
+                className="text-link"
+              >
                 {report.report_id}
               </Link>
             </dd>
@@ -125,7 +152,9 @@ export function BusinessInvoiceClient({ detail }: { detail: OblInvoiceDetailApiR
           </div>
         ) : null}
         <div>
-          <dt className="text-fg-secondary">{t('business_field_created_at')}</dt>
+          <dt className="text-fg-secondary">
+            {t('business_field_created_at')}
+          </dt>
           <dd>
             <time dateTime={invoice.created_at}>
               {formatAbsoluteDateTime(invoice.created_at, locale)}
@@ -134,7 +163,9 @@ export function BusinessInvoiceClient({ detail }: { detail: OblInvoiceDetailApiR
         </div>
         {Object.keys(invoice.details ?? {}).length > 0 ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_sign_metadata_label')}</dt>
+            <dt className="text-fg-secondary">
+              {t('business_sign_metadata_label')}
+            </dt>
             <dd>
               <pre className="mt-1 whitespace-pre-wrap rounded-btn border border-border bg-surface-alt p-2 font-mono text-caption">
                 {JSON.stringify(invoice.details, null, 2)}

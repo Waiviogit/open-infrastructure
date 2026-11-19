@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, business, obl]
-updated_at: 2026-07-16
+updated_at: 2026-11-19
 related:
   - docs/apps/web/spec/overview.md
   - docs/spec/open-business-layer.md
@@ -80,7 +80,7 @@ Path builders: `modules/business/domain/routes.ts`. The redirects above are `red
 | Broadcast | `useOblBroadcast` + `useOblCustomJsonId` + `@opden-data-layer/hive-broadcast` |
 | USD→WAIV (client) | BFF `GET /api/business/convert-usd-to-waiv` |
 
-Child specs: [offers.md](offers.md), [relationships.md](relationships.md), [arbitration.md](arbitration.md), [blockchain-actions.md](blockchain-actions.md).
+Child specs: [offers.md](offers.md), [relationships.md](relationships.md), [arbitration.md](arbitration.md), [blockchain-actions.md](blockchain-actions.md), [ui-building-blocks.md](ui-building-blocks.md).
 
 ## Verification
 

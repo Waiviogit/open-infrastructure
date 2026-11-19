@@ -8,14 +8,20 @@ import {
   type OfferDraftFields,
   type OfferTerms,
 } from '../../../domain/offer-form.types';
-import { offerEditorFieldClass, offerEditorLabelClass } from './offer-editor-field-styles';
+import {
+  offerEditorFieldClass,
+  offerEditorLabelClass,
+} from './offer-editor-field-styles';
 
 export type OfferEditorCommercialStepProps = {
   fields: OfferDraftFields;
   onFieldsChange: (fields: OfferDraftFields) => void;
 };
 
-function mergeTerms(fields: OfferDraftFields, patch: Partial<OfferTerms>): OfferDraftFields {
+function mergeTerms(
+  fields: OfferDraftFields,
+  patch: Partial<OfferTerms>,
+): OfferDraftFields {
   return { ...fields, terms: { ...getOfferTerms(fields), ...patch } };
 }
 
@@ -55,22 +61,25 @@ export function OfferEditorCommercialStep({
           type="text"
           inputMode="decimal"
           value={amountUsd}
-          onChange={(e) => onFieldsChange(mergeTerms(fields, { amountUsd: e.target.value }))}
+          onChange={(e) =>
+            onFieldsChange(mergeTerms(fields, { amountUsd: e.target.value }))
+          }
           aria-invalid={amountUsdInvalid}
-          className={[
-            offerEditorFieldClass,
-            amountUsdInvalid ? 'border-danger text-danger' : '',
-          ].join(' ')}
+          className={offerEditorFieldClass}
         />
         {amountUsdInvalid ? (
-          <span className="text-caption text-danger">{t('business_field_amount_usd_invalid')}</span>
+          <span className="text-caption text-error" role="alert">
+            {t('business_field_amount_usd_invalid')}
+          </span>
         ) : null}
       </label>
       <label className={offerEditorLabelClass}>
         {t('business_field_currency')}
         <input
           value={terms.currency ?? 'USD'}
-          onChange={(e) => onFieldsChange(mergeTerms(fields, { currency: e.target.value }))}
+          onChange={(e) =>
+            onFieldsChange(mergeTerms(fields, { currency: e.target.value }))
+          }
           className={offerEditorFieldClass}
         />
       </label>

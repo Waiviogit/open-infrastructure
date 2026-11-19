@@ -6,10 +6,21 @@ import { useI18n } from '@/i18n/providers/i18n-provider';
 import { OptimisticNavLink } from '@/shared/presentation';
 
 import { businessRoutes, type BusinessNavId } from '../../domain/routes';
+import { BusinessEmptyState } from '../ui/business-states';
+
+export { BusinessEmptyState };
 
 const NAV_ITEMS: { id: BusinessNavId; href: string; labelKey: string }[] = [
-  { id: 'discover', href: businessRoutes.discoverOffers, labelKey: 'business_nav_discover' },
-  { id: 'offers', href: businessRoutes.manageOffers, labelKey: 'business_nav_offers' },
+  {
+    id: 'discover',
+    href: businessRoutes.discoverOffers,
+    labelKey: 'business_nav_discover',
+  },
+  {
+    id: 'offers',
+    href: businessRoutes.manageOffers,
+    labelKey: 'business_nav_offers',
+  },
   {
     id: 'requests',
     href: businessRoutes.manageRequests,
@@ -54,10 +65,10 @@ export function BusinessLayoutNav({ active }: BusinessLayoutNavProps) {
             aria-current={isActive ? 'page' : undefined}
             suppressHydrationWarning
             className={[
-              'rounded-btn px-3 py-2 text-body-sm',
+              'rounded-btn px-3 py-2 text-body-sm transition-colors',
               isActive
-                ? 'bg-surface-alt font-weight-label text-heading'
-                : 'text-fg-secondary hover:bg-ghost-surface hover:text-fg',
+                ? 'bg-accent-soft font-weight-label text-accent'
+                : 'text-fg hover:bg-ghost-surface',
             ].join(' ')}
           >
             {t(item.labelKey)}
@@ -94,32 +105,14 @@ export function BusinessPageShell({
             <p className="mt-1 text-body text-fg-secondary">{subtitle}</p>
           ) : null}
         </div>
-        {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
+        {actions ? (
+          <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>
+        ) : null}
       </div>
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(10rem,12rem)_minmax(0,1fr)_minmax(12rem,15rem)]">
         <BusinessLayoutNav active={activeNav} />
         <div className="min-w-0 lg:col-span-2">{children}</div>
       </div>
-    </div>
-  );
-}
-
-export type BusinessEmptyStateProps = {
-  title: string;
-  description: string;
-  action?: ReactNode;
-};
-
-export function BusinessEmptyState({
-  title,
-  description,
-  action,
-}: BusinessEmptyStateProps) {
-  return (
-    <div className="rounded-card border border-border bg-surface p-card-padding text-center shadow-card">
-      <h2 className="text-body font-weight-strong text-heading">{title}</h2>
-      <p className="mt-2 text-body-sm text-fg-secondary">{description}</p>
-      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   );
 }

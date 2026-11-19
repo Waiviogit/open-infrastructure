@@ -3,34 +3,38 @@
 import { useEffect, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { ModalShell, ModalShellCloseButton } from '@/shared/presentation';
 
-import { shortContractId } from '../../../domain/dispute-resolution';
+import { contractDisplayLabel } from '../../../domain/contract-label';
 import type { LedgerContractRow } from '../../../domain/ledger.types';
 import { compactServiceOrderDetails } from '../../../domain/service-order-create';
 import { emptyValueFromSchema } from '../../../domain/service-order-schema';
+import { BUSINESS_FIELD_CLASS } from '../../ui/classes';
+import { BusinessField } from '../../ui/business-field';
+import { BusinessFormModal } from '../../ui/business-form-modal';
 import { ObjectBuilder } from '../object-builder';
 
 export type BusinessCreateServiceOrderModalProps = {
   open: boolean;
   onClose: () => void;
   isBusy: boolean;
+  error?: string | null;
   contracts: LedgerContractRow[];
+  /** Resolves `true` when the broadcast succeeded. */
   onSubmit: (input: {
     contractId: string;
     details?: Record<string, unknown>;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
 };
 
 export function BusinessCreateServiceOrderModal({
   open,
   onClose,
   isBusy,
+  error,
   contracts,
   onSubmit,
 }: BusinessCreateServiceOrderModalProps) {
   const { t } = useI18n();
-  const titleId = 'business-create-service-order-modal-title';
   const [contractId, setContractId] = useState('');
   const [details, setDetails] = useState<Record<string, unknown>>({});
   const [detailsValid, setDetailsValid] = useState(true);
@@ -68,94 +72,61 @@ export function BusinessCreateServiceOrderModal({
     selectedContract?.service_order_schema !== undefined &&
     Object.keys(selectedContract.service_order_schema).length > 0;
 
-  const canSubmit =
-    !isBusy && contractId.trim().length > 0 && detailsValid;
-
-  async function handleSubmit() {
-    await onSubmit({
-      contractId,
-      details: compactServiceOrderDetails(details),
-    });
-    onClose();
-  }
-
   return (
-    <ModalShell
+    <BusinessFormModal
       open={open}
       onClose={onClose}
-      closeOnBackdrop={!isBusy}
-      labelledBy={titleId}
-      maxWidthClass="max-w-md"
-      header={
-        <div className="flex items-center justify-between gap-3 border-b border-border px-card-padding py-3">
-          <h2 id={titleId} className="text-body font-weight-strong text-heading">
-            {t('business_create_service_order')}
-          </h2>
-          <ModalShellCloseButton onClose={onClose} disabled={isBusy} ariaLabel={t('business_modal_close')} />
-        </div>
+      title={t('business_create_service_order')}
+      busy={isBusy}
+      error={error}
+      submitLabel={t('business_create_service_order_submit')}
+      canSubmit={
+        contracts.length > 0 && contractId.trim().length > 0 && detailsValid
       }
-      footer={
-        <div className="flex justify-end gap-2 border-t border-border px-card-padding py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isBusy}
-            className="rounded-btn border border-border px-4 py-2 text-body-sm disabled:opacity-50"
-          >
-            {t('business_modal_cancel')}
-          </button>
-          <button
-            type="button"
-            disabled={!canSubmit || contracts.length === 0}
-            onClick={() => void handleSubmit()}
-            className="rounded-btn bg-accent px-4 py-2 text-body-sm text-accent-fg disabled:opacity-50"
-          >
-            {t('business_create_service_order_submit')}
-          </button>
-        </div>
+      onSubmit={() =>
+        onSubmit({ contractId, details: compactServiceOrderDetails(details) })
       }
     >
-      <div className="flex flex-col gap-4 px-card-padding py-4">
-        {contracts.length === 0 ? (
-          <p className="text-caption text-error" role="alert">
-            {t('business_service_order_contract_required_missing')}
-          </p>
-        ) : (
-          <label className="flex flex-col gap-1 text-body-sm">
-            {t('business_field_contract')}
-            <select
-              value={contractId}
-              onChange={(e) => {
-                const nextId = e.target.value;
-                setContractId(nextId);
-                applyContractPrefill(nextId);
-              }}
-              className="rounded-btn border border-border px-3 py-2"
-            >
-              {contracts.map((c) => (
-                <option key={c.contract_id} value={c.contract_id}>
-                  {c.offer_name} · {shortContractId(c.contract_id)}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {hasSchemaPrefill ? (
-          <p className="text-caption text-fg-secondary">
-            {t('business_service_order_schema_prefill_hint')}
-          </p>
-        ) : null}
-        <ObjectBuilder
-          key={detailsBuilderKey}
-          value={details}
-          label={t('business_service_order_details_label')}
-          disabled={isBusy}
-          onChange={(next, valid) => {
-            setDetails(next);
-            setDetailsValid(valid);
-          }}
-        />
-      </div>
-    </ModalShell>
+      {contracts.length === 0 ? (
+        <p className="text-body-sm text-error" role="alert">
+          {t('business_service_order_contract_required_missing')}
+        </p>
+      ) : (
+        <BusinessField
+          label={t('business_field_contract')}
+          hint={
+            hasSchemaPrefill
+              ? t('business_service_order_schema_prefill_hint')
+              : undefined
+          }
+        >
+          <select
+            value={contractId}
+            onChange={(e) => {
+              const nextId = e.target.value;
+              setContractId(nextId);
+              applyContractPrefill(nextId);
+            }}
+            className={BUSINESS_FIELD_CLASS}
+          >
+            {contracts.map((c) => (
+              <option key={c.contract_id} value={c.contract_id}>
+                {contractDisplayLabel(c)}
+              </option>
+            ))}
+          </select>
+        </BusinessField>
+      )}
+      <ObjectBuilder
+        key={detailsBuilderKey}
+        value={details}
+        label={t('business_service_order_details_label')}
+        disabled={isBusy}
+        onChange={(next, valid) => {
+          setDetails(next);
+          setDetailsValid(valid);
+        }}
+      />
+    </BusinessFormModal>
   );
 }

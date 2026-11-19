@@ -22,6 +22,7 @@ import {
   extractPaymentRefNote,
   parsePaymentRefAuthorperm,
 } from '../../../domain/payment-ref';
+import { paymentMethodLabelKey } from '../../../domain/contract-label';
 import { StateBadge } from '../state-badge';
 
 export type RelationshipPaymentRowProps = {
@@ -31,7 +32,13 @@ export type RelationshipPaymentRowProps = {
   onConfirm: (payment: LedgerPaymentRow) => void;
 };
 
-function ProfileLink({ name, children }: { name: string; children: ReactNode }) {
+function ProfileLink({
+  name,
+  children,
+}: {
+  name: string;
+  children: ReactNode;
+}) {
   return (
     <Link href={`/@${name}`} className="text-link" suppressHydrationWarning>
       {children}
@@ -79,7 +86,8 @@ function paymentDescription(
     );
   }
 
-  const counterparty = payment.payer === viewer ? payment.receiver : payment.payer;
+  const counterparty =
+    payment.payer === viewer ? payment.receiver : payment.payer;
   const isOutgoing = payment.payer === viewer;
 
   if (isOutgoing) {
@@ -106,6 +114,8 @@ export function RelationshipPaymentRow({
   onConfirm,
 }: RelationshipPaymentRowProps) {
   const { t } = useI18n();
+  const methodKey = paymentMethodLabelKey(payment.method);
+  const methodLabel = methodKey ? t(methodKey) : payment.method;
   const amountView = buildLedgerPaymentAmountView(viewer, payment);
   const clickable = canConfirmLedgerPayment(payment, viewer);
   const refNote = extractPaymentRefNote(payment.ref);
@@ -131,8 +141,12 @@ export function RelationshipPaymentRow({
       secondary={
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <StateBadge variant={payment.state === 'pending' ? 'pending' : 'confirmed'} />
-            <span className="text-caption text-fg-secondary">{payment.method}</span>
+            <StateBadge
+              variant={payment.state === 'pending' ? 'pending' : 'confirmed'}
+            />
+            <span className="text-caption text-fg-secondary">
+              {methodLabel}
+            </span>
             {clickable ? (
               <span className="text-caption text-link">
                 {t('business_payment_awaiting_confirm')}
@@ -142,7 +156,9 @@ export function RelationshipPaymentRow({
           {payment.paid_by ? (
             <p className="text-caption text-fg-secondary">
               {t('business_payment_paid_by')}{' '}
-              <ProfileLink name={payment.paid_by}>@{payment.paid_by}</ProfileLink>
+              <ProfileLink name={payment.paid_by}>
+                @{payment.paid_by}
+              </ProfileLink>
             </p>
           ) : null}
           {refNote ? (

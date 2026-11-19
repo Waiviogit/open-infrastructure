@@ -7,7 +7,11 @@ import { ActivityTimestamp } from '@/modules/user-activity/presentation/componen
 
 import type { LedgerServiceOrderRow } from '../../../domain/ledger.types';
 import { businessRoutes } from '../../../domain/routes';
-import { canCancelServiceOrder, serviceOrderStatus } from '../../../domain/service-order-cancel';
+import {
+  canCancelServiceOrder,
+  serviceOrderStatus,
+} from '../../../domain/service-order-cancel';
+import { BusinessButton } from '../../ui/business-button';
 import { StateBadge } from '../state-badge';
 
 export function BusinessServiceOrderCard({
@@ -30,7 +34,7 @@ export function BusinessServiceOrderCard({
   const showCancel = canCancelServiceOrder(so, username);
 
   return (
-    <article className="rounded-card border border-border bg-surface/80 p-card-padding text-body-sm">
+    <article className="rounded-card border border-border bg-surface p-card-padding text-body-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <Link
           href={businessRoutes.serviceOrder(so.service_order_id)}
@@ -58,14 +62,15 @@ export function BusinessServiceOrderCard({
         <ActivityTimestamp timestamp={so.created_at} />
       </p>
       {showCancel ? (
-        <button
-          type="button"
+        <BusinessButton
+          variant="destructive"
+          size="sm"
+          className="mt-3"
           disabled={isBusy}
           onClick={() => onCancel(so.service_order_id)}
-          className="mt-3 rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
         >
           {t('business_cancel_service_order')}
-        </button>
+        </BusinessButton>
       ) : null}
     </article>
   );

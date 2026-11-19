@@ -7,16 +7,18 @@ import { useRouter } from 'next/navigation';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
 
-import {
-  buildRetireOfferOp,
-} from '../../application/build-obl-ops';
+import { buildRetireOfferOp } from '../../application/build-obl-ops';
 import { businessNavIdForKind, businessRoutes } from '../../domain/routes';
 import type { OblOfferApiRow } from '../../infrastructure/clients/obl-offers.server';
 import { createOblDraftAction } from '../../infrastructure/actions/obl-drafts.actions';
 import { BusinessDisclosure } from './business-disclosure';
+import { OfferTermsSummary } from './offer-terms-summary';
 import { StateBadge } from './state-badge';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessButton } from '../ui/business-button';
+import { BusinessConfirmDialog } from '../ui/business-confirm-dialog';
+import { BusinessActionError } from '../ui/business-states';
 
 export function BusinessOfferDetailClient({
   username,
@@ -28,8 +30,13 @@ export function BusinessOfferDetailClient({
   const { t } = useI18n();
   const router = useRouter();
   const oblCustomJsonId = useOblCustomJsonId();
-  const { broadcast, phase, isBusy, error } = useOblBroadcast(username);
-  const [newVersionErrorKey, setNewVersionErrorKey] = useState<string | null>(null);
+  const { broadcast, phase, isBusy, error, setError } =
+    useOblBroadcast(username);
+  const [newVersionErrorKey, setNewVersionErrorKey] = useState<string | null>(
+    null,
+  );
+  const [creatingVersion, setCreatingVersion] = useState(false);
+  const [retireOpen, setRetireOpen] = useState(false);
   const isOwner = username === offer.author;
   const publicHref =
     offer.kind === 'offer'
@@ -42,12 +49,25 @@ export function BusinessOfferDetailClient({
       author: username,
       offerId: offer.offer_id,
     });
-    await broadcast([op]);
-    router.refresh();
+    const txId = await broadcast([op]);
+    if (txId !== null) {
+      setRetireOpen(false);
+    }
   }
 
   async function onNewVersion() {
     setNewVersionErrorKey(null);
+    setCreatingVersion(true);
+    try {
+      await createNewVersionDraft();
+    } catch {
+      setNewVersionErrorKey('business_draft_create_error_generic');
+    } finally {
+      setCreatingVersion(false);
+    }
+  }
+
+  async function createNewVersionDraft() {
     const draft = await createOblDraftAction(username, {
       kind: offer.kind,
       fields: {
@@ -88,22 +108,24 @@ export function BusinessOfferDetailClient({
         isOwner ? (
           <>
             {offer.status === 'active' ? (
-              <button
-                type="button"
+              <BusinessButton
+                variant="destructive"
                 disabled={isBusy}
-                onClick={() => void onRetire()}
-                className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
+                onClick={() => {
+                  setError(null);
+                  setRetireOpen(true);
+                }}
               >
                 {t('business_retire_offer')}
-              </button>
+              </BusinessButton>
             ) : null}
-            <button
-              type="button"
+            <BusinessButton
+              variant="primary"
+              busy={creatingVersion}
               onClick={() => void onNewVersion()}
-              className="rounded-btn bg-accent px-3 py-1 text-body-sm text-accent-fg"
             >
               {t('business_new_version')}
-            </button>
+            </BusinessButton>
           </>
         ) : null
       }
@@ -111,19 +133,31 @@ export function BusinessOfferDetailClient({
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
           <StateBadge
-            variant={offer.status === 'active' ? 'confirmed' : 'retired'}
+            variant={offer.status === 'active' ? 'active' : 'retired'}
           />
           <span className="text-caption text-fg-secondary">
-            {offer.kind} · v{offer.version}
+            {t(`business_kind_label_${offer.kind}`)} · v{offer.version}
           </span>
         </div>
 
         {offer.description ? (
-          <p className="text-body text-fg">{offer.description}</p>
+          <p className="whitespace-pre-wrap break-words text-body text-fg">
+            {offer.description}
+          </p>
         ) : null}
 
+        <OfferTermsSummary
+          terms={offer.terms}
+          disputeRule={offer.dispute_rule}
+          arbiter={offer.arbiter}
+          serviceRef={offer.service_ref}
+          legalRef={offer.legal_ref}
+        />
+
         <BusinessDisclosure variant="immutable_version" />
-        {offer.legal_ref ? <BusinessDisclosure variant="legal_ref_warning" /> : null}
+        {offer.legal_ref ? (
+          <BusinessDisclosure variant="legal_ref_warning" />
+        ) : null}
 
         <div className="flex flex-wrap gap-3">
           <Link href={publicHref} className="text-body-sm text-link">
@@ -133,18 +167,32 @@ export function BusinessOfferDetailClient({
             href={businessRoutes.offerVersion(offer.offer_id, offer.version)}
             className="text-body-sm text-link"
           >
-            {t('business_versions')} v{offer.version}
+            {t('business_open_version').replace(
+              '{version}',
+              String(offer.version),
+            )}
           </Link>
         </div>
 
         {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
-        {error ? <p className="text-body-sm text-error">{error}</p> : null}
+        {retireOpen ? null : <BusinessActionError message={error} />}
         {newVersionErrorKey ? (
           <p className="text-body-sm text-error" role="alert">
             {t(newVersionErrorKey)}
           </p>
         ) : null}
       </div>
+      <BusinessConfirmDialog
+        open={retireOpen}
+        title={t('business_retire_confirm_title')}
+        description={t('business_retire_confirm_body')}
+        confirmLabel={t('business_retire_offer')}
+        destructive
+        busy={isBusy}
+        error={error}
+        onConfirm={() => void onRetire()}
+        onClose={() => setRetireOpen(false)}
+      />
     </BusinessPageShell>
   );
 }

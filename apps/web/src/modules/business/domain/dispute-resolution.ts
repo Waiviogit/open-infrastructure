@@ -79,24 +79,9 @@ export function truncateText(value: string, maxLength: number): string {
   return `${value.slice(0, maxLength).trimEnd()}…`;
 }
 
-export function formatUsdDisplay(value: string | null | undefined): string {
-  if (value == null || value === '') {
-    return '—';
-  }
-  const n = Number(value);
-  return Number.isFinite(n) ? n.toFixed(2) : value;
-}
-
 export function findInvoiceForDispute(
   dispute: LedgerDisputeRow,
   invoices: readonly LedgerInvoiceRow[],
 ): LedgerInvoiceRow | undefined {
   return invoices.find((inv) => inv.invoice_id === dispute.invoice_id);
-}
-
-export function shortContractId(contractId: string): string {
-  if (contractId.length <= 12) {
-    return contractId;
-  }
-  return `${contractId.slice(0, 8)}…`;
 }

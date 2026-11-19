@@ -23,6 +23,7 @@ export default async function BusinessRelationshipsPage() {
     <BusinessRelationshipsClient
       username={username}
       initialPage={page ?? { items: [], hasMore: false }}
+      loadFailed={page === null}
     />
   );
 }

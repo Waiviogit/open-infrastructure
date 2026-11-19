@@ -1,4 +1,6 @@
-export const offerEditorFieldClass =
-  'rounded-btn border border-border bg-surface-control px-3 py-2 text-body';
+import { BUSINESS_FIELD_CLASS } from '../../ui/classes';
 
-export const offerEditorLabelClass = 'flex flex-col gap-1 text-body-sm';
+/** Editor fields share the Market field recipe (hover, focus ring, `aria-invalid` border). */
+export const offerEditorFieldClass = BUSINESS_FIELD_CLASS;
+
+export const offerEditorLabelClass = 'flex flex-col gap-1 text-body-sm text-fg';

@@ -1,6 +1,9 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { InfoIcon } from '@/icons';
+
+import { BUSINESS_CALLOUT_CLASS } from '../ui/classes';
 
 export type BusinessDisclosureVariant =
   | 'ledger_start'
@@ -19,14 +22,19 @@ const KEYS: Record<BusinessDisclosureVariant, string> = {
   payment_partial_confirm: 'business_disclosure_payment_partial_confirm',
 };
 
-export function BusinessDisclosure({ variant }: { variant: BusinessDisclosureVariant }) {
+export function BusinessDisclosure({
+  variant,
+}: {
+  variant: BusinessDisclosureVariant;
+}) {
   const { t } = useI18n();
   return (
     <aside
-      className="rounded-card border border-border bg-surface-alt p-card-padding text-body-sm text-fg-secondary"
+      className={`${BUSINESS_CALLOUT_CLASS} flex items-start gap-2`}
       role="note"
     >
-      {t(KEYS[variant])}
+      <InfoIcon size={16} className="mt-0.5 shrink-0 text-fg-secondary" />
+      <span>{t(KEYS[variant])}</span>
     </aside>
   );
 }

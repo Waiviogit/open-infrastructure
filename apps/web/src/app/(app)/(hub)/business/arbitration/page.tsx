@@ -18,7 +18,9 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function BusinessArbitrationPage({ searchParams }: PageProps) {
+export default async function BusinessArbitrationPage({
+  searchParams,
+}: PageProps) {
   const { username } = await requireBusinessUser();
   const status = parseArbitrationStatus(await searchParams);
   const page = await fetchOblArbitration(username, {
@@ -30,6 +32,7 @@ export default async function BusinessArbitrationPage({ searchParams }: PageProp
       username={username}
       status={status}
       initialPage={page ?? { items: [], hasMore: false, nextCursor: null }}
+      loadFailed={page === null}
     />
   );
 }
