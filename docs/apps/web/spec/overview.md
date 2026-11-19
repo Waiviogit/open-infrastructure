@@ -90,6 +90,7 @@ Do **not** duplicate page-route detail in this file — link the site map or the
 | [components/story-container.md](components/story-container.md) | Feed row (`StoryContainer` / `Story`), DTO, demo mocks |
 | [components/story-overflow-menu.md](components/story-overflow-menu.md) | ⋯ menu on story cards: root post edit → editor + draft load, comment / thread edit inline |
 | [components/avatar.md](components/avatar.md) | Shared `UserAvatar`, `resolveAvatarUrl` (profile + feed) |
+| [components/modal-shell.md](components/modal-shell.md) | Shared `ModalShell` keyboard behaviour: initial focus, Tab containment, Escape for the top-most dialog, focus return |
 | [components/code-block-copy.md](components/code-block-copy.md) | Copy button on every code block rendered through `SocialEmbedHtml` |
 | [components/linkedin-embed.md](components/linkedin-embed.md) | LinkedIn post card rendered from the public embed page (LinkedIn iframes post no height) |
 

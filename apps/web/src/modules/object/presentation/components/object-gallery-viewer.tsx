@@ -194,7 +194,8 @@ export function ObjectGalleryViewer({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (avatarModalOpen) {
+        /** A dialog above the viewer takes this Escape (ModalShell closes the top one only). */
+        if (avatarModalOpen || rankModalOpen) {
           return;
         }
         onClose();
@@ -202,7 +203,7 @@ export function ObjectGalleryViewer({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [avatarModalOpen, onClose]);
+  }, [avatarModalOpen, rankModalOpen, onClose]);
 
   useEffect(() => {
     if (!albumDropdownOpen) {

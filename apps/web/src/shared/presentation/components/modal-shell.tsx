@@ -1,9 +1,11 @@
 'use client';
 
 import {
-  useCallback,
   useEffect,
+  useId,
+  useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -12,6 +14,13 @@ import { CloseIcon } from '@/icons';
 
 import { useModalScrollLock } from '../hooks/use-modal-scroll-lock';
 import { MODAL_Z_INDEX_DEFAULT } from './modal-shell.constants';
+import {
+  focusableElementsIn,
+  hasOpenPopupIn,
+  isTopModal,
+  popModal,
+  pushModal,
+} from './modal-shell-focus';
 
 export type ModalShellVariant = 'dialog' | 'fullscreen' | 'sheet';
 
@@ -75,6 +84,10 @@ export function ModalShellCloseButton({
 /**
  * Portaled overlay with enforced scroll architecture:
  * shell `overflow-hidden` → panel `flex flex-col` → single scroll body.
+ *
+ * Keyboard: opening moves focus into the dialog (the panel itself, unless a child already took it
+ * with `autoFocus`), Tab / Shift+Tab cycle inside it, Escape closes the top-most dialog unless a
+ * popup inside it is open, and closing returns focus to the element that opened it.
  */
 export function ModalShell({
   open,
@@ -97,9 +110,15 @@ export function ModalShell({
   aside,
 }: ModalShellProps) {
   const [mounted, setMounted] = useState(false);
+  const modalId = useId();
+  /** Focus trap root: the dialog panel plus its optional desktop aside. */
+  const trapRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
   const isFullscreen = variant === 'fullscreen';
   const isSheet = variant === 'sheet';
   const bodyScrolls = scrollBody ?? !isFullscreen;
+  const visible = open && mounted;
 
   useModalScrollLock(open);
 
@@ -107,24 +126,87 @@ export function ModalShell({
     setMounted(true);
   }, []);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    },
-    [onClose],
-  );
-
   useEffect(() => {
-    if (!open || !closeOnEscape) {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  /** Stacking order for Escape, initial focus and focus return. */
+  useEffect(() => {
+    if (!visible) {
       return;
     }
+    const opener =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    pushModal(modalId);
+    const panel = panelRef.current;
+    if (panel && !panel.contains(document.activeElement)) {
+      panel.focus({ preventScroll: true });
+    }
+    return () => {
+      popModal(modalId);
+      if (opener?.isConnected) {
+        opener.focus({ preventScroll: true });
+      }
+    };
+  }, [visible, modalId]);
+
+  /**
+   * Window bubble phase: popups inside the dialog (selects, menus, comboboxes) handle Escape first
+   * on their own element or `document`; the dialog closes on a later Escape.
+   */
+  useEffect(() => {
+    if (!visible || !closeOnEscape) {
+      return;
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing) {
+        return;
+      }
+      if (!isTopModal(modalId) || hasOpenPopupIn(trapRef.current)) {
+        return;
+      }
+      onCloseRef.current();
+    };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, closeOnEscape, handleKeyDown]);
+  }, [visible, closeOnEscape, modalId]);
 
-  if (!open || !mounted || typeof document === 'undefined') {
+  /** Keeps keyboard focus inside the dialog; other keys stay local to it (no page shortcuts). */
+  const handlePanelKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      return;
+    }
+    e.stopPropagation();
+    if (e.key !== 'Tab') {
+      return;
+    }
+    const root = trapRef.current;
+    if (!root) {
+      return;
+    }
+    const focusables = focusableElementsIn(root);
+    if (focusables.length === 0) {
+      e.preventDefault();
+      panelRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey && (active === first || active === panelRef.current)) {
+      e.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  if (!visible || typeof document === 'undefined') {
     return null;
   }
 
@@ -167,6 +249,7 @@ export function ModalShell({
         role="presentation"
       >
         <div
+          ref={trapRef}
           className={[
             'pointer-events-auto min-w-0',
             isFullscreen
@@ -178,16 +261,19 @@ export function ModalShell({
                   : `flex w-full justify-center`,
           ].join(' ')}
           onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
+          onKeyDown={handlePanelKeyDown}
         >
           <div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={labelledBy}
             aria-describedby={describedBy}
             aria-label={ariaLabel}
+            tabIndex={-1}
             className={[
               panelBase,
+              'outline-none',
               panelClassName,
               !isFullscreen && aside ? 'min-w-0 flex-1' : '',
             ].join(' ')}
@@ -200,7 +286,6 @@ export function ModalShell({
             <div
               className="hidden shrink-0 flex-col gap-2 lg:flex"
               onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
             >
               {aside}
             </div>

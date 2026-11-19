@@ -169,6 +169,10 @@ Use **`header`** / **`footer`** slots on `ModalShell` for chrome that must stay 
 | `fullscreen` | Gallery viewer, expanded geo map — set `scrollBody={false}` when layout is flex/media, not a scrolling list |
 | `sheet` | Mobile bottom sheet — slides up from bottom, `max-h-[92dvh]`. Mobile filter panels (Discover, Favorites) use **`MobileFilterButton`** + **`MobileFilterSheet`** from `@/shared/presentation` — no per-page filter pill or sheet chrome |
 
+### Keyboard
+
+`ModalShell` owns focus and Escape: focus moves into the dialog on open, Tab stays inside it, Escape closes the top-most dialog, and focus returns to the trigger on close. Popups inside a dialog (selects, menus, comboboxes) set **`aria-expanded`** on their trigger so Escape reaches them first. Do not add `window` Escape listeners for dialogs. Spec: [`modal-shell.md`](../../docs/apps/web/spec/components/modal-shell.md).
+
 ### Forbidden in modals
 
 - `backdrop-blur` on modal scrims (use solid **`post-modal-scrim`** / `var(--color-modal-scrim)`)
