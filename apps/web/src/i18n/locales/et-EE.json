@@ -3208,5 +3208,11 @@
   "business_dispute_opened_by": "Avas {account}",
   "business_contract_parties": "Teenusepakkuja: {provider}, klient: {client}",
   "business_report_by": "Autor: {account}",
-  "business_breadcrumbs_aria": "Sa oled siin"
+  "business_breadcrumbs_aria": "Sa oled siin",
+  "business_editor_steps_aria": "Redaktori sammud",
+  "business_editor_step_state_empty": "Alustamata",
+  "business_editor_step_state_incomplete": "Vajab tähelepanu",
+  "business_editor_step_state_complete": "Valmis",
+  "business_editor_step_progress": "Samm {current}/{total}",
+  "business_editor_draft_label": "Mustand"
 }

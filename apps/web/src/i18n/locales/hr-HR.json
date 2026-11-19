@@ -3208,5 +3208,11 @@
   "business_dispute_opened_by": "Otvorio korisnik {account}",
   "business_contract_parties": "Pružatelj: {provider}, klijent: {client}",
   "business_report_by": "Autor: {account}",
-  "business_breadcrumbs_aria": "Nalazite se ovdje"
+  "business_breadcrumbs_aria": "Nalazite se ovdje",
+  "business_editor_steps_aria": "Koraci uređivača",
+  "business_editor_step_state_empty": "Nije započeto",
+  "business_editor_step_state_incomplete": "Zahtijeva pažnju",
+  "business_editor_step_state_complete": "Dovršeno",
+  "business_editor_step_progress": "Korak {current} od {total}",
+  "business_editor_draft_label": "Skica"
 }

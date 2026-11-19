@@ -3208,5 +3208,11 @@
   "business_dispute_opened_by": "{account}님이 제기함",
   "business_contract_parties": "제공자: {provider}, 고객: {client}",
   "business_report_by": "작성자: {account}",
-  "business_breadcrumbs_aria": "현재 위치"
+  "business_breadcrumbs_aria": "현재 위치",
+  "business_editor_steps_aria": "편집기 단계",
+  "business_editor_step_state_empty": "시작 안 함",
+  "business_editor_step_state_incomplete": "확인 필요",
+  "business_editor_step_state_complete": "완료",
+  "business_editor_step_progress": "{total}단계 중 {current}단계",
+  "business_editor_draft_label": "초안"
 }

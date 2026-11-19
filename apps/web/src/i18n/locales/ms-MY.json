@@ -3206,5 +3206,11 @@
   "business_dispute_opened_by": "Dibuka oleh {account}",
   "business_contract_parties": "Penyedia: {provider}, pelanggan: {client}",
   "business_report_by": "Oleh {account}",
-  "business_breadcrumbs_aria": "Anda di sini"
+  "business_breadcrumbs_aria": "Anda di sini",
+  "business_editor_steps_aria": "Langkah editor",
+  "business_editor_step_state_empty": "Belum dimulakan",
+  "business_editor_step_state_incomplete": "Perlu perhatian",
+  "business_editor_step_state_complete": "Selesai",
+  "business_editor_step_progress": "Langkah {current} daripada {total}",
+  "business_editor_draft_label": "Draf"
 }

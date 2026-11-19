@@ -1,15 +1,27 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { BookOpenIcon } from '@/icons';
 import { ModalShell, ModalShellCloseButton } from '@/shared/presentation';
 
 import { useOfferEditor } from '../../application/use-offer-editor';
-import { computeStepCompleteness } from '../../domain/offer-draft.schema';
-import { OFFER_EDITOR_STEPS } from '../../domain/offer-form.types';
+import {
+  computeStepCompleteness,
+  type StepCompleteness,
+} from '../../domain/offer-draft.schema';
+import {
+  OFFER_EDITOR_STEPS,
+  type OfferEditorStep,
+} from '../../domain/offer-form.types';
 import { businessRoutes } from '../../domain/routes';
 import type { OblOfferDraftView } from '../../infrastructure/clients/obl-drafts.server';
+import {
+  EditorStepNav,
+  EditorStepProgress,
+} from './offer-editor/editor-step-nav';
 import { OfferEditorBasicsStep } from './offer-editor/offer-editor-basics-step';
 import { OfferEditorBillingStep } from './offer-editor/offer-editor-billing-step';
 import { OfferEditorCommercialStep } from './offer-editor/offer-editor-commercial-step';
@@ -22,7 +34,12 @@ import { OfferEditorTerminationStep } from './offer-editor/offer-editor-terminat
 import { OfferFullPreview } from './offer-full-preview';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessBreadcrumbs } from '../ui/business-breadcrumbs';
+import { BusinessButton } from '../ui/business-button';
 import { BusinessSaveStatus } from '../ui/business-save-status';
+import { businessCardClass } from '../ui/classes';
+
+const PREVIEW_ICON_SIZE = 16;
 
 export type BusinessOfferEditorClientProps = {
   username: string;
@@ -38,52 +55,89 @@ export function BusinessOfferEditorClient({
   const editor = useOfferEditor({ username, draft, broadcast });
 
   const previewTitleId = 'offer-full-preview-title';
+  const isOffer = draft.kind === 'offer';
+  const stepCount = OFFER_EDITOR_STEPS.length;
+  const isLastStep = editor.stepIndex >= stepCount - 1;
+  const stepLabel = t(`business_editor_step_${editor.step}`);
+  const stepProgress = t('business_editor_step_progress')
+    .replace('{current}', String(editor.stepIndex + 1))
+    .replace('{total}', String(stepCount));
+
+  const completeness = useMemo(
+    () =>
+      Object.fromEntries(
+        OFFER_EDITOR_STEPS.map((step) => [
+          step,
+          computeStepCompleteness(step, editor.state),
+        ]),
+      ) as Record<OfferEditorStep, StepCompleteness>,
+    [editor.state],
+  );
 
   return (
     <>
       <BusinessPageShell
-        variant="entity"
-        title={editor.fields.name || t('business_draft_untitled')}
-        subtitle={t('business_editor_subtitle')}
+        title={editor.fields.name?.trim() || t('business_draft_untitled')}
+        subtitle={`${t('business_editor_draft_label')} · ${t(`business_kind_label_${draft.kind}`)}`}
+        breadcrumbs={
+          <BusinessBreadcrumbs
+            items={[
+              {
+                label: isOffer
+                  ? t('business_nav_my_offers')
+                  : t('business_nav_my_requests'),
+                href: businessRoutes.manageTab(draft.kind, 'drafts'),
+              },
+              {
+                label: t('business_offers_tab_drafts'),
+                href: businessRoutes.manageTab(draft.kind, 'drafts'),
+              },
+              {
+                label:
+                  editor.fields.name?.trim() || t('business_draft_untitled'),
+              },
+            ]}
+          />
+        }
+        railLabel={`${stepProgress} · ${stepLabel}`}
+        rail={
+          <EditorStepNav
+            current={editor.step}
+            completeness={completeness}
+            onSelect={editor.setStep}
+          />
+        }
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => editor.setPreviewOpen(true)}
-              className="rounded-btn border border-border px-3 py-1 text-body-sm text-link"
-            >
-              {t('business_full_preview')}
-            </button>
+          <>
             <BusinessSaveStatus
               state={editor.saveState}
               onRetry={() => void editor.retrySave()}
             />
-          </div>
+            <BusinessButton
+              size="sm"
+              onClick={() => editor.setPreviewOpen(true)}
+            >
+              <BookOpenIcon size={PREVIEW_ICON_SIZE} />
+              {t('business_full_preview')}
+            </BusinessButton>
+          </>
         }
       >
-        <div className="mb-6 flex flex-wrap gap-2">
-          {OFFER_EDITOR_STEPS.map((s, i) => {
-            const completeness = computeStepCompleteness(s, editor.state);
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => editor.setStep(s)}
-                className={[
-                  'rounded-pill border px-3 py-1 text-caption',
-                  editor.step === s
-                    ? 'border-border bg-surface-alt font-weight-label'
-                    : 'border-transparent text-fg-secondary',
-                  completeness === 'incomplete' ? 'text-error' : '',
-                ].join(' ')}
-              >
-                {i + 1}. {t(`business_editor_step_${s}`)}
-              </button>
-            );
-          })}
+        <div className="mb-card-padding flex flex-col gap-2 lg:hidden">
+          <EditorStepProgress current={editor.step} />
         </div>
 
-        <div className="rounded-card border border-border bg-surface p-card-padding shadow-card">
+        <section
+          className={businessCardClass()}
+          aria-labelledby="offer-editor-step-title"
+        >
+          <p className="text-caption text-fg-secondary">{stepProgress}</p>
+          <h2
+            id="offer-editor-step-title"
+            className="mb-card-padding text-body font-weight-strong text-heading"
+          >
+            {stepLabel}
+          </h2>
           {editor.step === 'basics' ? (
             <OfferEditorBasicsStep
               kind={editor.kind}
@@ -150,37 +204,22 @@ export function BusinessOfferEditorClient({
               onGoToStep={editor.setStep}
             />
           ) : null}
-        </div>
+        </section>
 
-        <div className="mt-6 flex justify-between">
-          <button
-            type="button"
+        {/* Sticky on mobile so Back / Continue stay under the thumb on long steps. */}
+        <div className="mt-card-padding flex items-center justify-between gap-2 max-lg:sticky max-lg:bottom-0 max-lg:z-10 max-lg:-mx-gutter max-lg:border-t max-lg:border-border max-lg:bg-bg max-lg:px-gutter max-lg:py-3 sm:max-lg:-mx-gutter-sm sm:max-lg:px-gutter-sm">
+          <BusinessButton
             disabled={editor.stepIndex <= 0}
             onClick={editor.goBack}
-            className="rounded-btn border border-border px-4 py-2 text-body-sm disabled:opacity-50"
           >
             {t('business_back')}
-          </button>
-          <button
-            type="button"
-            disabled={editor.stepIndex >= OFFER_EDITOR_STEPS.length - 1}
-            onClick={editor.goNext}
-            className="rounded-btn border border-border px-4 py-2 text-body-sm disabled:opacity-50"
-          >
-            {t('business_continue')}
-          </button>
+          </BusinessButton>
+          {isLastStep ? null : (
+            <BusinessButton variant="primary" onClick={editor.goNext}>
+              {t('business_continue')}
+            </BusinessButton>
+          )}
         </div>
-
-        <p className="mt-4">
-          <Link
-            href={businessRoutes.manageTab(draft.kind, 'drafts')}
-            className="text-body-sm text-link"
-          >
-            {draft.kind === 'request'
-              ? t('business_back_to_requests')
-              : t('business_back_to_offers')}
-          </Link>
-        </p>
       </BusinessPageShell>
 
       <ModalShell
@@ -190,7 +229,6 @@ export function BusinessOfferEditorClient({
         maxWidthClass="max-w-container-narrow"
         scrollBody
         align="start"
-        panelClassName="p-card-padding"
         header={
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-card-padding py-3">
             <h2
@@ -204,7 +242,7 @@ export function BusinessOfferEditorClient({
                 href={editor.previewHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-body-sm text-link"
+                className="text-body-sm text-link hover:underline"
               >
                 {t('business_full_preview_open_tab')}
               </Link>
@@ -216,7 +254,9 @@ export function BusinessOfferEditorClient({
           </div>
         }
       >
-        <OfferFullPreview state={editor.state} author={username} />
+        <div className="p-card-padding">
+          <OfferFullPreview state={editor.state} author={username} />
+        </div>
       </ModalShell>
     </>
   );

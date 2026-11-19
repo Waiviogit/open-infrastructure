@@ -3928,5 +3928,11 @@
   "business_dispute_opened_by": "{account} が申し立て",
   "business_contract_parties": "提供者：{provider}、クライアント：{client}",
   "business_report_by": "作成者：{account}",
-  "business_breadcrumbs_aria": "現在地"
+  "business_breadcrumbs_aria": "現在地",
+  "business_editor_steps_aria": "エディターのステップ",
+  "business_editor_step_state_empty": "未着手",
+  "business_editor_step_state_incomplete": "要確認",
+  "business_editor_step_state_complete": "完了",
+  "business_editor_step_progress": "ステップ {current}/{total}",
+  "business_editor_draft_label": "下書き"
 }

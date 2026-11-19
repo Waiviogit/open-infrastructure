@@ -16,6 +16,7 @@ import { OfferTermsSummary } from './offer-terms-summary';
 import { StateBadge } from './state-badge';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessBreadcrumbs } from '../ui/business-breadcrumbs';
 import { BusinessButton } from '../ui/business-button';
 import { BusinessConfirmDialog } from '../ui/business-confirm-dialog';
 import { BusinessActionError } from '../ui/business-states';
@@ -104,6 +105,31 @@ export function BusinessOfferDetailClient({
       variant="entity"
       title={offer.name}
       subtitle={t('business_offer_detail_subtitle')}
+      breadcrumbs={
+        <BusinessBreadcrumbs
+          items={[
+            {
+              label:
+                offer.kind === 'offer'
+                  ? t('business_nav_my_offers')
+                  : t('business_nav_my_requests'),
+              href: businessRoutes.manageTab(offer.kind, 'drafts'),
+            },
+            {
+              label: t(
+                offer.status === 'active'
+                  ? 'business_offers_tab_published'
+                  : 'business_offers_tab_retired',
+              ),
+              href: businessRoutes.manageTab(
+                offer.kind,
+                offer.status === 'active' ? 'published' : 'retired',
+              ),
+            },
+            { label: offer.name },
+          ]}
+        />
+      }
       actions={
         isOwner ? (
           <>

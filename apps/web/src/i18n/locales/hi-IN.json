@@ -3928,5 +3928,11 @@
   "business_dispute_opened_by": "{account} द्वारा दर्ज किया गया",
   "business_contract_parties": "प्रदाता: {provider}, क्लाइंट: {client}",
   "business_report_by": "{account} द्वारा",
-  "business_breadcrumbs_aria": "आप यहाँ हैं"
+  "business_breadcrumbs_aria": "आप यहाँ हैं",
+  "business_editor_steps_aria": "एडिटर के चरण",
+  "business_editor_step_state_empty": "शुरू नहीं हुआ",
+  "business_editor_step_state_incomplete": "ध्यान देने की ज़रूरत है",
+  "business_editor_step_state_complete": "पूरा हुआ",
+  "business_editor_step_progress": "चरण {current} / {total}",
+  "business_editor_draft_label": "ड्राफ़्ट"
 }

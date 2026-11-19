@@ -3909,5 +3909,11 @@
   "business_dispute_opened_by": "由 {account} 发起",
   "business_contract_parties": "服务方：{provider}，客户：{client}",
   "business_report_by": "作者：{account}",
-  "business_breadcrumbs_aria": "当前位置"
+  "business_breadcrumbs_aria": "当前位置",
+  "business_editor_steps_aria": "编辑器步骤",
+  "business_editor_step_state_empty": "未开始",
+  "business_editor_step_state_incomplete": "需要处理",
+  "business_editor_step_state_complete": "已完成",
+  "business_editor_step_progress": "第 {current} 步，共 {total} 步",
+  "business_editor_draft_label": "草稿"
 }

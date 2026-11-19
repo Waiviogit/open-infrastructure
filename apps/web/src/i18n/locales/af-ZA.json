@@ -3928,5 +3928,11 @@
   "business_dispute_opened_by": "Geopen deur {account}",
   "business_contract_parties": "Verskaffer: {provider}, kliënt: {client}",
   "business_report_by": "Deur {account}",
-  "business_breadcrumbs_aria": "Jy is hier"
+  "business_breadcrumbs_aria": "Jy is hier",
+  "business_editor_steps_aria": "Redigeerderstappe",
+  "business_editor_step_state_empty": "Nie begin nie",
+  "business_editor_step_state_incomplete": "Vereis aandag",
+  "business_editor_step_state_complete": "Voltooi",
+  "business_editor_step_progress": "Stap {current} van {total}",
+  "business_editor_draft_label": "Konsep"
 }

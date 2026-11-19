@@ -3208,5 +3208,11 @@
   "business_dispute_opened_by": "Åbnet af {account}",
   "business_contract_parties": "Leverandør: {provider}, kunde: {client}",
   "business_report_by": "Af {account}",
-  "business_breadcrumbs_aria": "Du er her"
+  "business_breadcrumbs_aria": "Du er her",
+  "business_editor_steps_aria": "Editortrin",
+  "business_editor_step_state_empty": "Ikke startet",
+  "business_editor_step_state_incomplete": "Kræver opmærksomhed",
+  "business_editor_step_state_complete": "Fuldført",
+  "business_editor_step_progress": "Trin {current} af {total}",
+  "business_editor_draft_label": "Kladde"
 }

@@ -3208,5 +3208,11 @@
   "business_dispute_opened_by": "Binuksan ni {account}",
   "business_contract_parties": "Tagapagbigay: {provider}, kliyente: {client}",
   "business_report_by": "Isinulat ni {account}",
-  "business_breadcrumbs_aria": "Narito ka"
+  "business_breadcrumbs_aria": "Narito ka",
+  "business_editor_steps_aria": "Mga hakbang ng editor",
+  "business_editor_step_state_empty": "Hindi pa nasisimulan",
+  "business_editor_step_state_incomplete": "Kailangang asikasuhin",
+  "business_editor_step_state_complete": "Kumpleto",
+  "business_editor_step_progress": "Hakbang {current} ng {total}",
+  "business_editor_draft_label": "Draft"
 }

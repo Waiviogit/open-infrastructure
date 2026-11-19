@@ -3208,5 +3208,11 @@
   "business_dispute_opened_by": "Oberta per {account}",
   "business_contract_parties": "Proveïdor: {provider}, client: {client}",
   "business_report_by": "Per {account}",
-  "business_breadcrumbs_aria": "Ets aquí"
+  "business_breadcrumbs_aria": "Ets aquí",
+  "business_editor_steps_aria": "Passos de l'editor",
+  "business_editor_step_state_empty": "Sense començar",
+  "business_editor_step_state_incomplete": "Requereix atenció",
+  "business_editor_step_state_complete": "Completat",
+  "business_editor_step_progress": "Pas {current} de {total}",
+  "business_editor_draft_label": "Esborrany"
 }

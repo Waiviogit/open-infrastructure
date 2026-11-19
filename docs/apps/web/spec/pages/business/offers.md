@@ -28,6 +28,7 @@ related:
 
 - Nine steps (`OFFER_EDITOR_STEPS` in `offer-form.types.ts`); debounced PATCH autosave (~800ms). The save status reads the action `Result`: saving → saved, or **Couldn't save** with **Try again** (a failed PATCH never shows "Saved"; publish stops when the last save failed).
 - All steps have real fields: basics (incl. tags), service (`service_ref` + optional `terms.signParams`), **schema** (optional `terms.serviceOrderSchema` via hybrid JSON Schema builder), commercial (`terms`), billing, termination (`terms.termination`), disputes, legal (`legal_ref` + off-chain `legalText`).
+- Layout: breadcrumbs (My offers › Drafts › name), steps in the context rail (`EditorStepNav`: ✓ complete, ! needs attention, number otherwise; `aria-current="step"`, status also in screen-reader text). Below `lg` the steps open from a `Step N of 9 · <step> ▾` drawer trigger with a progress bar; Back / Continue stick to the bottom of the viewport.
 - **Full preview:** header button opens scrollable modal; **Open in new tab** → `.../drafts/:draftId/preview`.
 - Publish validation via `offer-draft.schema.ts` (Zod); review step shows readiness checklist; publish blocked until `name` (+ arbiter when required).
 - New version flow: clone sets `publishedOfferId` → publish uses `offer_update`; first publish uses `offer_publish`.
@@ -48,7 +49,7 @@ Published / retired tabs call `searchOblOffers` with `author`, `kind` and `statu
 
 ## Offer detail (`/business/manage/offers/:offerId`)
 
-Terms summary (`OfferTermsSummary`), **Retire** (`buildRetireOfferOp`) behind a destructive confirmation (`BusinessConfirmDialog`; the dialog stays open with the error if the broadcast fails), **New version** (clone fields into a new draft; button is busy while the draft is created). Links to the public page and to the version page.
+Breadcrumbs (My offers › Published / Retired › name), terms summary (`OfferTermsSummary`), **Retire** (`buildRetireOfferOp`) behind a destructive confirmation (`BusinessConfirmDialog`; the dialog stays open with the error if the broadcast fails), **New version** (clone fields into a new draft; button is busy while the draft is created). Links to the public page and to the version page.
 
 ## Public sign
 

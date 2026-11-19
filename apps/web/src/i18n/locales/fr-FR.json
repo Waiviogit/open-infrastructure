@@ -3928,5 +3928,11 @@
   "business_dispute_opened_by": "Ouvert par {account}",
   "business_contract_parties": "Prestataire : {provider}, client : {client}",
   "business_report_by": "Par {account}",
-  "business_breadcrumbs_aria": "Vous êtes ici"
+  "business_breadcrumbs_aria": "Vous êtes ici",
+  "business_editor_steps_aria": "Étapes de l'éditeur",
+  "business_editor_step_state_empty": "Non commencée",
+  "business_editor_step_state_incomplete": "Nécessite votre attention",
+  "business_editor_step_state_complete": "Terminée",
+  "business_editor_step_progress": "Étape {current} sur {total}",
+  "business_editor_draft_label": "Brouillon"
 }

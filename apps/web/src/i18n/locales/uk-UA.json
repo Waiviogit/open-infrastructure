@@ -3928,5 +3928,11 @@
   "business_dispute_opened_by": "Відкрито акаунтом {account}",
   "business_contract_parties": "{provider} — виконавець, {client} — клієнт",
   "business_report_by": "Автор: {account}",
-  "business_breadcrumbs_aria": "Ви тут"
+  "business_breadcrumbs_aria": "Ви тут",
+  "business_editor_steps_aria": "Кроки редактора",
+  "business_editor_step_state_empty": "Не розпочато",
+  "business_editor_step_state_incomplete": "Потребує уваги",
+  "business_editor_step_state_complete": "Готово",
+  "business_editor_step_progress": "Крок {current} з {total}",
+  "business_editor_draft_label": "Чернетка"
 }

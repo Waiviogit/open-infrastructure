@@ -3207,5 +3207,11 @@
   "business_dispute_opened_by": "Aberta por {account}",
   "business_contract_parties": "Prestador: {provider}, cliente: {client}",
   "business_report_by": "Por {account}",
-  "business_breadcrumbs_aria": "Você está aqui"
+  "business_breadcrumbs_aria": "Você está aqui",
+  "business_editor_steps_aria": "Etapas do editor",
+  "business_editor_step_state_empty": "Não iniciada",
+  "business_editor_step_state_incomplete": "Requer atenção",
+  "business_editor_step_state_complete": "Concluída",
+  "business_editor_step_progress": "Etapa {current} de {total}",
+  "business_editor_draft_label": "Rascunho"
 }

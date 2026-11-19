@@ -3209,5 +3209,11 @@
   "business_dispute_opened_by": "Indította: {account}",
   "business_contract_parties": "Szolgáltató: {provider}, ügyfél: {client}",
   "business_report_by": "Szerző: {account}",
-  "business_breadcrumbs_aria": "Itt vagy"
+  "business_breadcrumbs_aria": "Itt vagy",
+  "business_editor_steps_aria": "A szerkesztő lépései",
+  "business_editor_step_state_empty": "Nincs elkezdve",
+  "business_editor_step_state_incomplete": "Figyelmet igényel",
+  "business_editor_step_state_complete": "Kész",
+  "business_editor_step_progress": "{current}. lépés / {total}",
+  "business_editor_draft_label": "Piszkozat"
 }

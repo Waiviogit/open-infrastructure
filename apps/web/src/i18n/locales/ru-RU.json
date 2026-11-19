@@ -4057,5 +4057,11 @@
   "business_dispute_opened_by": "Открыл(а) {account}",
   "business_contract_parties": "{provider} — исполнитель, {client} — клиент",
   "business_report_by": "Автор: {account}",
-  "business_breadcrumbs_aria": "Вы здесь"
+  "business_breadcrumbs_aria": "Вы здесь",
+  "business_editor_steps_aria": "Шаги редактора",
+  "business_editor_step_state_empty": "Не заполнено",
+  "business_editor_step_state_incomplete": "Требует внимания",
+  "business_editor_step_state_complete": "Готово",
+  "business_editor_step_progress": "Шаг {current} из {total}",
+  "business_editor_draft_label": "Черновик"
 }

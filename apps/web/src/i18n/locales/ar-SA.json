@@ -3207,5 +3207,11 @@
   "business_dispute_opened_by": "فُتح بواسطة {account}",
   "business_contract_parties": "المزوّد: {provider}، العميل: {client}",
   "business_report_by": "بواسطة {account}",
-  "business_breadcrumbs_aria": "أنت هنا"
+  "business_breadcrumbs_aria": "أنت هنا",
+  "business_editor_steps_aria": "خطوات المحرر",
+  "business_editor_step_state_empty": "لم تبدأ",
+  "business_editor_step_state_incomplete": "تحتاج إلى انتباه",
+  "business_editor_step_state_complete": "مكتملة",
+  "business_editor_step_progress": "الخطوة {current} من {total}",
+  "business_editor_draft_label": "مسودة"
 }
