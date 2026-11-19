@@ -121,6 +121,15 @@ export type AccountUpdateOp = {
   readonly json_metadata: string;
 };
 
+/** Posting-key `account_update2` that only replaces `posting_json_metadata` (profile edit). */
+export type AccountUpdate2ProfileOp = {
+  readonly type: 'account_update2';
+  readonly account: string;
+  /** Always empty: a non-empty value would need the active key. */
+  readonly json_metadata: '';
+  readonly posting_json_metadata: string;
+};
+
 export type HiveOperation =
   | VoteOp
   | CommentOp
@@ -135,7 +144,8 @@ export type HiveOperation =
   | CancelTransferFromSavingsOp
   | ClaimRewardBalanceOp
   | CollateralizedConvertOp
-  | AccountUpdateOp;
+  | AccountUpdateOp
+  | AccountUpdate2ProfileOp;
 
 export type HiveOperationPayload = {
   readonly operations: readonly HiveOperation[];

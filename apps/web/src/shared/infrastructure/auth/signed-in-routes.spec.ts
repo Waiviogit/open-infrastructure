@@ -9,6 +9,7 @@ describe('resolveSignedInRouteRedirect', () => {
     ['/editor', '/'],
     ['/drafts', '/'],
     ['/notifications/settings', '/'],
+    ['/edit-profile', '/sign-in'],
   ])('sends anonymous %s to %s', (pathname, target) => {
     expect(resolveSignedInRouteRedirect(pathname)).toBe(target);
   });

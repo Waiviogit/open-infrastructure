@@ -157,6 +157,16 @@ export function toHiveWireOperation(op: HiveOperation): HiveWireOperation {
           active: op.active,
         }),
       ];
+    case 'account_update2':
+      return [
+        'account_update2',
+        {
+          account: op.account,
+          json_metadata: op.json_metadata,
+          posting_json_metadata: op.posting_json_metadata,
+          extensions: [],
+        },
+      ];
   }
   return assertNeverForHiveOp(op);
 }

@@ -13,7 +13,7 @@ updated_at: 2026-06-10
 
 # Settings page (`/settings`)
 
-**Back:** [web overview](../../overview.md) · **Related:** [i18n](i18n.md), [theme](theme.md), [shell-mode](shell-mode.md)
+**Back:** [web overview](../../overview.md) · **Related:** [i18n](i18n.md), [theme](theme.md), [shell-mode](shell-mode.md), [edit profile](edit-profile.md)
 
 ## Purpose
 

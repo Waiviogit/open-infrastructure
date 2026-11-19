@@ -4,11 +4,12 @@ export function isToolsHubPath(pathname: string): boolean {
     pathname === '/tools' ||
     pathname === '/drafts' ||
     pathname === '/settings' ||
+    pathname === '/edit-profile' ||
     pathname.startsWith('/notifications/settings')
   );
 }
 
-export type ToolsNavId = 'notifications' | 'drafts' | 'settings';
+export type ToolsNavId = 'edit-profile' | 'notifications' | 'drafts' | 'settings';
 
 export function resolveToolsNavId(pathname: string): ToolsNavId {
   if (
@@ -22,6 +23,9 @@ export function resolveToolsNavId(pathname: string): ToolsNavId {
   }
   if (pathname === '/settings') {
     return 'settings';
+  }
+  if (pathname === '/edit-profile') {
+    return 'edit-profile';
   }
   return 'notifications';
 }

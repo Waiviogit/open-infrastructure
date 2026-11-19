@@ -1,5 +1,6 @@
 import {
   buildAccountUpdate2ProfileOp,
+  buildAccountUpdate2ProfileTypedOp,
   mergeHiveProfileMetadata,
   parseHiveAccountMetadata,
 } from './hive-account-profile-operations';
@@ -67,6 +68,55 @@ describe('mergeHiveProfileMetadata', () => {
 
     expect(result.profile).toEqual({ name: 'Neo', version: 2 });
     expect(result.changedFields).toEqual(['location']);
+  });
+});
+
+describe('mergeHiveProfileMetadata — socials, wallets, signature', () => {
+  it('sets and removes social, wallet and signature keys without touching others', () => {
+    const result = mergeHiveProfileMetadata({
+      postingJsonMetadata: JSON.stringify({
+        profile: { name: 'Neo', twitter: 'old', bitcoin: 'bc1old', custom: 'x' },
+        app: 'odl',
+      }),
+      jsonMetadata: '',
+      patch: {
+        twitter: 'neo',
+        bitcoin: null,
+        signature: '— Neo',
+        whatsapp: '+15551234567',
+      },
+    });
+
+    expect(JSON.parse(result.postingJsonMetadata)).toEqual({
+      profile: {
+        name: 'Neo',
+        twitter: 'neo',
+        custom: 'x',
+        signature: '— Neo',
+        whatsapp: '+15551234567',
+        version: 2,
+      },
+      app: 'odl',
+    });
+    expect(result.changedFields.sort()).toEqual(
+      ['bitcoin', 'signature', 'twitter', 'whatsapp'].sort(),
+    );
+  });
+});
+
+describe('buildAccountUpdate2ProfileTypedOp', () => {
+  it('builds a typed posting-only op', () => {
+    expect(
+      buildAccountUpdate2ProfileTypedOp({
+        account: '@Neo',
+        postingJsonMetadata: '{"profile":{}}',
+      }),
+    ).toEqual({
+      type: 'account_update2',
+      account: 'neo',
+      json_metadata: '',
+      posting_json_metadata: '{"profile":{}}',
+    });
   });
 });
 

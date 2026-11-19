@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, pages, index]
-updated_at: 2026-11-11
+updated_at: 2026-11-19
 related:
   - docs/apps/web/spec/overview.md
 ---
@@ -28,6 +28,7 @@ Every App Router `page.tsx` under `apps/web/src/app/` maps to a **route area** f
 | `/drafts` | `drafts/` | [page.md](drafts/page.md) | `@/modules/editor` — tools hub sidebar |
 | `/tools` | `tools/` | [page.md](tools/page.md) | redirect → `/notifications/settings` (`next.config.js` `redirects`) |
 | `/settings` | `settings/` | [page.md](settings/page.md) | `@/i18n`, `@/theme`, `@/shell-mode` |
+| `/edit-profile` | `settings/` | [edit-profile.md](settings/edit-profile.md) | `@/modules/profile-settings` — tools hub sidebar |
 | `/notifications` | `notifications/` | [page.md](notifications/page.md) | `@/modules/notifications` |
 | `/object-create` | `object-create/` | [page.md](object-create/page.md) | `@/modules/object-create` |
 | `/business` | `business/` | [overview.md](business/overview.md) | `@/modules/business` |

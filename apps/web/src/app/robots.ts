@@ -19,6 +19,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
           '/editor',
           '/drafts',
           '/settings',
+          '/edit-profile',
           '/notifications',
         ],
       },

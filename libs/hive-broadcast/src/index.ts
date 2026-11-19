@@ -66,7 +66,10 @@ export {
 export {
   HIVE_PROFILE_FIELDS,
   HIVE_PROFILE_METADATA_VERSION,
+  HIVE_PROFILE_SOCIAL_FIELDS,
+  HIVE_PROFILE_WALLET_FIELDS,
   buildAccountUpdate2ProfileOp,
+  buildAccountUpdate2ProfileTypedOp,
   mergeHiveProfileMetadata,
   parseHiveAccountMetadata,
   type BuildAccountUpdate2ProfileOpInput,

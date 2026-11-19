@@ -53,7 +53,7 @@ While loading, the row shows `comment_edit_loading`. State lives in `useCommentE
 |-------|-------|
 | `author`, `permlink`, `parent_author`, `parent_permlink` | unchanged from the published item |
 | `title` | the published title (`''` for almost every comment and thread) |
-| `body` | `editorBodyToMarkdown(lexicalJson)` |
+| `body` | `editorBodyToMarkdown(lexicalJson)`; the profile signature is not added again on edit ([edit profile](pages/settings/edit-profile.md#signature-on-comments)) |
 | `json_metadata` | published keys kept (tags, links, image, community, …); `app` = this client, `format` = `markdown` (`mergeEditedPostJsonMetadata`) |
 
 Threads (`parent_author` in `THREAD_ACCOUNTS`): the object anchor the compose bar appended as the last paragraph (`#object_id` or `/object/{id}`, `extractTrailingObjectAnchorId`) is re-applied with `appendObjectAnchorToThreadBody`, which skips it when the body still has it — the thread never leaves the object's feed and the anchor never doubles.

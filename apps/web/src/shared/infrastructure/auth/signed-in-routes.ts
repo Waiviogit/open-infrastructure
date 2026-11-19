@@ -28,6 +28,7 @@ const SIGNED_IN_ROUTES: readonly SignedInRoute[] = [
   { prefix: '/editor', redirectTo: HOME_PATH },
   { prefix: '/drafts', redirectTo: HOME_PATH },
   { prefix: '/notifications', redirectTo: HOME_PATH },
+  { prefix: '/edit-profile', redirectTo: SIGN_IN_PATH },
 ];
 
 function matchesPrefix(pathname: string, prefix: string): boolean {

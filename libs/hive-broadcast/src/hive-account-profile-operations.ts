@@ -1,13 +1,43 @@
+import type { AccountUpdate2ProfileOp } from './hive-operations';
 import type { HiveWireOperation } from './hive-operation-wire';
+
+/** Social handles stored flat on `posting_json_metadata.profile` (legacy Waivio keys). */
+export const HIVE_PROFILE_SOCIAL_FIELDS = [
+  'facebook',
+  'twitter',
+  'youtube',
+  'instagram',
+  'tiktok',
+  'snapchat',
+  'github',
+  'reddit',
+  'telegram',
+  'whatsapp',
+  'pinterest',
+  'twitch',
+  'linkedin',
+] as const;
+
+/** Crypto deposit addresses stored flat on `posting_json_metadata.profile` (legacy Waivio keys). */
+export const HIVE_PROFILE_WALLET_FIELDS = [
+  'bitcoin',
+  'litecoin',
+  'ethereum',
+  'lightningBitcoin',
+] as const;
 
 /** Profile keys read by Hive frontends from `posting_json_metadata.profile`. */
 export const HIVE_PROFILE_FIELDS = [
   'name',
   'about',
   'location',
+  'email',
   'website',
   'profile_image',
   'cover_image',
+  'signature',
+  ...HIVE_PROFILE_SOCIAL_FIELDS,
+  ...HIVE_PROFILE_WALLET_FIELDS,
 ] as const;
 
 export type HiveProfileField = (typeof HIVE_PROFILE_FIELDS)[number];
@@ -130,6 +160,22 @@ export type BuildAccountUpdate2ProfileOpInput = {
 export function buildAccountUpdate2ProfileOp(
   input: BuildAccountUpdate2ProfileOpInput,
 ): HiveWireOperation {
+  const op = buildAccountUpdate2ProfileTypedOp(input);
+  return [
+    'account_update2',
+    {
+      account: op.account,
+      json_metadata: op.json_metadata,
+      posting_json_metadata: op.posting_json_metadata,
+      extensions: [],
+    },
+  ];
+}
+
+/** Same operation as {@link buildAccountUpdate2ProfileOp}, typed for the wallet broadcast path. */
+export function buildAccountUpdate2ProfileTypedOp(
+  input: BuildAccountUpdate2ProfileOpInput,
+): AccountUpdate2ProfileOp {
   const account = input.account.trim().replace(/^@/, '').toLowerCase();
   if (!account) {
     throw new Error('account is required');
@@ -138,13 +184,10 @@ export function buildAccountUpdate2ProfileOp(
     throw new Error('postingJsonMetadata must not be empty');
   }
 
-  return [
-    'account_update2',
-    {
-      account,
-      json_metadata: '',
-      posting_json_metadata: input.postingJsonMetadata,
-      extensions: [],
-    },
-  ];
+  return {
+    type: 'account_update2',
+    account,
+    json_metadata: '',
+    posting_json_metadata: input.postingJsonMetadata,
+  };
 }

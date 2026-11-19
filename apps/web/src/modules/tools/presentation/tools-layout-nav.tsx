@@ -11,6 +11,11 @@ import { resolveToolsNavId, type ToolsNavId } from '../domain/tools-paths';
 
 const NAV_ITEMS: { id: ToolsNavId; href: string; labelKey: string }[] = [
   {
+    id: 'edit-profile',
+    href: '/edit-profile',
+    labelKey: 'edit_profile',
+  },
+  {
     id: 'notifications',
     href: '/notifications/settings',
     labelKey: 'notifications',

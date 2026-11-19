@@ -40,6 +40,13 @@ jest.mock('@/shared', () => ({
   ...jest.requireActual('@/shared/domain/hive-permlink'),
 }));
 
+const mockGetViewerSignature = jest.fn<Promise<string | null>, [string]>();
+
+jest.mock('@/modules/profile-settings', () => ({
+  ...jest.requireActual('@/modules/profile-settings/domain/append-signature'),
+  getViewerSignature: (username: string) => mockGetViewerSignature(username),
+}));
+
 jest.mock('@/modules/notifications', () => ({
   awaitTrxConfirmation: jest.fn().mockResolvedValue(undefined),
 }));
@@ -130,6 +137,29 @@ describe('StoryCommentEditor', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockBroadcast.mockResolvedValue({ transactionId: 'tx-1' });
+    mockGetViewerSignature.mockResolvedValue(null);
+  });
+
+  it('appends the profile signature to a new reply', async () => {
+    mockGetViewerSignature.mockResolvedValue('— Alice');
+    render(<StoryCommentEditor story={story} currentUsername="alice" />);
+
+    fireEvent.change(screen.getByLabelText('comment'), {
+      target: {
+        value: JSON.stringify({
+          root: {
+            children: [{ type: 'paragraph', children: [{ type: 'text', text: 'Nice', format: 0 }] }],
+          },
+        }),
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit comment' }));
+
+    await waitFor(() => expect(mockBroadcast).toHaveBeenCalledTimes(1));
+    expect(mockBuildCommentOp).toHaveBeenCalledWith(
+      expect.objectContaining({ body: 'Nice\n\n— Alice' }),
+    );
+    expect(mockGetViewerSignature).toHaveBeenCalledWith('alice');
   });
 
   it('broadcasts the editor body as markdown: bold, link href, image URL and hashtag survive', async () => {
@@ -245,6 +275,7 @@ describe('StoryCommentEditor', () => {
         format: 'markdown',
       });
       expect(mockBuildCommentOp).not.toHaveBeenCalled();
+      expect(mockGetViewerSignature).not.toHaveBeenCalled();
       await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
     });
 

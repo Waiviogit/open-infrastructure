@@ -2,7 +2,7 @@
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { BellIcon } from '@/icons';
-import { StatHoverTooltip, UserAvatar } from '@/shared/presentation';
+import { OptimisticNavLink, StatHoverTooltip, UserAvatar } from '@/shared/presentation';
 
 import type { UserAccountSidebarView } from '../../domain/types/user-account-sidebar-view';
 import type { UserProfileShellUser } from './types';
@@ -172,8 +172,9 @@ export function UserHeader({
           </>
         ) : null}
         {!isHeroLoading && isSameUser ? (
-          <button
-            type="button"
+          <OptimisticNavLink
+            href="/edit-profile"
+            suppressHydrationWarning
             className={[
               'rounded-btn px-4 py-2 text-body-sm font-weight-label',
               hasCoverPhoto
@@ -182,7 +183,7 @@ export function UserHeader({
             ].join(' ')}
           >
             {t('edit_profile')}
-          </button>
+          </OptimisticNavLink>
         ) : null}
       </div>
 

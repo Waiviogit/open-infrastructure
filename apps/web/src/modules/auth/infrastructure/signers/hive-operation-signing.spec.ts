@@ -31,6 +31,17 @@ describe('hive-operation-signing', () => {
     expect(resolveKeychainBroadcastKey([op])).toBe('Posting');
   });
 
+  it('keeps posting key for a profile account_update2', () => {
+    const op: HiveOperation = {
+      type: 'account_update2',
+      account: 'alice',
+      json_metadata: '',
+      posting_json_metadata: '{"profile":{"version":2}}',
+    };
+    expect(hiveOperationRequiresActiveKey(op)).toBe(false);
+    expect(resolveKeychainBroadcastKey([op])).toBe('Posting');
+  });
+
   it('keeps posting key for claim_reward_balance', () => {
     const op: HiveOperation = {
       type: 'claim_reward_balance',

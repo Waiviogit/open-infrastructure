@@ -111,6 +111,8 @@ export type Harness = {
   get<T>(token: unknown): T;
   /** Wraps custom_json ops into one synthetic Hive block (one tx per op) and parses it. */
   hiveBlock(ops: CustomJsonOpLike[]): Promise<number>;
+  /** Any Hive wire ops (e.g. `['account_update2', {...}]` captured from the web), one tx per op. */
+  hiveWireBlock(ops: Array<[string, Record<string, unknown>]>): Promise<number>;
   /** Parses one synthetic Hive Engine block referencing the given Hive block number. */
   heBlock(refHiveBlockNumber: number, txs: HeTxLike[]): Promise<void>;
   /** Builds a successful `tokens/transfer` Hive Engine tx (payload + logs) as the sidechain emits it. */
@@ -160,6 +162,18 @@ async function main(): Promise<void> {
             'custom_json',
             { ...op, required_auths: [...op.required_auths], required_posting_auths: [...op.required_posting_auths] },
           ]],
+        })),
+      });
+      return blockNum;
+    },
+    async hiveWireBlock(ops) {
+      blockNum += 1;
+      await hive.parseBlock({
+        timestamp: new Date().toISOString().slice(0, 19),
+        transactions: ops.map((op, i) => ({
+          block_num: blockNum,
+          transaction_id: `verify-trx-${blockNum}-${i}`,
+          operations: [op],
         })),
       });
       return blockNum;

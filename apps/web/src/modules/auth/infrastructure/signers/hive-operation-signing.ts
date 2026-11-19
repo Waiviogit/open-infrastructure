@@ -9,17 +9,22 @@ const ACTIVE_KEY_OPERATION_TYPES = new Set([
   'transfer_from_savings',
   'cancel_transfer_from_savings',
   'account_update',
-  'account_update2',
   'convert',
   'collateralized_convert',
   'limit_order_create',
   'limit_order_cancel',
 ]);
 
-/** Hive L1 ops and `custom_json` with `required_auths` need the active key. */
+/**
+ * Hive L1 ops and `custom_json` with `required_auths` need the active key.
+ * `account_update2` that only replaces `posting_json_metadata` is signed with the posting key.
+ */
 export function hiveOperationRequiresActiveKey(op: HiveOperation): boolean {
   if (op.type === 'custom_json') {
     return op.required_auths.length > 0;
+  }
+  if (op.type === 'account_update2') {
+    return op.json_metadata !== '';
   }
   return ACTIVE_KEY_OPERATION_TYPES.has(op.type);
 }

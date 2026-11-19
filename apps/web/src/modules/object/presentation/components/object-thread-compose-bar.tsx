@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getHiveJsonMetadataDefaults } from '@/config/hive-json-metadata-public';
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
@@ -9,6 +9,7 @@ import { useI18n } from '@/i18n/providers/i18n-provider';
 import { CompactComposeEditor, editorBodyToMarkdown } from '@/modules/editor';
 import { buildCommentOp, getWalletFacade, useHydrateWalletProvider } from '@/modules/auth';
 import { awaitTrxConfirmation } from '@/modules/notifications';
+import { appendSignature, getViewerSignature } from '@/modules/profile-settings';
 import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-after-broadcast';
 import { revalidateObjectAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 import { buildHiveJsonMetadataString, createCommentPermlink } from '@/shared';
@@ -45,6 +46,12 @@ export function ObjectThreadComposeBar({
   );
   const viewer = viewerUsername?.trim() ?? '';
 
+  useEffect(() => {
+    if (viewer) {
+      void getViewerSignature(viewer);
+    }
+  }, [viewer]);
+
   const onSubmit = useCallback(async () => {
     if (!body || pending) {
       return;
@@ -66,7 +73,12 @@ export function ObjectThreadComposeBar({
         return;
       }
 
-      const publishBody = appendObjectAnchorToThreadBody(body, objectId);
+      // Signature before the anchor: edits read the object id from the last paragraph.
+      const signature = await getViewerSignature(viewerUsername);
+      const publishBody = appendObjectAnchorToThreadBody(
+        appendSignature(body, signature),
+        objectId,
+      );
       const defaults = getHiveJsonMetadataDefaults();
       const json_metadata = buildHiveJsonMetadataString({
         host: window.location.host,

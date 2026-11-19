@@ -44,6 +44,7 @@ function resolveSigningAccount(operations: HiveOperationPayload['operations']): 
         accounts.add(op.owner);
         break;
       case 'account_update':
+      case 'account_update2':
         accounts.add(op.account);
         break;
       case 'custom_json': {

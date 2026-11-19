@@ -6,6 +6,7 @@ describe('tools-paths', () => {
       expect(isToolsHubPath('/tools')).toBe(true);
       expect(isToolsHubPath('/drafts')).toBe(true);
       expect(isToolsHubPath('/settings')).toBe(true);
+      expect(isToolsHubPath('/edit-profile')).toBe(true);
       expect(isToolsHubPath('/notifications/settings')).toBe(true);
     });
 
@@ -29,6 +30,10 @@ describe('tools-paths', () => {
 
     it('returns settings for settings path', () => {
       expect(resolveToolsNavId('/settings')).toBe('settings');
+    });
+
+    it('returns edit-profile for the edit profile path', () => {
+      expect(resolveToolsNavId('/edit-profile')).toBe('edit-profile');
     });
   });
 });

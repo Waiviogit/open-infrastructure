@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getHiveJsonMetadataDefaults } from '@/config/hive-json-metadata-public';
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
@@ -13,6 +13,7 @@ import {
   useHydrateWalletProvider,
 } from '@/modules/auth';
 import { awaitTrxConfirmation } from '@/modules/notifications';
+import { appendSignature, getViewerSignature } from '@/modules/profile-settings';
 import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-after-broadcast';
 import {
   revalidateHomeFeedAfterBroadcast,
@@ -93,6 +94,12 @@ export function StoryCommentEditor({
   );
   const isEdit = editTarget != null;
 
+  useEffect(() => {
+    if (!isEdit && currentUsername) {
+      void getViewerSignature(currentUsername);
+    }
+  }, [currentUsername, isEdit]);
+
   const onSubmit = useCallback(async () => {
     if (!body || pending || confirming) {
       return;
@@ -109,7 +116,7 @@ export function StoryCommentEditor({
         : buildReplyOp(
             story,
             currentUsername,
-            body,
+            appendSignature(body, await getViewerSignature(currentUsername)),
             parentAuthor,
             parentPermlink,
           );
