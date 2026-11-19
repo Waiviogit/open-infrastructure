@@ -33,6 +33,18 @@ export type ProfileSeoInput = {
   reputation: number;
 };
 
+export type OfferSeoInput = {
+  kind: 'offer' | 'request';
+  offerId: string;
+  version: number;
+  name: string;
+  /** Markdown or plain text; the builder turns it into a short plain excerpt. */
+  description: string | null;
+  authorName: string;
+  /** Translated "Offer" / "Request", used when there is no description. */
+  kindLabel: string;
+};
+
 export type SeoBuildContext = {
   locale: string;
   messages: Readonly<Record<string, string>>;

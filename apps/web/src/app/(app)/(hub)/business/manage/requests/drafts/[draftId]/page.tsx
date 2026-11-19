@@ -1,9 +1,23 @@
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 
 import { BusinessOfferEditorClient } from '@/modules/business';
 import { businessRoutes } from '@/modules/business/domain/routes';
-import { fetchOblDraftOne } from '@/modules/business/infrastructure/clients/obl-drafts.server';
 import { requireBusinessUser } from '@/modules/business/infrastructure/require-business-user.server';
+import {
+  draftMetadata,
+  loadOblDraftForPage,
+} from '@/modules/business/infrastructure/business-metadata.server';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ draftId: string }>;
+}): Promise<Metadata> {
+  const { username } = await requireBusinessUser();
+  const { draftId } = await params;
+  return draftMetadata(username, draftId);
+}
 
 export default async function BusinessRequestDraftPage({
   params,
@@ -12,7 +26,7 @@ export default async function BusinessRequestDraftPage({
 }) {
   const { username } = await requireBusinessUser();
   const { draftId } = await params;
-  const draft = await fetchOblDraftOne(username, draftId);
+  const draft = await loadOblDraftForPage(username, draftId);
   if (!draft) {
     notFound();
   }

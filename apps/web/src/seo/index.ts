@@ -1,5 +1,6 @@
 export type {
   ObjectSeoInput,
+  OfferSeoInput,
   PostSeoInput,
   ProfileSeoInput,
   SeoBuildContext,
@@ -14,6 +15,7 @@ export {
   homeCanonical,
   discoverCanonical,
   signInCanonical,
+  offerCanonical,
 } from './domain/canonical';
 
 export { buildObjectMetadata } from './application/build-object-metadata';
@@ -22,6 +24,7 @@ export { buildProfileMetadata } from './application/build-profile-metadata';
 export { buildHomeMetadata } from './application/build-home-metadata';
 export { buildDiscoverMetadata } from './application/build-discover-metadata';
 export { buildSignInMetadata } from './application/build-sign-in-metadata';
+export { buildOfferMetadata } from './application/build-offer-metadata';
 
 export { seoPublicOrigin } from './infrastructure/seo-public-origin';
 export type {

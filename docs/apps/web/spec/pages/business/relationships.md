@@ -46,7 +46,7 @@ Each row is a link to the ledger: avatar, `@counterparty`, translated roles, `Co
 - **Service orders tab** — cards link to `/business/service-orders/:id`; contract label when known; destructive **Cancel** button (not nested in the link) when the SO is `active` and the viewer is provider or client — it opens a confirmation dialog before `service_order_cancel`.
 - **Reports tab** — cards link to `/business/reports/:id`; author, contract, optional service order label.
 - **Invoices tab** — title links to invoice detail; `@debtor pays @creditor`, linked contract, state badge, **Dispute** button when allowed.
-- **Payments tab** — wallet-style rows (`WalletHistoryRowShell`); a payment awaiting the viewer shows an explicit **Confirm received payment** button (the row itself is not a button).
+- **Payments tab** — Market cards like the other tabs: `Transferred to @x` / `Received from @x` (one translated sentence per direction, `{account}` placeholder), status, method, time, **Paid by**, reference note; amount on the right from `buildLedgerPaymentAmountView`: `−$100.00` sent, `+$100.00` received (`formatUsd`, sub-cent curation rewards keep two significant digits), plus **Declared amount** when the confirmed amount differs. A payment awaiting the viewer shows an explicit **Confirm received payment** button (the row itself is not a button).
 - **Disputes tab** — unchanged.
 
 ## Entity pages (contract, invoice, service order, report, dispute)

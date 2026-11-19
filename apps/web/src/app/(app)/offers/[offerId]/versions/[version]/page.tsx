@@ -1,9 +1,24 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { PublicOfferPageClient } from '@/modules/business';
 import { fetchOblOffer } from '@/modules/business/infrastructure/clients/obl-offers.server';
 import { resolveOfferAlreadySigned } from '@/modules/business/infrastructure/clients/obl-ledger.server';
 import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
+import { publicOfferMetadata } from '@/modules/business/infrastructure/business-metadata.server';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ offerId: string; version: string }>;
+}): Promise<Metadata> {
+  const { offerId, version } = await params;
+  const versionNum = Number.parseInt(version, 10);
+  if (!Number.isFinite(versionNum)) {
+    return {};
+  }
+  return publicOfferMetadata(offerId, versionNum);
+}
 
 export default async function PublicOfferSignPage({
   params,

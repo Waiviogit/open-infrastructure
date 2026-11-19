@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, seo, cross-cutting]
-updated_at: 2026-06-10
+updated_at: 2026-11-19
 related:
   - docs/apps/web/spec/overview.md
   - docs/apps/web/spec/i18n.md
@@ -59,6 +59,7 @@ Loader used by metadata **and** page body must use `react.cache()` and request `
 - **Posts:** `buildPostMetadata` + `buildArticleJsonLd` in `seo/domain/`.
 - **Profiles:** `buildProfileMetadata` + `buildPersonJsonLd`; canonical via `profileCanonical(origin, name)`.
 - **Home / discover / sign-in:** `buildHomeMetadata`, `buildDiscoverMetadata`, `buildSignInMetadata`.
+- **Market offer / request versions** (`/offers/:id/versions/:v`, `/requests/...`): `buildOfferMetadata` — offer name as title, plain-text description excerpt (≤160 chars, `markdownToPlainText`) or `<Offer|Request> · @author`, canonical via `offerCanonical`. Private Market pages set a title only (`modules/business/infrastructure/business-metadata.server.ts`).
 
 ## Open Graph images
 

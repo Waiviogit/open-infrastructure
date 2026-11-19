@@ -1,12 +1,12 @@
-import { formatWalletHistoryQuantity } from '@/modules/user-wallet/domain/waiv-wallet-history-amount-format';
-
 import type { LedgerPaymentRow } from './ledger.types';
+import { formatUsd, parseUsdAmount } from './usd-format';
 
+export type LedgerPaymentDirection = 'out' | 'in' | 'neutral';
+
+/** A ledger payment amount as the viewer reads it: `−$100.00` sent, `+$100.00` received. */
 export type LedgerPaymentAmountView = {
-  amount: string;
-  currency: 'USD';
-  tone: 'positive' | 'negative' | 'neutral';
-  sign: '+' | '-' | 'none';
+  label: string;
+  direction: LedgerPaymentDirection;
 };
 
 function paymentDeclaredAmount(payment: LedgerPaymentRow): string {
@@ -24,25 +24,29 @@ export function hasPaymentDeclaredMismatch(payment: LedgerPaymentRow): boolean {
   return declaredNum !== settledNum;
 }
 
+/** The amount the payer declared, when it differs from what the receiver confirmed. */
 export function buildLedgerPaymentDeclaredLabel(payment: LedgerPaymentRow): string {
-  const amount = formatWalletHistoryQuantity(paymentDeclaredAmount(payment));
-  return `${amount} USD`;
+  return formatUsd(paymentDeclaredAmount(payment), { precise: true });
 }
 
 export function buildLedgerPaymentAmountView(
   viewer: string,
   payment: LedgerPaymentRow,
 ): LedgerPaymentAmountView {
-  const amount = formatWalletHistoryQuantity(payment.amount_usd);
-  const base = { amount, currency: 'USD' as const };
-
+  const amount = parseUsdAmount(payment.amount_usd);
+  if (amount === null) {
+    return { label: formatUsd(null), direction: 'neutral' };
+  }
   if (payment.payer === viewer) {
-    return { ...base, tone: 'negative', sign: '-' };
+    return { label: formatUsd(-amount, { precise: true }), direction: 'out' };
   }
   if (payment.receiver === viewer) {
-    return { ...base, tone: 'positive', sign: '+' };
+    return {
+      label: formatUsd(amount, { precise: true, signed: true }),
+      direction: 'in',
+    };
   }
-  return { ...base, tone: 'neutral', sign: 'none' };
+  return { label: formatUsd(amount, { precise: true }), direction: 'neutral' };
 }
 
 export function canConfirmLedgerPayment(

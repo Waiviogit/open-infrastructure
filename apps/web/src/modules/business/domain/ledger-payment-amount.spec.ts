@@ -20,32 +20,39 @@ function payment(overrides: Partial<LedgerPaymentRow> = {}): LedgerPaymentRow {
 }
 
 describe('buildLedgerPaymentAmountView', () => {
-  it('marks outgoing payments negative for payer', () => {
-    const view = buildLedgerPaymentAmountView('alice', payment());
-    expect(view.tone).toBe('negative');
-    expect(view.sign).toBe('-');
-    expect(view.amount).toBe('12.500');
-    expect(view.currency).toBe('USD');
+  it('shows an outgoing payment with a minus for the payer', () => {
+    expect(buildLedgerPaymentAmountView('alice', payment())).toEqual({
+      label: '−$12.50',
+      direction: 'out',
+    });
   });
 
-  it('marks incoming payments positive for receiver', () => {
-    const view = buildLedgerPaymentAmountView('bob', payment());
-    expect(view.tone).toBe('positive');
-    expect(view.sign).toBe('+');
+  it('shows an incoming payment with a plus for the receiver', () => {
+    expect(buildLedgerPaymentAmountView('bob', payment())).toEqual({
+      label: '+$12.50',
+      direction: 'in',
+    });
   });
 
-  it('uses neutral tone when viewer is neither party', () => {
-    const view = buildLedgerPaymentAmountView('carol', payment());
-    expect(view.tone).toBe('neutral');
-    expect(view.sign).toBe('none');
+  it('has no sign when the viewer is neither party', () => {
+    expect(buildLedgerPaymentAmountView('carol', payment())).toEqual({
+      label: '$12.50',
+      direction: 'neutral',
+    });
   });
 
-  it('formats fractional amounts with wallet history rules', () => {
-    const view = buildLedgerPaymentAmountView(
-      'alice',
-      payment({ amount_usd: '0.00026163' }),
-    );
-    expect(view.amount).toBe('0.00026');
+  it('keeps sub-cent curation rewards readable', () => {
+    expect(
+      buildLedgerPaymentAmountView('bob', payment({ amount_usd: '0.00026163' }))
+        .label,
+    ).toBe('+$0.00026');
+  });
+
+  it('groups thousands like every other Market amount', () => {
+    expect(
+      buildLedgerPaymentAmountView('alice', payment({ amount_usd: '1234567.89' }))
+        .label,
+    ).toBe('−$1,234,567.89');
   });
 });
 
@@ -72,12 +79,12 @@ describe('hasPaymentDeclaredMismatch', () => {
 });
 
 describe('buildLedgerPaymentDeclaredLabel', () => {
-  it('formats declared amount with currency', () => {
+  it('formats the declared amount like other Market amounts', () => {
     expect(
       buildLedgerPaymentDeclaredLabel(
         payment({ declared_amount_usd: '60', amount_usd: '40' }),
       ),
-    ).toBe('60 USD');
+    ).toBe('$60.00');
   });
 });
 

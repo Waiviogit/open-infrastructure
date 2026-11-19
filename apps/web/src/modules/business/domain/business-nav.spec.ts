@@ -1,4 +1,9 @@
-import { businessNavIdForPath, isBusinessPath } from './business-nav';
+import {
+  BUSINESS_NAV_ITEMS,
+  businessNavIdForPath,
+  businessNavItems,
+  isBusinessPath,
+} from './business-nav';
 
 describe('businessNavIdForPath', () => {
   it('maps the catalog and its kinds to discover', () => {
@@ -44,5 +49,17 @@ describe('businessNavIdForPath', () => {
     expect(businessNavIdForPath('/feed')).toBeNull();
     expect(isBusinessPath('/businessman')).toBe(false);
     expect(isBusinessPath('/business/pay')).toBe(true);
+  });
+});
+
+describe('businessNavItems', () => {
+  it('shows every section to a signed-in viewer', () => {
+    expect(businessNavItems(true)).toEqual(BUSINESS_NAV_ITEMS);
+  });
+
+  it('shows only the public catalog to a guest', () => {
+    expect(businessNavItems(false).map((item) => item.id)).toEqual([
+      'discover',
+    ]);
   });
 });

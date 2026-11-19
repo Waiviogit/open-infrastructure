@@ -5,6 +5,7 @@ import { useCallback, useTransition } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { BriefcaseIcon, HandHelpingIcon, StoreIcon } from '@/icons';
+import { useLoginModal } from '@/modules/auth';
 import {
   useInfiniteScroll,
   useSyncedPaginatedList,
@@ -20,7 +21,9 @@ import { businessRoutes } from '../../domain/routes';
 import { loadMorePublicOffersAction } from '../../infrastructure/actions/load-more-obl.server';
 import type { OblOfferApiRow } from '../../infrastructure/clients/obl-offers.server';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessButton } from '../ui/business-button';
 import { BusinessRailNav } from '../ui/business-context-rail';
+import { BusinessGuestCard } from '../ui/business-guest-card';
 import { BusinessEmptyState, BusinessErrorState } from '../ui/business-states';
 import { businessButtonClass } from '../ui/classes';
 import { OfferCard } from './offer-card';
@@ -36,14 +39,18 @@ export function PublicOffersListClient({
   initialPage,
   kind,
   filters,
+  signedIn,
   loadFailed = false,
 }: {
   initialPage: OblOffsetPage<OblOfferApiRow>;
   kind: 'offer' | 'request';
   filters: PublicOffersPageState;
+  /** Guests get the sign-in card and a create CTA that opens the login dialog. */
+  signedIn: boolean;
   loadFailed?: boolean;
 }) {
   const { t } = useI18n();
+  const { openLogin } = useLoginModal();
   const [pending, startTransition] = useTransition();
   const { items, setItems, hasMore, setHasMore } =
     useSyncedPaginatedList(initialPage);
@@ -104,6 +111,11 @@ export function PublicOffersListClient({
     },
   ];
 
+  const createLabel =
+    kind === 'offer'
+      ? t('business_create_offer')
+      : t('business_create_request');
+
   function body() {
     if (loadFailed) {
       return <BusinessErrorState />;
@@ -144,15 +156,19 @@ export function PublicOffersListClient({
               : t('business_catalog_empty_requests_body')
           }
           action={
-            <Link
-              href={businessRoutes.manageNew(kind)}
-              className={businessButtonClass({ variant: 'primary' })}
-              suppressHydrationWarning
-            >
-              {kind === 'offer'
-                ? t('business_create_offer')
-                : t('business_create_request')}
-            </Link>
+            signedIn ? (
+              <Link
+                href={businessRoutes.manageNew(kind)}
+                className={businessButtonClass({ variant: 'primary' })}
+                suppressHydrationWarning
+              >
+                {createLabel}
+              </Link>
+            ) : (
+              <BusinessButton variant="primary" onClick={openLogin}>
+                {createLabel}
+              </BusinessButton>
+            )
           }
         />
       );
@@ -196,10 +212,20 @@ export function PublicOffersListClient({
           <div className="hidden lg:block">
             <CatalogFilterForm kind={kind} filters={filters} />
           </div>
+          {signedIn ? null : (
+            <div className="hidden lg:block">
+              <BusinessGuestCard layout="rail" />
+            </div>
+          )}
         </>
       }
       mobileControls={<CatalogMobileFilters kind={kind} filters={filters} />}
     >
+      {signedIn ? null : (
+        <div className="mb-card-padding lg:hidden">
+          <BusinessGuestCard layout="inline" />
+        </div>
+      )}
       <CatalogActiveFilters kind={kind} filters={filters} />
       {body()}
     </BusinessPageShell>

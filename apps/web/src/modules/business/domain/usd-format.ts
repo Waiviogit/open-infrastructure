@@ -8,11 +8,31 @@
 const MINUS = '−';
 const EMPTY = '—';
 const FRACTION_DIGITS = 2;
+/** Precise mode: sub-cent amounts keep two significant digits, capped at the on-chain 8 decimals. */
+const PRECISE_SIGNIFICANT_DIGITS = 2;
+const MAX_FRACTION_DIGITS = 8;
+const CENT = 0.01;
 
 export type FormatUsdOptions = {
   /** Prefix positive values with `+` (ledger rows that show direction by sign). */
   signed?: boolean;
+  /**
+   * Sub-cent amounts (curation rewards) read `$0.00026` instead of rounding to `$0.00`.
+   * A cent or more keeps two decimals.
+   */
+  precise?: boolean;
 };
+
+function fractionDigitsFor(abs: number, precise: boolean): number {
+  if (!precise || abs === 0 || abs >= CENT) {
+    return FRACTION_DIGITS;
+  }
+  const leadingZeros = -Math.floor(Math.log10(abs)) - 1;
+  return Math.min(
+    MAX_FRACTION_DIGITS,
+    leadingZeros + PRECISE_SIGNIFICANT_DIGITS,
+  );
+}
 
 export function parseUsdAmount(
   value: string | number | null | undefined,
@@ -36,11 +56,11 @@ export function formatUsd(
   if (n === null) {
     return EMPTY;
   }
-  const [integerPart, fraction] = Math.abs(n)
-    .toFixed(FRACTION_DIGITS)
-    .split('.');
+  const abs = Math.abs(n);
+  const digits = fractionDigitsFor(abs, options.precise === true);
+  const [integerPart, fraction] = abs.toFixed(digits).split('.');
   const body = `$${groupThousands(integerPart)}.${fraction}`;
-  const isZero = Number(Math.abs(n).toFixed(FRACTION_DIGITS)) === 0;
+  const isZero = Number(abs.toFixed(digits)) === 0;
   if (n < 0 && !isZero) {
     return `${MINUS}${body}`;
   }

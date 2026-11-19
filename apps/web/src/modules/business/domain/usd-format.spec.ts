@@ -21,6 +21,14 @@ describe('formatUsd', () => {
     expect(formatUsd('-0.001')).toBe('$0.00');
   });
 
+  it('keeps two significant digits for sub-cent amounts in precise mode', () => {
+    expect(formatUsd('0.00026163', { precise: true })).toBe('$0.00026');
+    expect(formatUsd('-0.004', { precise: true })).toBe('−$0.0040');
+    expect(formatUsd('0.00026163')).toBe('$0.00');
+    expect(formatUsd('12.5', { precise: true })).toBe('$12.50');
+    expect(formatUsd(0, { precise: true, signed: true })).toBe('$0.00');
+  });
+
   it('renders a dash for missing or invalid values', () => {
     expect(formatUsd(null)).toBe('—');
     expect(formatUsd('')).toBe('—');

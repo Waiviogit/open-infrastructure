@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -5,6 +6,16 @@ import { BusinessRelationshipDetailClient } from '@/modules/business';
 import { parseRelationshipTab } from '@/modules/business/domain/relationship-tab-url';
 import { loadRelationshipDetailInitial } from '@/modules/business/infrastructure/actions/load-more-obl.server';
 import { requireBusinessUser } from '@/modules/business/infrastructure/require-business-user.server';
+import { relationshipMetadata } from '@/modules/business/infrastructure/business-metadata.server';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ account: string }>;
+}): Promise<Metadata> {
+  const { account } = await params;
+  return relationshipMetadata(decodeURIComponent(account));
+}
 
 export default async function BusinessRelationshipDetailPage({
   params,

@@ -8,6 +8,7 @@ import { parsePublicOffersPageState } from '@/modules/business/domain/public-off
 import { BusinessPageSkeleton } from '@/modules/business/presentation/ui/business-page-skeleton';
 import { PublicOffersListClient } from '@/modules/business/presentation/components/public-offers-list-client';
 import { searchOblOffers } from '@/modules/business/infrastructure/clients/obl-offers.server';
+import { getRequestUser } from '@/shared/infrastructure/auth/get-request-user.server';
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -36,18 +37,22 @@ async function BusinessDiscoverRequestsBody({
   searchParams: SearchParams;
 }) {
   const filters = parsePublicOffersPageState(await searchParams);
-  const page = await searchOblOffers({
-    kind: 'request',
-    author: filters.author || undefined,
-    q: filters.q || undefined,
-    limit: OBL_LIST_PAGE_SIZE,
-  });
+  const [page, viewer] = await Promise.all([
+    searchOblOffers({
+      kind: 'request',
+      author: filters.author || undefined,
+      q: filters.q || undefined,
+      limit: OBL_LIST_PAGE_SIZE,
+    }),
+    getRequestUser(),
+  ]);
   return (
     <PublicOffersListClient
       initialPage={page ?? { items: [], hasMore: false }}
       loadFailed={page === null}
       kind="request"
       filters={filters}
+      signedIn={viewer !== null}
     />
   );
 }

@@ -38,6 +38,16 @@ export const BUSINESS_NAV_ITEMS: ReadonlyArray<{
   },
 ];
 
+/** Sections a signed-out visitor can open; every other section needs a session. */
+const PUBLIC_NAV_IDS: ReadonlySet<BusinessNavId> = new Set(['discover']);
+
+/** Band items for the viewer: guests only see the public catalog. */
+export function businessNavItems(signedIn: boolean): typeof BUSINESS_NAV_ITEMS {
+  return signedIn
+    ? BUSINESS_NAV_ITEMS
+    : BUSINESS_NAV_ITEMS.filter((item) => PUBLIC_NAV_IDS.has(item.id));
+}
+
 const PREFIXES: ReadonlyArray<[string, BusinessNavId]> = [
   ['/business/offers', 'discover'],
   ['/business/requests', 'discover'],

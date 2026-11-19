@@ -22,3 +22,17 @@ export function discoverCanonical(origin: string): string {
 export function signInCanonical(origin: string): string {
   return new URL('/sign-in', origin).toString();
 }
+
+/** Public OBL offer / request version page (`/offers/:id/versions/:v`, `/requests/...`). */
+export function offerCanonical(
+  origin: string,
+  kind: 'offer' | 'request',
+  offerId: string,
+  version: number,
+): string {
+  const section = kind === 'request' ? 'requests' : 'offers';
+  return new URL(
+    `/${section}/${encodeURIComponent(offerId)}/versions/${version}`,
+    origin,
+  ).toString();
+}

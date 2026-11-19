@@ -10,6 +10,13 @@ import { BUSINESS_FOCUS_RING } from './classes';
 export type BusinessCrumb = { label: string; href?: string };
 
 /**
+ * A long current page (an untitled draft's full name) truncates in the remaining width instead of
+ * squeezing "My offers" / "Drafts"; a long ancestor (the draft name above its preview) is capped.
+ */
+const CURRENT_CRUMB_CLASS = 'flex-1';
+const ANCESTOR_CRUMB_CLASS = 'max-w-[14rem]';
+
+/**
  * Where an entity page sits in Market (Favorites breadcrumb look): truncating links, the current
  * page last and not a link. Below `sm` only the parent stays, as a back link (`‹ Parent`): a
  * squeezed four-level trail is unreadable at phone width and the heading already names the page.
@@ -29,7 +36,7 @@ export function BusinessBreadcrumbs({
           return (
             <li
               key={`${item.label}-${index}`}
-              className={`flex min-w-0 items-center gap-x-2 ${isParent ? '' : 'max-sm:hidden'}`}
+              className={`flex min-w-0 items-center gap-x-2 ${last ? CURRENT_CRUMB_CLASS : ANCESTOR_CRUMB_CLASS} ${isParent ? '' : 'max-sm:hidden'}`}
             >
               {index > 0 ? (
                 <span

@@ -19,7 +19,9 @@ related:
 
 - `/business/offers` (default) and `/business/requests` — public `searchOblOffers` lists with `?author=` and `?q=`. Page title is the hub label (**Market**, `app_section_nav_business`).
 - Each row is an `OfferCard` (whole card is the link): author avatar + `@author`, title (2 lines), price from `terms` (`parseOfferCommercialSummary`: fixed / hourly / price on request), billing cycle, description excerpt (`markdownToPlainText`), up to 3 tags + `+N`. No status badge: the catalog only lists active versions.
-- States: query-api failure → `BusinessErrorState` with **Try again** (`router.refresh()`); empty catalog → empty state with **Create offer/request**; no matches → empty state with **Clear filters**.
+- States: query-api failure → `BusinessErrorState` with **Try again** (`router.refresh()`); empty catalog → empty state with **Create offer/request** (opens the login dialog for guests); no matches → empty state with **Clear filters**.
+- Guests: `BusinessGuestCard` (what signing in unlocks + **Sign in**) under the rail filters on desktop and above the list below `lg`. The page passes `signedIn` from `getRequestUser()` inside its Suspense body.
+- Public version pages get `buildOfferMetadata` ([SEO](../../seo.md)): offer name, description excerpt, canonical.
 - `/business` redirects to `/business/offers`.
 - Tab band **Catalog**; the rail holds the Offers / Requests switch (URL paths, browser history) and the filters (search + author, Enter submits). Applied filters show as removable chips above the list; on mobile the filters open in the shared filter sheet.
 - `/offers` and `/requests` redirect to discover.

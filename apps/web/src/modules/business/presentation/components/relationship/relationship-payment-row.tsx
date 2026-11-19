@@ -4,12 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import {
-  formatWaivAmountViewLabel,
-  WaivWalletAmount,
-  WalletDualAmount,
-  WalletHistoryRowShell,
-} from '@/modules/user-wallet/presentation/components/hive/history/wallet-history-row-shell';
+import { ActivityTimestamp } from '@/modules/user-activity/presentation/components/activity-timestamp';
 
 import {
   buildLedgerPaymentAmountView,
@@ -24,6 +19,7 @@ import {
 } from '../../../domain/payment-ref';
 import { paymentMethodLabelKey } from '../../../domain/contract-label';
 import { BusinessButton } from '../../ui/business-button';
+import { BUSINESS_BREAK_TEXT, businessCardClass } from '../../ui/classes';
 import { StateBadge } from '../state-badge';
 
 export type RelationshipPaymentRowProps = {
@@ -67,6 +63,8 @@ function PostLink({
   );
 }
 
+const ACCOUNT_PLACEHOLDER = '{account}';
+
 function paymentDescription(
   payment: LedgerPaymentRow,
   viewer: string,
@@ -87,23 +85,19 @@ function paymentDescription(
     );
   }
 
-  const counterparty =
-    payment.payer === viewer ? payment.receiver : payment.payer;
   const isOutgoing = payment.payer === viewer;
-
-  if (isOutgoing) {
-    return (
-      <>
-        {t('activity_transferred')} {t('activity_to')}{' '}
-        <ProfileLink name={counterparty}>@{counterparty}</ProfileLink>
-      </>
-    );
-  }
+  const counterparty = isOutgoing ? payment.receiver : payment.payer;
+  // One sentence per direction: word order differs by language, so the link goes where
+  // `{account}` sits in the translation.
+  const [before, after = ''] = t(
+    isOutgoing ? 'business_payment_sent_to' : 'business_payment_received_from',
+  ).split(ACCOUNT_PLACEHOLDER);
 
   return (
     <>
-      {t('activity_received')} {t('activity_from')}{' '}
+      {before}
       <ProfileLink name={counterparty}>@{counterparty}</ProfileLink>
+      {after}
     </>
   );
 }
@@ -122,40 +116,25 @@ export function RelationshipPaymentRow({
   const refNote = extractPaymentRefNote(payment.ref);
   const showDeclaredMismatch = hasPaymentDeclaredMismatch(payment);
 
-  const amount = showDeclaredMismatch ? (
-    <WalletDualAmount
-      transfer={buildLedgerPaymentDeclaredLabel(payment)}
-      received={formatWaivAmountViewLabel(amountView)}
-      transferTone="neutral"
-      receivedTone={amountView.tone}
-      transferSign="none"
-      receivedSign={amountView.sign}
-    />
-  ) : (
-    <WaivWalletAmount view={amountView} />
-  );
-
-  const body = (
-    <WalletHistoryRowShell
-      timestamp={payment.created_at}
-      amount={amount}
-      secondary={
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
+  return (
+    <article className={businessCardClass()}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-card-padding">
+        <div className="min-w-0 flex-1">
+          <p
+            className={`text-body font-weight-strong text-heading ${BUSINESS_BREAK_TEXT}`}
+          >
+            {paymentDescription(payment, viewer, t)}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-caption text-fg-secondary">
             <StateBadge
               variant={payment.state === 'pending' ? 'pending' : 'confirmed'}
             />
-            <span className="text-caption text-fg-secondary">
-              {methodLabel}
-            </span>
-            {clickable ? (
-              <span className="text-caption text-fg">
-                {t('business_payment_awaiting_confirm')}
-              </span>
-            ) : null}
+            <span>{methodLabel}</span>
+            <span aria-hidden>·</span>
+            <ActivityTimestamp timestamp={payment.created_at} />
           </div>
           {payment.paid_by ? (
-            <p className="text-caption text-fg-secondary">
+            <p className="mt-1 text-caption text-fg-secondary">
               {t('business_payment_paid_by')}{' '}
               <ProfileLink name={payment.paid_by}>
                 @{payment.paid_by}
@@ -163,25 +142,40 @@ export function RelationshipPaymentRow({
             </p>
           ) : null}
           {refNote ? (
-            <p className="text-caption text-fg-secondary">{refNote}</p>
+            <p
+              className={`mt-1 text-caption text-fg-secondary ${BUSINESS_BREAK_TEXT}`}
+            >
+              {refNote}
+            </p>
           ) : null}
           {clickable ? (
-            <BusinessButton
-              variant="primary"
-              size="sm"
-              className="mt-1 self-start"
-              disabled={isBusy}
-              onClick={() => onConfirm(payment)}
-            >
-              {t('business_confirm_received_payment')}
-            </BusinessButton>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <BusinessButton
+                variant="primary"
+                size="sm"
+                disabled={isBusy}
+                onClick={() => onConfirm(payment)}
+              >
+                {t('business_confirm_received_payment')}
+              </BusinessButton>
+              <span className="text-caption text-fg">
+                {t('business_payment_awaiting_confirm')}
+              </span>
+            </div>
           ) : null}
         </div>
-      }
-    >
-      {paymentDescription(payment, viewer, t)}
-    </WalletHistoryRowShell>
+        <div className="flex shrink-0 flex-col gap-0.5 sm:items-end">
+          <p className="text-body font-weight-strong tabular-nums text-heading">
+            {amountView.label}
+          </p>
+          {showDeclaredMismatch ? (
+            <p className="text-caption tabular-nums text-fg-secondary">
+              {t('business_field_declared_amount')}:{' '}
+              {buildLedgerPaymentDeclaredLabel(payment)}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </article>
   );
-
-  return body;
 }
