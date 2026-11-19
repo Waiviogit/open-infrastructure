@@ -1,4 +1,7 @@
-import { buildRelationshipTabHref, type RelationshipTab } from './relationship-tab-url';
+import {
+  buildRelationshipTabHref,
+  type RelationshipTab,
+} from './relationship-tab-url';
 import {
   buildArbitrationHref,
   type ArbitrationStatus,
@@ -13,7 +16,10 @@ export type OblOfferKindRoute = 'offer' | 'request';
 export type OffersListTab = 'drafts' | 'published' | 'retired';
 
 export type { RelationshipTab } from './relationship-tab-url';
-export { buildRelationshipTabHref, parseRelationshipTab } from './relationship-tab-url';
+export {
+  buildRelationshipTabHref,
+  parseRelationshipTab,
+} from './relationship-tab-url';
 export type { ArbitrationStatus } from './arbitration-status-url';
 export {
   ARBITRATION_STATUSES,
@@ -34,10 +40,6 @@ export type BusinessNavId =
   | 'relationships'
   | 'arbitration'
   | 'dispute-resolution';
-
-export function businessNavIdForKind(kind: OblOfferKindRoute): BusinessNavId {
-  return kind === 'request' ? 'requests' : 'offers';
-}
 
 const MANAGE_OFFERS = '/business/manage/offers';
 const MANAGE_REQUESTS = '/business/manage/requests';
@@ -64,7 +66,8 @@ export const businessRoutes = {
     `${MANAGE_OFFERS}/${encodeURIComponent(offerId)}/versions/${version}`,
   relationships: '/business/relationships',
   arbitration: '/business/arbitration',
-  arbitrationWithStatus: (status?: ArbitrationStatus) => buildArbitrationHref(status),
+  arbitrationWithStatus: (status?: ArbitrationStatus) =>
+    buildArbitrationHref(status),
   disputeResolution: '/business/dispute-resolution',
   disputeResolutionWithStatus: (status?: DisputeResolutionStatus) =>
     buildDisputeResolutionHref(status),

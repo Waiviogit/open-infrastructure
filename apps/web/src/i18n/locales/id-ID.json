@@ -3896,5 +3896,14 @@
   "business_kind_label_offer": "Penawaran",
   "business_kind_label_request": "Permintaan",
   "business_pay_on_behalf_debt_hint": "{debtor} berutang {amount} kepada {receiver}",
-  "business_public_filter_q_placeholder": "Nama atau deskripsi"
+  "business_public_filter_q_placeholder": "Nama atau deskripsi",
+  "business_nav_catalog": "Katalog",
+  "business_nav_my_offers": "Penawaran saya",
+  "business_nav_my_requests": "Permintaan saya",
+  "business_context_aria": "Menu bagian",
+  "business_catalog_search_offers_placeholder": "Cari penawaran",
+  "business_catalog_search_requests_placeholder": "Cari permintaan",
+  "business_catalog_filters_title": "Filter",
+  "business_catalog_active_filters": "Filter aktif",
+  "business_catalog_remove_filter": "Hapus filter {filter}"
 }

@@ -44,7 +44,7 @@ export function BusinessInvoiceClient({
 
   return (
     <BusinessPageShell
-      activeNav="relationships"
+      variant="entity"
       title={invoice.invoice_id}
       subtitle={t('business_invoice_subtitle')}
     >

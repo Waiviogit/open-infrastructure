@@ -18,5 +18,5 @@ export { OfferFullPreview } from './presentation/components/offer-full-preview';
 export {
   BusinessPageShell,
   BusinessEmptyState,
-  BusinessComingSoon,
 } from './presentation/layout/business-page-shell';
+export { HubMarketTabBand } from './presentation/layout/hub-market-tab-band';

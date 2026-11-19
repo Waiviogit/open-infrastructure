@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState, useTransition } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
-import { FlagIcon } from '@/icons';
+import { CheckCircleIcon, FlagIcon } from '@/icons';
 import {
   useInfiniteScroll,
   useSyncedPaginatedList,
@@ -23,7 +23,7 @@ import { loadMoreOblArbitrationAction } from '../../infrastructure/actions/load-
 import type { ArbitrationDisputeApiRow } from '../../infrastructure/clients/obl-arbitration.server';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
-import { BusinessSubTabs } from '../ui/business-sub-tabs';
+import { BusinessRailNav } from '../ui/business-context-rail';
 import { BusinessEmptyState, BusinessErrorState } from '../ui/business-states';
 import { DisputeInboxCard } from './dispute-inbox-card';
 import { BusinessResolveDisputeModal } from './relationship/business-resolve-dispute-modal';
@@ -128,20 +128,24 @@ export function BusinessArbitrationClient({
     id: value,
     href: buildArbitrationHref(value),
     label: t(`business_arbitration_filter_${value}`),
+    icon:
+      value === 'open' ? <FlagIcon size={16} /> : <CheckCircleIcon size={16} />,
   }));
 
   return (
     <>
       <BusinessPageShell
-        activeNav="arbitration"
         title={t('business_arbitration_title')}
+        railLabel={t(`business_arbitration_filter_${status}`)}
+        rail={
+          <BusinessRailNav
+            items={tabs}
+            activeId={status}
+            ariaLabel={t('business_arbitration_title')}
+          />
+        }
         subtitle={t('business_arbitration_subtitle')}
       >
-        <BusinessSubTabs
-          items={tabs}
-          activeId={status}
-          ariaLabel={t('business_arbitration_title')}
-        />
         {phase === 'indexing' ? (
           <div className="mb-card-padding">
             <StateBadge variant="indexing" />

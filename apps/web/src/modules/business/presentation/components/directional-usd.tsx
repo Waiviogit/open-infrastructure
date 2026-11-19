@@ -92,9 +92,9 @@ export function balanceDirection(viewerNet: number): BalanceDirection {
   return 'settled';
 }
 
-/** Owed to the viewer reads as positive; settled recedes. Owing stays neutral (not an error). */
+/** Direction is spelled out in words; settled recedes. Text stays neutral for contrast (WCAG 1.4.3). */
 export const BALANCE_DIRECTION_TEXT_CLASS: Record<BalanceDirection, string> = {
-  owed: 'text-success',
+  owed: 'text-heading',
   owing: 'text-heading',
   settled: 'text-fg-secondary',
 };

@@ -3176,5 +3176,14 @@
   "business_kind_label_offer": "Pakkumine",
   "business_kind_label_request": "Päring",
   "business_pay_on_behalf_debt_hint": "{debtor} võlgneb {receiver} kontole {amount}",
-  "business_public_filter_q_placeholder": "Nimi või kirjeldus"
+  "business_public_filter_q_placeholder": "Nimi või kirjeldus",
+  "business_nav_catalog": "Kataloog",
+  "business_nav_my_offers": "Minu pakkumised",
+  "business_nav_my_requests": "Minu päringud",
+  "business_context_aria": "Jaotise menüü",
+  "business_catalog_search_offers_placeholder": "Otsi pakkumisi",
+  "business_catalog_search_requests_placeholder": "Otsi päringuid",
+  "business_catalog_filters_title": "Filtrid",
+  "business_catalog_active_filters": "Aktiivsed filtrid",
+  "business_catalog_remove_filter": "Eemalda filter {filter}"
 }

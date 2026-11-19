@@ -62,7 +62,7 @@ export function BusinessServiceOrderClient({
 
   return (
     <BusinessPageShell
-      activeNav="relationships"
+      variant="entity"
       title={serviceOrder.service_order_id}
       subtitle={t('business_service_order_subtitle')}
       actions={

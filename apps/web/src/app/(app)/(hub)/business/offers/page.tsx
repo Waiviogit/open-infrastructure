@@ -5,7 +5,7 @@ import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { loadMessages } from '@/i18n/runtime/load-messages';
 import { OBL_LIST_PAGE_SIZE } from '@/modules/business/domain/obl-pagination.types';
 import { parsePublicOffersPageState } from '@/modules/business/domain/public-offers-url';
-import { BusinessContentSkeleton } from '@/modules/business/presentation/components/business-content-skeleton';
+import { BusinessPageSkeleton } from '@/modules/business/presentation/ui/business-page-skeleton';
 import { PublicOffersListClient } from '@/modules/business/presentation/components/public-offers-list-client';
 import { searchOblOffers } from '@/modules/business/infrastructure/clients/obl-offers.server';
 
@@ -24,7 +24,7 @@ export default function BusinessDiscoverOffersPage({
   searchParams: SearchParams;
 }) {
   return (
-    <Suspense fallback={<BusinessContentSkeleton />}>
+    <Suspense fallback={<BusinessPageSkeleton />}>
       <BusinessDiscoverOffersBody searchParams={searchParams} />
     </Suspense>
   );

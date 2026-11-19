@@ -24,11 +24,11 @@ related:
 | `/business/arbitration` | Open disputes assigned to viewer as `contract.arbiter` (default filter) |
 | `/business/arbitration?status=resolved` | Resolved dispute history |
 
-Nav item **Arbitration** is always visible in the Business shell (after Relationships).
+Tab **Arbitration** is always visible in the Market tab band (after Relationships).
 
 ## UX
 
-- Status tabs: **Open** / **Resolved** (`BusinessSubTabs`, underlined, optimistic; `arbitration-status-url.ts`, URL-synced).
+- Status rail: **Open** / **Resolved** (`BusinessRailNav`, optimistic; `arbitration-status-url.ts`, URL-synced; drawer on mobile).
 - Infinite scroll via `useSyncedPaginatedList` + `loadMoreOblArbitrationAction`.
 - Each card (`DisputeInboxCard`, shared with dispute resolution): offer name (link to the dispute), status badge, `@provider and @client`, `DisputeSettlementSummary`, **View dispute** (the arbiter is not a party, so there is no relationship link).
 - Open cards: **Resolve dispute** opens shared `BusinessResolveDisputeModal` (`dispute_resolve` broadcast). For multi-beneficiary invoices **Reject all** needs a second, destructive confirmation. Failures stay in the modal; the indexing badge shows while waiting for confirmation.
@@ -45,7 +45,7 @@ Nav item **Arbitration** is always visible in the Business shell (after Relation
 
 | Piece | Path |
 |-------|------|
-| Page | `apps/web/src/app/(app)/business/arbitration/page.tsx` |
-| Loading | `apps/web/src/app/(app)/business/arbitration/loading.tsx` |
+| Page | `apps/web/src/app/(app)/(hub)/business/arbitration/page.tsx` |
+| Loading | `apps/web/src/app/(app)/(hub)/business/arbitration/loading.tsx` |
 | Client | `business-arbitration-client.tsx` |
-| Skeleton | `skeletons/business-arbitration-skeleton.tsx` |
+| Skeleton | `ui/business-page-skeleton.tsx` |

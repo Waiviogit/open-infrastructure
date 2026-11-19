@@ -3896,5 +3896,14 @@
   "business_kind_label_offer": "Nabídka",
   "business_kind_label_request": "Poptávka",
   "business_pay_on_behalf_debt_hint": "{debtor} dluží {receiver} {amount}",
-  "business_public_filter_q_placeholder": "Název nebo popis"
+  "business_public_filter_q_placeholder": "Název nebo popis",
+  "business_nav_catalog": "Katalog",
+  "business_nav_my_offers": "Moje nabídky",
+  "business_nav_my_requests": "Moje poptávky",
+  "business_context_aria": "Menu sekce",
+  "business_catalog_search_offers_placeholder": "Hledat nabídky",
+  "business_catalog_search_requests_placeholder": "Hledat poptávky",
+  "business_catalog_filters_title": "Filtry",
+  "business_catalog_active_filters": "Aktivní filtry",
+  "business_catalog_remove_filter": "Odebrat filtr {filter}"
 }

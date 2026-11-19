@@ -3176,5 +3176,14 @@
   "business_kind_label_offer": "Alok",
   "business_kind_label_request": "Kahilingan",
   "business_pay_on_behalf_debt_hint": "May utang si {debtor} kay {receiver} na {amount}",
-  "business_public_filter_q_placeholder": "Pangalan o paglalarawan"
+  "business_public_filter_q_placeholder": "Pangalan o paglalarawan",
+  "business_nav_catalog": "Catalog",
+  "business_nav_my_offers": "Aking mga alok",
+  "business_nav_my_requests": "Aking mga kahilingan",
+  "business_context_aria": "Menu ng seksyon",
+  "business_catalog_search_offers_placeholder": "Maghanap ng alok",
+  "business_catalog_search_requests_placeholder": "Maghanap ng kahilingan",
+  "business_catalog_filters_title": "Mga filter",
+  "business_catalog_active_filters": "Mga aktibong filter",
+  "business_catalog_remove_filter": "Alisin ang filter na {filter}"
 }

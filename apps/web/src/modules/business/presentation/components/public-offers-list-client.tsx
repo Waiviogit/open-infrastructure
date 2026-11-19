@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback, useTransition } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { StoreIcon } from '@/icons';
+import { BriefcaseIcon, HandHelpingIcon, StoreIcon } from '@/icons';
 import {
   useInfiniteScroll,
   useSyncedPaginatedList,
@@ -20,11 +20,17 @@ import { businessRoutes } from '../../domain/routes';
 import { loadMorePublicOffersAction } from '../../infrastructure/actions/load-more-obl.server';
 import type { OblOfferApiRow } from '../../infrastructure/clients/obl-offers.server';
 import { BusinessPageShell } from '../layout/business-page-shell';
-import { BusinessSubTabs } from '../ui/business-sub-tabs';
+import { BusinessRailNav } from '../ui/business-context-rail';
 import { BusinessEmptyState, BusinessErrorState } from '../ui/business-states';
 import { businessButtonClass } from '../ui/classes';
 import { OfferCard } from './offer-card';
-import { PublicOffersFilters } from './public-offers-filters';
+import {
+  CatalogActiveFilters,
+  CatalogFilterForm,
+  CatalogMobileFilters,
+} from './public-offers-filters';
+
+const RAIL_ICON_SIZE = 16;
 
 export function PublicOffersListClient({
   initialPage,
@@ -79,14 +85,24 @@ export function PublicOffersListClient({
     onLoadMore,
   });
 
-  const kindTabs = (['offer', 'request'] as const).map((id) => ({
-    id,
-    href: buildPublicOffersHref(id, tabQuery),
-    label:
-      id === 'offer'
-        ? t('business_public_offers_title')
-        : t('business_public_requests_title'),
-  }));
+  const kindLabel =
+    kind === 'offer'
+      ? t('business_public_offers_title')
+      : t('business_public_requests_title');
+  const kindItems = [
+    {
+      id: 'offer',
+      href: buildPublicOffersHref('offer', tabQuery),
+      label: t('business_public_offers_title'),
+      icon: <BriefcaseIcon size={RAIL_ICON_SIZE} />,
+    },
+    {
+      id: 'request',
+      href: buildPublicOffersHref('request', tabQuery),
+      label: t('business_public_requests_title'),
+      icon: <HandHelpingIcon size={RAIL_ICON_SIZE} />,
+    },
+  ];
 
   function body() {
     if (loadFailed) {
@@ -167,16 +183,24 @@ export function PublicOffersListClient({
 
   return (
     <BusinessPageShell
-      activeNav="discover"
       title={t('app_section_nav_business')}
       subtitle={t('business_discover_subtitle')}
+      railLabel={kindLabel}
+      rail={
+        <>
+          <BusinessRailNav
+            items={kindItems}
+            activeId={kind}
+            ariaLabel={t('business_catalog_kind_aria')}
+          />
+          <div className="hidden lg:block">
+            <CatalogFilterForm kind={kind} filters={filters} />
+          </div>
+        </>
+      }
+      mobileControls={<CatalogMobileFilters kind={kind} filters={filters} />}
     >
-      <BusinessSubTabs
-        items={kindTabs}
-        activeId={kind}
-        ariaLabel={t('business_catalog_kind_aria')}
-      />
-      <PublicOffersFilters kind={kind} filters={filters} />
+      <CatalogActiveFilters kind={kind} filters={filters} />
       {body()}
     </BusinessPageShell>
   );

@@ -3,126 +3,112 @@
 import type { ReactNode } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { OptimisticNavLink } from '@/shared/presentation';
 
-import { businessRoutes, type BusinessNavId } from '../../domain/routes';
+import { BusinessMobileRail } from '../ui/business-context-rail';
+import { BUSINESS_BREAK_TEXT } from '../ui/classes';
 import { BusinessEmptyState } from '../ui/business-states';
 
 export { BusinessEmptyState };
 
-const NAV_ITEMS: { id: BusinessNavId; href: string; labelKey: string }[] = [
-  {
-    id: 'discover',
-    href: businessRoutes.discoverOffers,
-    labelKey: 'business_nav_discover',
-  },
-  {
-    id: 'offers',
-    href: businessRoutes.manageOffers,
-    labelKey: 'business_nav_offers',
-  },
-  {
-    id: 'requests',
-    href: businessRoutes.manageRequests,
-    labelKey: 'business_nav_requests',
-  },
-  {
-    id: 'relationships',
-    href: businessRoutes.relationships,
-    labelKey: 'business_nav_relationships',
-  },
-  {
-    id: 'arbitration',
-    href: businessRoutes.arbitration,
-    labelKey: 'business_nav_arbitration',
-  },
-  {
-    id: 'dispute-resolution',
-    href: businessRoutes.disputeResolution,
-    labelKey: 'business_nav_dispute_resolution',
-  },
-];
+/**
+ * Market page grid: the same three columns as the Feed hub (context rail | content | right
+ * column). The section tabs live in the hub band (`HubMarketTabBand`), not here.
+ */
+export const BUSINESS_SHELL_GRID_CLASS = [
+  'grid grid-cols-1 gap-card-padding',
+  'lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)_minmax(0,var(--shell-right-width))]',
+].join(' ');
 
-export type BusinessLayoutNavProps = {
-  active: BusinessNavId;
-};
-
-export function BusinessLayoutNav({ active }: BusinessLayoutNavProps) {
-  const { t } = useI18n();
-
-  return (
-    <nav
-      className="flex flex-col gap-1 border-b border-border pb-4 lg:border-b-0 lg:border-e lg:pb-0 lg:pe-6"
-      aria-label={t('business_nav_aria')}
-      suppressHydrationWarning
-    >
-      {NAV_ITEMS.map((item) => {
-        const isActive = item.id === active;
-        return (
-          <OptimisticNavLink
-            key={item.id}
-            href={item.href}
-            aria-current={isActive ? 'page' : undefined}
-            suppressHydrationWarning
-            className={[
-              'rounded-btn px-3 py-2 text-body-sm transition-colors',
-              isActive
-                ? 'bg-accent-soft font-weight-label text-accent'
-                : 'text-fg hover:bg-ghost-surface',
-            ].join(' ')}
-          >
-            {t(item.labelKey)}
-          </OptimisticNavLink>
-        );
-      })}
-    </nav>
-  );
-}
+/** Rail sticks below the app header and the hub section nav, like the Feed filter rail. */
+const RAIL_STICKY_CLASS = [
+  'sticky top-[calc(var(--shell-header-height)+var(--hub-section-nav-height,0px)+var(--spacing-card))]',
+  'max-h-[calc(100dvh-var(--shell-header-height)-var(--hub-section-nav-height,0px)-var(--spacing-card))]',
+  'flex flex-col gap-section-y-sm overflow-y-auto overflow-x-hidden scrollbar-minimal',
+].join(' ');
 
 export type BusinessPageShellProps = {
-  activeNav: BusinessNavId;
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  /** `list`: compact heading, content in the centre column. `entity`: display heading, wide content. */
+  variant?: 'list' | 'entity';
+  /** Above the heading (entity pages): back link / breadcrumbs. */
+  breadcrumbs?: ReactNode;
+  /** Context for this page (statuses, filters, steps): left rail on desktop, drawer below `lg`. */
+  rail?: ReactNode;
+  /** Mobile drawer trigger text: the active context, e.g. "Drafts". */
+  railLabel?: string;
+  /** Extra mobile-only controls next to the drawer trigger (e.g. the filter sheet button). */
+  mobileControls?: ReactNode;
   children: ReactNode;
 };
 
 export function BusinessPageShell({
-  activeNav,
   title,
   subtitle,
   actions,
+  variant = 'list',
+  breadcrumbs,
+  rail,
+  railLabel,
+  mobileControls,
   children,
 }: BusinessPageShellProps) {
-  return (
-    <div className="mx-auto w-full max-w-container-page px-gutter py-section-y sm:px-gutter-sm">
-      <div className="mb-section-y flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-section font-display font-weight-display text-heading">
-            {title}
-          </h1>
-          {subtitle ? (
-            <p className="mt-1 text-body text-fg-secondary">{subtitle}</p>
-          ) : null}
-        </div>
-        {actions ? (
-          <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>
-        ) : null}
-      </div>
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(10rem,12rem)_minmax(0,1fr)_minmax(12rem,15rem)]">
-        <BusinessLayoutNav active={activeNav} />
-        <div className="min-w-0 lg:col-span-2">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-export function BusinessComingSoon({ feature }: { feature: string }) {
   const { t } = useI18n();
+  const isEntity = variant === 'entity';
+
   return (
-    <BusinessEmptyState
-      title={t('business_coming_soon_title')}
-      description={`${t('business_coming_soon_body')} ${feature}`}
-    />
+    <div
+      className={`mt-card-padding pb-section-y ${BUSINESS_SHELL_GRID_CLASS}`}
+    >
+      <aside className="hidden min-w-0 lg:block">
+        {rail ? <div className={RAIL_STICKY_CLASS}>{rail}</div> : null}
+      </aside>
+
+      <div className={`min-w-0 ${isEntity ? 'lg:col-span-2' : ''}`}>
+        {breadcrumbs ? <div className="mb-3">{breadcrumbs}</div> : null}
+        <header className="mb-card-padding flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1
+              className={
+                isEntity
+                  ? `text-section font-display font-weight-display leading-display text-heading ${BUSINESS_BREAK_TEXT}`
+                  : `text-body-lg font-weight-strong text-heading ${BUSINESS_BREAK_TEXT}`
+              }
+            >
+              {title}
+            </h1>
+            {subtitle ? (
+              <p className="mt-1 text-body-sm text-fg-secondary">{subtitle}</p>
+            ) : null}
+          </div>
+          {actions ? (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {actions}
+            </div>
+          ) : null}
+        </header>
+
+        {rail || mobileControls ? (
+          <div className="mb-card-padding flex flex-wrap items-center justify-between gap-2 lg:hidden">
+            {rail ? (
+              <BusinessMobileRail
+                label={railLabel ?? title}
+                ariaLabel={t('business_context_aria')}
+              >
+                {rail}
+              </BusinessMobileRail>
+            ) : null}
+            {mobileControls}
+          </div>
+        ) : null}
+
+        {children}
+      </div>
+
+      {isEntity ? null : (
+        <aside className="hidden min-w-0 lg:block" aria-hidden />
+      )}
+    </div>
   );
 }

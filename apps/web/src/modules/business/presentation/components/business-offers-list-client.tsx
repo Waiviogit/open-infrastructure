@@ -2,10 +2,22 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState, useTransition } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { BriefcaseIcon, ChevronRightIcon, HandHelpingIcon } from '@/icons';
+import {
+  EyeOffIcon,
+  BriefcaseIcon,
+  ChevronRightIcon,
+  HandHelpingIcon,
+  PencilIcon,
+} from '@/icons';
 import { ActivityTimestamp } from '@/modules/user-activity/presentation/components/activity-timestamp';
 import {
   AppLoader,
@@ -18,7 +30,6 @@ import {
   loadMoreOblDraftsAction,
 } from '../../infrastructure/actions/load-more-obl.server';
 import {
-  businessNavIdForKind,
   businessRoutes,
   type OblOfferKindRoute,
   type OffersListTab,
@@ -29,13 +40,14 @@ import type { OblOfferApiRow } from '../../infrastructure/clients/obl-offers.ser
 import { createOblDraftAction } from '../../infrastructure/actions/obl-drafts.actions';
 import { BusinessPageShell } from '../layout/business-page-shell';
 import { BusinessButton } from '../ui/business-button';
-import { BusinessSubTabs } from '../ui/business-sub-tabs';
+import { BusinessRailNav } from '../ui/business-context-rail';
 import { BusinessEmptyState, BusinessErrorState } from '../ui/business-states';
 import { BUSINESS_BREAK_TEXT, businessCardClass } from '../ui/classes';
 import { OfferCard } from './offer-card';
 import { StateBadge } from './state-badge';
 
 const LIST_TABS: readonly OffersListTab[] = ['drafts', 'published', 'retired'];
+const RAIL_ICON_SIZE = 16;
 
 export type BusinessOffersListClientProps = {
   username: string;
@@ -75,8 +87,8 @@ export function BusinessOffersListClient({
 
   const isOffer = kind === 'offer';
   const title = isOffer
-    ? t('business_offers_title')
-    : t('business_requests_title');
+    ? t('business_nav_my_offers')
+    : t('business_nav_my_requests');
   const subtitle = isOffer
     ? t('business_offers_subtitle')
     : t('business_requests_subtitle');
@@ -165,10 +177,20 @@ export function BusinessOffersListClient({
     </BusinessButton>
   );
 
+  const tabIcons: Record<OffersListTab, ReactNode> = {
+    drafts: <PencilIcon size={RAIL_ICON_SIZE} />,
+    published: isOffer ? (
+      <BriefcaseIcon size={RAIL_ICON_SIZE} />
+    ) : (
+      <HandHelpingIcon size={RAIL_ICON_SIZE} />
+    ),
+    retired: <EyeOffIcon size={RAIL_ICON_SIZE} />,
+  };
   const tabs = LIST_TABS.map((id) => ({
     id,
     href: businessRoutes.manageTab(kind, id),
     label: t(`business_offers_tab_${id}`),
+    icon: tabIcons[id],
   }));
 
   function draftsBody() {
@@ -283,9 +305,10 @@ export function BusinessOffersListClient({
 
   return (
     <BusinessPageShell
-      activeNav={businessNavIdForKind(kind)}
       title={title}
       subtitle={subtitle}
+      railLabel={t(`business_offers_tab_${tab}`)}
+      rail={<BusinessRailNav items={tabs} activeId={tab} ariaLabel={title} />}
       actions={
         <div className="flex flex-col items-start gap-2 sm:items-end">
           {createButton}
@@ -300,7 +323,6 @@ export function BusinessOffersListClient({
         </div>
       }
     >
-      <BusinessSubTabs items={tabs} activeId={tab} ariaLabel={title} />
       {loadFailed ? (
         <BusinessErrorState />
       ) : isDraftsTab ? (

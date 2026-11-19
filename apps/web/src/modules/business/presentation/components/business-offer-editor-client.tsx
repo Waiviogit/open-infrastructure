@@ -8,7 +8,7 @@ import { ModalShell, ModalShellCloseButton } from '@/shared/presentation';
 import { useOfferEditor } from '../../application/use-offer-editor';
 import { computeStepCompleteness } from '../../domain/offer-draft.schema';
 import { OFFER_EDITOR_STEPS } from '../../domain/offer-form.types';
-import { businessNavIdForKind, businessRoutes } from '../../domain/routes';
+import { businessRoutes } from '../../domain/routes';
 import type { OblOfferDraftView } from '../../infrastructure/clients/obl-drafts.server';
 import { OfferEditorBasicsStep } from './offer-editor/offer-editor-basics-step';
 import { OfferEditorBillingStep } from './offer-editor/offer-editor-billing-step';
@@ -42,7 +42,7 @@ export function BusinessOfferEditorClient({
   return (
     <>
       <BusinessPageShell
-        activeNav={businessNavIdForKind(draft.kind)}
+        variant="entity"
         title={editor.fields.name || t('business_draft_untitled')}
         subtitle={t('business_editor_subtitle')}
         actions={

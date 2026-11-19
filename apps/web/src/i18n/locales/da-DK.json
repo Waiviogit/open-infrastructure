@@ -3176,5 +3176,14 @@
   "business_kind_label_offer": "Tilbud",
   "business_kind_label_request": "Forespørgsel",
   "business_pay_on_behalf_debt_hint": "{debtor} skylder {receiver} {amount}",
-  "business_public_filter_q_placeholder": "Navn eller beskrivelse"
+  "business_public_filter_q_placeholder": "Navn eller beskrivelse",
+  "business_nav_catalog": "Katalog",
+  "business_nav_my_offers": "Mine tilbud",
+  "business_nav_my_requests": "Mine forespørgsler",
+  "business_context_aria": "Sektionsmenu",
+  "business_catalog_search_offers_placeholder": "Søg i tilbud",
+  "business_catalog_search_requests_placeholder": "Søg i forespørgsler",
+  "business_catalog_filters_title": "Filtre",
+  "business_catalog_active_filters": "Aktive filtre",
+  "business_catalog_remove_filter": "Fjern filteret {filter}"
 }

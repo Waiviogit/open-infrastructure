@@ -3176,5 +3176,14 @@
   "business_kind_label_offer": "Oferta",
   "business_kind_label_request": "Sol·licitud",
   "business_pay_on_behalf_debt_hint": "{debtor} deu {amount} a {receiver}",
-  "business_public_filter_q_placeholder": "Nom o descripció"
+  "business_public_filter_q_placeholder": "Nom o descripció",
+  "business_nav_catalog": "Catàleg",
+  "business_nav_my_offers": "Les meves ofertes",
+  "business_nav_my_requests": "Les meves sol·licituds",
+  "business_context_aria": "Menú de la secció",
+  "business_catalog_search_offers_placeholder": "Cerca ofertes",
+  "business_catalog_search_requests_placeholder": "Cerca sol·licituds",
+  "business_catalog_filters_title": "Filtres",
+  "business_catalog_active_filters": "Filtres actius",
+  "business_catalog_remove_filter": "Elimina el filtre {filter}"
 }

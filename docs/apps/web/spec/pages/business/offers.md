@@ -21,7 +21,7 @@ related:
 - Each row is an `OfferCard` (whole card is the link): author avatar + `@author`, title (2 lines), price from `terms` (`parseOfferCommercialSummary`: fixed / hourly / price on request), billing cycle, description excerpt (`markdownToPlainText`), up to 3 tags + `+N`. No status badge: the catalog only lists active versions.
 - States: query-api failure → `BusinessErrorState` with **Try again** (`router.refresh()`); empty catalog → empty state with **Create offer/request**; no matches → empty state with **Clear filters**.
 - `/business` redirects to `/business/offers`.
-- Left nav **Discover**; Offers / Requests switcher uses URL paths (browser history).
+- Tab band **Catalog**; the rail holds the Offers / Requests switch (URL paths, browser history) and the filters (search + author, Enter submits). Applied filters show as removable chips above the list; on mobile the filters open in the shared filter sheet.
 - `/offers` and `/requests` redirect to discover.
 
 ## Draft editor (`/business/manage/offers/drafts/:draftId` or `/business/manage/requests/drafts/:draftId`)
@@ -40,8 +40,8 @@ related:
 
 Published / retired tabs call `searchOblOffers` with `author`, `kind` and `status` (`active` | `retired`). The obl-drafts API has no kind filter, so the drafts tab filters on the client and keeps paging (sentinel stays mounted) until rows of this kind appear or the list ends. A failed load shows `BusinessErrorState`, not the empty state.
 
-- Left nav: **Offers** and **Requests** (management, not discover).
-- Content tabs: **Drafts** | **Published** | **Retired** — each tab has its own URL.
+- Tab band: **My offers** and **My requests** (management, not discover).
+- Rail: **Drafts** | **Published** | **Retired** — each has its own URL (drawer `Drafts ▾` on mobile).
 - **Create new offer** / **Create new request** in page header actions.
 - `/business/manage/offers/new` and `/business/manage/requests/new` create drafts with fixed kind; editor basics step shows kind as read-only.
 - Legacy `/business/offers/*` and `/business/requests/*` manage paths redirect to `/business/manage/...`.

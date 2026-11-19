@@ -3897,5 +3897,14 @@
   "business_kind_label_offer": "Offerta",
   "business_kind_label_request": "Richiesta",
   "business_pay_on_behalf_debt_hint": "{debtor} deve {amount} a {receiver}",
-  "business_public_filter_q_placeholder": "Nome o descrizione"
+  "business_public_filter_q_placeholder": "Nome o descrizione",
+  "business_nav_catalog": "Catalogo",
+  "business_nav_my_offers": "Le mie offerte",
+  "business_nav_my_requests": "Le mie richieste",
+  "business_context_aria": "Menu della sezione",
+  "business_catalog_search_offers_placeholder": "Cerca offerte",
+  "business_catalog_search_requests_placeholder": "Cerca richieste",
+  "business_catalog_filters_title": "Filtri",
+  "business_catalog_active_filters": "Filtri attivi",
+  "business_catalog_remove_filter": "Rimuovi il filtro {filter}"
 }

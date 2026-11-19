@@ -3176,5 +3176,14 @@
   "business_kind_label_offer": "Ponuda",
   "business_kind_label_request": "Zahtjev",
   "business_pay_on_behalf_debt_hint": "{debtor} duguje {receiver} {amount}",
-  "business_public_filter_q_placeholder": "Naziv ili opis"
+  "business_public_filter_q_placeholder": "Naziv ili opis",
+  "business_nav_catalog": "Katalog",
+  "business_nav_my_offers": "Moje ponude",
+  "business_nav_my_requests": "Moji zahtjevi",
+  "business_context_aria": "Izbornik odjeljka",
+  "business_catalog_search_offers_placeholder": "Pretraži ponude",
+  "business_catalog_search_requests_placeholder": "Pretraži zahtjeve",
+  "business_catalog_filters_title": "Filteri",
+  "business_catalog_active_filters": "Aktivni filteri",
+  "business_catalog_remove_filter": "Ukloni filtar {filter}"
 }

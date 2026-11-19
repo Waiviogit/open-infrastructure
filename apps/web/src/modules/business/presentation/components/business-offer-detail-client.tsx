@@ -8,7 +8,7 @@ import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
 
 import { buildRetireOfferOp } from '../../application/build-obl-ops';
-import { businessNavIdForKind, businessRoutes } from '../../domain/routes';
+import { businessRoutes } from '../../domain/routes';
 import type { OblOfferApiRow } from '../../infrastructure/clients/obl-offers.server';
 import { createOblDraftAction } from '../../infrastructure/actions/obl-drafts.actions';
 import { BusinessDisclosure } from './business-disclosure';
@@ -101,7 +101,7 @@ export function BusinessOfferDetailClient({
 
   return (
     <BusinessPageShell
-      activeNav={businessNavIdForKind(offer.kind)}
+      variant="entity"
       title={offer.name}
       subtitle={t('business_offer_detail_subtitle')}
       actions={

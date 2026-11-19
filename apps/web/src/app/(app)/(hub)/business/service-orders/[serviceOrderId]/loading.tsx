@@ -1,5 +1,7 @@
-import { BusinessContentSkeleton } from '@/modules/business/presentation/components/business-content-skeleton';
+import { BusinessPageSkeleton } from '@/modules/business/presentation/ui/business-page-skeleton';
 
 export default function Loading() {
-  return <BusinessContentSkeleton />;
+  return (
+    <BusinessPageSkeleton variant="entity" scrollKey="business-service-order" />
+  );
 }

@@ -26,6 +26,13 @@ Implementation module: `apps/web/src/modules/business/`.
 
 Hub chrome: `/business*` lives under `(app)/(hub)` with FEED / DISCOVER / MARKET section nav (`AppSectionNav`). MARKET is active on these routes. See [home](../home/page.md). Public `/offers` and `/requests` discovery routes stay outside the hub group (no section nav).
 
+Market follows the Feed hub layout:
+
+- **Tab band** (`HubMarketTabBand`, rendered by the hub layout next to `HubFeedTabBand`): Catalog · My offers · My requests · Relationships · Arbitration · Dispute resolution, with icons; the active tab comes from the path (`businessNavIdForPath`, `domain/business-nav.ts`) and follows the optimistic target. Scrolls with arrows on narrow screens.
+- **Page grid** (`BusinessPageShell`): context rail | content | right column (`--shell-left-width` / `--shell-right-width`). List pages put their context in the rail (catalog kind + filters, Drafts / Published / Retired, Open / Resolved); entity pages (`variant="entity"`) use a display heading and span the content and right columns.
+- **Below `lg`**: the rail opens in a left drawer from a trigger named after the active row (`BusinessMobileRail`, e.g. `Drafts ▾`); catalog filters use `MobileFilterButton` + `MobileFilterSheet` and applied filters show as chips.
+- **Loading**: every route uses `BusinessPageSkeleton` (same grid), entry routes reset scroll with `ScrollToTopOnEnter`; the public offer page uses `PublicOfferSkeleton`.
+
 ## Theme tokens (mandatory)
 
 All Business UI styling uses semantic tokens from [`apps/web/src/styles/theme.css`](../../../../../../apps/web/src/styles/theme.css). The file header documents mandatory rules (no raw hex, no default Tailwind scale). See [theme.md](../theme.md) and [apps/web/AGENTS.md](../../../../../../apps/web/AGENTS.md).

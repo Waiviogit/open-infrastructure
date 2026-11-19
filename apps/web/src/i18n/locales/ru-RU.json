@@ -4025,5 +4025,14 @@
   "business_kind_label_offer": "Предложение",
   "business_kind_label_request": "Запрос",
   "business_pay_on_behalf_debt_hint": "{debtor} должен {receiver} {amount}",
-  "business_public_filter_q_placeholder": "Название или описание"
+  "business_public_filter_q_placeholder": "Название или описание",
+  "business_nav_catalog": "Каталог",
+  "business_nav_my_offers": "Мои предложения",
+  "business_nav_my_requests": "Мои запросы",
+  "business_context_aria": "Меню раздела",
+  "business_catalog_search_offers_placeholder": "Поиск предложений",
+  "business_catalog_search_requests_placeholder": "Поиск запросов",
+  "business_catalog_filters_title": "Фильтры",
+  "business_catalog_active_filters": "Активные фильтры",
+  "business_catalog_remove_filter": "Убрать фильтр {filter}"
 }

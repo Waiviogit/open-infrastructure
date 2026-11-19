@@ -136,7 +136,6 @@ export function BusinessRelationshipsClient({
 
   return (
     <BusinessPageShell
-      activeNav="relationships"
       title={t('business_relationships_title')}
       subtitle={t('business_relationships_subtitle')}
     >

@@ -518,7 +518,7 @@ export function BusinessRelationshipDetailClient({
   return (
     <>
       <BusinessPageShell
-        activeNav="relationships"
+        variant="entity"
         title={`@${counterparty}`}
         subtitle={t('business_relationship_detail_subtitle')}
         actions={

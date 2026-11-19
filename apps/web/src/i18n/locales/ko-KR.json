@@ -3176,5 +3176,14 @@
   "business_kind_label_offer": "제안",
   "business_kind_label_request": "요청",
   "business_pay_on_behalf_debt_hint": "{debtor}이(가) {receiver}에게 {amount}를 빚지고 있습니다",
-  "business_public_filter_q_placeholder": "이름 또는 설명"
+  "business_public_filter_q_placeholder": "이름 또는 설명",
+  "business_nav_catalog": "카탈로그",
+  "business_nav_my_offers": "내 제안",
+  "business_nav_my_requests": "내 요청",
+  "business_context_aria": "섹션 메뉴",
+  "business_catalog_search_offers_placeholder": "제안 검색",
+  "business_catalog_search_requests_placeholder": "요청 검색",
+  "business_catalog_filters_title": "필터",
+  "business_catalog_active_filters": "적용된 필터",
+  "business_catalog_remove_filter": "{filter} 필터 제거"
 }

@@ -22,7 +22,7 @@ export function BusinessContractClient({
 
   return (
     <BusinessPageShell
-      activeNav="relationships"
+      variant="entity"
       title={offerName ?? contract.contract_id}
       subtitle={t('business_contract_subtitle')}
     >

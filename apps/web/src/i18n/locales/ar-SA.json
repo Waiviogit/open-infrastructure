@@ -3175,5 +3175,14 @@
   "business_kind_label_offer": "عرض",
   "business_kind_label_request": "طلب",
   "business_pay_on_behalf_debt_hint": "{debtor} مدين لـ {receiver} بمبلغ {amount}",
-  "business_public_filter_q_placeholder": "الاسم أو الوصف"
+  "business_public_filter_q_placeholder": "الاسم أو الوصف",
+  "business_nav_catalog": "الكتالوج",
+  "business_nav_my_offers": "عروضي",
+  "business_nav_my_requests": "طلباتي",
+  "business_context_aria": "قائمة القسم",
+  "business_catalog_search_offers_placeholder": "البحث في العروض",
+  "business_catalog_search_requests_placeholder": "البحث في الطلبات",
+  "business_catalog_filters_title": "عوامل التصفية",
+  "business_catalog_active_filters": "عوامل التصفية النشطة",
+  "business_catalog_remove_filter": "إزالة عامل التصفية {filter}"
 }

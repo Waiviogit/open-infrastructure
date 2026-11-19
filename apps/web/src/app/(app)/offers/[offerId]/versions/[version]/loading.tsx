@@ -1,5 +1,5 @@
-import { BusinessContentSkeleton } from '@/modules/business/presentation/components/business-content-skeleton';
+import { PublicOfferSkeleton } from '@/modules/business/presentation/ui/public-offer-skeleton';
 
 export default function Loading() {
-  return <BusinessContentSkeleton />;
+  return <PublicOfferSkeleton />;
 }

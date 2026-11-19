@@ -1,6 +1,5 @@
-import { BusinessManageListSkeleton } from '@/modules/business/presentation/components/skeletons/business-manage-list-skeleton';
+import { BusinessPageSkeleton } from '@/modules/business/presentation/ui/business-page-skeleton';
 
-/** In the tab segment: the shared `manage/offers` segment does not change on tab switches. */
 export default function Loading() {
-  return <BusinessManageListSkeleton label="Loading offers" />;
+  return <BusinessPageSkeleton />;
 }

@@ -1,95 +1,232 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { CloseIcon, SearchIcon } from '@/icons';
+import { MobileFilterButton, MobileFilterSheet } from '@/shared/presentation';
 
 import {
   buildPublicOffersHref,
   hasPublicOffersFilters,
   type PublicOffersPageState,
 } from '../../domain/public-offers-url';
+import { BusinessButton } from '../ui/business-button';
+import { BusinessField } from '../ui/business-field';
+import { BUSINESS_FIELD_CLASS, BUSINESS_FOCUS_RING } from '../ui/classes';
 
-export type PublicOffersFiltersProps = {
-  kind: 'offer' | 'request';
-  filters: PublicOffersPageState;
-};
+type Kind = 'offer' | 'request';
 
-export function PublicOffersFilters({ kind, filters }: PublicOffersFiltersProps) {
-  const { t } = useI18n();
+function useCatalogFilterDraft(kind: Kind, filters: PublicOffersPageState) {
   const router = useRouter();
   const [author, setAuthor] = useState(filters.author);
   const [q, setQ] = useState(filters.q);
 
-  const hasFilters = hasPublicOffersFilters(filters);
+  useEffect(() => {
+    setAuthor(filters.author);
+    setQ(filters.q);
+  }, [filters.author, filters.q]);
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  function apply() {
     router.push(
       buildPublicOffersHref(kind, {
-        author: author || undefined,
-        q: q || undefined,
+        author: author.trim() || undefined,
+        q: q.trim() || undefined,
       }),
     );
   }
 
-  function onClear() {
+  function clear() {
     setAuthor('');
     setQ('');
     router.push(buildPublicOffersHref(kind));
   }
 
+  return { author, setAuthor, q, setQ, apply, clear };
+}
+
+type DraftState = ReturnType<typeof useCatalogFilterDraft>;
+
+function CatalogFilterFields({
+  kind,
+  draft,
+}: {
+  kind: Kind;
+  draft: DraftState;
+}) {
+  const { t } = useI18n();
   return (
-    <div className="mb-section-y flex flex-col gap-4">
-      <form
-        onSubmit={onSubmit}
-        className="flex flex-col gap-3 rounded-card border border-border bg-surface p-card-padding shadow-card sm:flex-row sm:flex-wrap sm:items-end"
+    <>
+      <BusinessField label={t('business_public_filter_q')}>
+        <input
+          type="search"
+          value={draft.q}
+          onChange={(e) => draft.setQ(e.target.value)}
+          placeholder={
+            kind === 'offer'
+              ? t('business_catalog_search_offers_placeholder')
+              : t('business_catalog_search_requests_placeholder')
+          }
+          className={BUSINESS_FIELD_CLASS}
+          autoComplete="off"
+          enterKeyHint="search"
+        />
+      </BusinessField>
+      <BusinessField label={t('business_public_filter_author')}>
+        <input
+          type="text"
+          value={draft.author}
+          onChange={(e) => draft.setAuthor(e.target.value)}
+          placeholder={t('business_public_filter_author_placeholder')}
+          className={BUSINESS_FIELD_CLASS}
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+        />
+      </BusinessField>
+    </>
+  );
+}
+
+/** Desktop rail: search + author, submitted with Enter or the button. */
+export function CatalogFilterForm({
+  kind,
+  filters,
+}: {
+  kind: Kind;
+  filters: PublicOffersPageState;
+}) {
+  const { t } = useI18n();
+  const draft = useCatalogFilterDraft(kind, filters);
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    draft.apply();
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-3" role="search">
+      <p className="px-2 text-caption font-weight-label uppercase tracking-loose text-fg-tertiary">
+        {t('business_catalog_filters_title')}
+      </p>
+      <CatalogFilterFields kind={kind} draft={draft} />
+      <div className="flex flex-wrap gap-2">
+        <BusinessButton type="submit" variant="primary" size="sm">
+          <SearchIcon size={16} />
+          {t('business_public_filter_apply')}
+        </BusinessButton>
+        {hasPublicOffersFilters(filters) ? (
+          <BusinessButton variant="ghost" size="sm" onClick={draft.clear}>
+            {t('business_public_filter_clear')}
+          </BusinessButton>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
+/** Below `lg`: the shared Filter pill + bottom sheet (Discover / Favorites pattern). */
+export function CatalogMobileFilters({
+  kind,
+  filters,
+}: {
+  kind: Kind;
+  filters: PublicOffersPageState;
+}) {
+  const draft = useCatalogFilterDraft(kind, filters);
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="lg:hidden">
+      <MobileFilterButton onClick={() => setOpen(true)} expanded={open} />
+      <MobileFilterSheet
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          draft.apply();
+        }}
+        onClear={() => {
+          setOpen(false);
+          draft.clear();
+        }}
       >
-        <label className="flex min-w-[10rem] flex-1 flex-col gap-1">
-          <span className="text-caption font-weight-label text-fg-secondary">
-            {t('business_public_filter_author')}
-          </span>
-          <input
-            type="text"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder={t('business_public_filter_author_placeholder')}
-            className="rounded-btn border border-border bg-surface px-3 py-2 text-body-sm text-fg"
-            autoComplete="off"
-          />
-        </label>
-        <label className="flex min-w-[12rem] flex-[2] flex-col gap-1">
-          <span className="text-caption font-weight-label text-fg-secondary">
-            {t('business_public_filter_q')}
-          </span>
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t('business_public_filter_q_placeholder')}
-            className="rounded-btn border border-border bg-surface px-3 py-2 text-body-sm text-fg"
-            autoComplete="off"
-          />
-        </label>
-        <div className="flex flex-wrap gap-2">
+        <form
+          className="flex flex-col gap-3 px-gutter py-card-padding"
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setOpen(false);
+            draft.apply();
+          }}
+        >
+          <CatalogFilterFields kind={kind} draft={draft} />
+        </form>
+      </MobileFilterSheet>
+    </div>
+  );
+}
+
+const CHIP_CLASS =
+  'inline-flex max-w-full items-center gap-1 rounded-pill border border-border bg-surface-control py-0.5 pe-1 ps-2 text-caption text-fg';
+
+/** Applied filters as removable chips above the results (Discover pattern). */
+export function CatalogActiveFilters({
+  kind,
+  filters,
+}: {
+  kind: Kind;
+  filters: PublicOffersPageState;
+}) {
+  const { t } = useI18n();
+  const router = useRouter();
+  if (!hasPublicOffersFilters(filters)) {
+    return null;
+  }
+
+  function hrefWithout(field: 'author' | 'q'): string {
+    return buildPublicOffersHref(kind, {
+      author: field === 'author' ? undefined : filters.author || undefined,
+      q: field === 'q' ? undefined : filters.q || undefined,
+    });
+  }
+
+  const chips: Array<{ field: 'author' | 'q'; label: string }> = [];
+  if (filters.q) {
+    chips.push({ field: 'q', label: `“${filters.q}”` });
+  }
+  if (filters.author) {
+    chips.push({ field: 'author', label: `@${filters.author}` });
+  }
+
+  return (
+    <div
+      className="mb-card-padding flex flex-wrap items-center gap-1.5"
+      aria-label={t('business_catalog_active_filters')}
+    >
+      {chips.map((chip) => (
+        <span key={chip.field} className={CHIP_CLASS}>
+          <span className="min-w-0 truncate">{chip.label}</span>
           <button
-            type="submit"
-            className="rounded-btn bg-accent px-4 py-2 text-body-sm font-weight-label text-accent-fg"
+            type="button"
+            onClick={() => router.push(hrefWithout(chip.field))}
+            aria-label={t('business_catalog_remove_filter').replace(
+              '{filter}',
+              chip.label,
+            )}
+            className={`inline-flex size-5 shrink-0 items-center justify-center rounded-circle text-fg-secondary hover:bg-surface hover:text-fg ${BUSINESS_FOCUS_RING}`}
           >
-            {t('business_public_filter_apply')}
+            <CloseIcon size={12} />
           </button>
-          {hasFilters ? (
-            <button
-              type="button"
-              onClick={onClear}
-              className="rounded-btn border border-border px-4 py-2 text-body-sm text-fg-secondary"
-            >
-              {t('business_public_filter_clear')}
-            </button>
-          ) : null}
-        </div>
-      </form>
+        </span>
+      ))}
+      <button
+        type="button"
+        onClick={() => router.push(buildPublicOffersHref(kind))}
+        className={`ms-1 rounded-btn text-caption text-accent underline-offset-2 hover:underline ${BUSINESS_FOCUS_RING}`}
+      >
+        {t('business_public_filter_clear')}
+      </button>
     </div>
   );
 }

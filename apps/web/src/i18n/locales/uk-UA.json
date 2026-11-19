@@ -3896,5 +3896,14 @@
   "business_kind_label_offer": "Пропозиція",
   "business_kind_label_request": "Запит",
   "business_pay_on_behalf_debt_hint": "{debtor} винен {receiver} {amount}",
-  "business_public_filter_q_placeholder": "Назва або опис"
+  "business_public_filter_q_placeholder": "Назва або опис",
+  "business_nav_catalog": "Каталог",
+  "business_nav_my_offers": "Мої пропозиції",
+  "business_nav_my_requests": "Мої запити",
+  "business_context_aria": "Меню розділу",
+  "business_catalog_search_offers_placeholder": "Пошук пропозицій",
+  "business_catalog_search_requests_placeholder": "Пошук запитів",
+  "business_catalog_filters_title": "Фільтри",
+  "business_catalog_active_filters": "Активні фільтри",
+  "business_catalog_remove_filter": "Прибрати фільтр {filter}"
 }

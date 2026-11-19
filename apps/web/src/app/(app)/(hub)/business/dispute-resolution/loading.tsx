@@ -1,9 +1,5 @@
-import { BusinessPageShell } from '@/modules/business';
+import { BusinessPageSkeleton } from '@/modules/business/presentation/ui/business-page-skeleton';
 
-export default function BusinessDisputeResolutionLoading() {
-  return (
-    <BusinessPageShell activeNav="dispute-resolution" title="…">
-      <div className="h-40 animate-pulse rounded-card bg-surface-alt" />
-    </BusinessPageShell>
-  );
+export default function Loading() {
+  return <BusinessPageSkeleton />;
 }

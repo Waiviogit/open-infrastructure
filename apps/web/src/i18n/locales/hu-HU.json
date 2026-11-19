@@ -3177,5 +3177,14 @@
   "business_kind_label_offer": "Ajánlat",
   "business_kind_label_request": "Igény",
   "business_pay_on_behalf_debt_hint": "{debtor} tartozása {receiver} felé: {amount}",
-  "business_public_filter_q_placeholder": "Név vagy leírás"
+  "business_public_filter_q_placeholder": "Név vagy leírás",
+  "business_nav_catalog": "Katalógus",
+  "business_nav_my_offers": "Ajánlataim",
+  "business_nav_my_requests": "Igényeim",
+  "business_context_aria": "A szakasz menüje",
+  "business_catalog_search_offers_placeholder": "Ajánlatok keresése",
+  "business_catalog_search_requests_placeholder": "Igények keresése",
+  "business_catalog_filters_title": "Szűrők",
+  "business_catalog_active_filters": "Aktív szűrők",
+  "business_catalog_remove_filter": "{filter} szűrő eltávolítása"
 }

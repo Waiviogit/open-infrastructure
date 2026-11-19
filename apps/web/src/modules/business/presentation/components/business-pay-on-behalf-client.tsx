@@ -120,7 +120,7 @@ export function BusinessPayOnBehalfClient({
 
   return (
     <BusinessPageShell
-      activeNav="relationships"
+      variant="entity"
       title={t('business_pay_on_behalf_title')}
       subtitle={t('business_pay_on_behalf_subtitle')}
     >

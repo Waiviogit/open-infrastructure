@@ -3896,5 +3896,14 @@
   "business_kind_label_offer": "ऑफ़र",
   "business_kind_label_request": "अनुरोध",
   "business_pay_on_behalf_debt_hint": "{debtor} पर {receiver} का {amount} बकाया है",
-  "business_public_filter_q_placeholder": "नाम या विवरण"
+  "business_public_filter_q_placeholder": "नाम या विवरण",
+  "business_nav_catalog": "कैटलॉग",
+  "business_nav_my_offers": "मेरे ऑफ़र",
+  "business_nav_my_requests": "मेरे अनुरोध",
+  "business_context_aria": "अनुभाग मेनू",
+  "business_catalog_search_offers_placeholder": "ऑफ़र खोजें",
+  "business_catalog_search_requests_placeholder": "अनुरोध खोजें",
+  "business_catalog_filters_title": "फ़िल्टर",
+  "business_catalog_active_filters": "सक्रिय फ़िल्टर",
+  "business_catalog_remove_filter": "फ़िल्टर {filter} हटाएँ"
 }

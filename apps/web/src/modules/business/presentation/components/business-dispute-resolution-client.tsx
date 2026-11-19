@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState, useTransition } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
-import { FlagIcon } from '@/icons';
+import { CheckCircleIcon, FlagIcon } from '@/icons';
 import {
   useInfiniteScroll,
   useSyncedPaginatedList,
@@ -24,7 +24,7 @@ import { loadMoreOblDisputeResolutionAction } from '../../infrastructure/actions
 import type { DisputeResolutionApiRow } from '../../infrastructure/clients/obl-dispute-resolution.server';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
-import { BusinessSubTabs } from '../ui/business-sub-tabs';
+import { BusinessRailNav } from '../ui/business-context-rail';
 import { BusinessEmptyState, BusinessErrorState } from '../ui/business-states';
 import { DisputeInboxCard } from './dispute-inbox-card';
 import { BusinessResolveDisputeModal } from './relationship/business-resolve-dispute-modal';
@@ -132,20 +132,24 @@ export function BusinessDisputeResolutionClient({
     id: value,
     href: buildDisputeResolutionHref(value),
     label: t(`business_dispute_resolution_filter_${value}`),
+    icon:
+      value === 'open' ? <FlagIcon size={16} /> : <CheckCircleIcon size={16} />,
   }));
 
   return (
     <>
       <BusinessPageShell
-        activeNav="dispute-resolution"
         title={t('business_dispute_resolution_title')}
+        railLabel={t(`business_dispute_resolution_filter_${status}`)}
+        rail={
+          <BusinessRailNav
+            items={tabs}
+            activeId={status}
+            ariaLabel={t('business_dispute_resolution_title')}
+          />
+        }
         subtitle={t('business_dispute_resolution_subtitle')}
       >
-        <BusinessSubTabs
-          items={tabs}
-          activeId={status}
-          ariaLabel={t('business_dispute_resolution_title')}
-        />
         {phase === 'indexing' ? (
           <div className="mb-card-padding">
             <StateBadge variant="indexing" />

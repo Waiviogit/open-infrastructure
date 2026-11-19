@@ -85,7 +85,7 @@ export function BusinessDisputeClient({
   return (
     <>
       <BusinessPageShell
-        activeNav="dispute-resolution"
+        variant="entity"
         title={dispute.dispute_id}
         subtitle={t('business_dispute_subtitle')}
         actions={

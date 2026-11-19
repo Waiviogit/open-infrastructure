@@ -20,7 +20,7 @@ export function BusinessReportClient({
 
   return (
     <BusinessPageShell
-      activeNav="relationships"
+      variant="entity"
       title={report.report_id}
       subtitle={t('business_report_subtitle')}
     >

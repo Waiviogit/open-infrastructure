@@ -5,7 +5,12 @@ import { useI18n } from '@/i18n/providers/i18n-provider';
 import type { PairBalanceView } from '../../domain/ledger.types';
 import { formatUsd } from '../../domain/usd-format';
 import { businessCardClass } from '../ui/classes';
-import { DirectionalUsd } from './directional-usd';
+import {
+  BALANCE_DIRECTION_TEXT_CLASS,
+  balanceDirection,
+  directionalUsdText,
+  viewerNetUsd,
+} from './directional-usd';
 
 export type BalanceCardsProps = {
   viewer: string;
@@ -13,36 +18,63 @@ export type BalanceCardsProps = {
   balance: PairBalanceView;
 };
 
-const BUCKETS = ['confirmed', 'pending', 'disputed'] as const;
+const SECONDARY_BUCKETS = ['pending', 'disputed'] as const;
 
+/**
+ * Relationship balance: the confirmed position as the headline ("@alice owes you $2,101.00"),
+ * pending and disputed buckets as a compact second row. Same direction wording everywhere.
+ */
 export function BalanceCards({
   viewer,
   counterparty,
   balance,
 }: BalanceCardsProps) {
   const { t } = useI18n();
+  const net = (bucket: 'confirmed' | 'pending' | 'disputed') =>
+    viewerNetUsd(
+      viewer,
+      balance.accountA,
+      balance.accountB,
+      balance[bucket].netUsd,
+    );
+  const confirmedNet = net('confirmed');
 
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {BUCKETS.map((bucket) => (
-        <section key={bucket} className={businessCardClass()}>
-          <h2 className="text-caption font-weight-label text-fg-secondary">
-            {t(`business_balance_${bucket}`)}
-          </h2>
-          <DirectionalUsd
-            viewer={viewer}
-            counterparty={counterparty}
-            accountA={balance.accountA}
-            accountB={balance.accountB}
-            bucket={balance[bucket]}
-            zeroLabel={bucket === 'confirmed' ? undefined : formatUsd(0)}
-            className="mt-1 text-body font-weight-strong"
-          />
-          <p className="mt-1 text-caption text-fg-secondary">
-            {t(`business_balance_${bucket}_hint`)}
-          </p>
-        </section>
-      ))}
-    </div>
+    <section
+      className={businessCardClass()}
+      aria-labelledby="relationship-balance-title"
+    >
+      <h2
+        id="relationship-balance-title"
+        className="text-caption font-weight-label text-fg-secondary"
+      >
+        {t('business_balance_confirmed')}
+      </h2>
+      <p
+        className={`mt-1 text-body-lg font-weight-strong tabular-nums ${BALANCE_DIRECTION_TEXT_CLASS[balanceDirection(confirmedNet)]}`}
+      >
+        {directionalUsdText(confirmedNet, counterparty, t)}
+      </p>
+      <p className="mt-0.5 text-caption text-fg-secondary">
+        {t('business_balance_confirmed_hint')}
+      </p>
+      <dl className="mt-3 grid gap-3 border-t border-border pt-3 sm:grid-cols-2">
+        {SECONDARY_BUCKETS.map((bucket) => {
+          const value = net(bucket);
+          return (
+            <div key={bucket} className="min-w-0">
+              <dt className="text-caption text-fg-secondary">
+                {t(`business_balance_${bucket}`)}
+              </dt>
+              <dd
+                className={`mt-0.5 text-body-sm font-weight-label tabular-nums ${BALANCE_DIRECTION_TEXT_CLASS[balanceDirection(value)]}`}
+              >
+                {directionalUsdText(value, counterparty, t, formatUsd(0))}
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+    </section>
   );
 }

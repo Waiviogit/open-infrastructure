@@ -3877,5 +3877,14 @@
   "business_kind_label_offer": "报价",
   "business_kind_label_request": "需求",
   "business_pay_on_behalf_debt_hint": "{debtor} 欠 {receiver} {amount}",
-  "business_public_filter_q_placeholder": "名称或描述"
+  "business_public_filter_q_placeholder": "名称或描述",
+  "business_nav_catalog": "目录",
+  "business_nav_my_offers": "我的报价",
+  "business_nav_my_requests": "我的需求",
+  "business_context_aria": "栏目菜单",
+  "business_catalog_search_offers_placeholder": "搜索报价",
+  "business_catalog_search_requests_placeholder": "搜索需求",
+  "business_catalog_filters_title": "筛选",
+  "business_catalog_active_filters": "已应用的筛选条件",
+  "business_catalog_remove_filter": "移除筛选条件“{filter}”"
 }

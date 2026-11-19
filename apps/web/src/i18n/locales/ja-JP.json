@@ -3896,5 +3896,14 @@
   "business_kind_label_offer": "オファー",
   "business_kind_label_request": "リクエスト",
   "business_pay_on_behalf_debt_hint": "{debtor} は {receiver} に {amount} の債務があります",
-  "business_public_filter_q_placeholder": "名前または説明"
+  "business_public_filter_q_placeholder": "名前または説明",
+  "business_nav_catalog": "カタログ",
+  "business_nav_my_offers": "自分のオファー",
+  "business_nav_my_requests": "自分のリクエスト",
+  "business_context_aria": "セクションメニュー",
+  "business_catalog_search_offers_placeholder": "オファーを検索",
+  "business_catalog_search_requests_placeholder": "リクエストを検索",
+  "business_catalog_filters_title": "フィルター",
+  "business_catalog_active_filters": "適用中のフィルター",
+  "business_catalog_remove_filter": "フィルター「{filter}」を削除"
 }

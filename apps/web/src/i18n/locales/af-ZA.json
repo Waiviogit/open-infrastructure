@@ -3896,5 +3896,14 @@
   "business_kind_label_offer": "Aanbieding",
   "business_kind_label_request": "Versoek",
   "business_pay_on_behalf_debt_hint": "{debtor} skuld {receiver} {amount}",
-  "business_public_filter_q_placeholder": "Naam of beskrywing"
+  "business_public_filter_q_placeholder": "Naam of beskrywing",
+  "business_nav_catalog": "Katalogus",
+  "business_nav_my_offers": "My aanbiedings",
+  "business_nav_my_requests": "My versoeke",
+  "business_context_aria": "Afdelingskieslys",
+  "business_catalog_search_offers_placeholder": "Soek aanbiedings",
+  "business_catalog_search_requests_placeholder": "Soek versoeke",
+  "business_catalog_filters_title": "Filters",
+  "business_catalog_active_filters": "Aktiewe filters",
+  "business_catalog_remove_filter": "Verwyder filter {filter}"
 }
