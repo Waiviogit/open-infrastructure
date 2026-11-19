@@ -41,28 +41,42 @@ export function useOblLedgerTabLists(input: {
   const [pending, startTransition] = useTransition();
   const loadedTabsRef = useRef(
     new Set<RelationshipTab>(
-      (Object.entries(input.initialPages) as Array<[RelationshipTab, OblCursorPage<unknown> | undefined]>)
+      (
+        Object.entries(input.initialPages) as Array<
+          [RelationshipTab, OblCursorPage<unknown> | undefined]
+        >
+      )
         .filter(([, page]) => (page?.items.length ?? 0) > 0)
         .map(([tabId]) => tabId),
     ),
   );
-  const [lists, setLists] = useState<Record<RelationshipTab, TabListState>>(() => ({
-    payments: fromPage(input.initialPages.payments),
-    contracts: fromPage(input.initialPages.contracts),
-    'service-orders': fromPage(input.initialPages['service-orders']),
-    reports: fromPage(input.initialPages.reports),
-    invoices: fromPage(input.initialPages.invoices),
-    disputes: fromPage(input.initialPages.disputes),
-  }));
-
-  useEffect(() => {
-    setLists({
+  const [lists, setLists] = useState<Record<RelationshipTab, TabListState>>(
+    () => ({
       payments: fromPage(input.initialPages.payments),
       contracts: fromPage(input.initialPages.contracts),
       'service-orders': fromPage(input.initialPages['service-orders']),
       reports: fromPage(input.initialPages.reports),
       invoices: fromPage(input.initialPages.invoices),
       disputes: fromPage(input.initialPages.disputes),
+    }),
+  );
+
+  /**
+   * A server refresh returns only the active tab (plus its companion list): merge those pages
+   * and keep the other tabs, so revisiting a loaded tab never shows an empty list.
+   */
+  useEffect(() => {
+    setLists((prev) => {
+      const next = { ...prev };
+      for (const [tabId, page] of Object.entries(input.initialPages) as Array<
+        [RelationshipTab, OblCursorPage<unknown> | undefined]
+      >) {
+        if (page) {
+          next[tabId] = fromPage(page);
+          loadedTabsRef.current.add(tabId);
+        }
+      }
+      return next;
     });
   }, [input.initialPages]);
 
@@ -116,5 +130,9 @@ export function useOblLedgerTabLists(input: {
     onLoadMore: () => loadMore(input.activeTab),
   });
 
-  return { lists, pending, sentinelRef };
+  /** First load of the active tab is in flight: show a skeleton, not the empty state. */
+  const activeTabLoading =
+    pending && !loadedTabsRef.current.has(input.activeTab);
+
+  return { lists, pending, activeTabLoading, sentinelRef };
 }

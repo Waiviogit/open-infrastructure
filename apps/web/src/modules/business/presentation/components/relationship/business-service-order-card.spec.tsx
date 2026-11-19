@@ -8,18 +8,27 @@ import { I18nProvider } from '@/i18n/providers/i18n-provider';
 import type { LedgerServiceOrderRow } from '../../../domain/ledger.types';
 import { BusinessServiceOrderCard } from './business-service-order-card';
 
-jest.mock('@/modules/user-activity/presentation/components/activity-timestamp', () => ({
-  ActivityTimestamp: ({ timestamp }: { timestamp: string }) => <time>{timestamp}</time>,
-}));
+jest.mock(
+  '@/modules/user-activity/presentation/components/activity-timestamp',
+  () => ({
+    ActivityTimestamp: ({ timestamp }: { timestamp: string }) => (
+      <time>{timestamp}</time>
+    ),
+  }),
+);
 
 const messages = {
   business_field_contract: 'Contract',
   business_field_created_at: 'Created',
   business_cancel_service_order: 'Cancel service order',
   business_state_cancelled: 'Cancelled',
+  business_state_active: 'Active',
+  business_service_order_by: 'Created by {account}',
 };
 
-function so(overrides: Partial<LedgerServiceOrderRow> = {}): LedgerServiceOrderRow {
+function so(
+  overrides: Partial<LedgerServiceOrderRow> = {},
+): LedgerServiceOrderRow {
   return {
     service_order_id: 'so-1',
     contract_id: 'c-1',
@@ -40,13 +49,17 @@ function so(overrides: Partial<LedgerServiceOrderRow> = {}): LedgerServiceOrderR
 function renderCard(
   row: LedgerServiceOrderRow,
   username: string,
-  extras: { linkedContract?: string | null; linkedContractUrl?: string | null } = {},
+  extras: {
+    linkedContract?: string | null;
+    linkedContractUrl?: string | null;
+  } = {},
 ) {
   return render(
     <I18nProvider locale="en-US" messages={messages}>
       <BusinessServiceOrderCard
         so={row}
         username={username}
+        title="Homepage redesign"
         linkedContract={extras.linkedContract ?? null}
         linkedContractUrl={extras.linkedContractUrl ?? null}
         isBusy={false}
@@ -59,21 +72,32 @@ function renderCard(
 describe('BusinessServiceOrderCard', () => {
   it('shows Cancel when the order is active and the viewer is a party', () => {
     renderCard(so(), 'alice');
-    expect(screen.getByRole('button', { name: 'Cancel service order' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Cancel service order' }),
+    ).toBeInTheDocument();
   });
 
   it('hides Cancel and shows cancelled badge after cancel', () => {
-    renderCard(
-      so({ status: 'cancelled', cancelled_by: 'bob' }),
-      'alice',
-    );
-    expect(screen.queryByRole('button', { name: 'Cancel service order' })).not.toBeInTheDocument();
+    renderCard(so({ status: 'cancelled', cancelled_by: 'bob' }), 'alice');
+    expect(
+      screen.queryByRole('button', { name: 'Cancel service order' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText('Cancelled')).toBeInTheDocument();
   });
 
   it('hides Cancel when the viewer is not a party', () => {
     renderCard(so(), 'carol');
-    expect(screen.queryByRole('button', { name: 'Cancel service order' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Cancel service order' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses the human title as the link to the service order', () => {
+    renderCard(so(), 'alice');
+    expect(
+      screen.getByRole('link', { name: 'Homepage redesign' }),
+    ).toHaveAttribute('href', '/business/service-orders/so-1');
+    expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
   it('links the contract label when linkedContractUrl is set', () => {

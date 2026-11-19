@@ -23,6 +23,7 @@ import {
   parsePaymentRefAuthorperm,
 } from '../../../domain/payment-ref';
 import { paymentMethodLabelKey } from '../../../domain/contract-label';
+import { BusinessButton } from '../../ui/business-button';
 import { StateBadge } from '../state-badge';
 
 export type RelationshipPaymentRowProps = {
@@ -148,7 +149,7 @@ export function RelationshipPaymentRow({
               {methodLabel}
             </span>
             {clickable ? (
-              <span className="text-caption text-link">
+              <span className="text-caption text-fg">
                 {t('business_payment_awaiting_confirm')}
               </span>
             ) : null}
@@ -164,6 +165,17 @@ export function RelationshipPaymentRow({
           {refNote ? (
             <p className="text-caption text-fg-secondary">{refNote}</p>
           ) : null}
+          {clickable ? (
+            <BusinessButton
+              variant="primary"
+              size="sm"
+              className="mt-1 self-start"
+              disabled={isBusy}
+              onClick={() => onConfirm(payment)}
+            >
+              {t('business_confirm_received_payment')}
+            </BusinessButton>
+          ) : null}
         </div>
       }
     >
@@ -171,22 +183,5 @@ export function RelationshipPaymentRow({
     </WalletHistoryRowShell>
   );
 
-  if (!clickable) {
-    return <div className={isBusy ? 'opacity-50' : undefined}>{body}</div>;
-  }
-
-  return (
-    <button
-      type="button"
-      disabled={isBusy}
-      onClick={() => onConfirm(payment)}
-      className={[
-        'w-full text-start',
-        'cursor-pointer rounded-card transition-colors hover:bg-surface-alt',
-        isBusy ? 'cursor-not-allowed opacity-50' : '',
-      ].join(' ')}
-    >
-      {body}
-    </button>
-  );
+  return body;
 }

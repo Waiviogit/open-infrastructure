@@ -9,11 +9,11 @@ export default async function BusinessInvoicePage({
 }: {
   params: Promise<{ invoiceId: string }>;
 }) {
-  await requireBusinessUser();
+  const { username } = await requireBusinessUser();
   const { invoiceId } = await params;
   const detail = await fetchOblInvoice(decodeURIComponent(invoiceId));
   if (!detail) {
     notFound();
   }
-  return <BusinessInvoiceClient detail={detail} />;
+  return <BusinessInvoiceClient username={username} detail={detail} />;
 }

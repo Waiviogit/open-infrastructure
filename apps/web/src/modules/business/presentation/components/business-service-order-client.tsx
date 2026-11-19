@@ -5,10 +5,12 @@ import { useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
-import { formatAbsoluteDateTime } from '@/shared/utils/format-relative-time';
 
 import { buildCancelServiceOrderOp } from '../../application/build-obl-ops';
-import { contractDisplayLabel } from '../../domain/contract-label';
+import {
+  contractDisplayLabel,
+  serviceOrderDisplayLabel,
+} from '../../domain/contract-label';
 import { businessRoutes } from '../../domain/routes';
 import {
   canCancelServiceOrder,
@@ -20,6 +22,14 @@ import { BusinessPageShell } from '../layout/business-page-shell';
 import { BusinessButton } from '../ui/business-button';
 import { BusinessConfirmDialog } from '../ui/business-confirm-dialog';
 import { BusinessActionError } from '../ui/business-states';
+import { BusinessDetailSection } from '../ui/business-detail-list';
+import {
+  LedgerBreadcrumbs,
+  LedgerDetailsSection,
+  LedgerPartiesSection,
+  LedgerTechnicalDetails,
+  pairCounterparty,
+} from './ledger-detail-parts';
 import { StateBadge } from './state-badge';
 
 export function BusinessServiceOrderClient({
@@ -29,7 +39,7 @@ export function BusinessServiceOrderClient({
   username: string;
   detail: OblServiceOrderDetailApiResponse;
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { serviceOrder, contract } = detail;
   const counterparty =
     username === serviceOrder.provider
@@ -60,11 +70,23 @@ export function BusinessServiceOrderClient({
     }
   }
 
+  const contracts = contract ? [contract] : [];
+
   return (
     <BusinessPageShell
       variant="entity"
-      title={serviceOrder.service_order_id}
+      title={serviceOrderDisplayLabel(serviceOrder, contracts)}
       subtitle={t('business_service_order_subtitle')}
+      breadcrumbs={
+        <LedgerBreadcrumbs
+          counterparty={pairCounterparty(
+            username,
+            serviceOrder.provider,
+            serviceOrder.client,
+          )}
+          current={t('business_field_service_order')}
+        />
+      }
       actions={
         showCancel ? (
           <BusinessButton
@@ -81,106 +103,70 @@ export function BusinessServiceOrderClient({
         ) : null
       }
     >
-      <dl className="grid gap-3 text-body-sm">
-        {cancelled ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <StateBadge variant="cancelled" />
-          </div>
-        ) : null}
-        <div>
-          <dt className="text-fg-secondary">{t('business_field_creator')}</dt>
-          <dd>@{serviceOrder.creator}</dd>
+      <div className="flex flex-col gap-card-padding">
+        <div className="flex flex-wrap items-center gap-2">
+          <StateBadge variant={cancelled ? 'cancelled' : 'active'} />
+          {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
+          {cancelled && serviceOrder.cancelled_by ? (
+            <span className="text-caption text-fg-secondary">
+              {t('business_service_order_cancelled_by').replace(
+                '{account}',
+                `@${serviceOrder.cancelled_by}`,
+              )}
+            </span>
+          ) : null}
         </div>
-        <div>
-          <dt className="text-fg-secondary">{t('business_field_provider')}</dt>
-          <dd>@{serviceOrder.provider}</dd>
-        </div>
-        <div>
-          <dt className="text-fg-secondary">{t('business_field_client')}</dt>
-          <dd>@{serviceOrder.client}</dd>
-        </div>
-        {cancelled && serviceOrder.cancelled_by ? (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_field_cancelled_by')}
-            </dt>
-            <dd>@{serviceOrder.cancelled_by}</dd>
-          </div>
-        ) : null}
-        {cancelled && serviceOrder.cancelled_at ? (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_field_cancelled_at')}
-            </dt>
-            <dd>
-              <time dateTime={serviceOrder.cancelled_at}>
-                {formatAbsoluteDateTime(serviceOrder.cancelled_at, locale)}
-              </time>
-            </dd>
-          </div>
-        ) : null}
+        {confirmOpen ? null : <BusinessActionError message={error} />}
+        <LedgerDetailsSection
+          title={t('business_service_order_details_label')}
+          details={serviceOrder.details}
+        />
+        <LedgerPartiesSection
+          viewer={username}
+          parties={[
+            {
+              role: t('business_field_creator'),
+              account: serviceOrder.creator,
+            },
+            {
+              role: t('business_field_provider'),
+              account: serviceOrder.provider,
+            },
+            { role: t('business_field_client'), account: serviceOrder.client },
+          ]}
+        />
         {contract ? (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_field_contract')}
-            </dt>
-            <dd>
-              <Link
-                href={businessRoutes.contract(contract.contract_id)}
-                className="text-link"
-              >
-                {contractDisplayLabel(contract)}
-              </Link>
-            </dd>
-          </div>
-        ) : (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_field_contract')}
-            </dt>
-            <dd className="font-mono text-caption">
-              {serviceOrder.contract_id}
-            </dd>
-          </div>
-        )}
-        <div>
-          <dt className="text-fg-secondary">
-            {t('business_field_created_at')}
-          </dt>
-          <dd>
-            <time dateTime={serviceOrder.created_at}>
-              {formatAbsoluteDateTime(serviceOrder.created_at, locale)}
-            </time>
-          </dd>
-        </div>
-        {Object.keys(serviceOrder.details ?? {}).length > 0 ? (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_sign_metadata_label')}
-            </dt>
-            <dd>
-              <pre className="mt-1 whitespace-pre-wrap rounded-btn border border-border bg-surface-alt p-2 font-mono text-caption">
-                {JSON.stringify(serviceOrder.details, null, 2)}
-              </pre>
-            </dd>
-          </div>
+          <BusinessDetailSection
+            title={t('business_section_linked')}
+            rows={[
+              {
+                label: t('business_field_contract'),
+                value: (
+                  <Link
+                    href={businessRoutes.contract(contract.contract_id)}
+                    className="text-link hover:underline"
+                    suppressHydrationWarning
+                  >
+                    {contractDisplayLabel(contract)}
+                  </Link>
+                ),
+              },
+            ]}
+          />
         ) : null}
-      </dl>
-      {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
-      {confirmOpen ? null : <BusinessActionError message={error} />}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href={businessRoutes.relationship(serviceOrder.provider)}
-          className="text-body-sm text-link"
-        >
-          @{serviceOrder.provider}
-        </Link>
-        <Link
-          href={businessRoutes.relationship(serviceOrder.client)}
-          className="text-body-sm text-link"
-        >
-          @{serviceOrder.client}
-        </Link>
+        <LedgerTechnicalDetails
+          ids={[
+            {
+              label: t('business_field_service_order'),
+              id: serviceOrder.service_order_id,
+            },
+            {
+              label: t('business_field_transaction_id'),
+              id: serviceOrder.transaction_id,
+            },
+          ]}
+          createdAt={serviceOrder.created_at}
+        />
       </div>
       <BusinessConfirmDialog
         open={confirmOpen}

@@ -3,142 +3,123 @@
 import Link from 'next/link';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { formatAbsoluteDateTime } from '@/shared/utils/format-relative-time';
 
-import { disputeRuleLabelKey } from '../../domain/contract-label';
+import {
+  contractDisplayLabel,
+  disputeRuleLabelKey,
+} from '../../domain/contract-label';
 import { businessRoutes } from '../../domain/routes';
 import type { OblContractApiRow } from '../../infrastructure/clients/obl-ledger.server';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessAccountLink } from '../ui/business-account-link';
+import { BusinessDetailSection } from '../ui/business-detail-list';
+import {
+  LedgerBreadcrumbs,
+  LedgerDetailsSection,
+  LedgerPartiesSection,
+  LedgerTechnicalDetails,
+  pairCounterparty,
+} from './ledger-detail-parts';
+import { StateBadge } from './state-badge';
 
 export function BusinessContractClient({
+  username,
   contract,
 }: {
+  username: string;
   contract: OblContractApiRow;
 }) {
-  const { t, locale } = useI18n();
-  const hasMetadata = Object.keys(contract.metadata ?? {}).length > 0;
-  const offerName = contract.offer_name?.trim() || null;
-  const offerDescription = contract.offer_description?.trim() || null;
+  const { t } = useI18n();
+  const title = contractDisplayLabel(contract);
+  const description = contract.offer_description?.trim() || null;
 
   return (
     <BusinessPageShell
       variant="entity"
-      title={offerName ?? contract.contract_id}
+      title={title}
       subtitle={t('business_contract_subtitle')}
+      breadcrumbs={
+        <LedgerBreadcrumbs
+          counterparty={pairCounterparty(
+            username,
+            contract.provider,
+            contract.client,
+          )}
+          current={t('business_field_contract')}
+        />
+      }
     >
-      <dl className="grid gap-3 text-body-sm">
-        {offerName ? (
+      <div className="flex flex-col gap-card-padding">
+        {contract.offer_status === 'retired' ? (
           <div>
-            <dt className="text-fg-secondary">{t('business_field_name')}</dt>
-            <dd>{offerName}</dd>
+            <StateBadge variant="retired" />
           </div>
         ) : null}
-        {offerDescription ? (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_field_description')}
-            </dt>
-            <dd className="whitespace-pre-wrap">{offerDescription}</dd>
-          </div>
-        ) : null}
-        <div>
-          <dt className="text-fg-secondary">{t('business_field_offer')}</dt>
-          <dd>
-            <Link
-              href={businessRoutes.offerDetail(contract.offer_id)}
-              className="text-link"
-            >
-              {contract.offer_id} v{contract.offer_version}
-            </Link>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-fg-secondary">{t('business_field_contract')}</dt>
-          <dd className="font-mono text-caption">{contract.contract_id}</dd>
-        </div>
-        <div>
-          <dt className="text-fg-secondary">{t('business_field_provider')}</dt>
-          <dd>@{contract.provider}</dd>
-        </div>
-        <div>
-          <dt className="text-fg-secondary">{t('business_field_client')}</dt>
-          <dd>@{contract.client}</dd>
-        </div>
-        <div>
-          <dt className="text-fg-secondary">
-            {t('business_field_dispute_rule')}
-          </dt>
-          <dd>{t(disputeRuleLabelKey(contract.dispute_rule))}</dd>
-        </div>
-        {contract.arbiter ? (
-          <div>
-            <dt className="text-fg-secondary">{t('business_field_arbiter')}</dt>
-            <dd>
-              <Link
-                href={businessRoutes.relationship(contract.arbiter)}
-                className="text-link"
-              >
-                @{contract.arbiter}
-              </Link>
-            </dd>
-          </div>
-        ) : null}
-        {contract.created_at ? (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_field_created_at')}
-            </dt>
-            <dd>
-              <time dateTime={contract.created_at}>
-                {formatAbsoluteDateTime(contract.created_at, locale)}
-              </time>
-            </dd>
-          </div>
-        ) : null}
-        {contract.transaction_id ? (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_field_transaction_id')}
-            </dt>
-            <dd className="font-mono text-caption break-all">
-              {contract.transaction_id}
-            </dd>
-          </div>
-        ) : null}
-        {hasMetadata ? (
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_sign_metadata_label')}
-            </dt>
-            <dd>
-              <pre className="mt-1 whitespace-pre-wrap rounded-btn border border-border bg-surface-alt p-2 font-mono text-caption">
-                {JSON.stringify(contract.metadata, null, 2)}
-              </pre>
-            </dd>
-          </div>
-        ) : null}
-      </dl>
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href={businessRoutes.relationship(contract.client)}
-          className="text-body-sm text-link"
-        >
-          @{contract.client}
-        </Link>
-        <Link
-          href={businessRoutes.relationship(contract.provider)}
-          className="text-body-sm text-link"
-        >
-          @{contract.provider}
-        </Link>
-        {contract.arbiter ? (
-          <Link
-            href={businessRoutes.relationship(contract.arbiter)}
-            className="text-body-sm text-link"
-          >
-            @{contract.arbiter}
-          </Link>
-        ) : null}
+        <LedgerPartiesSection
+          viewer={username}
+          parties={[
+            { role: t('business_field_provider'), account: contract.provider },
+            { role: t('business_field_client'), account: contract.client },
+          ]}
+        />
+        <BusinessDetailSection
+          title={t('business_section_terms')}
+          rows={[
+            ...(description
+              ? [
+                  {
+                    label: t('business_field_description'),
+                    value: (
+                      <span className="whitespace-pre-wrap">{description}</span>
+                    ),
+                    wide: true,
+                  },
+                ]
+              : []),
+            {
+              label: t('business_field_offer'),
+              value: (
+                <Link
+                  href={businessRoutes.offerDetail(contract.offer_id)}
+                  className="text-link hover:underline"
+                  suppressHydrationWarning
+                >
+                  {t('business_open_version').replace(
+                    '{version}',
+                    String(contract.offer_version),
+                  )}
+                </Link>
+              ),
+            },
+            {
+              label: t('business_field_dispute_rule'),
+              value: t(disputeRuleLabelKey(contract.dispute_rule)),
+            },
+            ...(contract.arbiter
+              ? [
+                  {
+                    label: t('business_field_arbiter'),
+                    value: <BusinessAccountLink account={contract.arbiter} />,
+                  },
+                ]
+              : []),
+          ]}
+        />
+        <LedgerDetailsSection
+          title={t('business_sign_metadata_label')}
+          details={contract.metadata}
+        />
+        <LedgerTechnicalDetails
+          ids={[
+            { label: t('business_field_contract'), id: contract.contract_id },
+            { label: t('business_field_offer'), id: contract.offer_id },
+            {
+              label: t('business_field_transaction_id'),
+              id: contract.transaction_id,
+            },
+          ]}
+          createdAt={contract.created_at}
+        />
       </div>
     </BusinessPageShell>
   );

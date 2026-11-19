@@ -5,7 +5,6 @@ import { useMemo, useState } from 'react';
 
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { formatAbsoluteDateTime } from '@/shared/utils/format-relative-time';
 
 import { buildResolveDisputeOp } from '../../application/build-obl-ops';
 import {
@@ -14,6 +13,8 @@ import {
 } from '../../domain/dispute-resolution';
 import { contractDisplayLabel } from '../../domain/contract-label';
 import { toLedgerContractRow } from '../../domain/ledger-contract';
+import { ledgerDetailsSummary } from '../../domain/ledger-display';
+import { formatUsd } from '../../domain/usd-format';
 import type { LedgerInvoiceRow } from '../../domain/ledger.types';
 import { businessRoutes } from '../../domain/routes';
 import type { OblDisputeDetailApiResponse } from '../../infrastructure/clients/obl-ledger.server';
@@ -24,6 +25,13 @@ import { DisputeSettlementSummary } from './relationship/dispute-settlement-summ
 import { StateBadge } from './state-badge';
 import { BusinessButton } from '../ui/business-button';
 import { BusinessActionError } from '../ui/business-states';
+import { BusinessDetailSection } from '../ui/business-detail-list';
+import {
+  LedgerBreadcrumbs,
+  LedgerPartiesSection,
+  LedgerTechnicalDetails,
+  pairCounterparty,
+} from './ledger-detail-parts';
 
 export function BusinessDisputeClient({
   username,
@@ -32,7 +40,7 @@ export function BusinessDisputeClient({
   username: string;
   detail: OblDisputeDetailApiResponse;
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const oblCustomJsonId = useOblCustomJsonId();
   const { dispute, invoice, contract } = detail;
   const [resolveOpen, setResolveOpen] = useState(false);
@@ -82,12 +90,28 @@ export function BusinessDisputeClient({
     return txId !== null;
   }
 
+  const counterparty =
+    (contract
+      ? pairCounterparty(username, contract.provider, contract.client)
+      : null) ?? pairCounterparty(username, invoice.debtor, invoice.creditor);
+  const title =
+    ledgerDetailsSummary(invoice.details) ??
+    (contract
+      ? contractDisplayLabel(contract)
+      : t('business_dispute_untitled'));
+
   return (
     <>
       <BusinessPageShell
         variant="entity"
-        title={dispute.dispute_id}
+        title={title}
         subtitle={t('business_dispute_subtitle')}
+        breadcrumbs={
+          <LedgerBreadcrumbs
+            counterparty={counterparty}
+            current={t('business_field_dispute')}
+          />
+        }
         actions={
           canResolve ? (
             <BusinessButton
@@ -103,81 +127,83 @@ export function BusinessDisputeClient({
           ) : null
         }
       >
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <StateBadge
-            variant={dispute.status === 'open' ? 'disputed' : 'resolved'}
+        <div className="flex flex-col gap-card-padding">
+          <div className="flex flex-wrap items-center gap-2">
+            <StateBadge
+              variant={dispute.status === 'open' ? 'disputed' : 'resolved'}
+            />
+            {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
+          </div>
+          {resolveOpen ? null : <BusinessActionError message={error} />}
+          <BusinessDetailSection
+            title={t('business_section_settlement')}
+            rows={[]}
+          >
+            <DisputeSettlementSummary
+              dispute={dispute}
+              invoice={ledgerInvoice}
+            />
+          </BusinessDetailSection>
+          <LedgerPartiesSection
+            viewer={username}
+            parties={[
+              { role: t('business_field_debtor'), account: invoice.debtor },
+              { role: t('business_field_creditor'), account: invoice.creditor },
+              ...(contract?.arbiter
+                ? [
+                    {
+                      role: t('business_field_arbiter'),
+                      account: contract.arbiter,
+                    },
+                  ]
+                : []),
+            ]}
           />
-          {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
-        </div>
-        {resolveOpen ? null : <BusinessActionError message={error} />}
-        <dl className="grid gap-3 text-body-sm">
-          <div>
-            <dt className="text-fg-secondary">{t('business_field_invoice')}</dt>
-            <dd>
-              <Link
-                href={businessRoutes.invoice(invoice.invoice_id)}
-                className="text-link"
-              >
-                {invoice.invoice_id}
-              </Link>
-            </dd>
-          </div>
-          {contract ? (
-            <div>
-              <dt className="text-fg-secondary">
-                {t('business_field_contract')}
-              </dt>
-              <dd>
-                <Link
-                  href={businessRoutes.contract(contract.contract_id)}
-                  className="text-link"
-                >
-                  {contractDisplayLabel(contract)}
-                </Link>
-              </dd>
-            </div>
-          ) : null}
-          <div>
-            <dt className="text-fg-secondary">
-              {t('business_field_created_at')}
-            </dt>
-            <dd>
-              <time dateTime={dispute.created_at}>
-                {formatAbsoluteDateTime(dispute.created_at, locale)}
-              </time>
-            </dd>
-          </div>
-        </dl>
-        <DisputeSettlementSummary dispute={dispute} invoice={ledgerInvoice} />
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href={businessRoutes.relationship(invoice.debtor)}
-            className="text-body-sm text-link"
-          >
-            @{invoice.debtor}
-          </Link>
-          <Link
-            href={businessRoutes.relationship(invoice.creditor)}
-            className="text-body-sm text-link"
-          >
-            @{invoice.creditor}
-          </Link>
-          {contract ? (
-            <>
-              <Link
-                href={businessRoutes.relationship(contract.provider)}
-                className="text-body-sm text-link"
-              >
-                @{contract.provider}
-              </Link>
-              <Link
-                href={businessRoutes.relationship(contract.client)}
-                className="text-body-sm text-link"
-              >
-                @{contract.client}
-              </Link>
-            </>
-          ) : null}
+          <BusinessDetailSection
+            title={t('business_section_linked')}
+            rows={[
+              {
+                label: t('business_field_invoice'),
+                value: (
+                  <Link
+                    href={businessRoutes.invoice(invoice.invoice_id)}
+                    className="text-link hover:underline"
+                    suppressHydrationWarning
+                  >
+                    {ledgerDetailsSummary(invoice.details) ??
+                      formatUsd(invoice.amount_usd)}
+                  </Link>
+                ),
+              },
+              ...(contract
+                ? [
+                    {
+                      label: t('business_field_contract'),
+                      value: (
+                        <Link
+                          href={businessRoutes.contract(contract.contract_id)}
+                          className="text-link hover:underline"
+                          suppressHydrationWarning
+                        >
+                          {contractDisplayLabel(contract)}
+                        </Link>
+                      ),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          <LedgerTechnicalDetails
+            ids={[
+              { label: t('business_field_dispute'), id: dispute.dispute_id },
+              { label: t('business_field_invoice'), id: invoice.invoice_id },
+              {
+                label: t('business_field_transaction_id'),
+                id: dispute.transaction_id,
+              },
+            ]}
+            createdAt={dispute.created_at}
+          />
         </div>
       </BusinessPageShell>
 

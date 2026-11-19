@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
-import { ActivityTimestamp } from '@/modules/user-activity/presentation/components/activity-timestamp';
-import { OptimisticTabButton } from '@/shared/presentation';
+import { CopyIcon, FileTextIcon, PackageIcon, CheckIcon } from '@/icons';
+import { UserAvatar } from '@/shared/presentation';
 
 import {
   buildConfirmPaymentOp,
@@ -26,8 +25,10 @@ import {
   findInvoiceForDispute,
   truncateText,
 } from '../../domain/dispute-resolution';
-import { contractDisplayLabel } from '../../domain/contract-label';
-import { formatUsd } from '../../domain/usd-format';
+import {
+  contractDisplayLabel,
+  serviceOrderDisplayLabel,
+} from '../../domain/contract-label';
 import type {
   LedgerContractRow,
   LedgerDisputeRow,
@@ -54,6 +55,7 @@ import { buildPayOnBehalfHref } from '../../domain/pay-on-behalf';
 import { businessRoutes } from '../../domain/routes';
 import { canCreateServiceOrderOnContract } from '../../domain/service-order-create';
 import {
+  RELATIONSHIP_TABS,
   buildRelationshipTabHref,
   parseRelationshipTab,
   type RelationshipTab,
@@ -69,51 +71,30 @@ import { BusinessIssueInvoiceModal } from './relationship/business-issue-invoice
 import { BusinessServiceOrderCard } from './relationship/business-service-order-card';
 import { BusinessOpenDisputeModal } from './relationship/business-open-dispute-modal';
 import { BusinessResolveDisputeModal } from './relationship/business-resolve-dispute-modal';
-import { DisputeSettlementSummary } from './relationship/dispute-settlement-summary';
+import {
+  LedgerContractCard,
+  LedgerDisputeCard,
+  LedgerInvoiceCard,
+  LedgerReportCard,
+} from './relationship/ledger-cards';
 import { RelationshipPaymentRow } from './relationship/relationship-payment-row';
 import { StateBadge } from './state-badge';
 import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { useOblLedgerTabLists } from '../hooks/use-obl-ledger-tab-lists';
 import { BusinessPageShell } from '../layout/business-page-shell';
+import { BusinessActionsMenu } from '../ui/business-actions-menu';
+import { BusinessBreadcrumbs } from '../ui/business-breadcrumbs';
+import { BusinessButton } from '../ui/business-button';
 import { BusinessConfirmDialog } from '../ui/business-confirm-dialog';
+import { BusinessSubTabs } from '../ui/business-sub-tabs';
+import { BusinessEmptyState } from '../ui/business-states';
+import { businessCardClass } from '../ui/classes';
 
 const COPIED_RESET_MS = 2000;
-
-type TabId = RelationshipTab;
-
 const CONTRACT_DESCRIPTION_MAX = 300;
-
-function invoiceDetailSummary(
-  details: Record<string, unknown> | undefined,
-): string | null {
-  if (!details || Object.keys(details).length === 0) {
-    return null;
-  }
-  const report = details.report;
-  if (typeof report === 'string' && report.trim().length > 0) {
-    return report.trim();
-  }
-  const memo = details.memo;
-  if (typeof memo === 'string' && memo.trim().length > 0) {
-    return memo.trim();
-  }
-  return JSON.stringify(details);
-}
-
-function invoiceStateBadgeVariant(
-  state: LedgerInvoiceRow['state'],
-): 'confirmed' | 'pending_signature' | 'disputed' | 'resolved' {
-  if (state === 'pending') {
-    return 'pending_signature';
-  }
-  if (state === 'disputed') {
-    return 'disputed';
-  }
-  if (state === 'resolved') {
-    return 'resolved';
-  }
-  return 'confirmed';
-}
+const TITLE_AVATAR_SIZE = 40;
+const MENU_ICON_SIZE = 18;
+const LOADING_ROWS = 3;
 
 function castTabRows<T>(items: unknown[]): T[] {
   return items as T[];
@@ -153,17 +134,27 @@ function contractLabel(
     return null;
   }
   const contract = contracts.find((c) => c.contract_id === contractId);
-  if (!contract) {
-    return contractId;
-  }
-  return contractDisplayLabel(contract);
+  return contract ? contractDisplayLabel(contract) : null;
 }
 
-function contractHref(contractId: string | null | undefined): string | null {
-  if (!contractId) {
-    return null;
-  }
-  return businessRoutes.contract(contractId);
+function TabLoading() {
+  return (
+    <div className="flex flex-col gap-card-padding" aria-busy="true">
+      {Array.from({ length: LOADING_ROWS }, (_, i) => (
+        <div
+          key={i}
+          className={businessCardClass({ className: 'flex flex-col gap-2' })}
+        >
+          <div className="h-4 w-1/2 animate-pulse rounded-btn bg-surface-control" />
+          <div className="h-3 w-1/3 animate-pulse rounded-btn bg-surface-control" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TabList({ children }: { children: ReactNode }) {
+  return <div className="flex flex-col gap-card-padding">{children}</div>;
 }
 
 export function BusinessRelationshipDetailClient({
@@ -225,7 +216,7 @@ export function BusinessRelationshipDetailClient({
     open();
   }
 
-  const { lists, sentinelRef } = useOblLedgerTabLists({
+  const { lists, activeTabLoading, sentinelRef } = useOblLedgerTabLists({
     accountA: username,
     accountB: counterparty,
     activeTab: tab,
@@ -506,65 +497,281 @@ export function BusinessRelationshipDetailClient({
     return txId !== null;
   }
 
-  const tabs: TabId[] = [
-    'payments',
-    'contracts',
-    'service-orders',
-    'reports',
-    'invoices',
-    'disputes',
-  ];
+  const ledgerTabs = RELATIONSHIP_TABS.map((id) => ({
+    id,
+    href: buildRelationshipTabHref(counterparty, id),
+    label: t(`business_tab_${id}`),
+  }));
+
+  const createInvoiceButton = (
+    <BusinessButton
+      variant="primary"
+      size="sm"
+      disabled={isBusy}
+      onClick={() => openAction(() => setInvoiceModalOpen(true))}
+    >
+      {t('business_create_invoice')}
+    </BusinessButton>
+  );
+  const recordPaymentButton = (
+    <BusinessButton
+      size="sm"
+      disabled={isBusy}
+      onClick={() => openAction(() => setDeclareModalOpen(true))}
+    >
+      {t('business_record_payment')}
+    </BusinessButton>
+  );
+
+  function tabBody() {
+    if (activeTabLoading) {
+      return <TabLoading />;
+    }
+
+    if (tab === 'payments') {
+      return payments.length === 0 ? (
+        <BusinessEmptyState
+          title={t('business_payments_empty')}
+          description={t('business_payments_empty_body')}
+          action={recordPaymentButton}
+        />
+      ) : (
+        <TabList>
+          {payments.map((pay) => (
+            <RelationshipPaymentRow
+              key={pay.payment_id}
+              payment={pay}
+              viewer={username}
+              isBusy={isBusy}
+              onConfirm={(row) => openAction(() => setConfirmPaymentRow(row))}
+            />
+          ))}
+        </TabList>
+      );
+    }
+
+    if (tab === 'contracts') {
+      return contracts.length === 0 ? (
+        <BusinessEmptyState
+          title={t('business_contracts_empty')}
+          description={t('business_contracts_empty_body')}
+        />
+      ) : (
+        <TabList>
+          {contracts.map((c) => (
+            <LedgerContractCard
+              key={c.contract_id}
+              contract={c}
+              label={contractDisplayLabel(c)}
+              descriptionPreview={
+                c.offer_description
+                  ? truncateText(c.offer_description, CONTRACT_DESCRIPTION_MAX)
+                  : null
+              }
+            />
+          ))}
+        </TabList>
+      );
+    }
+
+    if (tab === 'service-orders') {
+      return serviceOrders.length === 0 ? (
+        <BusinessEmptyState
+          title={t('business_service_orders_empty')}
+          description={t('business_service_orders_empty_body')}
+          action={
+            serviceOrderContracts.length > 0 ? (
+              <BusinessButton
+                size="sm"
+                disabled={isBusy}
+                onClick={() => openAction(() => setServiceOrderModalOpen(true))}
+              >
+                {t('business_create_service_order')}
+              </BusinessButton>
+            ) : undefined
+          }
+        />
+      ) : (
+        <TabList>
+          {serviceOrders.map((so) => (
+            <BusinessServiceOrderCard
+              key={so.service_order_id}
+              so={so}
+              username={username}
+              title={serviceOrderDisplayLabel(so, contracts)}
+              linkedContract={contractLabel(so.contract_id, contracts)}
+              linkedContractUrl={businessRoutes.contract(so.contract_id)}
+              isBusy={isBusy}
+              onCancel={(serviceOrderId) =>
+                openAction(() => setCancelServiceOrderId(serviceOrderId))
+              }
+            />
+          ))}
+        </TabList>
+      );
+    }
+
+    if (tab === 'reports') {
+      return reports.length === 0 ? (
+        <BusinessEmptyState
+          title={t('business_reports_empty')}
+          description={t('business_reports_empty_body')}
+          action={
+            <BusinessButton
+              size="sm"
+              disabled={isBusy}
+              onClick={() => openAction(() => setReportModalOpen(true))}
+            >
+              {t('business_create_report')}
+            </BusinessButton>
+          }
+        />
+      ) : (
+        <TabList>
+          {reports.map((rep) => {
+            const linkedServiceOrder = rep.service_order_id
+              ? serviceOrders.find(
+                  (so) => so.service_order_id === rep.service_order_id,
+                )
+              : undefined;
+            return (
+              <LedgerReportCard
+                key={rep.report_id}
+                report={rep}
+                contractLabel={contractLabel(rep.contract_id, contracts)}
+                serviceOrderLabel={
+                  linkedServiceOrder
+                    ? serviceOrderDisplayLabel(linkedServiceOrder, contracts)
+                    : rep.service_order_id
+                }
+              />
+            );
+          })}
+        </TabList>
+      );
+    }
+
+    if (tab === 'invoices') {
+      return invoices.length === 0 ? (
+        <BusinessEmptyState
+          title={t('business_invoices_empty')}
+          description={t('business_invoices_empty_body')}
+          action={createInvoiceButton}
+        />
+      ) : (
+        <TabList>
+          {invoices.map((inv) => (
+            <LedgerInvoiceCard
+              key={inv.invoice_id}
+              invoice={inv}
+              contractLabel={contractLabel(inv.contract_id, contracts)}
+              disputable={canDisputeInvoice(inv, username, disputes)}
+              isBusy={isBusy}
+              onDispute={() => openAction(() => setDisputeInvoice(inv))}
+            />
+          ))}
+        </TabList>
+      );
+    }
+
+    return disputes.length === 0 ? (
+      <BusinessEmptyState
+        title={t('business_disputes_empty')}
+        description={t('business_disputes_empty_body')}
+      />
+    ) : (
+      <TabList>
+        {disputes.map((d) => {
+          const linkedInvoice = findInvoiceForDispute(d, invoices);
+          const governingContract = linkedInvoice?.contract_id
+            ? contracts.find((c) => c.contract_id === linkedInvoice.contract_id)
+            : undefined;
+          return (
+            <LedgerDisputeCard
+              key={d.dispute_id}
+              dispute={d}
+              invoice={linkedInvoice}
+              contractLabel={contractLabel(
+                linkedInvoice?.contract_id,
+                contracts,
+              )}
+              contractId={linkedInvoice?.contract_id ?? null}
+              resolvable={canViewerResolveDispute(
+                username,
+                d,
+                invoices,
+                contracts,
+                {
+                  invoice: linkedInvoice,
+                  governingContract,
+                },
+              )}
+              isBusy={isBusy}
+              onResolve={() => openAction(() => setResolveDisputeRow(d))}
+            />
+          );
+        })}
+      </TabList>
+    );
+  }
 
   return (
     <>
       <BusinessPageShell
         variant="entity"
         title={`@${counterparty}`}
+        titleLeading={
+          <UserAvatar username={counterparty} size={TITLE_AVATAR_SIZE} />
+        }
         subtitle={t('business_relationship_detail_subtitle')}
+        breadcrumbs={
+          <BusinessBreadcrumbs
+            items={[
+              {
+                label: t('business_nav_relationships'),
+                href: businessRoutes.relationships,
+              },
+              { label: `@${counterparty}` },
+            ]}
+          />
+        }
         actions={
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => openAction(() => setInvoiceModalOpen(true))}
-              className="rounded-btn bg-accent px-3 py-1 text-body-sm text-accent-fg disabled:opacity-50"
-            >
-              {t('business_create_invoice')}
-            </button>
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => openAction(() => setServiceOrderModalOpen(true))}
-              className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
-            >
-              {t('business_create_service_order')}
-            </button>
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => openAction(() => setReportModalOpen(true))}
-              className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
-            >
-              {t('business_create_report')}
-            </button>
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => openAction(() => setDeclareModalOpen(true))}
-              className="rounded-btn border border-border px-3 py-1 text-body-sm disabled:opacity-50"
-            >
-              {t('business_record_payment')}
-            </button>
-            <button
-              type="button"
-              onClick={() => void copyPayOnBehalfLink()}
-              className="rounded-btn border border-border px-3 py-1 text-body-sm"
-            >
-              {payLinkCopied
-                ? t('business_pay_on_behalf_link_copied')
-                : t('business_pay_on_behalf_copy_link')}
-            </button>
-          </div>
+          <>
+            {createInvoiceButton}
+            {recordPaymentButton}
+            <BusinessActionsMenu
+              label={t('business_more_actions')}
+              actions={[
+                {
+                  id: 'service-order',
+                  label: t('business_create_service_order'),
+                  icon: <PackageIcon size={MENU_ICON_SIZE} />,
+                  disabled: isBusy,
+                  onSelect: () =>
+                    openAction(() => setServiceOrderModalOpen(true)),
+                },
+                {
+                  id: 'report',
+                  label: t('business_create_report'),
+                  icon: <FileTextIcon size={MENU_ICON_SIZE} />,
+                  disabled: isBusy,
+                  onSelect: () => openAction(() => setReportModalOpen(true)),
+                },
+                {
+                  id: 'pay-link',
+                  label: payLinkCopied
+                    ? t('business_pay_on_behalf_link_copied')
+                    : t('business_pay_on_behalf_copy_link'),
+                  icon: payLinkCopied ? (
+                    <CheckIcon size={MENU_ICON_SIZE} />
+                  ) : (
+                    <CopyIcon size={MENU_ICON_SIZE} />
+                  ),
+                  onSelect: () => void copyPayOnBehalfLink(),
+                },
+              ]}
+            />
+          </>
         }
       >
         <BalanceCards
@@ -573,377 +780,26 @@ export function BusinessRelationshipDetailClient({
           balance={balance}
         />
         {phase === 'indexing' ? (
-          <div className="mt-2">
+          <div className="mt-3">
             <StateBadge variant="indexing" />
           </div>
         ) : null}
+        {payLinkCopied ? (
+          <p className="mt-3 text-body-sm text-fg" role="status">
+            {t('business_pay_on_behalf_link_copied')}
+          </p>
+        ) : null}
 
-        <div className="mt-6 flex flex-wrap gap-2 border-b border-border pb-2">
-          {tabs.map((id) => (
-            <OptimisticTabButton
-              key={id}
-              href={buildRelationshipTabHref(counterparty, id)}
-              method="replace"
-              className={[
-                'rounded-btn px-3 py-1 text-body-sm',
-                tab === id
-                  ? 'bg-surface-alt font-weight-label text-heading'
-                  : 'text-fg-secondary',
-              ].join(' ')}
-            >
-              {t(`business_tab_${id}`)}
-            </OptimisticTabButton>
-          ))}
-        </div>
+        <BusinessSubTabs
+          items={ledgerTabs}
+          activeId={tab}
+          method="replace"
+          ariaLabel={t('business_ledger_tabs_aria')}
+          className="mb-card-padding mt-section-y-sm"
+        />
 
-        <div className="mt-4">
-          {tab === 'contracts' ? (
-            <div className="flex flex-col gap-3">
-              {contracts.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">
-                  {t('business_contracts_empty')}
-                </p>
-              ) : null}
-              {contracts.map((c) => (
-                <Link
-                  key={c.contract_id}
-                  href={businessRoutes.contract(c.contract_id)}
-                  className="rounded-card border border-border bg-surface p-card-padding text-body-sm hover:bg-surface-alt"
-                >
-                  <h3 className="font-weight-label text-heading">
-                    {c.offer_name}
-                  </h3>
-                  {c.offer_description ? (
-                    <p className="mt-2 text-caption text-fg-secondary">
-                      {truncateText(
-                        c.offer_description,
-                        CONTRACT_DESCRIPTION_MAX,
-                      )}
-                    </p>
-                  ) : null}
-                  <p className="mt-2 font-mono text-caption text-fg-secondary">
-                    {c.contract_id}
-                  </p>
-                  <p className="mt-1 text-caption text-fg-secondary">
-                    {t('business_field_created_at')}:{' '}
-                    <ActivityTimestamp timestamp={c.created_at} />
-                  </p>
-                </Link>
-              ))}
-            </div>
-          ) : null}
-
-          {tab === 'service-orders' ? (
-            <div className="flex flex-col gap-3">
-              {serviceOrders.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">
-                  {t('business_service_orders_empty')}
-                </p>
-              ) : null}
-              {serviceOrders.map((so) => {
-                const linkedContract = contractLabel(so.contract_id, contracts);
-                const linkedContractUrl = contractHref(so.contract_id);
-                return (
-                  <BusinessServiceOrderCard
-                    key={so.service_order_id}
-                    so={so}
-                    username={username}
-                    linkedContract={linkedContract}
-                    linkedContractUrl={linkedContractUrl}
-                    isBusy={isBusy}
-                    onCancel={(serviceOrderId) =>
-                      openAction(() => setCancelServiceOrderId(serviceOrderId))
-                    }
-                  />
-                );
-              })}
-            </div>
-          ) : null}
-
-          {tab === 'reports' ? (
-            <div className="flex flex-col gap-3">
-              {reports.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">
-                  {t('business_reports_empty')}
-                </p>
-              ) : null}
-              {reports.map((rep) => {
-                const linkedContract = contractLabel(
-                  rep.contract_id,
-                  contracts,
-                );
-                const linkedContractUrl = contractHref(rep.contract_id);
-                return (
-                  <Link
-                    key={rep.report_id}
-                    href={businessRoutes.report(rep.report_id)}
-                    className="rounded-card border border-border bg-surface p-card-padding text-body-sm hover:bg-surface-alt"
-                  >
-                    <h3 className="font-weight-label text-heading">
-                      {rep.report_id}
-                    </h3>
-                    <p className="mt-1 text-caption text-fg-secondary">
-                      {t('business_field_author')}: @{rep.author}
-                    </p>
-                    {linkedContract ? (
-                      <p className="mt-1 text-caption text-fg-secondary">
-                        {t('business_field_contract')}:{' '}
-                        {linkedContractUrl ? (
-                          <span className="text-link">{linkedContract}</span>
-                        ) : (
-                          linkedContract
-                        )}
-                      </p>
-                    ) : null}
-                    {rep.service_order_id ? (
-                      <p className="mt-1 text-caption text-fg-secondary">
-                        {t('business_field_service_order')}:{' '}
-                        {rep.service_order_id}
-                      </p>
-                    ) : null}
-                    <p className="mt-1 text-caption text-fg-secondary">
-                      {t('business_field_created_at')}:{' '}
-                      <ActivityTimestamp timestamp={rep.created_at} />
-                    </p>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
-
-          {tab === 'invoices' ? (
-            <div className="flex flex-col gap-3">
-              {invoices.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">
-                  {t('business_invoices_empty')}
-                </p>
-              ) : null}
-              {invoices.map((inv) => {
-                const detailSummary = invoiceDetailSummary(inv.details);
-                const disputable = canDisputeInvoice(inv, username, disputes);
-                const linkedContract = contractLabel(
-                  inv.contract_id,
-                  contracts,
-                );
-                const linkedContractUrl = contractHref(inv.contract_id);
-                const showSettled =
-                  inv.state === 'resolved' &&
-                  inv.final_amount_usd != null &&
-                  inv.final_amount_usd !== '';
-                return (
-                  <div
-                    key={inv.invoice_id}
-                    className="rounded-card border border-border bg-surface p-card-padding text-body-sm"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span>
-                        <Link
-                          href={businessRoutes.invoice(inv.invoice_id)}
-                          className="text-link"
-                        >
-                          {inv.invoice_id}
-                        </Link>
-                        <span className="tabular-nums">
-                          {' · '}
-                          {showSettled
-                            ? `${formatUsd(inv.amount_usd)} → ${formatUsd(inv.final_amount_usd)}`
-                            : formatUsd(inv.amount_usd)}
-                        </span>
-                      </span>
-                      <StateBadge
-                        variant={invoiceStateBadgeVariant(inv.state)}
-                      />
-                      {inv.kind === 'multi' ? (
-                        <span className="text-caption text-fg-secondary">
-                          {t('business_invoice_kind_multi')}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 text-caption text-fg-secondary">
-                      @{inv.debtor} → @{inv.creditor}
-                    </p>
-                    {linkedContract ? (
-                      <p className="mt-1 text-caption text-fg-secondary">
-                        {t('business_invoice_contract_label')}:{' '}
-                        {linkedContractUrl ? (
-                          <Link href={linkedContractUrl} className="text-link">
-                            {linkedContract}
-                          </Link>
-                        ) : (
-                          linkedContract
-                        )}
-                      </p>
-                    ) : null}
-                    {inv.service_order_id ? (
-                      <p className="mt-1 text-caption text-fg-secondary">
-                        {t('business_field_service_order')}:{' '}
-                        <Link
-                          href={businessRoutes.serviceOrder(
-                            inv.service_order_id,
-                          )}
-                          className="text-link"
-                        >
-                          {inv.service_order_id}
-                        </Link>
-                      </p>
-                    ) : null}
-                    {inv.report_id ? (
-                      <p className="mt-1 text-caption text-fg-secondary">
-                        {t('business_field_report')}:{' '}
-                        <Link
-                          href={businessRoutes.report(inv.report_id)}
-                          className="text-link"
-                        >
-                          {inv.report_id}
-                        </Link>
-                      </p>
-                    ) : null}
-                    <p className="mt-1 text-caption text-fg-secondary">
-                      {t('business_field_created_at')}:{' '}
-                      <ActivityTimestamp timestamp={inv.created_at} />
-                    </p>
-                    {detailSummary ? (
-                      <p className="mt-2 text-caption text-fg-secondary">
-                        {detailSummary}
-                      </p>
-                    ) : null}
-                    {disputable ? (
-                      <button
-                        type="button"
-                        disabled={isBusy}
-                        onClick={() => openAction(() => setDisputeInvoice(inv))}
-                        className="mt-2 text-body-sm text-link disabled:opacity-50"
-                      >
-                        {t('business_invoice_dispute_action')}
-                      </button>
-                    ) : null}
-                    {inv.state === 'disputed' ? (
-                      <p className="mt-2 text-caption text-fg-secondary">
-                        {t('business_invoice_in_dispute')}
-                      </p>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
-
-          {tab === 'payments' ? (
-            <div className="flex flex-col gap-3">
-              {payments.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">
-                  {t('business_payments_empty')}
-                </p>
-              ) : null}
-              {payments.map((pay) => (
-                <RelationshipPaymentRow
-                  key={pay.payment_id}
-                  payment={pay}
-                  viewer={username}
-                  isBusy={isBusy}
-                  onConfirm={(row) =>
-                    openAction(() => setConfirmPaymentRow(row))
-                  }
-                />
-              ))}
-            </div>
-          ) : null}
-
-          {tab === 'disputes' ? (
-            <div className="flex flex-col gap-3">
-              {disputes.length === 0 ? (
-                <p className="text-body-sm text-fg-secondary">
-                  {t('business_disputes_empty')}
-                </p>
-              ) : null}
-              {disputes.map((d) => {
-                const linkedInvoice = findInvoiceForDispute(d, invoices);
-                const governingContract = linkedInvoice?.contract_id
-                  ? contracts.find(
-                      (c) => c.contract_id === linkedInvoice.contract_id,
-                    )
-                  : undefined;
-                const resolvable = canViewerResolveDispute(
-                  username,
-                  d,
-                  invoices,
-                  contracts,
-                  {
-                    invoice: linkedInvoice,
-                    governingContract,
-                  },
-                );
-                const linkedContract = contractLabel(
-                  linkedInvoice?.contract_id,
-                  contracts,
-                );
-                const linkedContractUrl = contractHref(
-                  linkedInvoice?.contract_id,
-                );
-                return (
-                  <div
-                    key={d.dispute_id}
-                    className="rounded-card border border-border bg-surface p-card-padding text-body-sm"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <Link
-                        href={businessRoutes.dispute(d.dispute_id)}
-                        className="text-link"
-                      >
-                        {d.dispute_id}
-                      </Link>
-                      <StateBadge
-                        variant={d.status === 'open' ? 'disputed' : 'resolved'}
-                      />
-                    </div>
-                    <p className="mt-1 text-caption text-fg-secondary">
-                      {t('business_field_invoice')}:{' '}
-                      <Link
-                        href={businessRoutes.invoice(d.invoice_id)}
-                        className="text-link"
-                      >
-                        {d.invoice_id}
-                      </Link>
-                    </p>
-                    {linkedContract ? (
-                      <p className="mt-1 text-caption text-fg-secondary">
-                        {t('business_invoice_contract_label')}:{' '}
-                        {linkedContractUrl ? (
-                          <Link href={linkedContractUrl} className="text-link">
-                            {linkedContract}
-                          </Link>
-                        ) : (
-                          linkedContract
-                        )}
-                      </p>
-                    ) : null}
-                    <DisputeSettlementSummary
-                      dispute={d}
-                      invoice={linkedInvoice}
-                    />
-                    <p className="mt-2 text-caption text-fg-secondary">
-                      {t('business_field_created_at')}:{' '}
-                      <ActivityTimestamp timestamp={d.created_at} />
-                    </p>
-                    {resolvable ? (
-                      <button
-                        type="button"
-                        disabled={isBusy}
-                        onClick={() =>
-                          openAction(() => setResolveDisputeRow(d))
-                        }
-                        className="mt-2 text-body-sm text-link disabled:opacity-50"
-                      >
-                        {t('business_dispute_resolve_action')}
-                      </button>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
-          <div ref={sentinelRef} className="h-4" aria-hidden />
-        </div>
+        {tabBody()}
+        <div ref={sentinelRef} className="h-4" aria-hidden />
       </BusinessPageShell>
 
       <BusinessIssueInvoiceModal

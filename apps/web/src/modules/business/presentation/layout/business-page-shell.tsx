@@ -34,6 +34,8 @@ export type BusinessPageShellProps = {
   variant?: 'list' | 'entity';
   /** Above the heading (entity pages): back link / breadcrumbs. */
   breadcrumbs?: ReactNode;
+  /** Visual before the heading (entity pages: the counterparty's avatar). */
+  titleLeading?: ReactNode;
   /** Context for this page (statuses, filters, steps): left rail on desktop, drawer below `lg`. */
   rail?: ReactNode;
   /** Mobile drawer trigger text: the active context, e.g. "Drafts". */
@@ -49,6 +51,7 @@ export function BusinessPageShell({
   actions,
   variant = 'list',
   breadcrumbs,
+  titleLeading,
   rail,
   railLabel,
   mobileControls,
@@ -68,19 +71,26 @@ export function BusinessPageShell({
       <div className={`min-w-0 ${isEntity ? 'lg:col-span-2' : ''}`}>
         {breadcrumbs ? <div className="mb-3">{breadcrumbs}</div> : null}
         <header className="mb-card-padding flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h1
-              className={
-                isEntity
-                  ? `text-section font-display font-weight-display leading-display text-heading ${BUSINESS_BREAK_TEXT}`
-                  : `text-body-lg font-weight-strong text-heading ${BUSINESS_BREAK_TEXT}`
-              }
-            >
-              {title}
-            </h1>
-            {subtitle ? (
-              <p className="mt-1 text-body-sm text-fg-secondary">{subtitle}</p>
+          <div className="flex min-w-0 items-start gap-3">
+            {titleLeading ? (
+              <div className="shrink-0">{titleLeading}</div>
             ) : null}
+            <div className="min-w-0">
+              <h1
+                className={
+                  isEntity
+                    ? `text-section font-display font-weight-display leading-display text-heading ${BUSINESS_BREAK_TEXT}`
+                    : `text-body-lg font-weight-strong text-heading ${BUSINESS_BREAK_TEXT}`
+                }
+              >
+                {title}
+              </h1>
+              {subtitle ? (
+                <p className="mt-1 text-body-sm text-fg-secondary">
+                  {subtitle}
+                </p>
+              ) : null}
+            </div>
           </div>
           {actions ? (
             <div className="flex shrink-0 flex-wrap items-center gap-2">

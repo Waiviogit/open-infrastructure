@@ -9,11 +9,11 @@ export default async function BusinessContractPage({
 }: {
   params: Promise<{ contractId: string }>;
 }) {
-  await requireBusinessUser();
+  const { username } = await requireBusinessUser();
   const { contractId } = await params;
   const contract = await fetchOblContract(decodeURIComponent(contractId));
   if (!contract) {
     notFound();
   }
-  return <BusinessContractClient contract={contract} />;
+  return <BusinessContractClient username={username} contract={contract} />;
 }

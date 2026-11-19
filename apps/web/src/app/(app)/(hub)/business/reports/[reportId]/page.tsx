@@ -9,11 +9,11 @@ export default async function BusinessReportPage({
 }: {
   params: Promise<{ reportId: string }>;
 }) {
-  await requireBusinessUser();
+  const { username } = await requireBusinessUser();
   const { reportId } = await params;
   const detail = await fetchOblReport(decodeURIComponent(reportId));
   if (!detail) {
     notFound();
   }
-  return <BusinessReportClient detail={detail} />;
+  return <BusinessReportClient username={username} detail={detail} />;
 }

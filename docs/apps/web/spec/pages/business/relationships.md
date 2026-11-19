@@ -26,8 +26,9 @@ Each row is a link to the ledger: avatar, `@counterparty`, translated roles, `Co
 
 ## Detail (`/business/relationships/:account`)
 
+- Header: breadcrumbs (Relationships › @counterparty), avatar + `@counterparty`; actions **Create invoice** (primary), **Record payment**, and a **More** menu (`BusinessActionsMenu`: create service order, create report, copy payment link).
 - Balance from `GET /query/v1/obl/balance`; tab lists load from `GET /query/v1/obl/ledger/{payments|contracts|service-orders|reports|invoices|disputes}` with cursor pagination and infinite scroll (only the active tab is fetched initially; other tabs lazy-load on first visit).
-- Tabs (default **Payments**): Payments, Contracts, Service orders, Reports, Invoices, Disputes — no Overview tab.
+- Tabs (default **Payments**): Payments, Contracts, Service orders, Reports, Invoices, Disputes — no Overview tab. `BusinessSubTabs` (underlined, scrolls on mobile, `replace` navigation). The first load of a tab shows a card skeleton, never the empty state; each empty tab explains itself and offers its action (Record payment, Create service order / report / invoice). Pages returned by a server refresh are merged into the loaded tabs instead of resetting them.
 - Tab selection is URL-synced via `?tab=payments|contracts|service-orders|reports|invoices|disputes` (default omits query). Example: `/business/relationships/flowmaster?tab=service-orders`.
 - All tab lists are ordered **newest first** by `created_at` (API + client sort).
 - Balance cards show every bucket with a direction ("@alice owes you $2,101.00" / "You owe @alice …"); amounts go through `formatUsd` (`$1,234,567.89`, `−` for negatives).
@@ -40,11 +41,17 @@ Each row is a link to the ledger: avatar, `@counterparty`, translated roles, `Co
 - **Pay on behalf** page `/business/pay?for=&to=` (`BusinessPayOnBehalfClient`): editable debtor/receiver prefilled from the query, USD amount, **Pay with WAIV** (Hive Engine transfer with memo `obl:on-behalf:<debtor>`, USD→WAIV via `/api/business/convert-usd-to-waiv`) and **Declare off-chain payment** (`payment_declare` with `payer = debtor`, signed by viewer). Client mirrors indexer rules (`validatePayOnBehalfParties`) and warns, without blocking, when the debtor has no confirmed debt. See [payment on behalf](../../../../spec/obl/payment-on-behalf.md).
 - Payments rows show **Paid by @account** when `paid_by` is set.
 - **Confirm payment**, **Payments tab**, **Dispute invoice** — unchanged (see prior spec text in git history if needed).
-- **Contracts tab** — cards with offer name, description (truncated to 300 chars), `contract_id`, `created_at`; link to contract detail.
+- Cards (`relationship/ledger-cards.tsx`) lead with a human title (offer name, invoice memo / title, report summary) and show ids only as `CopyableId`; amounts on the right (`formatUsd`, settled invoices show the original struck through).
+- **Contracts tab** — offer label (`Name · vN`), parties, description (truncated to 300 chars), retired badge; link to contract detail.
 - **Service orders tab** — cards link to `/business/service-orders/:id`; contract label when known; destructive **Cancel** button (not nested in the link) when the SO is `active` and the viewer is provider or client — it opens a confirmation dialog before `service_order_cancel`.
-- **Reports tab** — cards link to `/business/reports/:id`; author, contract, optional service order id.
-- **Invoices tab** — each row shows linked contract; optional links to service order and report when `service_order_id` / `report_id` present; `invoice_id` links to invoice detail; `created_at`, state badge.
+- **Reports tab** — cards link to `/business/reports/:id`; author, contract, optional service order label.
+- **Invoices tab** — title links to invoice detail; `@debtor pays @creditor`, linked contract, state badge, **Dispute** button when allowed.
+- **Payments tab** — wallet-style rows (`WalletHistoryRowShell`); a payment awaiting the viewer shows an explicit **Confirm received payment** button (the row itself is not a button).
 - **Disputes tab** — unchanged.
+
+## Entity pages (contract, invoice, service order, report, dispute)
+
+Shared layout (`ledger-detail-parts.tsx`): breadcrumbs Relationships › @counterparty › entity (no pair link when the viewer is not a party), a human title, cards **Amount** / **Parties** (avatar links to each relationship) / **Linked records** / details as label–value pairs (never raw JSON), and a collapsed **Technical details** card with ids (`CopyableId`), transaction id and the absolute creation time.
 
 ## Invoice (`/business/invoices/:invoiceId`)
 

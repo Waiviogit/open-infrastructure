@@ -22,6 +22,14 @@ import { useOblBroadcast } from '../hooks/use-obl-broadcast';
 import { BusinessPageShell } from '../layout/business-page-shell';
 import { parsePositiveUsdAmount } from './relationship/relationship-modal-fields';
 import { StateBadge } from './state-badge';
+import { BusinessButton } from '../ui/business-button';
+import { BusinessField } from '../ui/business-field';
+import { BusinessActionError } from '../ui/business-states';
+import {
+  BUSINESS_CALLOUT_CLASS,
+  BUSINESS_FIELD_CLASS,
+  businessCardClass,
+} from '../ui/classes';
 
 const CONVERT_USD_TO_WAIV_PATH = '/api/business/convert-usd-to-waiv';
 
@@ -34,16 +42,20 @@ export type BusinessPayOnBehalfClientProps = {
 
 async function fetchAmountWaiv(amountUsd: string): Promise<number | null> {
   const q = new URLSearchParams({ amountUsd });
-  const res = await fetch(`${CONVERT_USD_TO_WAIV_PATH}?${q.toString()}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
+  try {
+    const res = await fetch(`${CONVERT_USD_TO_WAIV_PATH}?${q.toString()}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      return null;
+    }
+    const body = (await res.json()) as { amountWaiv?: number | null };
+    return typeof body.amountWaiv === 'number' && body.amountWaiv > 0
+      ? body.amountWaiv
+      : null;
+  } catch {
     return null;
   }
-  const body = (await res.json()) as { amountWaiv?: number | null };
-  return typeof body.amountWaiv === 'number' && body.amountWaiv > 0
-    ? body.amountWaiv
-    : null;
 }
 
 export function BusinessPayOnBehalfClient({
@@ -118,51 +130,66 @@ export function BusinessPayOnBehalfClient({
     setSent(trxId !== null);
   }
 
+  const [busyAction, setBusyAction] = useState<'waiv' | 'offchain' | null>(
+    null,
+  );
+
   return (
     <BusinessPageShell
       variant="entity"
       title={t('business_pay_on_behalf_title')}
       subtitle={t('business_pay_on_behalf_subtitle')}
     >
-      <div className="flex max-w-container-content flex-col gap-4">
-        <label className="flex flex-col gap-1 text-body-sm">
-          {t('business_pay_on_behalf_field_debtor')}
-          <input
-            type="text"
-            value={debtorInput}
-            onChange={(e) => setDebtorInput(e.target.value)}
-            disabled={isBusy}
-            className="rounded-btn border border-border px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-body-sm">
-          {t('business_pay_on_behalf_field_receiver')}
-          <input
-            type="text"
-            value={receiverInput}
-            onChange={(e) => setReceiverInput(e.target.value)}
-            disabled={isBusy}
-            className="rounded-btn border border-border px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-body-sm">
-          {t('business_field_amount_usd')}
+      <div
+        className={businessCardClass({
+          className: 'flex max-w-container-content flex-col gap-4',
+        })}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <BusinessField label={t('business_pay_on_behalf_field_debtor')}>
+            <input
+              type="text"
+              value={debtorInput}
+              onChange={(e) => setDebtorInput(e.target.value)}
+              disabled={isBusy}
+              autoCapitalize="none"
+              spellCheck={false}
+              className={BUSINESS_FIELD_CLASS}
+            />
+          </BusinessField>
+          <BusinessField label={t('business_pay_on_behalf_field_receiver')}>
+            <input
+              type="text"
+              value={receiverInput}
+              onChange={(e) => setReceiverInput(e.target.value)}
+              disabled={isBusy}
+              autoCapitalize="none"
+              spellCheck={false}
+              className={BUSINESS_FIELD_CLASS}
+            />
+          </BusinessField>
+        </div>
+        <BusinessField label={t('business_field_amount_usd')}>
           <input
             type="text"
             inputMode="decimal"
+            placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             disabled={isBusy}
-            className="rounded-btn border border-border px-3 py-2"
+            className={BUSINESS_FIELD_CLASS}
           />
-        </label>
+        </BusinessField>
 
         {partiesError ? (
-          <p className="text-body-sm text-error" role="alert">
+          <p
+            className={`text-body-sm ${partiesError === 'missing_accounts' ? 'text-fg-secondary' : 'text-error'}`}
+            role={partiesError === 'missing_accounts' ? undefined : 'alert'}
+          >
             {t(`business_pay_on_behalf_error_${partiesError}`)}
           </p>
         ) : (
-          <aside className="rounded-card border border-border bg-surface-alt p-card-padding text-body-sm text-fg-secondary">
+          <div className={`${BUSINESS_CALLOUT_CLASS} flex flex-col gap-1`}>
             {parties.debtor !== normalizeHiveAccountInput(username) ? (
               <p>{fillAccount(t('business_pay_on_behalf_you_pay_for'))}</p>
             ) : null}
@@ -175,42 +202,47 @@ export function BusinessPayOnBehalfClient({
               </p>
             ) : null}
             {debtUsd === 0 ? (
-              <p role="alert">
+              <p className="text-error">
                 {fillAccount(t('business_pay_on_behalf_no_debt_warning'))}
               </p>
             ) : null}
-          </aside>
+          </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={!canSubmit}
-            onClick={() => void payWithWaiv()}
-            className="rounded-btn bg-accent px-4 py-2 text-body-sm font-weight-label text-accent-fg disabled:opacity-50"
-          >
-            {t('business_pay_on_behalf_pay_waiv')}
-          </button>
-          <button
-            type="button"
-            disabled={!canSubmit}
-            onClick={() => void declareOffchain()}
-            className="rounded-btn border border-border px-4 py-2 text-body-sm disabled:opacity-50"
-          >
-            {t('business_pay_on_behalf_declare_offchain')}
-          </button>
-        </div>
-        <p className="text-caption text-fg-tertiary">
-          {fillAccount(t('business_pay_on_behalf_declare_hint'))}
-        </p>
-
+        <BusinessActionError message={error} />
         {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
-        {error ? <p className="text-body-sm text-error">{error}</p> : null}
         {sent ? (
-          <p className="text-body-sm text-fg-secondary" role="status">
+          <p className="text-body-sm text-fg" role="status">
             {fillAccount(t('business_pay_on_behalf_sent'))}
           </p>
         ) : null}
+
+        <div className="flex flex-wrap gap-2">
+          <BusinessButton
+            variant="primary"
+            busy={isBusy && busyAction === 'waiv'}
+            disabled={!canSubmit}
+            onClick={() => {
+              setBusyAction('waiv');
+              void payWithWaiv();
+            }}
+          >
+            {t('business_pay_on_behalf_pay_waiv')}
+          </BusinessButton>
+          <BusinessButton
+            busy={isBusy && busyAction === 'offchain'}
+            disabled={!canSubmit}
+            onClick={() => {
+              setBusyAction('offchain');
+              void declareOffchain();
+            }}
+          >
+            {t('business_pay_on_behalf_declare_offchain')}
+          </BusinessButton>
+        </div>
+        <p className="text-caption text-fg-secondary">
+          {fillAccount(t('business_pay_on_behalf_declare_hint'))}
+        </p>
       </div>
     </BusinessPageShell>
   );
