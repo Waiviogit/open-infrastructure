@@ -59,16 +59,25 @@ export function BusinessPageShell({
 }: BusinessPageShellProps) {
   const { t } = useI18n();
   const isEntity = variant === 'entity';
+  /** Entity pages without context use the whole grid width instead of an empty rail column. */
+  const fullWidth = isEntity && !rail;
+  const contentSpan = fullWidth
+    ? 'lg:col-span-3'
+    : isEntity
+      ? 'lg:col-span-2'
+      : '';
 
   return (
     <div
       className={`mt-card-padding pb-section-y ${BUSINESS_SHELL_GRID_CLASS}`}
     >
-      <aside className="hidden min-w-0 lg:block">
-        {rail ? <div className={RAIL_STICKY_CLASS}>{rail}</div> : null}
-      </aside>
+      {fullWidth ? null : (
+        <aside className="hidden min-w-0 lg:block">
+          {rail ? <div className={RAIL_STICKY_CLASS}>{rail}</div> : null}
+        </aside>
+      )}
 
-      <div className={`min-w-0 ${isEntity ? 'lg:col-span-2' : ''}`}>
+      <div className={`min-w-0 ${contentSpan}`}>
         {breadcrumbs ? <div className="mb-3">{breadcrumbs}</div> : null}
         <header className="mb-card-padding flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">

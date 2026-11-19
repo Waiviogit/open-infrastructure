@@ -30,21 +30,30 @@ export function BusinessPageSkeleton({
   scrollKey,
 }: BusinessPageSkeletonProps) {
   const isEntity = variant === 'entity';
+  /** Mirrors the shell: an entity page without a rail spans the whole grid. */
+  const fullWidth = isEntity && !withRail;
+  const contentSpan = fullWidth
+    ? 'lg:col-span-3'
+    : isEntity
+      ? 'lg:col-span-2'
+      : '';
 
   return (
     <div className={GRID_CLASS} aria-busy="true">
       {scrollKey ? <ScrollToTopOnEnter routeKey={scrollKey} /> : null}
-      <div className="hidden min-w-0 lg:block" aria-hidden>
-        {withRail ? (
-          <div className="flex flex-col gap-1">
-            {Array.from({ length: RAIL_ROW_COUNT }, (_, i) => (
-              <div key={i} className={`h-8 ${BAR}`} />
-            ))}
-          </div>
-        ) : null}
-      </div>
+      {fullWidth ? null : (
+        <div className="hidden min-w-0 lg:block" aria-hidden>
+          {withRail ? (
+            <div className="flex flex-col gap-1">
+              {Array.from({ length: RAIL_ROW_COUNT }, (_, i) => (
+                <div key={i} className={`h-8 ${BAR}`} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )}
       <div
-        className={`flex min-w-0 flex-col gap-card-padding ${isEntity ? 'lg:col-span-2' : ''}`}
+        className={`flex min-w-0 flex-col gap-card-padding ${contentSpan}`}
         aria-hidden
       >
         <div className="flex flex-col gap-2">
