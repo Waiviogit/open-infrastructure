@@ -17,7 +17,8 @@
  * Rules:
  *   - every key must have a translation for every locale file (fails otherwise);
  *   - `{placeholder}` sets must match en-US in every locale;
- *   - keys already present in a catalog are left untouched unless --overwrite.
+ *   - keys already present in a catalog are left untouched unless --overwrite, which replaces
+ *     their values in place (catalog order is kept; only new keys go after the anchor).
  *
  * Usage (repo root):
  *   pnpm i18n:add-keys path/to/keys.json [--overwrite] [--dry-run]
@@ -111,15 +112,26 @@ function main() {
     const locale = file.replace(/\.json$/, '');
     const filePath = path.join(LOCALES_DIR, file);
     const catalog = readUtf8Json(filePath);
-    const entries = Object.entries(spec.keys)
-      .filter(([key]) => overwrite || !(key in catalog))
+    const added = Object.entries(spec.keys)
+      .filter(([key]) => !(key in catalog))
       .map(([key, translations]) => [key, translations[locale]]);
+    let updated = 0;
+    // --overwrite replaces existing values in place, so catalog order (and the diff) stays stable.
     const base = overwrite
-      ? Object.fromEntries(Object.entries(catalog).filter(([key]) => !(key in spec.keys)))
+      ? Object.fromEntries(
+          Object.entries(catalog).map(([key, value]) => {
+            if (!(key in spec.keys)) return [key, value];
+            const next = spec.keys[key][locale];
+            if (next !== value) updated += 1;
+            return [key, next];
+          }),
+        )
       : catalog;
-    const next = insertAfter(base, spec.after, entries);
+    const next = insertAfter(base, spec.after, added);
     if (!dryRun) writeUtf8Json(filePath, next);
-    console.log(`${locale}: +${entries.length}${dryRun ? ' (dry run)' : ''}`);
+    console.log(
+      `${locale}: +${added.length}${overwrite ? ` ~${updated}` : ''}${dryRun ? ' (dry run)' : ''}`,
+    );
   }
 }
 
