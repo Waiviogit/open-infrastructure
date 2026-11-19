@@ -17,6 +17,8 @@ let mockSearch = '';
 const mockOpenLogin = jest.fn();
 
 jest.mock('@/shared/presentation', () => ({
+  railItemClass: jest.requireActual('@/shared/presentation/components/rail-item-class')
+    .railItemClass,
   OptimisticNavLink: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
     <a href={href} {...rest}>
       {children}

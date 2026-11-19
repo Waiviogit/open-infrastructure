@@ -12,6 +12,8 @@ import { DiscoverSidebar } from './discover-sidebar';
 let mockSearch = 'type=product';
 
 jest.mock('@/shared/presentation', () => ({
+  railItemClass: jest.requireActual('@/shared/presentation/components/rail-item-class')
+    .railItemClass,
   OptimisticNavLink: ({
     href,
     children,
