@@ -11,6 +11,7 @@ export type BusinessButtonVariant =
   | 'primary'
   | 'secondary'
   | 'ghost'
+  | 'quiet'
   | 'destructive';
 export type BusinessButtonSize = 'md' | 'sm';
 
@@ -31,6 +32,8 @@ const BUTTON_VARIANT: Record<BusinessButtonVariant, string> = {
   secondary:
     'border border-border bg-surface text-fg hover:border-border-strong hover:bg-surface-alt',
   ghost: 'text-link hover:bg-ghost-surface',
+  /** Row-level secondary actions (remove a row) that must not compete with the accent. */
+  quiet: 'text-fg hover:bg-ghost-surface',
   destructive:
     'border border-error bg-surface text-error hover:bg-error hover:text-error-fg',
 };

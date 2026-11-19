@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { PlusIcon, TrashIcon } from '@/icons';
 
 import {
   createEmptyArrayItem,
@@ -17,6 +18,8 @@ import {
   type ObjectBuilderType,
   type ObjectBuilderValidationIssue,
 } from '../../../domain/object-builder';
+import { BusinessButton } from '../../ui/business-button';
+import { BUSINESS_FIELD_CLASS, BUSINESS_FOCUS_RING } from '../../ui/classes';
 
 export type ObjectBuilderProps = {
   value: Record<string, unknown>;
@@ -26,12 +29,24 @@ export type ObjectBuilderProps = {
   maxProperties?: number;
 };
 
-const INPUT_CLASS =
-  'min-w-0 flex-1 rounded-btn border border-border px-2 py-1.5 text-body-sm';
-const SELECT_CLASS =
-  'rounded-btn border border-border px-2 py-1.5 text-body-sm bg-surface';
-const TRASH_CLASS =
-  'shrink-0 rounded-btn border border-border px-2 py-1.5 text-body-sm text-fg-secondary hover:text-error disabled:opacity-50';
+const ICON_SIZE = 16;
+
+/**
+ * Key | type | remove, value on its own line below. The builder lives in narrow containers
+ * (modals, the sign panel), so the layout must not depend on the viewport width.
+ */
+const PROPERTY_GRID_CLASS =
+  'grid grid-cols-[minmax(0,1fr)_minmax(0,8rem)_auto] items-start gap-2';
+const PROPERTY_REMOVE_CELL_CLASS = 'col-start-3 row-start-1';
+const PROPERTY_VALUE_CELL_CLASS = 'col-span-2 col-start-1 row-start-2 min-w-0';
+/** Array items: type | value | remove. */
+const ITEM_GRID_CLASS =
+  'grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_auto] items-start gap-2';
+/** Value placeholder cells (null, nested object) keep the field height so rows stay aligned. */
+const VALUE_NOTE_CLASS =
+  'flex min-h-10 items-center text-body-sm text-fg-secondary';
+/** Logical start edge: nested rows indent on the reading side (RTL-safe). */
+const NESTED_CLASS = 'flex flex-col gap-2 border-s-2 border-border ps-3';
 
 function issueMessage(
   t: (key: string) => string,
@@ -72,12 +87,38 @@ function typeLabel(t: (key: string) => string, type: ObjectBuilderType): string 
   }
 }
 
+function RemoveRowButton({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <BusinessButton
+      variant="quiet"
+      size="sm"
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className="size-10 px-0 py-0 max-lg:size-11"
+    >
+      <TrashIcon size={ICON_SIZE} />
+    </BusinessButton>
+  );
+}
+
 function countNestedProperties(children: ObjectBuilderRow[]): number {
   return children.filter((child) => child.key.trim().length > 0).length;
 }
 
 type ScalarValueEditorProps = {
   itemType: ObjectBuilderScalarType;
+  ariaLabel: string;
+  placeholder?: string;
   value: string;
   boolValue: boolean;
   disabled: boolean;
@@ -87,6 +128,8 @@ type ScalarValueEditorProps = {
 
 function ScalarValueEditor({
   itemType,
+  ariaLabel,
+  placeholder,
   value,
   boolValue,
   disabled,
@@ -94,30 +137,32 @@ function ScalarValueEditor({
   onBoolChange,
 }: ScalarValueEditorProps) {
   if (itemType === 'null') {
-    return (
-      <span className="flex-1 px-2 py-1.5 text-body-sm text-fg-secondary">null</span>
-    );
+    return <span className={`${VALUE_NOTE_CLASS} font-mono`}>null</span>;
   }
   if (itemType === 'boolean') {
     return (
-      <label className="flex flex-1 items-center gap-2 px-2 py-1.5 text-body-sm">
+      <span className="flex min-h-10 items-center">
         <input
           type="checkbox"
+          aria-label={ariaLabel}
           checked={boolValue}
           disabled={disabled}
           onChange={(e) => onBoolChange(e.target.checked)}
+          className={`size-5 rounded-btn accent-accent ${BUSINESS_FOCUS_RING}`}
         />
-      </label>
+      </span>
     );
   }
   return (
     <input
       type="text"
+      aria-label={ariaLabel}
       inputMode={itemType === 'number' ? 'decimal' : 'text'}
+      placeholder={placeholder}
       value={value}
       disabled={disabled}
       onChange={(e) => onValueChange(e.target.value)}
-      className={INPUT_CLASS}
+      className={BUSINESS_FIELD_CLASS}
     />
   );
 }
@@ -131,10 +176,11 @@ type ArrayItemsEditorProps = {
 
 function ArrayItemsEditor({ items, disabled, t, onChange }: ArrayItemsEditorProps) {
   return (
-    <div className="flex flex-col gap-2 border-l-2 border-border pl-3">
+    <div className={NESTED_CLASS}>
       {items.map((item) => (
-        <div key={item.id} className="flex flex-wrap items-center gap-2">
+        <div key={item.id} className={ITEM_GRID_CLASS}>
           <select
+            aria-label={t('business_object_builder_col_type')}
             value={item.type}
             disabled={disabled}
             onChange={(e) => {
@@ -152,7 +198,7 @@ function ArrayItemsEditor({ items, disabled, t, onChange }: ArrayItemsEditorProp
                 ),
               );
             }}
-            className={SELECT_CLASS}
+            className={BUSINESS_FIELD_CLASS}
           >
             {(['string', 'number', 'boolean', 'null'] as const).map((scalar) => (
               <option key={scalar} value={scalar}>
@@ -162,6 +208,7 @@ function ArrayItemsEditor({ items, disabled, t, onChange }: ArrayItemsEditorProp
           </select>
           <ScalarValueEditor
             itemType={item.type}
+            ariaLabel={t('business_object_builder_col_value')}
             value={item.value}
             boolValue={item.boolValue}
             disabled={disabled}
@@ -178,25 +225,22 @@ function ArrayItemsEditor({ items, disabled, t, onChange }: ArrayItemsEditorProp
               )
             }
           />
-          <button
-            type="button"
+          <RemoveRowButton
+            label={t('business_object_builder_remove')}
             disabled={disabled}
-            className={TRASH_CLASS}
-            aria-label={t('business_object_builder_remove')}
             onClick={() => onChange(items.filter((row) => row.id !== item.id))}
-          >
-            ×
-          </button>
+          />
         </div>
       ))}
-      <button
-        type="button"
+      <BusinessButton
+        size="sm"
         disabled={disabled}
-        className="self-start rounded-btn border border-border px-3 py-1.5 text-caption"
+        className="self-start"
         onClick={() => onChange([...items, createEmptyArrayItem()])}
       >
+        <PlusIcon size={ICON_SIZE} />
         {t('business_object_builder_add_item')}
-      </button>
+      </BusinessButton>
     </div>
   );
 }
@@ -239,26 +283,23 @@ function PropertyRowsEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="hidden gap-2 text-caption font-weight-label text-fg-secondary sm:grid sm:grid-cols-[1fr_auto_1fr_auto]">
-        <span>{t('business_object_builder_col_key')}</span>
-        <span>{t('business_object_builder_col_type')}</span>
-        <span>{t('business_object_builder_col_value')}</span>
-        <span className="sr-only">{t('business_object_builder_remove')}</span>
-      </div>
       {rows.map((row) => {
         const rowIssues = issuesByRowId.get(row.id) ?? [];
         return (
           <div key={row.id} className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-start gap-2">
+            <div className={PROPERTY_GRID_CLASS}>
               <input
                 type="text"
+                aria-label={t('business_object_builder_col_key')}
+                aria-invalid={rowIssues.length > 0 || undefined}
                 value={row.key}
                 disabled={disabled}
                 placeholder={t('business_object_builder_key_placeholder')}
                 onChange={(e) => updateRow(row.id, { key: e.target.value })}
-                className={`${INPUT_CLASS} sm:max-w-[10rem]`}
+                className={BUSINESS_FIELD_CLASS}
               />
               <select
+                aria-label={t('business_object_builder_col_type')}
                 value={row.type}
                 disabled={disabled}
                 onChange={(e) => {
@@ -272,7 +313,7 @@ function PropertyRowsEditor({
                   }
                   updateRow(row.id, patch);
                 }}
-                className={SELECT_CLASS}
+                className={BUSINESS_FIELD_CLASS}
               >
                 {typeOptions.map((opt) => (
                   <option key={opt} value={opt}>
@@ -280,32 +321,42 @@ function PropertyRowsEditor({
                   </option>
                 ))}
               </select>
+              <div className={PROPERTY_REMOVE_CELL_CLASS}>
+                <RemoveRowButton
+                  label={t('business_object_builder_remove')}
+                  disabled={disabled}
+                  onClick={() => removeRow(row.id)}
+                />
+              </div>
               {row.type === 'object' ? (
-                <span className="flex-1 px-2 py-1.5 text-body-sm text-fg-secondary">
+                <span
+                  className={`${PROPERTY_VALUE_CELL_CLASS} ${VALUE_NOTE_CLASS}`}
+                >
                   {t('business_object_builder_edit_n_properties').replace(
                     '{count}',
                     String(countNestedProperties(row.children)),
                   )}
                 </span>
               ) : row.type === 'array' ? null : (
-                <ScalarValueEditor
-                  itemType={row.type}
-                  value={row.value}
-                  boolValue={row.boolValue}
-                  disabled={disabled}
-                  onValueChange={(next) => updateRow(row.id, { value: next })}
-                  onBoolChange={(next) => updateRow(row.id, { boolValue: next })}
-                />
+                <div className={PROPERTY_VALUE_CELL_CLASS}>
+                  <ScalarValueEditor
+                    itemType={row.type}
+                    ariaLabel={
+                      row.key.trim()
+                        ? `${t('business_object_builder_col_value')}: ${row.key.trim()}`
+                        : t('business_object_builder_col_value')
+                    }
+                    placeholder={t('business_object_builder_col_value')}
+                    value={row.value}
+                    boolValue={row.boolValue}
+                    disabled={disabled}
+                    onValueChange={(next) => updateRow(row.id, { value: next })}
+                    onBoolChange={(next) =>
+                      updateRow(row.id, { boolValue: next })
+                    }
+                  />
+                </div>
               )}
-              <button
-                type="button"
-                disabled={disabled}
-                className={TRASH_CLASS}
-                aria-label={t('business_object_builder_remove')}
-                onClick={() => removeRow(row.id)}
-              >
-                ×
-              </button>
             </div>
             {rowIssues.length > 0 ? (
               <p className="text-caption text-error" role="alert">
@@ -313,7 +364,7 @@ function PropertyRowsEditor({
               </p>
             ) : null}
             {row.type === 'object' ? (
-              <div className="ml-2 border-l-2 border-border pl-3">
+              <div className={`ms-2 ${NESTED_CLASS}`}>
                 <PropertyRowsEditor
                   rows={row.children}
                   depth={depth + 1}
@@ -336,14 +387,15 @@ function PropertyRowsEditor({
           </div>
         );
       })}
-      <button
-        type="button"
+      <BusinessButton
+        size="sm"
         disabled={disabled || atMax}
-        className="self-start rounded-btn border border-border px-3 py-1.5 text-caption disabled:opacity-50"
+        className="self-start"
         onClick={() => onChange([...rows, createEmptyRow()])}
       >
+        <PlusIcon size={ICON_SIZE} />
         {t('business_object_builder_add_property')}
-      </button>
+      </BusinessButton>
     </div>
   );
 }
@@ -409,8 +461,10 @@ export function ObjectBuilder({
           {globalIssues.map((issue) => issueMessage(t, issue)).join(' ')}
         </p>
       ) : null}
-      <details className="rounded-btn border border-border px-3 py-2">
-        <summary className="cursor-pointer text-caption font-weight-label">
+      <details className="rounded-card border border-border px-3 py-2">
+        <summary
+          className={`cursor-pointer rounded-btn text-caption font-weight-label ${BUSINESS_FOCUS_RING}`}
+        >
           {t('business_object_builder_json_preview')}
         </summary>
         <pre className="mt-2 overflow-x-auto font-mono text-caption text-fg-secondary">

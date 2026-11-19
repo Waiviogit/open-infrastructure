@@ -6,6 +6,9 @@ import {
 } from '@opden-data-layer/core/utils/obl-usd-amount';
 
 import { ArrowUpDownIcon } from '@/icons';
+
+import { BUSINESS_BREAK_TEXT, BUSINESS_FOCUS_RING } from '../../ui/classes';
+
 export function RelationshipReadonlyField({
   label,
   value,
@@ -38,7 +41,7 @@ export function AccountPairSwapButton({
       aria-label={ariaLabel}
       disabled={disabled}
       onClick={onClick}
-      className="flex size-9 shrink-0 items-center justify-center rounded-btn text-fg-secondary transition-colors hover:bg-surface-alt hover:text-fg disabled:cursor-not-allowed disabled:opacity-50"
+      className={`flex size-9 shrink-0 items-center justify-center rounded-btn text-fg-secondary transition-colors hover:bg-surface-alt hover:text-fg disabled:cursor-not-allowed disabled:opacity-50 max-lg:size-11 ${BUSINESS_FOCUS_RING}`}
     >
       <ArrowUpDownIcon size={18} className="rotate-90" />
     </button>
@@ -66,17 +69,25 @@ export function AccountPairSwapRow({
     <div className="flex flex-col gap-1">
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2">
         <span className="text-caption text-fg-secondary">{leftLabel}</span>
-        <span aria-hidden className="size-9 shrink-0" />
+        <span aria-hidden className="w-9 shrink-0 max-lg:w-11" />
         <span className="text-caption text-fg-secondary">{rightLabel}</span>
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2">
-        <span className="font-mono text-body-sm text-fg">{leftValue}</span>
+        <span
+          className={`min-w-0 text-body-sm font-weight-label text-fg ${BUSINESS_BREAK_TEXT}`}
+        >
+          {leftValue}
+        </span>
         <AccountPairSwapButton
           ariaLabel={swapAriaLabel}
           disabled={disabled}
           onClick={onSwap}
         />
-        <span className="font-mono text-body-sm text-fg">{rightValue}</span>
+        <span
+          className={`min-w-0 text-body-sm font-weight-label text-fg ${BUSINESS_BREAK_TEXT}`}
+        >
+          {rightValue}
+        </span>
       </div>
     </div>
   );

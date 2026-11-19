@@ -3,8 +3,13 @@
 import { useCallback, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { PlusIcon } from '@/icons';
 import { EditorCreateObjectModal } from '@/modules/editor/presentation/components/editor-create-object-modal';
 import { ObjectRefSearchField } from '@/modules/object-updates/presentation/components/object-ref-search-field';
+
+import { BusinessButton } from '../../ui/business-button';
+
+const CREATE_ICON_SIZE = 16;
 
 export type OfferEditorObjectRefFieldProps = {
   username: string;
@@ -41,13 +46,14 @@ export function OfferEditorObjectRefField({
           appliesTo={[objectType]}
         />
         <div className="mt-2 flex justify-end">
-          <button
-            type="button"
+          <BusinessButton
+            variant="ghost"
+            size="sm"
             onClick={() => setCreateOpen(true)}
-            className="text-body-sm text-link hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
+            <PlusIcon size={CREATE_ICON_SIZE} />
             {t('create_new_object')}
-          </button>
+          </BusinessButton>
         </div>
       </div>
 

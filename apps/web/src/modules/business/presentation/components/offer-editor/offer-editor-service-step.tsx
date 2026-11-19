@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { PlusIcon, TrashIcon } from '@/icons';
 import { OBL_CATALOG_OBJECT_TYPES } from '../../../domain/obl-catalog-types';
 import { buildDiscoverHref } from '@/modules/discover/domain/discover-url';
 import { fetchDiscoverObjects } from '@/modules/discover/infrastructure/discover.client';
@@ -15,6 +16,8 @@ import {
   type OfferDraftFields,
   type OfferSignParam,
 } from '../../../domain/offer-form.types';
+import { BusinessButton } from '../../ui/business-button';
+import { BUSINESS_FOCUS_RING } from '../../ui/classes';
 import { OfferEditorObjectRefField } from './offer-editor-object-ref-field';
 import { offerEditorFieldClass, offerEditorLabelClass } from './offer-editor-field-styles';
 
@@ -29,6 +32,8 @@ function serviceObjectLabel(item: SocialProjectedObjectView): string {
   }
   return item.object_id;
 }
+
+const ICON_SIZE = 16;
 
 function emptySignParam(): OfferSignParam {
   return { key: '', label: '', required: false };
@@ -94,7 +99,7 @@ export function OfferEditorServiceStep({
           </p>
           <Link
             href={buildDiscoverHref({ type: objectType })}
-            className="text-body-sm text-link"
+            className={`rounded-btn text-body-sm text-link hover:underline ${BUSINESS_FOCUS_RING}`}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -113,11 +118,13 @@ export function OfferEditorServiceStep({
                 <li key={item.object_id}>
                   <button
                     type="button"
+                    aria-pressed={selected}
                     onClick={() => onFieldsChange({ ...fields, serviceRef: item.object_id })}
                     className={[
-                      'flex w-full items-center justify-between gap-2 rounded-btn px-2 py-2 text-start text-body-sm',
+                      'flex min-h-10 w-full items-center justify-between gap-2 rounded-btn px-2 py-2 text-start text-body-sm transition-colors',
+                      BUSINESS_FOCUS_RING,
                       selected
-                        ? 'bg-surface font-weight-label text-heading'
+                        ? 'bg-accent-soft font-weight-label text-accent'
                         : 'text-fg hover:bg-ghost-surface',
                     ].join(' ')}
                   >
@@ -185,26 +192,30 @@ export function OfferEditorServiceStep({
                   next[index] = { ...param, required: e.target.checked };
                   updateSignParams(next);
                 }}
+                className={`size-4 rounded-btn accent-accent ${BUSINESS_FOCUS_RING}`}
               />
               {t('business_sign_params_field_required')}
             </label>
-            <button
-              type="button"
+            <BusinessButton
+              variant="quiet"
+              size="sm"
               onClick={() => updateSignParams(signParams.filter((_, i) => i !== index))}
-              className="w-fit text-body-sm text-link"
+              className="self-start"
             >
+              <TrashIcon size={ICON_SIZE} />
               {t('business_sign_params_remove')}
-            </button>
+            </BusinessButton>
           </div>
         ))}
 
-        <button
-          type="button"
+        <BusinessButton
+          size="sm"
           onClick={() => updateSignParams([...signParams, emptySignParam()])}
-          className="w-fit rounded-btn border border-border px-3 py-1 text-body-sm"
+          className="self-start"
         >
+          <PlusIcon size={ICON_SIZE} />
           {t('business_sign_params_add')}
-        </button>
+        </BusinessButton>
       </div>
     </div>
   );

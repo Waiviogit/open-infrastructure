@@ -12,6 +12,8 @@ import {
   type OfferDraftState,
   type OfferEditorStep,
 } from '../../../domain/offer-form.types';
+import { BusinessButton } from '../../ui/business-button';
+import { BusinessActionError } from '../../ui/business-states';
 import { BusinessDisclosure } from '../business-disclosure';
 import { StateBadge } from '../state-badge';
 
@@ -26,11 +28,27 @@ export type OfferEditorReviewStepProps = {
 
 const CHECKLIST_STEPS = OFFER_EDITOR_STEPS.filter((s) => s !== 'review');
 
+type ChecklistStatus = 'blocked' | 'ready' | 'optional' | 'incomplete';
+
+const STATUS_DOT_CLASS: Record<ChecklistStatus, string> = {
+  ready: 'bg-success',
+  optional: 'bg-fg-tertiary',
+  incomplete: 'bg-error',
+  blocked: 'bg-error',
+};
+
+const STATUS_LABEL_KEY: Record<ChecklistStatus, string> = {
+  ready: 'business_review_checklist_ok',
+  optional: 'business_review_checklist_optional',
+  incomplete: 'business_step_incomplete',
+  blocked: 'business_review_checklist_blocked',
+};
+
 function stepStatus(
   step: OfferEditorStep,
   state: OfferDraftState,
   stepErrors: string[],
-): 'blocked' | 'ready' | 'optional' | 'incomplete' {
+): ChecklistStatus {
   if (stepErrors.length > 0) {
     return 'blocked';
   }
@@ -71,52 +89,38 @@ export function OfferEditorReviewStep({
       <h3 className="text-body font-weight-strong text-heading">
         {t('business_review_checklist_title')}
       </h3>
-      <ul className="flex flex-col gap-2">
+      <ul className="divide-y divide-border rounded-card border border-border bg-surface">
         {CHECKLIST_STEPS.map((step) => {
           const stepErrors = !validation.ok
             ? (validation.errors[step] ?? [])
             : [];
           const status = stepStatus(step, state, stepErrors);
-          const statusClass =
-            status === 'blocked' || status === 'incomplete'
-              ? 'text-error'
-              : status === 'ready'
-                ? 'text-validity-approved'
-                : 'text-fg-secondary';
+          const needsFix = status === 'blocked' || status === 'incomplete';
 
           return (
-            <li
-              key={step}
-              className={[
-                'rounded-btn border px-3 py-2 text-body-sm',
-                status === 'blocked' || status === 'incomplete'
-                  ? 'border-error bg-surface'
-                  : 'border-border bg-surface',
-              ].join(' ')}
-            >
+            <li key={step} className="px-3 py-1 text-body-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-weight-label">
                   {t(`business_editor_step_${step}`)}
                 </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={statusClass}>
-                    {status === 'ready'
-                      ? t('business_review_checklist_ok')
-                      : status === 'optional'
-                        ? t('business_review_checklist_optional')
-                        : status === 'blocked'
-                          ? t('business_review_checklist_blocked')
-                          : t('business_step_incomplete')}
+                <div className="flex min-h-9 flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 ${needsFix ? 'text-error' : 'text-fg'}`}
+                  >
+                    <span
+                      className={`size-2 shrink-0 rounded-circle ${STATUS_DOT_CLASS[status]}`}
+                      aria-hidden
+                    />
+                    {t(STATUS_LABEL_KEY[status])}
                   </span>
-                  {(status === 'blocked' || status === 'incomplete') &&
-                  onGoToStep ? (
-                    <button
-                      type="button"
+                  {needsFix && onGoToStep ? (
+                    <BusinessButton
+                      variant="ghost"
+                      size="sm"
                       onClick={() => onGoToStep(step)}
-                      className="text-link underline-offset-2 hover:underline"
                     >
                       {t('business_review_fix_step')}
-                    </button>
+                    </BusinessButton>
                   ) : null}
                 </div>
               </div>
@@ -133,7 +137,7 @@ export function OfferEditorReviewStep({
       </ul>
       {!canPublish ? (
         <div
-          className="rounded-btn border border-error bg-surface px-3 py-2 text-body-sm text-error"
+          className="rounded-card border border-error bg-surface px-3 py-2 text-body-sm text-error"
           role="alert"
         >
           <p className="font-weight-label">{t('business_publish_blocked')}</p>
@@ -152,15 +156,16 @@ export function OfferEditorReviewStep({
         </div>
       ) : null}
       {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
-      {error ? <p className="text-body-sm text-error">{error}</p> : null}
-      <button
-        type="button"
-        disabled={!canPublish || isBusy}
+      <BusinessActionError message={error} />
+      <BusinessButton
+        variant="primary"
+        disabled={!canPublish}
+        busy={isBusy}
         onClick={onPublish}
-        className="rounded-btn bg-accent px-4 py-2 text-body-sm font-weight-label text-accent-fg disabled:opacity-50"
+        className="self-start"
       >
         {t('business_publish_version')}
-      </button>
+      </BusinessButton>
     </div>
   );
 }

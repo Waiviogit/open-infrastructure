@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
@@ -10,7 +9,7 @@ import {
 } from '@/modules/business/domain/offer-form.types';
 import { fetchOblDraftOne } from '@/modules/business/infrastructure/clients/obl-drafts.server';
 import { requireBusinessUser } from '@/modules/business/infrastructure/require-business-user.server';
-import { OfferFullPreview } from '@/modules/business/presentation/components/offer-full-preview';
+import { OfferDraftPreviewView } from '@/modules/business/presentation/components/offer-draft-preview-view';
 
 export async function generateMetadata() {
   const locale = await getRequestLocale();
@@ -33,9 +32,6 @@ export default async function BusinessRequestDraftPreviewPage({
     redirect(businessRoutes.offerDraftPreview('offer', draftId));
   }
 
-  const locale = await getRequestLocale();
-  const messages = await loadMessages(locale);
-
   const state = {
     kind: draft.kind,
     fields: { ...emptyOfferFields(), ...(draft.fields as OfferDraftFields) },
@@ -43,16 +39,6 @@ export default async function BusinessRequestDraftPreviewPage({
   };
 
   return (
-    <div className="mx-auto max-w-container-narrow px-gutter py-section-y">
-      <div className="mb-section-y flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href={businessRoutes.offerDraft('request', draftId)}
-          className="rounded-btn border border-border px-3 py-1 text-body-sm text-link"
-        >
-          {messages.business_back_to_editor ?? 'Back to editor'}
-        </Link>
-      </div>
-      <OfferFullPreview state={state} author={username} />
-    </div>
+    <OfferDraftPreviewView draftId={draftId} state={state} author={username} />
   );
 }

@@ -45,7 +45,7 @@ export function OfferEditorLegalStep({
           onChange={(e) => onLegalTextChange(e.target.value)}
           rows={8}
           placeholder={t('business_field_legal_text_placeholder')}
-          className={`${offerEditorFieldClass} font-mono text-body-sm`}
+          className={offerEditorFieldClass}
         />
       </label>
       <p className="text-caption text-fg-secondary">{t('business_field_legal_text_hint')}</p>

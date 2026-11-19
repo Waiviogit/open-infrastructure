@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { PlusIcon, TrashIcon } from '@/icons';
 
 import {
   getOfferTerms,
@@ -18,7 +19,13 @@ import {
   type SchemaPropertyRow,
   type ServiceOrderSchemaType,
 } from '../../../domain/service-order-schema';
+import { BusinessButton } from '../../ui/business-button';
+import { BUSINESS_FOCUS_RING } from '../../ui/classes';
 import { offerEditorFieldClass, offerEditorLabelClass } from './offer-editor-field-styles';
+
+const ICON_SIZE = 16;
+/** Nested properties indent on the reading side (RTL-safe). */
+const NESTED_CLASS = 'border-s-2 border-border ps-3';
 
 export type OfferEditorSchemaStepProps = {
   fields: OfferDraftFields;
@@ -102,19 +109,21 @@ function PropertyEditor({ row, depth, t, onChange, onRemove }: PropertyEditorPro
           type="checkbox"
           checked={row.required}
           onChange={(e) => onChange({ ...row, required: e.target.checked })}
+          className={`size-4 rounded-btn accent-accent ${BUSINESS_FOCUS_RING}`}
         />
         {t('business_schema_builder_field_required')}
       </label>
-      <button
-        type="button"
+      <BusinessButton
+        variant="ghost"
+        size="sm"
         onClick={() => setAdvancedOpen((open) => !open)}
-        className="w-fit rounded-btn border border-border px-3 py-1 text-caption text-link"
+        className="self-start"
         aria-expanded={advancedOpen}
       >
         {advancedOpen
           ? t('business_schema_builder_hide_advanced')
           : t('business_schema_builder_show_advanced')}
-      </button>
+      </BusinessButton>
       {advancedOpen ? (
         <div className="flex flex-col gap-2 border-t border-border pt-2">
           <div className="grid gap-2 sm:grid-cols-2">
@@ -190,7 +199,7 @@ function PropertyEditor({ row, depth, t, onChange, onRemove }: PropertyEditorPro
         </div>
       ) : null}
       {row.type === 'object' && allowNested ? (
-        <div className="border-l-2 border-border pl-3">
+        <div className={NESTED_CLASS}>
           <p className="mb-2 text-caption text-fg-secondary">
             {t('business_schema_builder_nested_properties')}
           </p>
@@ -214,9 +223,8 @@ function PropertyEditor({ row, depth, t, onChange, onRemove }: PropertyEditorPro
               />
             </div>
           ))}
-          <button
-            type="button"
-            className="rounded-btn border border-border px-3 py-1 text-caption"
+          <BusinessButton
+            size="sm"
             onClick={() =>
               onChange({
                 ...row,
@@ -224,12 +232,13 @@ function PropertyEditor({ row, depth, t, onChange, onRemove }: PropertyEditorPro
               })
             }
           >
+            <PlusIcon size={ICON_SIZE} />
             {t('business_schema_builder_add_property')}
-          </button>
+          </BusinessButton>
         </div>
       ) : null}
       {row.type === 'array' && allowNested && row.itemSchema ? (
-        <div className="border-l-2 border-border pl-3">
+        <div className={NESTED_CLASS}>
           <p className="mb-2 text-caption text-fg-secondary">
             {t('business_schema_builder_array_items')}
           </p>
@@ -242,9 +251,15 @@ function PropertyEditor({ row, depth, t, onChange, onRemove }: PropertyEditorPro
           />
         </div>
       ) : null}
-      <button type="button" onClick={onRemove} className="w-fit text-body-sm text-link">
+      <BusinessButton
+        variant="quiet"
+        size="sm"
+        onClick={onRemove}
+        className="self-start"
+      >
+        <TrashIcon size={ICON_SIZE} />
         {t('business_schema_builder_remove_property')}
-      </button>
+      </BusinessButton>
     </div>
   );
 }
@@ -303,20 +318,23 @@ export function OfferEditorSchemaStep({ fields, onFieldsChange }: OfferEditorSch
           }}
         />
       ))}
-      <button
-        type="button"
+      <BusinessButton
+        size="sm"
         onClick={() => commitRows([...rows, createEmptySchemaPropertyRow()])}
-        className="w-fit rounded-btn border border-border px-3 py-1 text-body-sm"
+        className="self-start"
       >
+        <PlusIcon size={ICON_SIZE} />
         {t('business_schema_builder_add_property')}
-      </button>
+      </BusinessButton>
       {!valid ? (
         <p className="text-caption text-error" role="alert">
           {t('business_schema_builder_invalid')}
         </p>
       ) : null}
-      <details className="rounded-btn border border-border px-3 py-2">
-        <summary className="cursor-pointer text-caption font-weight-label">
+      <details className="rounded-card border border-border px-3 py-2">
+        <summary
+          className={`cursor-pointer rounded-btn text-caption font-weight-label ${BUSINESS_FOCUS_RING}`}
+        >
           {t('business_schema_builder_json_preview')}
         </summary>
         <pre className="mt-2 overflow-x-auto font-mono text-caption text-fg-secondary">

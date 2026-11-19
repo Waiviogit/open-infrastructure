@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { BUSINESS_BREAK_TEXT, businessCardClass } from './classes';
 
 export type BusinessDetailRow = {
+  /** React key when labels can repeat (user-defined rows); defaults to the label. */
+  id?: string;
   label: string;
   value: ReactNode;
   /** Spans both columns (long text, tables). */
@@ -29,7 +31,7 @@ export function BusinessDetailSection({
         <dl className="mt-3 grid gap-x-card-padding gap-y-3 sm:grid-cols-2">
           {rows.map((row) => (
             <div
-              key={row.label}
+              key={row.id ?? row.label}
               className={`min-w-0 ${row.wide ? 'sm:col-span-2' : ''}`}
             >
               <dt className="text-caption text-fg-secondary">{row.label}</dt>

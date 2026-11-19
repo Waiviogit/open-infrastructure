@@ -20,7 +20,8 @@ Market screens compose `modules/business/presentation/ui/` instead of ad-hoc cla
 
 | Block | Use |
 |-------|-----|
-| `businessButtonClass` / `BusinessButton` | Primary, secondary, ghost, destructive; `busy` spinner; ≥40px (44px below `lg`) |
+| `businessButtonClass` / `BusinessButton` | Primary, secondary, ghost, quiet (neutral row actions such as Remove), destructive; `busy` spinner; ≥40px (44px below `lg`) |
+| `BusinessBreadcrumbs` | Trail above entity pages; below `sm` only the parent stays, as a 44px `‹ Parent` back link |
 | `BUSINESS_FIELD_CLASS` / `BusinessField` | Inputs, selects, textareas with label, hint and field error |
 | `businessCardClass` | Card surface (Feed / Discover recipe); `interactive` when the whole card is the link |
 | `BusinessSubTabs` | Underlined, scrolling, optimistic sub-tabs (`profileSectionTabClass('sub')`) |

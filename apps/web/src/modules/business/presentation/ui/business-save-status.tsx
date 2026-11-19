@@ -43,7 +43,7 @@ export function BusinessSaveStatus({
           <button
             type="button"
             onClick={onRetry}
-            className={`rounded-btn px-1 text-link underline-offset-2 hover:underline ${BUSINESS_FOCUS_RING}`}
+            className={`inline-flex min-h-9 items-center rounded-btn px-2 text-link underline-offset-2 hover:underline max-lg:min-h-11 ${BUSINESS_FOCUS_RING}`}
           >
             {t('business_retry')}
           </button>
