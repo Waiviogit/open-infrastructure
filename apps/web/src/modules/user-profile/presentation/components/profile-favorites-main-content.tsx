@@ -10,8 +10,10 @@ import { apiNavContextFromLineage } from '../../domain/category-nav-path';
 import { isUncategorizedLineage } from '../../domain/favorites-path';
 import {
   buildShopListScopeKey,
+  profileShopFiltersActive,
   type ProfileShopFiltersState,
 } from '../../domain/profile-shop-filters-url';
+import { favoritesTypeHasFilters } from '../../domain/profile-shop-registry';
 import { favoritesTypeHasCategories } from '../../domain/types/favorites';
 import { FAVORITES_OBJECTS_PAGE_SIZE } from '../../domain/types/shop-objects';
 import { getCategoryNav } from '../../infrastructure/clients/categories.client';
@@ -34,7 +36,9 @@ export type ProfileFavoritesMainContentProps = {
 /**
  * Center column of the Favorites tab (types are in the profile submenu): breadcrumbs (below `lg`
  * the current crumb opens the category drawer), the mobile Filter button, filter chips, then
- * category sections or a flat list of the active type.
+ * category sections or a flat list of the active type. Below `lg` the Filter button shares the
+ * breadcrumb row on a bare type page without filters; with a category path or active filters it
+ * moves to its own row after the chips.
  * Unknown types and a category lineage on a type without categorized objects are not found.
  */
 export async function ProfileFavoritesMainContent({
@@ -75,6 +79,11 @@ export async function ProfileFavoritesMainContent({
       )
     : null;
 
+  const filterButton = favoritesTypeHasFilters(objectType) ? (
+    <FavoritesMobileFilterButton objectType={objectType} />
+  ) : null;
+  const singleRowToolbar = lineageSegments.length === 0 && !profileShopFiltersActive(shopFilters);
+
   return (
     <>
       <FavoritesBreadcrumbs
@@ -83,9 +92,11 @@ export async function ProfileFavoritesMainContent({
         lineage={lineageSegments}
         filters={shopFilters}
         categoryMenu={withCategories}
+        trailing={singleRowToolbar ? filterButton : null}
       />
-      <FavoritesMobileFilterButton objectType={objectType} />
-      <ProfileShopFilterChips filters={shopFilters} />
+      {singleRowToolbar ? null : (
+        <ProfileShopFilterChips filters={shopFilters} filterButton={filterButton} />
+      )}
       {withCategories ? (
         <FavoritesCategoryContent
           accountName={accountName}

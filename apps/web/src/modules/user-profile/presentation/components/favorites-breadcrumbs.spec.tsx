@@ -36,6 +36,7 @@ jest.mock('./user-profile-nav-link', () => ({
 }));
 
 const messages = {
+  all: 'All',
   favorites_breadcrumb_aria: 'Favorites path',
   profile_categories_uncategorized: 'Uncategorized',
   favorites_categories_aria: 'Favorites categories',
@@ -58,16 +59,16 @@ function renderCrumbs(lineage: string[], filters: ProfileShopFiltersState = NO_F
 }
 
 describe('FavoritesBreadcrumbs', () => {
-  it('renders Type › Category › Subcategory with the last crumb as the current page', () => {
+  it('renders All › Category › Subcategory with the last crumb as the current page', () => {
     const nav = renderCrumbs(['German Cuisine', 'Comfort Food']);
     const items = within(nav).getAllByRole('listitem');
     expect(items.map((item) => item.textContent)).toEqual([
-      'Recipe',
+      'All',
       '›German Cuisine',
       '›Comfort Food',
     ]);
 
-    expect(within(nav).getByRole('link', { name: 'Recipe' })).toHaveAttribute(
+    expect(within(nav).getByRole('link', { name: 'All' })).toHaveAttribute(
       'href',
       '/@alice/favorites/recipe',
     );
@@ -95,16 +96,34 @@ describe('FavoritesBreadcrumbs', () => {
     expect(separator).toHaveAttribute('aria-hidden');
   });
 
-  it('shows only the type as the current page at the type root', () => {
+  it('shows only All as the current page at the type root', () => {
     const nav = renderCrumbs([]);
     expect(within(nav).queryAllByRole('link')).toHaveLength(0);
-    expect(within(nav).getByText('Recipe')).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByText('All')).toHaveAttribute('aria-current', 'page');
   });
 
   it('labels the Uncategorized node', () => {
     const nav = renderCrumbs(['uncategorized']);
-    expect(within(nav).getByRole('link', { name: 'Recipe' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'All' })).toBeInTheDocument();
     expect(within(nav).getByText('Uncategorized')).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('renders trailing controls on the crumb row, outside the trail', () => {
+    render(
+      <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
+        <FavoritesBreadcrumbs
+          accountName="alice"
+          objectType="recipe"
+          lineage={[]}
+          filters={NO_FILTERS}
+          trailing={<button type="button">Filter</button>}
+        />
+      </I18nProvider>,
+    );
+    const nav = screen.getByRole('navigation', { name: 'Favorites path' });
+    const filter = screen.getByRole('button', { name: 'Filter' });
+    expect(nav.contains(filter)).toBe(false);
+    expect(nav.parentElement?.contains(filter)).toBe(true);
   });
 
   describe('category menu trigger', () => {

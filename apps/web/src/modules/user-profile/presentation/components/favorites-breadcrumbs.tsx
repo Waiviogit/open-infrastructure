@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { ChevronDownIcon } from '@/icons';
 
@@ -10,7 +12,6 @@ import {
 } from '../../domain/profile-shop-filters-url';
 import { useFavoritesCategoryDrawerState } from './favorites-category-drawer';
 import { FAVORITES_CRUMBS_ROW_CLASS } from './favorites-layout-classes';
-import { formatFavoritesTypeLabel } from './favorites-type-label';
 import { UserProfileNavLink } from './user-profile-nav-link';
 
 export type FavoritesBreadcrumbsProps = {
@@ -22,13 +23,15 @@ export type FavoritesBreadcrumbsProps = {
   filters: ProfileShopFiltersState;
   /** Type has categories: below `lg` the current crumb opens the category drawer. */
   categoryMenu?: boolean;
+  /** Below `lg`, controls on the same row after the trail (the Filter button on a bare type page). */
+  trailing?: ReactNode;
 };
 
 type Crumb = { key: string; label: string; path: string };
 
 const CURRENT_CRUMB_CLASS = 'truncate font-weight-label text-fg';
 
-/** Current crumb; below `lg` it is the category drawer trigger (same look as Feed / Discover). */
+/** Current crumb; below `lg` it is the category drawer trigger, a tinted pill so it reads as tappable. */
 function CurrentCrumb({ label, categoryMenu }: { label: string; categoryMenu: boolean }) {
   const { t } = useI18n();
   const drawer = useFavoritesCategoryDrawerState();
@@ -46,7 +49,7 @@ function CurrentCrumb({ label, categoryMenu }: { label: string; categoryMenu: bo
       </span>
       <button
         type="button"
-        className="inline-flex min-w-0 items-center gap-1 font-weight-label text-accent lg:hidden"
+        className="inline-flex min-w-0 items-center gap-1 rounded-pill bg-accent-soft px-3 py-1 font-weight-label text-accent lg:hidden"
         aria-haspopup="dialog"
         aria-expanded={drawer.open}
         aria-label={`${label}, ${t('favorites_categories_aria')}`}
@@ -60,7 +63,8 @@ function CurrentCrumb({ label, categoryMenu }: { label: string; categoryMenu: bo
 }
 
 /**
- * `Type › Category › Subcategory` trail above the Favorites center column. Every crumb but the
+ * `All › Category › Subcategory` trail above the Favorites center column. The root crumb is the
+ * active type's root, labelled `All` (the type itself is selected in the type menu above). Every crumb but the
  * last links back (filters kept); the last one is the current page.
  */
 export function FavoritesBreadcrumbs({
@@ -69,13 +73,14 @@ export function FavoritesBreadcrumbs({
   lineage,
   filters,
   categoryMenu = false,
+  trailing,
 }: FavoritesBreadcrumbsProps) {
   const { t } = useI18n();
 
   const crumbs: Crumb[] = [
     {
       key: 'type',
-      label: formatFavoritesTypeLabel(objectType),
+      label: t('all'),
       path: buildFavoritesPath(accountName, objectType),
     },
   ];
@@ -96,31 +101,34 @@ export function FavoritesBreadcrumbs({
   }
 
   return (
-    <nav aria-label={t('favorites_breadcrumb_aria')} className={FAVORITES_CRUMBS_ROW_CLASS}>
-      <ol className="flex min-w-0 list-none flex-nowrap items-center gap-x-2 overflow-hidden p-0 text-body-sm">
-        {crumbs.map((crumb, index) => {
-          const isLast = index === crumbs.length - 1;
-          return (
-            <li key={crumb.key} className="flex min-w-0 items-center gap-2">
-              {index > 0 ? (
-                <span aria-hidden className="text-fg-tertiary">
-                  ›
-                </span>
-              ) : null}
-              {isLast ? (
-                <CurrentCrumb label={crumb.label} categoryMenu={categoryMenu} />
-              ) : (
-                <UserProfileNavLink
-                  href={buildProfileShopHref(crumb.path, filters)}
-                  className="truncate text-fg-secondary underline-offset-2 hover:text-fg hover:underline"
-                >
-                  {crumb.label}
-                </UserProfileNavLink>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+    <div className={FAVORITES_CRUMBS_ROW_CLASS}>
+      <nav aria-label={t('favorites_breadcrumb_aria')} className="flex min-w-0 items-center">
+        <ol className="flex min-w-0 list-none flex-nowrap items-center gap-x-2 overflow-hidden p-0 text-body-sm">
+          {crumbs.map((crumb, index) => {
+            const isLast = index === crumbs.length - 1;
+            return (
+              <li key={crumb.key} className="flex min-w-0 items-center gap-2">
+                {index > 0 ? (
+                  <span aria-hidden className="text-fg-tertiary">
+                    ›
+                  </span>
+                ) : null}
+                {isLast ? (
+                  <CurrentCrumb label={crumb.label} categoryMenu={categoryMenu} />
+                ) : (
+                  <UserProfileNavLink
+                    href={buildProfileShopHref(crumb.path, filters)}
+                    className="truncate text-fg-secondary underline-offset-2 hover:text-fg hover:underline"
+                  >
+                    {crumb.label}
+                  </UserProfileNavLink>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+      {trailing}
+    </div>
   );
 }

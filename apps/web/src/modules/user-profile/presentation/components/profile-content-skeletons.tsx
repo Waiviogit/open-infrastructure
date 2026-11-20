@@ -53,7 +53,7 @@ function ProfileObjectCardRowSkeleton() {
 /** Breadcrumb trail placeholder shared by the Favorites content skeletons. */
 function ProfileFavoritesBreadcrumbSkeleton() {
   return (
-    <div className={`${FAVORITES_CRUMBS_ROW_CLASS} gap-2`}>
+    <div className={FAVORITES_CRUMBS_ROW_CLASS}>
       <div className="h-4 w-16 animate-pulse rounded-btn bg-surface-control" />
       <div className="h-4 w-24 animate-pulse rounded-btn bg-surface-control" />
     </div>

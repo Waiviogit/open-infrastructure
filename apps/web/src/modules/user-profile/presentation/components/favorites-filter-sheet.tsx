@@ -7,10 +7,7 @@ import { MobileFilterButton, MobileFilterSheet, useInstantNavigation } from '@/s
 
 import { parseFavoritesPath } from '../../domain/favorites-path';
 import { buildProfileShopHref } from '../../domain/profile-shop-filters-url';
-import {
-  shopTypesHaveRatingFilters,
-  shopTypesHaveTagFilters,
-} from '../../domain/profile-shop-registry';
+import { favoritesTypeHasFilters } from '../../domain/profile-shop-registry';
 import { ProfileFavoritesFiltersFromUrl } from './profile-shop-filters';
 
 type FavoritesFilterSheetState = {
@@ -38,14 +35,10 @@ export function FavoritesFilterSheetProvider({ children }: { children: ReactNode
   return <SheetStateContext.Provider value={value}>{children}</SheetStateContext.Provider>;
 }
 
-/** True when the type has rating or tag facets (the right rail would show filters). */
-export function favoritesTypeHasFilters(objectType: string): boolean {
-  return shopTypesHaveTagFilters([objectType]) || shopTypesHaveRatingFilters([objectType]);
-}
-
 /**
- * Below `lg`: `Filter` button above the Favorites list (shared `MobileFilterButton`, as on Discover).
- * Rendered only for a type with rating or tag facets.
+ * Below `lg`: `Filter` button of the Favorites toolbar (shared `MobileFilterButton`, as on
+ * Discover). Rendered only for a type with rating or tag facets; the caller places it next to the
+ * breadcrumbs or after the filter chips.
  */
 export function FavoritesMobileFilterButton({ objectType }: { objectType: string }) {
   const sheet = useContext(SheetStateContext);
@@ -53,7 +46,7 @@ export function FavoritesMobileFilterButton({ objectType }: { objectType: string
     return null;
   }
   return (
-    <div className="mb-card-padding lg:hidden">
+    <div className="shrink-0 lg:hidden">
       <MobileFilterButton onClick={sheet.openSheet} expanded={sheet.open} />
     </div>
   );

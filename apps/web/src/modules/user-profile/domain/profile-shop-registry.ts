@@ -25,6 +25,11 @@ export function shopTypesHaveRatingFilters(types: readonly string[]): boolean {
   });
 }
 
+/** True when a Favorites type has rating or tag facets (the right rail / mobile sheet shows filters). */
+export function favoritesTypeHasFilters(objectType: string): boolean {
+  return shopTypesHaveTagFilters([objectType]) || shopTypesHaveRatingFilters([objectType]);
+}
+
 /** Registry tag category names merged across shop object types (deduped, stable). */
 export function getTagCategoryNamesForShopTypes(types: readonly string[]): string[] {
   const seen = new Set<string>();

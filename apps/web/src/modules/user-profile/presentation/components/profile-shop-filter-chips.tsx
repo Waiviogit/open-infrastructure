@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 
 import { decodeTagFilter } from '@/modules/discover/domain/discover-url';
 import { DISCOVER_ACTIVE_CHIP_CLASS } from '@/modules/discover/presentation/components/discover-active-chips';
@@ -18,9 +18,16 @@ import { shopRatingThresholdToStars } from '../../domain/profile-shop-registry';
 
 export type ProfileShopFilterChipsProps = {
   filters: ProfileShopFiltersState;
+  /** Below `lg`: the Filter button, after the chips (alone on its row when no filter is active). */
+  filterButton?: ReactNode;
 };
 
-export function ProfileShopFilterChips({ filters }: ProfileShopFilterChipsProps) {
+/**
+ * Active Favorites filters as removable chips. From `lg` up they sit under an
+ * `Active filters · Clear all` heading; below `lg` they share one wrapping row with the Filter
+ * button (the sheet has its own Clear).
+ */
+export function ProfileShopFilterChips({ filters, filterButton }: ProfileShopFilterChipsProps) {
   const { t } = useI18n();
   const { navigateInstant } = useInstantNavigation();
   const pathname = usePathname();
@@ -54,12 +61,12 @@ export function ProfileShopFilterChips({ filters }: ProfileShopFilterChipsProps)
   }, [pushFilters]);
 
   if (activeCount === 0) {
-    return null;
+    return filterButton ? <div className="mb-card-padding lg:hidden">{filterButton}</div> : null;
   }
 
   return (
     <div className="mb-4">
-      <div className="mb-1.5 flex items-center justify-between gap-2">
+      <div className="mb-1.5 hidden items-center justify-between gap-2 lg:flex">
         <span className="text-caption font-weight-label text-fg-tertiary">
           {t('profile_active_filters').replace('{count}', String(activeCount))}
         </span>
@@ -71,7 +78,7 @@ export function ProfileShopFilterChips({ filters }: ProfileShopFilterChipsProps)
           {t('profile_clear_all_filters')}
         </button>
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         {filters.rating != null ? (
           <span className={DISCOVER_ACTIVE_CHIP_CLASS}>
             <span className="truncate font-weight-label">
@@ -107,6 +114,7 @@ export function ProfileShopFilterChips({ filters }: ProfileShopFilterChipsProps)
             </span>
           );
         })}
+        {filterButton}
       </div>
     </div>
   );

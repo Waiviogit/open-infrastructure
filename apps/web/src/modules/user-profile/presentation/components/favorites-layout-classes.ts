@@ -1,9 +1,12 @@
 /**
  * Layout stability of the Favorites tab. The center column starts with a one-line breadcrumb row
- * of fixed height; the breadcrumbs, their skeletons (route `loading.tsx` and the instant-nav
- * overlay) all use this class, so the content below never moves while a navigation is pending.
+ * of fixed height (taller below `lg`, where the current crumb is a tinted pill and the Filter
+ * button may share the row); the breadcrumbs, their skeletons (route `loading.tsx` and the
+ * instant-nav overlay) all use this class, so the content below never moves while a navigation
+ * is pending.
  */
-export const FAVORITES_CRUMBS_ROW_CLASS = 'mb-card-padding flex h-6 min-w-0 items-center';
+export const FAVORITES_CRUMBS_ROW_CLASS =
+  'mb-card-padding flex h-8 min-w-0 items-center gap-2 lg:h-6';
 
 /**
  * Favorites left rail (categories of the active type). It stays in page flow — not sticky, no
