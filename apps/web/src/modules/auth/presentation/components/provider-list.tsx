@@ -7,6 +7,7 @@ import { useI18n } from '@/i18n/providers/i18n-provider';
 import { AppLoader, UserAvatar } from '@/shared/presentation';
 
 import { ChevronDownIcon } from '@/icons';
+import { loadAccountAvatarUrlsAction } from '@/modules/user-profile/infrastructure/actions/load-account-avatar-urls.action';
 
 import {
   clearAccountHistory,
@@ -18,6 +19,52 @@ import { KeychainHasLoginPanel } from './keychain-has-login-panel';
 import { useKeychainLogin } from './keychain-login';
 
 const PROVIDER_ICON_SIZE = 28;
+const HISTORY_AVATAR_SIZE = 24;
+
+/**
+ * Query-api avatar URL per history account (`undefined` while loading). Without it `UserAvatar`
+ * falls back to the Hive CDN, which keeps serving a picture the user already replaced.
+ */
+function useHistoryAvatarUrls(names: readonly string[], enabled: boolean) {
+  const [urls, setUrls] = useState<Record<string, string | null>>({});
+  const namesKey = names.join(',');
+
+  useEffect(() => {
+    if (!enabled || namesKey === '') {
+      return undefined;
+    }
+    let cancelled = false;
+    loadAccountAvatarUrlsAction(namesKey.split(','))
+      .then((loaded) => {
+        if (!cancelled) {
+          setUrls((prev) => ({ ...prev, ...loaded }));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUrls((prev) => ({
+            ...prev,
+            ...Object.fromEntries(namesKey.split(',').map((name) => [name.toLowerCase(), null])),
+          }));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, namesKey]);
+
+  return useCallback(
+    (name: string): string | null | undefined => urls[name.trim().replace(/^@+/, '').toLowerCase()],
+    [urls],
+  );
+}
+
+function HistoryAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null | undefined }) {
+  if (avatarUrl === undefined) {
+    return <span aria-hidden className="block size-6 shrink-0 rounded-full bg-surface-control" />;
+  }
+  return <UserAvatar username={name} avatarUrl={avatarUrl} size={HISTORY_AVATAR_SIZE} displayName={name} />;
+}
 
 export type ProviderListProps = {
   providers: readonly WalletProviderMeta[];
@@ -104,6 +151,7 @@ function KeychainProviderRow({
   const [history, setHistory] = useState<string[]>([]);
 
   const keychain = useKeychainLogin({ onLoginSuccess });
+  const avatarUrlFor = useHistoryAvatarUrls(history, expanded);
 
   const refreshHistory = useCallback(() => {
     setHistory(getAccountHistory());
@@ -240,7 +288,7 @@ function KeychainProviderRow({
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelectAccount(name)}
               >
-                <UserAvatar username={name} size={24} displayName={name} />
+                <HistoryAvatar name={name} avatarUrl={avatarUrlFor(name)} />
                 <span className="font-label">{name}</span>
               </button>
             </li>
