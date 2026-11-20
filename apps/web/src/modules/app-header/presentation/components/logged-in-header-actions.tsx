@@ -216,7 +216,7 @@ export function LoggedInHeaderActions({
           aria-label={t('my_profile')}
           suppressHydrationWarning
         >
-          <UserAvatar username={user.username} size={32} />
+          <UserAvatar username={user.username} avatarUrl={user.avatarUrl} size={32} />
         </Link>
         <button
           ref={triggerRef}
