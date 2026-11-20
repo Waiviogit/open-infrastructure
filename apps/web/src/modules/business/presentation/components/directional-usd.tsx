@@ -3,46 +3,8 @@
 import { useI18n } from '@/i18n/providers/i18n-provider';
 
 import type { DirectionalUsdView } from '../../domain/ledger.types';
+import { accountNetUsd } from '../../domain/pair-balance';
 import { formatUsd } from '../../domain/usd-format';
-
-function parseUsd(value: string): number {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-export function directionalAmountsForViewer(
-  viewer: string,
-  accountA: string,
-  accountB: string,
-  bucket: DirectionalUsdView,
-): { viewerOwes: number; owesViewer: number } {
-  const owesAtoB = parseUsd(bucket.owesAtoB);
-  const owesBtoA = parseUsd(bucket.owesBtoA);
-  if (viewer === accountA) {
-    return { viewerOwes: owesAtoB, owesViewer: owesBtoA };
-  }
-  if (viewer === accountB) {
-    return { viewerOwes: owesBtoA, owesViewer: owesAtoB };
-  }
-  return { viewerOwes: owesAtoB, owesViewer: owesBtoA };
-}
-
-/** netUsd = raw owesBtoA − raw owesAtoB; positive means accountB owes accountA. */
-export function viewerNetUsd(
-  viewer: string,
-  accountA: string,
-  accountB: string,
-  netUsd: string,
-): number {
-  const net = parseUsd(netUsd);
-  if (viewer === accountA) {
-    return net;
-  }
-  if (viewer === accountB) {
-    return -net;
-  }
-  return net;
-}
 
 export function shouldShowPendingWhenSettled(
   viewer: string,
@@ -52,8 +14,8 @@ export function shouldShowPendingWhenSettled(
   pending: DirectionalUsdView,
 ): boolean {
   return (
-    viewerNetUsd(viewer, accountA, accountB, confirmed.netUsd) === 0 &&
-    viewerNetUsd(viewer, accountA, accountB, pending.netUsd) !== 0
+    accountNetUsd(viewer, accountA, accountB, confirmed.netUsd) === 0 &&
+    accountNetUsd(viewer, accountA, accountB, pending.netUsd) !== 0
   );
 }
 
@@ -65,7 +27,7 @@ export function formatPendingBalanceLine(
   pending: DirectionalUsdView,
   t: (key: string) => string,
 ): string {
-  const viewerNet = viewerNetUsd(viewer, accountA, accountB, pending.netUsd);
+  const viewerNet = accountNetUsd(viewer, accountA, accountB, pending.netUsd);
   if (viewerNet > 0) {
     return t('business_balance_pending_counterparty_owes_you')
       .replace('@account', `@${counterparty}`)
@@ -140,7 +102,7 @@ export function DirectionalUsd({
   className = 'text-body font-weight-strong',
 }: DirectionalUsdProps) {
   const { t } = useI18n();
-  const viewerNet = viewerNetUsd(viewer, accountA, accountB, bucket.netUsd);
+  const viewerNet = accountNetUsd(viewer, accountA, accountB, bucket.netUsd);
   const direction = balanceDirection(viewerNet);
 
   return (

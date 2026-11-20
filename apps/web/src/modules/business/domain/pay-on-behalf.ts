@@ -2,6 +2,7 @@ import { isHiveAccountName } from '@opden-data-layer/common';
 
 import { normalizeHiveAccountInput } from './invoice-issue';
 import type { PairBalanceView } from './ledger.types';
+import { accountNetUsd } from './pair-balance';
 
 /** Query keys of the pay-on-behalf page: `for` = debtor, `to` = receiver. */
 export const PAY_ON_BEHALF_QUERY = { debtor: 'for', receiver: 'to' } as const;
@@ -59,17 +60,33 @@ export function buildPayOnBehalfHref(parties: PayOnBehalfParties): string {
   return `/business/pay?${q.toString()}`;
 }
 
-/** Confirmed USD the debtor owes the receiver on their ledger; 0 when there is no such debt. */
+function isBalanceOfParties(
+  balance: Pick<PairBalanceView, 'accountA' | 'accountB'>,
+  parties: PayOnBehalfParties,
+): boolean {
+  const { accountA, accountB } = balance;
+  return (
+    (accountA === parties.debtor && accountB === parties.receiver) ||
+    (accountA === parties.receiver && accountB === parties.debtor)
+  );
+}
+
+/**
+ * Confirmed net USD the debtor owes the receiver — the same figure the relationship page
+ * shows; 0 when the pair is settled, the debt runs the other way, or the pair does not match.
+ */
 export function confirmedDebtUsd(
   balance: Pick<PairBalanceView, 'accountA' | 'accountB' | 'confirmed'>,
   parties: PayOnBehalfParties,
 ): number {
-  const raw =
-    balance.accountA === parties.debtor && balance.accountB === parties.receiver
-      ? balance.confirmed.owesAtoB
-      : balance.accountA === parties.receiver && balance.accountB === parties.debtor
-        ? balance.confirmed.owesBtoA
-        : '0';
-  const value = Number(raw);
-  return Number.isFinite(value) && value > 0 ? value : 0;
+  if (!isBalanceOfParties(balance, parties)) {
+    return 0;
+  }
+  const owedToReceiver = accountNetUsd(
+    parties.receiver,
+    balance.accountA,
+    balance.accountB,
+    balance.confirmed.netUsd,
+  );
+  return owedToReceiver > 0 ? owedToReceiver : 0;
 }

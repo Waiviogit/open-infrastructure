@@ -53,29 +53,42 @@ describe('pay on behalf parties', () => {
 describe('confirmedDebtUsd', () => {
   const zero = { owesAtoB: '0', owesBtoA: '0', netUsd: '0' };
 
-  it('reads the debtor→receiver direction when the debtor is account A', () => {
+  it('reads the net debt when the debtor is account A', () => {
     const balance = {
       accountA: 'alice',
       accountB: 'bob',
-      confirmed: { owesAtoB: '100', owesBtoA: '0', netUsd: '100' },
+      confirmed: { owesAtoB: '100', owesBtoA: '0', netUsd: '-100' },
     };
     expect(confirmedDebtUsd(balance, { debtor: 'alice', receiver: 'bob' })).toBe(100);
   });
 
-  it('reads the debtor→receiver direction when the debtor is account B', () => {
+  it('reads the net debt when the debtor is account B', () => {
     const balance = {
       accountA: 'alice',
       accountB: 'bob',
-      confirmed: { owesAtoB: '0', owesBtoA: '7.5', netUsd: '-7.5' },
+      confirmed: { owesAtoB: '0', owesBtoA: '7.5', netUsd: '7.5' },
     };
     expect(confirmedDebtUsd(balance, { debtor: 'bob', receiver: 'alice' })).toBe(7.5);
+  });
+
+  it('nets credits the receiver owes back against the gross debt', () => {
+    const balance = {
+      accountA: 'flowmaster',
+      accountB: 'insta.agent',
+      confirmed: { owesAtoB: '7.91919370', owesBtoA: '8.48688000', netUsd: '0.56768630' },
+    };
+    expect(confirmedDebtUsd(balance, { debtor: 'flowmaster', receiver: 'insta.agent' })).toBe(0);
+    expect(confirmedDebtUsd(balance, { debtor: 'insta.agent', receiver: 'flowmaster' })).toBeCloseTo(
+      0.5676863,
+      8,
+    );
   });
 
   it('returns 0 when the debt goes the other way or the pair does not match', () => {
     const balance = {
       accountA: 'alice',
       accountB: 'bob',
-      confirmed: { owesAtoB: '0', owesBtoA: '20', netUsd: '-20' },
+      confirmed: { owesAtoB: '0', owesBtoA: '20', netUsd: '20' },
     };
     expect(confirmedDebtUsd(balance, { debtor: 'alice', receiver: 'bob' })).toBe(0);
     expect(

@@ -3,13 +3,13 @@
 import { useI18n } from '@/i18n/providers/i18n-provider';
 
 import type { PairBalanceView } from '../../domain/ledger.types';
+import { accountNetUsd } from '../../domain/pair-balance';
 import { formatUsd } from '../../domain/usd-format';
 import { businessCardClass } from '../ui/classes';
 import {
   BALANCE_DIRECTION_TEXT_CLASS,
   balanceDirection,
   directionalUsdText,
-  viewerNetUsd,
 } from './directional-usd';
 
 export type BalanceCardsProps = {
@@ -31,7 +31,7 @@ export function BalanceCards({
 }: BalanceCardsProps) {
   const { t } = useI18n();
   const net = (bucket: 'confirmed' | 'pending' | 'disputed') =>
-    viewerNetUsd(
+    accountNetUsd(
       viewer,
       balance.accountA,
       balance.accountB,
