@@ -12,6 +12,7 @@ import { HubActivityFeedRepository } from './hub-activity-feed.repository';
 import { HubPostsFeedRepository } from './hub-posts-feed.repository';
 import { HubThreadsFeedRepository } from './hub-threads-feed.repository';
 import { HubUpdatesFeedRepository } from './hub-updates-feed.repository';
+import { MessagingRepository } from './messaging.repository';
 
 const describeDb = process.env.POSTGRES_TEST_URL ? describe : describe.skip;
 
@@ -387,6 +388,32 @@ describeDb('hub feed repositories (db)', () => {
         expect(page2.map((r) => r.message_id)).toEqual(['links-b']);
 
         expect((await repo.findByAuthor('hubf-zed', null, LIMIT)).map((r) => r.message_id)).toEqual(['links-b', 'unrelated']);
+      });
+    });
+  });
+
+  describe('MessagingRepository object activity', () => {
+    it('returns BIGINT timestamps as numbers, not driver strings', async () => {
+      await withRollback(db, async (trx) => {
+        const repo = new MessagingRepository(asDb(trx));
+        await insertObject(trx, 'hubf-obj-a');
+        await insertChannel(trx, { channelId: 'hubf-ch-a', kind: 'object', objectId: 'hubf-obj-a' });
+        await insertMessage(trx, { messageId: 'm1', channelId: 'hubf-ch-a', author: 'hubf-alice', created: 1795165820 });
+        await trx
+          .updateTable('messages')
+          .set({ original_created_at_unix: 1789392093 })
+          .where('message_id', '=', 'm1')
+          .execute();
+
+        const [listed] = await repo.listObjectActivityMessages('hubf-obj-a', [], null, LIMIT);
+        const found = await repo.findObjectActivityMessage('hubf-obj-a', 'm1', []);
+
+        for (const row of [listed, found]) {
+          expect(row?.created_at_unix).toBe(1795165820);
+          expect(row?.original_created_at_unix).toBe(1789392093);
+          expect(row?.updated_at_unix).toBeNull();
+          expect(row?.event_seq).toBe(BigInt(1795165820));
+        }
       });
     });
   });

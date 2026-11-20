@@ -404,7 +404,8 @@ export class MessagingRepository {
       query = query.where('m.author', 'not in', excludedAuthors as string[]);
     }
 
-    return query.executeTakeFirst();
+    const row = await query.executeTakeFirst();
+    return row ? normalizeActivityRow(row) : undefined;
   }
 
   async listObjectActivityMessages(
@@ -469,7 +470,8 @@ export class MessagingRepository {
       `);
     }
 
-    return query.execute();
+    const rows = await query.execute();
+    return rows.map(normalizeActivityRow);
   }
 
   async listFollowedObjectActivityMessages(

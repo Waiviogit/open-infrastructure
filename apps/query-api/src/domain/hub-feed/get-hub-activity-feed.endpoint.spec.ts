@@ -61,11 +61,9 @@ describe('GetHubActivityFeedEndpoint', () => {
     });
   });
 
-  it('reads one object through the object activity query and normalizes driver values', async () => {
+  it('reads one object through the object activity query', async () => {
     const { endpoint, messagingRepo } = setup();
-    messagingRepo.listObjectActivityMessages.mockResolvedValue([
-      { ...message('m1', 300, 30), created_at_unix: '300', event_seq: '30', duplicate_count: '2' },
-    ]);
+    messagingRepo.listObjectActivityMessages.mockResolvedValue([message('m1', 300, 30)]);
 
     const page = await endpoint.execute(
       body({ filter: { kind: 'object', object_id: 'obj' } }),
