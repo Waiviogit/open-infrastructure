@@ -29,6 +29,7 @@ import { WalletModule } from '../domain/wallet';
 import { OblModule } from '../domain/obl';
 import { UserWalletController } from './user-wallet.controller';
 import { HiveWalletAdvancedReportController } from './hive-wallet-advanced-report.controller';
+import { HiveWalletDepositController } from './hive-wallet-deposit.controller';
 import { WaivWalletAdvancedReportController } from './waiv-wallet-advanced-report.controller';
 import { WaivWalletGeneratedReportController } from './waiv-wallet-generated-report.controller';
 import { OblOfferDraftsController } from './obl-offer-drafts.controller';
@@ -73,6 +74,7 @@ import { HubFeedFiltersController } from './hub-feed-filters.controller';
     UserActivityController,
     UserWalletController,
     HiveWalletAdvancedReportController,
+    HiveWalletDepositController,
     WaivWalletAdvancedReportController,
     WaivWalletGeneratedReportController,
     PostsController,

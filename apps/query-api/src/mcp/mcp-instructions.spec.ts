@@ -12,6 +12,7 @@ describe('QUERY_API_MCP_INSTRUCTIONS', () => {
     expect(QUERY_API_MCP_INSTRUCTIONS).toContain('get_post_discussion');
     expect(QUERY_API_MCP_INSTRUCTIONS).toContain('get_user_authority_grantors');
     expect(QUERY_API_MCP_INSTRUCTIONS).toContain('get_user_authority_grantees');
+    expect(QUERY_API_MCP_INSTRUCTIONS).toContain('post_user_hive_deposit_create');
   });
 
   it('documents context params', () => {

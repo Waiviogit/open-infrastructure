@@ -13,6 +13,12 @@ export { HiveChangellyWithdrawService } from './hive-changelly-withdraw.service'
 export { GetUserHiveWithdrawRangeEndpoint } from './get-user-hive-withdraw-range.endpoint';
 export { PostUserHiveWithdrawEstimateEndpoint } from './post-user-hive-withdraw-estimate.endpoint';
 export { PostUserHiveWithdrawCreateEndpoint } from './post-user-hive-withdraw-create.endpoint';
+export { GetHiveDepositCurrenciesEndpoint } from './get-hive-deposit-currencies.endpoint';
+export { GetUserHiveDepositRangeEndpoint } from './get-user-hive-deposit-range.endpoint';
+export { PostUserHiveDepositEstimateEndpoint } from './post-user-hive-deposit-estimate.endpoint';
+export { PostUserHiveDepositCreateEndpoint } from './post-user-hive-deposit-create.endpoint';
+export { GetUserHiveDepositStatusEndpoint } from './get-user-hive-deposit-status.endpoint';
+export { GetUserHiveDepositHistoryEndpoint } from './get-user-hive-deposit-history.endpoint';
 export {
   HIVE_CHANGELLY_OUTPUT_COINS,
   HIVE_CHANGELLY_TRACKING_HIVE_RESERVE,
@@ -77,6 +83,32 @@ export {
   type HiveChangellyWithdrawCreateBody,
   type HiveChangellyWithdrawCreateResponse,
 } from './schemas/hive-changelly-withdraw.schema';
+export {
+  hiveChangellyDepositCurrenciesQuerySchema,
+  hiveChangellyDepositCurrenciesResponseSchema,
+  hiveChangellyDepositRangeQuerySchema,
+  hiveChangellyDepositRangeResponseSchema,
+  hiveChangellyDepositEstimateBodySchema,
+  hiveChangellyDepositEstimateResponseSchema,
+  hiveChangellyDepositCreateBodySchema,
+  hiveChangellyDepositCreateResponseSchema,
+  hiveChangellyDepositStatusParamsSchema,
+  hiveChangellyDepositItemSchema,
+  hiveChangellyDepositHistoryQuerySchema,
+  hiveChangellyDepositHistoryResponseSchema,
+  type HiveChangellyDepositCurrenciesQuery,
+  type HiveChangellyDepositCurrenciesResponse,
+  type HiveChangellyDepositRangeQuery,
+  type HiveChangellyDepositRangeResponse,
+  type HiveChangellyDepositEstimateBody,
+  type HiveChangellyDepositEstimateResponse,
+  type HiveChangellyDepositCreateBody,
+  type HiveChangellyDepositCreateResponse,
+  type HiveChangellyDepositStatusParams,
+  type HiveChangellyDepositItem,
+  type HiveChangellyDepositHistoryQuery,
+  type HiveChangellyDepositHistoryResponse,
+} from './schemas/hive-changelly-deposit.schema';
 export {
   engineTokenDelegationsResponseSchema,
   type EngineTokenDelegationsResponse,

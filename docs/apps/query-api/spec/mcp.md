@@ -106,6 +106,14 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 | `get_user_hive_wallet` | `GET .../wallet/hive` | [user-hive-wallet-endpoint.md](user-hive-wallet-endpoint.md) |
 | `get_user_hive_hp_delegations` | `GET .../wallet/hive/delegations` | [user-hive-wallet-endpoint.md](user-hive-wallet-endpoint.md) |
 | `get_user_hive_rc_delegations` | `GET .../wallet/hive/rc-delegations` | [user-hive-wallet-endpoint.md](user-hive-wallet-endpoint.md) |
+| `get_user_hive_withdraw_range` | `GET .../wallet/hive/withdraw/range` | [user-hive-changelly-withdraw.md](user-hive-changelly-withdraw.md) |
+| `post_user_hive_withdraw_estimate` | `POST .../wallet/hive/withdraw/estimate` | [user-hive-changelly-withdraw.md](user-hive-changelly-withdraw.md) |
+| `get_hive_deposit_currencies` | `GET /query/v1/wallet/hive/deposit/currencies` | [user-hive-changelly-deposit.md](user-hive-changelly-deposit.md) |
+| `get_user_hive_deposit_range` | `GET .../wallet/hive/deposit/range` | [user-hive-changelly-deposit.md](user-hive-changelly-deposit.md) |
+| `post_user_hive_deposit_estimate` | `POST .../wallet/hive/deposit/estimate` | [user-hive-changelly-deposit.md](user-hive-changelly-deposit.md) |
+| `post_user_hive_deposit_create` | `POST .../wallet/hive/deposit/create` | [user-hive-changelly-deposit.md](user-hive-changelly-deposit.md) |
+| `get_user_hive_deposit_status` | `GET .../wallet/hive/deposit/status/:exchangeId` | [user-hive-changelly-deposit.md](user-hive-changelly-deposit.md) |
+| `get_user_hive_deposit_history` | `GET .../wallet/hive/deposit/history` | [user-hive-changelly-deposit.md](user-hive-changelly-deposit.md) |
 | `get_post` | `GET /query/v1/posts/:author/:permlink` | [single-post-endpoint.md](single-post-endpoint.md) |
 | `get_post_discussion` | `GET .../discussion` | [post-discussion-endpoint.md](post-discussion-endpoint.md) |
 | `get_currency_market` | `GET /query/v1/currency/market` | — |

@@ -37,6 +37,9 @@ export const WAIV_REWARD_POOL_CACHE_TTL_SEC = 60;
 /** Redis TTL for WAIV/HIVE diesel pool quote price used in account sidebar (seconds). */
 export const WAIV_DIESEL_POOL_CACHE_TTL_SEC = 60;
 
+/** Redis TTL for the Changelly coin list that converts into HIVE (seconds). */
+export const CHANGELLY_DEPOSIT_CURRENCIES_CACHE_TTL_SEC = 600;
+
 /** Redis TTL for condenser `get_accounts` snapshot (profile + sidebar dedup). */
 export const HIVE_ACCOUNTS_CACHE_TTL_SEC = 60;
 

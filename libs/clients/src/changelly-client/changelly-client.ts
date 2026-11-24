@@ -16,17 +16,34 @@ import type {
   ChangellyClientInterface,
   ChangellyClientResult,
 } from './interface';
+import {
+  mapChangellyAddressValidation,
+  mapChangellyCreatedTransaction,
+  mapChangellyCurrency,
+  mapChangellyFixRate,
+  mapChangellyPair,
+  mapChangellyRows,
+  mapChangellyTransactionInfo,
+} from './map-changelly-records';
 import { mapChangellyTransactionResult } from './map-changelly-transaction';
 import type {
+  ChangellyAddressValidation,
+  ChangellyCreatedTransaction,
+  ChangellyCurrency,
   ChangellyExchangeAmount,
+  ChangellyFixRate,
   ChangellyJsonRpcRequest,
+  ChangellyPair,
   ChangellyPairParams,
   ChangellyPayinExchange,
+  ChangellyTransactionInfo,
   ChangellyTransactionResult,
+  ChangellyTransactionsFilter,
 } from './type';
 
 const DEFAULT_BASE_URL = 'https://api.changelly.com/v2';
 const DEFAULT_TIMEOUT_MS = 12_000;
+const INCOMPLETE_TRANSACTION_MESSAGE = 'Changelly returned an incomplete transaction';
 
 type ChangellyCredentials = {
   privateKey: KeyObject;
@@ -78,6 +95,22 @@ function formRequest(
     },
     body: JSON.stringify(message),
   };
+}
+
+const RPC_REQUEST_ID = 'odl';
+
+function rpcRequest(
+  method: string,
+  params: ChangellyJsonRpcRequest['params'],
+): ChangellyJsonRpcRequest {
+  return { jsonrpc: '2.0', id: RPC_REQUEST_ID, method, params };
+}
+
+/** Drops `undefined` keys so the signed body only carries the params that were set. */
+function withoutUndefined(input: object): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined),
+  );
 }
 
 @Injectable()
@@ -226,4 +259,125 @@ export class ChangellyClient implements ChangellyClientInterface {
     }
     return { result: mapChangellyTransactionResult(result) };
   }
+
+  async getCurrenciesFull(): Promise<ChangellyClientResult<ChangellyCurrency[]>> {
+    const { result, error } = await this.fetchData<unknown>(
+      rpcRequest('getCurrenciesFull', {}),
+    );
+    if (error) {
+      return { error };
+    }
+    return { result: mapChangellyRows(result, mapChangellyCurrency) };
+  }
+
+  async getPairs(input: {
+    from?: string;
+    to?: string;
+  }): Promise<ChangellyClientResult<ChangellyPair[]>> {
+    const { result, error } = await this.fetchData<unknown>(
+      rpcRequest('getPairs', withoutUndefined(input)),
+    );
+    if (error) {
+      return { error };
+    }
+    return { result: mapChangellyRows(result, mapChangellyPair) };
+  }
+
+  /** `null` result: the amount is outside the fixed-rate limits (Changelly omits the pair). */
+  async getFixRateForAmount(input: {
+    from: string;
+    to: string;
+    amountFrom: number;
+  }): Promise<ChangellyClientResult<ChangellyFixRate | null>> {
+    const { result, error } = await this.fetchData<unknown>(
+      rpcRequest('getFixRateForAmount', [
+        { from: input.from, to: input.to, amountFrom: String(input.amountFrom) },
+      ]),
+    );
+    if (error) {
+      return { error };
+    }
+    return { result: mapChangellyRows(result, mapChangellyFixRate)[0] ?? null };
+  }
+
+  async createFloatTransaction(input: {
+    from: string;
+    to: string;
+    amountFrom: number;
+    address: string;
+    extraId?: string;
+    refundAddress?: string;
+    refundExtraId?: string;
+  }): Promise<ChangellyClientResult<ChangellyCreatedTransaction>> {
+    return this.createExchange(
+      rpcRequest(
+        'createTransaction',
+        withoutUndefined({ ...input, amountFrom: String(input.amountFrom) }),
+      ),
+    );
+  }
+
+  async createFixTransaction(input: {
+    from: string;
+    to: string;
+    rateId: string;
+    amountFrom: number;
+    address: string;
+    extraId?: string;
+    refundAddress: string;
+    refundExtraId?: string;
+  }): Promise<ChangellyClientResult<ChangellyCreatedTransaction>> {
+    return this.createExchange(
+      rpcRequest(
+        'createFixTransaction',
+        withoutUndefined({ ...input, amountFrom: String(input.amountFrom) }),
+      ),
+    );
+  }
+
+  async getTransactions(
+    filter: ChangellyTransactionsFilter,
+  ): Promise<ChangellyClientResult<ChangellyTransactionInfo[]>> {
+    const { result, error } = await this.fetchData<unknown>(
+      rpcRequest('getTransactions', withoutUndefined(filter)),
+    );
+    if (error) {
+      return { error };
+    }
+    return { result: mapChangellyRows(result, mapChangellyTransactionInfo) };
+  }
+
+  async validateAddress(input: {
+    currency: string;
+    address: string;
+    extraId?: string;
+  }): Promise<ChangellyClientResult<ChangellyAddressValidation>> {
+    const { result, error } = await this.fetchData<unknown>(
+      rpcRequest('validateAddress', withoutUndefined(input)),
+    );
+    if (error) {
+      return { error };
+    }
+    const validation = mapChangellyAddressValidation(result);
+    if (!validation) {
+      return { error: { message: 'Changelly returned an invalid address check' } };
+    }
+    return { result: validation };
+  }
+
+  private async createExchange(
+    message: ChangellyJsonRpcRequest,
+  ): Promise<ChangellyClientResult<ChangellyCreatedTransaction>> {
+    const { result, error } = await this.fetchData<unknown>(message);
+    if (error) {
+      return { error };
+    }
+    const created = mapChangellyCreatedTransaction(result);
+    if (!created) {
+      this.logger.warn(INCOMPLETE_TRANSACTION_MESSAGE);
+      return { error: { message: INCOMPLETE_TRANSACTION_MESSAGE } };
+    }
+    return { result: created };
+  }
 }
+

@@ -12,6 +12,7 @@ import './feed.openapi';
 import './hub-feed.openapi';
 import './user-activity.openapi';
 import './user-wallet.openapi';
+import './user-hive-deposit.openapi';
 import './user-hive-advanced-report.openapi';
 import './user-waiv-advanced-report.openapi';
 import './user-waiv-generated-report.openapi';

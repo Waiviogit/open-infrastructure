@@ -25,6 +25,26 @@ import {
   GetUserHiveWithdrawRangeEndpoint,
   PostUserHiveWithdrawEstimateEndpoint,
   PostUserHiveWithdrawCreateEndpoint,
+  GetUserHiveDepositRangeEndpoint,
+  PostUserHiveDepositEstimateEndpoint,
+  PostUserHiveDepositCreateEndpoint,
+  GetUserHiveDepositStatusEndpoint,
+  GetUserHiveDepositHistoryEndpoint,
+  hiveChangellyDepositRangeQuerySchema,
+  hiveChangellyDepositEstimateBodySchema,
+  hiveChangellyDepositCreateBodySchema,
+  hiveChangellyDepositStatusParamsSchema,
+  hiveChangellyDepositHistoryQuerySchema,
+  type HiveChangellyDepositRangeQuery,
+  type HiveChangellyDepositRangeResponse,
+  type HiveChangellyDepositEstimateBody,
+  type HiveChangellyDepositEstimateResponse,
+  type HiveChangellyDepositCreateBody,
+  type HiveChangellyDepositCreateResponse,
+  type HiveChangellyDepositStatusParams,
+  type HiveChangellyDepositItem,
+  type HiveChangellyDepositHistoryQuery,
+  type HiveChangellyDepositHistoryResponse,
   type EngineTokenDelegationsResponse,
   type EngineWalletResponse,
   type EngineWalletHistoryResponse,
@@ -78,6 +98,11 @@ export class UserWalletController {
     private readonly getUserHiveWithdrawRange: GetUserHiveWithdrawRangeEndpoint,
     private readonly postUserHiveWithdrawEstimate: PostUserHiveWithdrawEstimateEndpoint,
     private readonly postUserHiveWithdrawCreate: PostUserHiveWithdrawCreateEndpoint,
+    private readonly getUserHiveDepositRange: GetUserHiveDepositRangeEndpoint,
+    private readonly postUserHiveDepositEstimate: PostUserHiveDepositEstimateEndpoint,
+    private readonly postUserHiveDepositCreate: PostUserHiveDepositCreateEndpoint,
+    private readonly getUserHiveDepositStatus: GetUserHiveDepositStatusEndpoint,
+    private readonly getUserHiveDepositHistory: GetUserHiveDepositHistoryEndpoint,
     private readonly getUserHiveWallet: GetUserHiveWalletEndpoint,
     private readonly getUserHiveHpDelegations: GetUserHiveHpDelegationsEndpoint,
     private readonly getUserHiveRcDelegations: GetUserHiveRcDelegationsEndpoint,
@@ -279,6 +304,71 @@ export class UserWalletController {
     body: HiveChangellyWithdrawCreateBody,
   ): Promise<HiveChangellyWithdrawCreateResponse> {
     const result = await this.postUserHiveWithdrawCreate.execute(name, body);
+    if (!result) {
+      throw new NotFoundException(`User not found: ${name}`);
+    }
+    return result;
+  }
+
+  @Get(':name/wallet/hive/deposit/range')
+  async getHiveDepositRange(
+    @Param('name') name: string,
+    @Query(new ZodQueryPipe(hiveChangellyDepositRangeQuerySchema))
+    query: HiveChangellyDepositRangeQuery,
+  ): Promise<HiveChangellyDepositRangeResponse> {
+    const result = await this.getUserHiveDepositRange.execute(name, query);
+    if (!result) {
+      throw new NotFoundException(`User not found: ${name}`);
+    }
+    return result;
+  }
+
+  @Post(':name/wallet/hive/deposit/estimate')
+  async postHiveDepositEstimate(
+    @Param('name') name: string,
+    @Body(new ZodBodyPipe(hiveChangellyDepositEstimateBodySchema))
+    body: HiveChangellyDepositEstimateBody,
+  ): Promise<HiveChangellyDepositEstimateResponse> {
+    const result = await this.postUserHiveDepositEstimate.execute(name, body);
+    if (!result) {
+      throw new NotFoundException(`User not found: ${name}`);
+    }
+    return result;
+  }
+
+  @Post(':name/wallet/hive/deposit/create')
+  async postHiveDepositCreate(
+    @Param('name') name: string,
+    @Body(new ZodBodyPipe(hiveChangellyDepositCreateBodySchema))
+    body: HiveChangellyDepositCreateBody,
+  ): Promise<HiveChangellyDepositCreateResponse> {
+    const result = await this.postUserHiveDepositCreate.execute(name, body);
+    if (!result) {
+      throw new NotFoundException(`User not found: ${name}`);
+    }
+    return result;
+  }
+
+  @Get(':name/wallet/hive/deposit/status/:exchangeId')
+  async getHiveDepositStatus(
+    @Param('name') name: string,
+    @Param(new ZodQueryPipe(hiveChangellyDepositStatusParamsSchema))
+    params: HiveChangellyDepositStatusParams,
+  ): Promise<HiveChangellyDepositItem> {
+    const result = await this.getUserHiveDepositStatus.execute(name, params);
+    if (!result) {
+      throw new NotFoundException(`User not found: ${name}`);
+    }
+    return result;
+  }
+
+  @Get(':name/wallet/hive/deposit/history')
+  async getHiveDepositHistory(
+    @Param('name') name: string,
+    @Query(new ZodQueryPipe(hiveChangellyDepositHistoryQuerySchema))
+    query: HiveChangellyDepositHistoryQuery,
+  ): Promise<HiveChangellyDepositHistoryResponse> {
+    const result = await this.getUserHiveDepositHistory.execute(name, query);
     if (!result) {
       throw new NotFoundException(`User not found: ${name}`);
     }

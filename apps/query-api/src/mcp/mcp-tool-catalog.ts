@@ -362,6 +362,48 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/user-hive-changelly-withdraw.md',
   },
   {
+    name: 'get_hive_deposit_currencies',
+    description:
+      'Coins Changelly converts into HIVE (any account), with network, protocol, extra-id name and pay-in warning. Pass search (e.g. usdt, tron) to narrow; the ticker fixes the network. Skill: changelly-hive-deposit-for-agents.',
+    httpEquivalent: 'GET /query/v1/wallet/hive/deposit/currencies',
+    specPath: 'docs/apps/query-api/spec/user-hive-changelly-deposit.md',
+  },
+  {
+    name: 'get_user_hive_deposit_range',
+    description:
+      'Changelly min/max pay-in amount for a coin → HIVE deposit into the account (float or fixed rate).',
+    httpEquivalent: 'GET /query/v1/users/:name/wallet/hive/deposit/range',
+    specPath: 'docs/apps/query-api/spec/user-hive-changelly-deposit.md',
+  },
+  {
+    name: 'post_user_hive_deposit_estimate',
+    description:
+      'Changelly estimate for a coin → HIVE deposit: HIVE before and after the payout network fee (amountToNet is what the account receives).',
+    httpEquivalent: 'POST /query/v1/users/:name/wallet/hive/deposit/estimate',
+    specPath: 'docs/apps/query-api/spec/user-hive-changelly-deposit.md',
+  },
+  {
+    name: 'post_user_hive_deposit_create',
+    description:
+      'Creates a real Changelly exchange that pays HIVE to the account (the caller or any other Hive account) and returns the pay-in address. Nothing is signed. Show payinAddress, payinExtraId when not null, the network and exchangeId exactly as returned; never invent an address. One call per payment. Skill: changelly-hive-deposit-for-agents.',
+    httpEquivalent: 'POST /query/v1/users/:name/wallet/hive/deposit/create',
+    specPath: 'docs/apps/query-api/spec/user-hive-changelly-deposit.md',
+  },
+  {
+    name: 'get_user_hive_deposit_status',
+    description:
+      'Live Changelly status of a deposit into the account (waiting, confirming, exchanging, sending, finished, failed, refunded, hold, overdue, expired).',
+    httpEquivalent: 'GET /query/v1/users/:name/wallet/hive/deposit/status/:exchangeId',
+    specPath: 'docs/apps/query-api/spec/user-hive-changelly-deposit.md',
+  },
+  {
+    name: 'get_user_hive_deposit_history',
+    description:
+      'Changelly deposits that pay HIVE to the account, newest Changelly order. Use it to recover a lost exchangeId.',
+    httpEquivalent: 'GET /query/v1/users/:name/wallet/hive/deposit/history',
+    specPath: 'docs/apps/query-api/spec/user-hive-changelly-deposit.md',
+  },
+  {
     name: 'post_hive_advanced_report',
     description:
       'Multi-account Hive L1 advanced wallet report with date range, mutual-transaction filter, and historical fiat.',

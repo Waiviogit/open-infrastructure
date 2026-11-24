@@ -34,6 +34,8 @@ export const redisKey = {
   hubFeedFilterCounts: (account: string, tab: string) =>
     buildRedisKey(APP, 'cache', 'hub-feed-filters', 'v2', account.trim().toLowerCase(), tab),
   hiveRewardFund: () => buildRedisKey(APP, 'cache', 'reward-fund', 'hive'),
+  changellyDepositCurrencies: () =>
+    buildRedisKey(APP, 'cache', 'changelly', 'deposit-currencies', 'v1'),
   /** Shared with chain-indexer, which deletes it on the account's profile update. */
   hiveAccount: (accountName: string) => sharedRedisKey.queryApiHiveAccount(accountName),
   waivRewardPool: () => buildRedisKey(APP, 'cache', 'waiv', 'reward-pool'),

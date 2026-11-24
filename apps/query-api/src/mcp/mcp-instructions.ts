@@ -31,6 +31,7 @@ Decision table:
 | Who delegated authority to me / who can I post as | get_user_authority_grantors (404 = account absent from accounts_current, not "no grantors") |
 | Who did this account delegate authority to | get_user_authority_grantees |
 | Grant/revoke posting or act as grantor | Not here — skill hive-account-authority-for-agents + agent-wallet hive_build_posting_authority_grant |
+| Receive HIVE paid in BTC/ETH/USDT/… (any Hive account) | get_hive_deposit_currencies → get_user_hive_deposit_range / post_user_hive_deposit_estimate → post_user_hive_deposit_create; track with get_user_hive_deposit_status / get_user_hive_deposit_history — skill changelly-hive-deposit-for-agents |
 | Hive Engine deposit (BTC → SWAP.BTC, …) | get_user_engine_deposit_list / get_user_engine_deposit_address, then agent-wallet osl_build_hive_engine_deposit + wallet_broadcast posting before showing the address — skill hive-engine-deposit-for-agents |
 
 Excluded: user post drafts (JWT writes) — not exposed via MCP.

@@ -6,15 +6,16 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, wallet, hive, changelly]
-updated_at: 2026-08-28
+updated_at: 2026-11-24
 related:
   - docs/apps/query-api/spec/user-hive-wallet-endpoint.md
+  - docs/apps/query-api/spec/user-hive-changelly-deposit.md
   - docs/apps/web/spec/pages/user-profile/routes/transfers.md
 ---
 
 # User HIVE Changelly withdraw endpoints
 
-Liquid HIVE → external crypto (BTC, LTC, ETH) via [Changelly](https://changelly.com/). query-api talks to Changelly; the **web client** broadcasts Hive L1 `transfer` operations after `create`.
+Liquid HIVE → external crypto (BTC, LTC, ETH) via [Changelly](https://changelly.com/). query-api talks to Changelly; the **web client** broadcasts Hive L1 `transfer` operations after `create`. The reverse direction (any coin → HIVE) is [user-hive-changelly-deposit.md](user-hive-changelly-deposit.md).
 
 ## Environment
 

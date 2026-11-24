@@ -9,6 +9,7 @@ import { registerPostTools } from './tools/posts.tools';
 import { registerHubFeedTools } from './tools/hub-feed.tools';
 import { registerSearchTools } from './tools/search.tools';
 import { registerUserTools } from './tools/users.tools';
+import { registerWalletDepositTools } from './tools/wallet-deposit.tools';
 import { registerOblTools } from './tools/obl.tools';
 import { registerPlacesTools } from './tools/places.tools';
 
@@ -23,6 +24,7 @@ export function registerAllMcpTools(
   registerDiscoverTools(server, deps);
   registerObjectTools(server, deps);
   registerUserTools(server, deps);
+  registerWalletDepositTools(server, deps);
   registerChannelTools(server, deps);
   registerCategoryTools(server, deps);
   registerPostTools(server, deps);

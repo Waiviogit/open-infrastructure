@@ -20,6 +20,14 @@ import { HiveChangellyWithdrawService } from './hive-changelly-withdraw.service'
 import { GetUserHiveWithdrawRangeEndpoint } from './get-user-hive-withdraw-range.endpoint';
 import { PostUserHiveWithdrawEstimateEndpoint } from './post-user-hive-withdraw-estimate.endpoint';
 import { PostUserHiveWithdrawCreateEndpoint } from './post-user-hive-withdraw-create.endpoint';
+import { ChangellyDepositCurrenciesCache } from './changelly-deposit-currencies.cache';
+import { HiveChangellyDepositService } from './hive-changelly-deposit.service';
+import { GetHiveDepositCurrenciesEndpoint } from './get-hive-deposit-currencies.endpoint';
+import { GetUserHiveDepositRangeEndpoint } from './get-user-hive-deposit-range.endpoint';
+import { PostUserHiveDepositEstimateEndpoint } from './post-user-hive-deposit-estimate.endpoint';
+import { PostUserHiveDepositCreateEndpoint } from './post-user-hive-deposit-create.endpoint';
+import { GetUserHiveDepositStatusEndpoint } from './get-user-hive-deposit-status.endpoint';
+import { GetUserHiveDepositHistoryEndpoint } from './get-user-hive-deposit-history.endpoint';
 import { EngineWithdrawQuoteService } from './engine-swap/engine-withdraw-quote.service';
 import { GetHiveAdvancedReportEndpoint } from './get-hive-advanced-report.endpoint';
 import { GetWaivAdvancedReportEndpoint } from './get-waiv-advanced-report.endpoint';
@@ -51,6 +59,14 @@ import { EngineWalletHistoryPagerService } from './engine-wallet-history-pager.s
     HiveChangellyWithdrawService,
     GetUserHiveWithdrawRangeEndpoint,
     PostUserHiveWithdrawEstimateEndpoint,
+    ChangellyDepositCurrenciesCache,
+    HiveChangellyDepositService,
+    GetHiveDepositCurrenciesEndpoint,
+    GetUserHiveDepositRangeEndpoint,
+    PostUserHiveDepositEstimateEndpoint,
+    PostUserHiveDepositCreateEndpoint,
+    GetUserHiveDepositStatusEndpoint,
+    GetUserHiveDepositHistoryEndpoint,
     PostUserHiveWithdrawCreateEndpoint,
     EngineWithdrawQuoteService,
     WaivWalletHistoryPagerService,
@@ -85,6 +101,12 @@ import { EngineWalletHistoryPagerService } from './engine-wallet-history-pager.s
     HiveChangellyWithdrawService,
     GetUserHiveWithdrawRangeEndpoint,
     PostUserHiveWithdrawEstimateEndpoint,
+    GetHiveDepositCurrenciesEndpoint,
+    GetUserHiveDepositRangeEndpoint,
+    PostUserHiveDepositEstimateEndpoint,
+    PostUserHiveDepositCreateEndpoint,
+    GetUserHiveDepositStatusEndpoint,
+    GetUserHiveDepositHistoryEndpoint,
     PostUserHiveWithdrawCreateEndpoint,
     GetUserEngineTokenDelegationsEndpoint,
     GetUserHiveWalletEndpoint,

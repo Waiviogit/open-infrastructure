@@ -10,8 +10,15 @@ export type {
 } from './interface';
 export { mapChangellyTransactionResult } from './map-changelly-transaction';
 export type {
+  ChangellyAddressValidation,
+  ChangellyCreatedTransaction,
+  ChangellyCurrency,
   ChangellyExchangeAmount,
+  ChangellyFixRate,
+  ChangellyPair,
   ChangellyPairParams,
   ChangellyPayinExchange,
+  ChangellyTransactionInfo,
   ChangellyTransactionResult,
+  ChangellyTransactionsFilter,
 } from './type';

@@ -115,6 +115,12 @@ import type {
   GetUserEngineDepositListEndpoint,
   PostUserEngineWithdrawQuoteEndpoint,
   GetUserHiveWithdrawRangeEndpoint,
+  GetHiveDepositCurrenciesEndpoint,
+  GetUserHiveDepositRangeEndpoint,
+  PostUserHiveDepositEstimateEndpoint,
+  PostUserHiveDepositCreateEndpoint,
+  GetUserHiveDepositStatusEndpoint,
+  GetUserHiveDepositHistoryEndpoint,
   PostUserHiveWithdrawEstimateEndpoint,
   GetHiveAdvancedReportEndpoint,
   UpsertHiveWalletExemptionEndpoint,
@@ -189,6 +195,12 @@ export interface McpToolDeps {
   getUserHiveWallet: GetUserHiveWalletEndpoint;
   getUserHiveWithdrawRange: GetUserHiveWithdrawRangeEndpoint;
   postUserHiveWithdrawEstimate: PostUserHiveWithdrawEstimateEndpoint;
+  getHiveDepositCurrencies: GetHiveDepositCurrenciesEndpoint;
+  getUserHiveDepositRange: GetUserHiveDepositRangeEndpoint;
+  postUserHiveDepositEstimate: PostUserHiveDepositEstimateEndpoint;
+  postUserHiveDepositCreate: PostUserHiveDepositCreateEndpoint;
+  getUserHiveDepositStatus: GetUserHiveDepositStatusEndpoint;
+  getUserHiveDepositHistory: GetUserHiveDepositHistoryEndpoint;
   getHiveAdvancedReport: GetHiveAdvancedReportEndpoint;
   upsertHiveWalletExemption: UpsertHiveWalletExemptionEndpoint;
   getUserFollowers: GetUserFollowersEndpoint;
