@@ -45,7 +45,9 @@ test.describe('instant navigation', () => {
 
   test('feed tab Threads → Updates paints the feed skeleton', async ({ page }) => {
     await page.goto('/feed/threads');
-    const trigger = page.locator('nav[aria-label="Feed sections"] a[href="/feed/updates"]');
+    // `:visible` — until React reveals the streamed tab band, its Suspense fallback (same links)
+    // is on screen and the finished band waits in a hidden `<div hidden id="S:…">`.
+    const trigger = page.locator('nav[aria-label="Feed sections"] a[href="/feed/updates"]:visible');
     await expect(trigger).toBeVisible();
 
     const updatesFeed = page.getByTestId('home-updates-feed');
