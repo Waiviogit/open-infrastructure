@@ -4,7 +4,7 @@ import { useCallback, useState, useTransition } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { useLoginModal } from '@/modules/auth';
-import { ObjectCard } from '@/modules/feed/presentation';
+import { CategorySectionCard } from '@/modules/feed/presentation';
 import { useInfiniteScroll, useSyncedPaginatedList } from '@/shared/presentation';
 import { FeedColumn } from '@/shared/presentation/layout';
 
@@ -19,7 +19,7 @@ import type { ShopSectionView, ShopSectionsPage } from '../../domain/types/shop-
 import { UNCATEGORIZED_SHOP_PATH_SEGMENT } from '../../domain/category-nav-path';
 import { formatFavoritesTypeLabel } from './favorites-type-label';
 import { FavoritesLoadMoreFooter } from './favorites-load-more-footer';
-import { UserProfileNavLink } from './user-profile-nav-link';
+import { FavoritesNavLink } from './favorites-nav-links';
 
 /** Objects with no category; rendered after the last category section on the type root. */
 export type FavoritesUncategorizedSection = Pick<ShopSectionView, 'items' | 'totalObjects'>;
@@ -40,54 +40,10 @@ export type FavoritesSectionsProps = {
   viewerUsername?: string | null;
 };
 
-type SectionCardProps = {
-  headingId: string;
-  title: string;
-  href: string;
-  section: FavoritesUncategorizedSection;
-  viewerUsername?: string | null;
-};
-
-function FavoritesSectionCard({ headingId, title, href, section, viewerUsername }: SectionCardProps) {
-  const { t } = useI18n();
-  const { openLogin } = useLoginModal();
-
-  return (
-    <section
-      aria-labelledby={headingId}
-      className="rounded-card border border-border bg-surface/60 p-card-padding"
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id={headingId} className="text-heading font-label text-body-lg">
-          <UserProfileNavLink href={href} className="text-fg underline-offset-2 hover:underline">
-            {title}
-          </UserProfileNavLink>
-        </h2>
-        <p className="text-caption text-fg-secondary tabular-nums">
-          {t('profile_shop_object_count').replace('{count}', String(section.totalObjects))}
-        </p>
-      </div>
-      {section.items.length === 0 ? (
-        <p className="mt-3 text-body-sm text-muted">{t('profile_shop_no_preview')}</p>
-      ) : (
-        <ul className="mt-4 flex flex-col gap-card-padding">
-          {section.items.map((o) => (
-            <ObjectCard
-              key={o.object_id}
-              object={o}
-              viewerUsername={viewerUsername}
-              onRequireLogin={openLogin}
-            />
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 /**
- * Child categories of the current node of a category type, each with preview objects.
- * More sections load on scroll; the Uncategorized section closes the type root.
+ * Child categories of the current node of a category type, each a `CategorySectionCard` (preview
+ * objects, count, Show more). More sections load on scroll; the Uncategorized section closes the
+ * type root.
  */
 export function FavoritesSections({
   accountName,
@@ -101,6 +57,7 @@ export function FavoritesSections({
   viewerUsername,
 }: FavoritesSectionsProps) {
   const { t } = useI18n();
+  const { openLogin } = useLoginModal();
   const {
     items: sections,
     setItems: setSections,
@@ -192,7 +149,7 @@ export function FavoritesSections({
     <FeedColumn>
       <div className="flex flex-col gap-8">
         {sections.map((sec, index) => (
-          <FavoritesSectionCard
+          <CategorySectionCard
             key={sec.categoryName}
             headingId={`favorites-section-${index}`}
             title={sec.categoryName}
@@ -200,20 +157,26 @@ export function FavoritesSections({
               buildFavoritesPath(accountName, objectType, [...lineageSegments, sec.categoryName]),
               shopFilters,
             )}
-            section={sec}
+            totalObjects={sec.totalObjects}
+            items={sec.items}
+            NavLink={FavoritesNavLink}
             viewerUsername={viewerUsername}
+            onRequireLogin={openLogin}
           />
         ))}
         {trailingUncategorized ? (
-          <FavoritesSectionCard
+          <CategorySectionCard
             headingId="favorites-section-uncategorized"
             title={t('profile_categories_uncategorized')}
             href={buildProfileShopHref(
               buildFavoritesPath(accountName, objectType, [UNCATEGORIZED_SHOP_PATH_SEGMENT]),
               shopFilters,
             )}
-            section={trailingUncategorized}
+            totalObjects={trailingUncategorized.totalObjects}
+            items={trailingUncategorized.items}
+            NavLink={FavoritesNavLink}
             viewerUsername={viewerUsername}
+            onRequireLogin={openLogin}
           />
         ) : null}
       </div>

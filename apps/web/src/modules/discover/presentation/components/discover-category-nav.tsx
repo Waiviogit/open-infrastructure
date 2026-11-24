@@ -20,7 +20,7 @@ import { DrawerRegion } from '@/shared/presentation/layout';
 import type { DiscoverCategoryNavState } from '../hooks/use-discover-category-nav';
 
 /** Every Discover link replaces the URL (same-route query change); the drawer needs it too. */
-function DiscoverCategoryLink(props: CategoryNavLinkProps) {
+export function DiscoverCategoryLink(props: CategoryNavLinkProps) {
   return <OptimisticNavLink method="replace" {...props} />;
 }
 

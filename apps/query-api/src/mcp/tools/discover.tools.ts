@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   discoverCategoriesQuerySchema,
   discoverObjectsQuerySchema,
+  discoverSectionsQuerySchema,
   discoverTagCategoriesQuerySchema,
   discoverUsersQuerySchema,
 } from '../../domain/discover';
@@ -82,6 +83,30 @@ export function registerDiscoverTools(server: McpServer, deps: McpToolDeps): voi
     },
     async (args) => {
       const result = await deps.discoverCategories.execute({ query: args });
+      return jsonToolResult(result);
+    },
+  );
+
+  server.registerTool(
+    'discover_sections',
+    {
+      description: catalogDescription('discover_sections'),
+      inputSchema: withMcpLocaleContext(discoverSectionsQuerySchema),
+    },
+    async (args) => {
+      const ctx = pickMcpContext(args);
+      const result = await deps.discoverSections.execute({
+        query: {
+          object_type: args.object_type,
+          category_path: args.category_path,
+          cursor: args.cursor,
+          section_limit: args.section_limit,
+        },
+        locale: ctx.locale,
+        viewerAccount: ctx.viewerAccount,
+        governanceObjectIdFromHeader: ctx.governanceObjectIdFromHeader,
+        countryCode: resolveMcpCountry(deps, args.country),
+      });
       return jsonToolResult(result);
     },
   );

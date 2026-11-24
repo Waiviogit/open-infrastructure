@@ -1,9 +1,14 @@
-import type { DiscoverObjectsPage } from '../domain/discover-response.schema';
+import type {
+  DiscoverObjectsPage,
+  DiscoverSectionsPage,
+} from '../domain/discover-response.schema';
 import type { DiscoverBox } from '../domain/discover-url';
+import { createSessionLruCache } from './session-lru-cache';
 
 const MAX_ENTRIES = 3;
 
-const cache = new Map<string, DiscoverObjectsPage>();
+const feedCache = createSessionLruCache<DiscoverObjectsPage>(MAX_ENTRIES);
+const sectionsCache = createSessionLruCache<DiscoverSectionsPage>(MAX_ENTRIES);
 
 export type DiscoverFeedCacheQuery = {
   objectType: string;
@@ -30,27 +35,27 @@ export function discoverFeedCacheKey(query: DiscoverFeedCacheQuery): string {
 }
 
 export function readDiscoverFeedCache(key: string): DiscoverObjectsPage | null {
-  const hit = cache.get(key);
-  if (!hit) {
-    return null;
-  }
-  cache.delete(key);
-  cache.set(key, hit);
-  return hit;
+  return feedCache.read(key);
 }
 
 export function writeDiscoverFeedCache(key: string, page: DiscoverObjectsPage): void {
-  cache.delete(key);
-  cache.set(key, page);
-  while (cache.size > MAX_ENTRIES) {
-    const oldest = cache.keys().next().value;
-    if (oldest === undefined) {
-      break;
-    }
-    cache.delete(oldest);
-  }
+  feedCache.write(key, page);
+}
+
+/** Category blocks depend only on the type and the lineage (no filters in block mode). */
+export function discoverSectionsCacheKey(objectType: string, categoryPath: readonly string[]): string {
+  return [objectType, categoryPath.join('\u0001')].join('\u0002');
+}
+
+export function readDiscoverSectionsCache(key: string): DiscoverSectionsPage | null {
+  return sectionsCache.read(key);
+}
+
+export function writeDiscoverSectionsCache(key: string, page: DiscoverSectionsPage): void {
+  sectionsCache.write(key, page);
 }
 
 export function clearDiscoverFeedCacheForTests(): void {
-  cache.clear();
+  feedCache.clear();
+  sectionsCache.clear();
 }

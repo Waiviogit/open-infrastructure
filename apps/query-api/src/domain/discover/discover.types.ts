@@ -47,3 +47,17 @@ export interface DiscoverCategoriesResponseDto {
   /** Root only: more categories pass the display rules than the root limit shows. */
   show_other: boolean;
 }
+
+export interface DiscoverSectionDto {
+  categoryName: string;
+  /** Top objects of the child category by rank, one per group. */
+  items: ProjectedObject[];
+  /** Groups in the child category (its category tree count). */
+  totalObjects: number;
+}
+
+export interface DiscoverSectionsResponseDto {
+  sections: DiscoverSectionDto[];
+  cursor: string | null;
+  hasMore: boolean;
+}

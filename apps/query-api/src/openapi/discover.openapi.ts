@@ -130,3 +130,26 @@ registry.registerPath({
     },
   },
 });
+
+registry.registerPath({
+  method: 'get',
+  path: '/query/v1/discover/sections',
+  tags: [queryApiOpenApiTags.discover],
+  summary: 'Category blocks of a category',
+  description:
+    'One block per child category of `category_path` (the category tree children: at least 3 groups, at most 60% of the level, ordered by count). Each block has the top 3 objects by rank (one per group) and the group count. Paged by the last block category name.',
+  request: {
+    query: z.object({
+      object_type: z.string().min(1).describe('Category object type, e.g. product'),
+      category_path: z
+        .union([z.string(), z.array(z.string())])
+        .describe('Selected lineage, root first (repeat the parameter); required'),
+      cursor: z.string().optional().describe('Category name of the last block of the previous page'),
+      section_limit: z.coerce.number().int().min(1).max(10).optional(),
+      country: z.string().trim().max(32).optional(),
+    }),
+  },
+  responses: {
+    200: { description: '`{ sections: [{ categoryName, items, totalObjects }], cursor, hasMore }`.' },
+  },
+});

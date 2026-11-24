@@ -42,6 +42,7 @@ Next.js **Route Handlers** under `apps/web/src/app/api/` proxy to backend servic
 | `/api/discover/users` | GET | query-api discover users | Discover page |
 | `/api/discover/tag-categories` | GET | query-api tag categories | Discover filters |
 | `/api/discover/categories` | GET | query-api discover category tree level | Discover category rail and drawer |
+| `/api/discover/sections` | GET | query-api discover category blocks (viewer, locale, client IP forwarded) | Discover center column inside a category |
 | `/api/hello` | GET | — | Health / smoke only |
 | `/api/social-embed/linkedin` | GET | `www.linkedin.com/embed/feed/update/{urn}` → post card | LinkedIn post card ([linkedin-embed.md](components/linkedin-embed.md)); **422** for layouts it does not know (client keeps the iframe) |
 | `/api/users/[name]/wallet/waiv` | GET | query-api WAIV summary | WAIV transfers tab |

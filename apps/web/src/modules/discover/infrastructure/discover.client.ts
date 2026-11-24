@@ -1,10 +1,12 @@
 import {
   discoverCategoriesResponseSchema,
   discoverObjectsPageSchema,
+  discoverSectionsPageSchema,
   discoverTagCategoriesResponseSchema,
   discoverUsersPageSchema,
   type DiscoverCategoriesResponse,
   type DiscoverObjectsPage,
+  type DiscoverSectionsPage,
   type DiscoverTagCategoriesResponse,
   type DiscoverUsersPage,
 } from '../domain/discover-response.schema';
@@ -217,6 +219,42 @@ export async function fetchDiscoverCategories(
     }
     const raw: unknown = await res.json();
     const parsed = discoverCategoriesResponseSchema.safeParse(raw);
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/** One page of category blocks under `categoryPath` (non-empty); null when the request fails. */
+export async function fetchDiscoverSections(
+  objectType: string,
+  init: {
+    categoryPath: readonly string[];
+    cursor?: string | null;
+    sectionLimit?: number;
+    signal?: AbortSignal;
+  },
+): Promise<DiscoverSectionsPage | null> {
+  const sp = new URLSearchParams({ object_type: objectType.trim() });
+  appendCategoryPath(sp, init.categoryPath);
+  if (init.cursor?.trim()) {
+    sp.set('cursor', init.cursor.trim());
+  }
+  if (init.sectionLimit != null) {
+    sp.set('section_limit', String(init.sectionLimit));
+  }
+  try {
+    const res = await fetch(`/api/discover/sections?${sp.toString()}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      signal: init.signal,
+    });
+    if (!res.ok) {
+      return null;
+    }
+    const raw: unknown = await res.json();
+    const parsed = discoverSectionsPageSchema.safeParse(raw);
     return parsed.success ? parsed.data : null;
   } catch {
     return null;

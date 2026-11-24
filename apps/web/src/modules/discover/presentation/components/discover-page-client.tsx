@@ -11,6 +11,7 @@ import {
   useInstantNavigation,
 } from '@/shared/presentation';
 import { useLoginModal } from '@/modules/auth';
+import { sameCategoryLineage } from '@/shared/domain/category-nav';
 
 import {
   parseDiscoverPageState,
@@ -25,7 +26,7 @@ import {
 import { resolveInitialDiscoverType } from '../../domain/resolve-initial-discover-type';
 import { useDiscoverCategoryNav } from '../hooks/use-discover-category-nav';
 import { DiscoverCategoryDrawer, DiscoverCategoryRail } from './discover-category-nav';
-import { DiscoverFeed } from './discover-feed';
+import { DiscoverFeed, type DiscoverCenterMode } from './discover-feed';
 import type { DiscoverMobileTab } from './discover-mobile-header';
 import { DiscoverFilters } from './discover-filters';
 import { DiscoverFilterSheet } from './discover-filter-sheet';
@@ -142,6 +143,20 @@ function DiscoverPageContent({
     categoryType != null &&
     (categoryPath.length > 0 || categoryNav.status !== 'ready' || categoryNav.items.length > 0);
 
+  const filtersActive = q.trim().length > 0 || tags.length > 0 || box != null;
+  // Blocks per subcategory inside a category that has subcategories, without filters (like
+  // Favorites); the type root and leaves keep the flat feed.
+  const centerMode: DiscoverCenterMode =
+    categoryType == null || categoryPath.length === 0 || filtersActive
+      ? 'feed'
+      : categoryNav.status === 'loading'
+        ? 'pending'
+        : categoryNav.status === 'ready' &&
+            categoryNav.items.length > 0 &&
+            sameCategoryLineage(categoryNav.navLineage, categoryPath)
+          ? 'sections'
+          : 'feed';
+
   const categoryHref = useCallback(
     (lineage: readonly string[]) =>
       buildDiscoverHref({
@@ -238,6 +253,7 @@ function DiscoverPageContent({
             mobileTab={mobileTab}
             onMobileTabChange={setMobileTab}
             onOpenFilterSheet={() => setFilterSheetOpen(true)}
+            centerMode={centerMode}
             categoryTrail={
               showCategoryTree
                 ? {

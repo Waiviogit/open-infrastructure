@@ -2,16 +2,20 @@ import { Controller, Get, Query } from '@nestjs/common';
 import {
   GetDiscoverCategoriesEndpoint,
   GetDiscoverObjectsEndpoint,
+  GetDiscoverSectionsEndpoint,
   GetDiscoverTagCategoriesEndpoint,
   GetDiscoverUsersEndpoint,
   discoverCategoriesQuerySchema,
   discoverObjectsQuerySchema,
+  discoverSectionsQuerySchema,
   discoverTagCategoriesQuerySchema,
   discoverUsersQuerySchema,
   type DiscoverCategoriesQuery,
   type DiscoverCategoriesResponseDto,
   type DiscoverObjectsQuery,
   type DiscoverObjectsResponseDto,
+  type DiscoverSectionsQuery,
+  type DiscoverSectionsResponseDto,
   type DiscoverTagCategoriesQuery,
   type DiscoverTagCategoriesResponseDto,
   type DiscoverUsersQuery,
@@ -31,6 +35,7 @@ export class DiscoverController {
     private readonly getDiscoverUsers: GetDiscoverUsersEndpoint,
     private readonly getDiscoverTagCategories: GetDiscoverTagCategoriesEndpoint,
     private readonly getDiscoverCategories: GetDiscoverCategoriesEndpoint,
+    private readonly getDiscoverSections: GetDiscoverSectionsEndpoint,
     private readonly countryResolver: CountryResolverService,
   ) {}
 
@@ -71,5 +76,22 @@ export class DiscoverController {
     @Query(new ZodQueryPipe(discoverCategoriesQuerySchema)) query: DiscoverCategoriesQuery,
   ): Promise<DiscoverCategoriesResponseDto> {
     return this.getDiscoverCategories.execute({ query });
+  }
+
+  @Get('sections')
+  async sections(
+    @Query(new ZodQueryPipe(discoverSectionsQuerySchema)) query: DiscoverSectionsQuery,
+    @ReqLocale() locale: string,
+    @ReqViewer() viewer: string | undefined,
+    @ReqGovernanceObjectId() governanceObjectIdFromHeader: string | undefined,
+    @ReqClientIp() clientIp: string | null,
+  ): Promise<DiscoverSectionsResponseDto> {
+    return this.getDiscoverSections.execute({
+      query,
+      locale,
+      viewerAccount: viewer,
+      governanceObjectIdFromHeader,
+      countryCode: this.countryResolver.resolve(clientIp, query.country),
+    });
   }
 }

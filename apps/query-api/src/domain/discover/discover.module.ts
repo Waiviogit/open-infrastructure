@@ -6,7 +6,9 @@ import { CategoryNavigationModule } from '../categories/category-navigation.modu
 import { GovernanceModule } from '../governance';
 import { ObjectProjectionModule } from '../object-projection/object-projection.module';
 import { GetDiscoverCategoriesEndpoint } from './get-discover-categories.endpoint';
+import { DiscoverObjectProjector } from './discover-object-projector';
 import { GetDiscoverObjectsEndpoint } from './get-discover-objects.endpoint';
+import { GetDiscoverSectionsEndpoint } from './get-discover-sections.endpoint';
 import { GetDiscoverTagCategoriesEndpoint } from './get-discover-tag-categories.endpoint';
 import { GetDiscoverUsersEndpoint } from './get-discover-users.endpoint';
 
@@ -20,13 +22,16 @@ import { GetDiscoverUsersEndpoint } from './get-discover-users.endpoint';
     CategoryNavigationModule,
   ],
   providers: [
+    DiscoverObjectProjector,
     GetDiscoverObjectsEndpoint,
+    GetDiscoverSectionsEndpoint,
     GetDiscoverUsersEndpoint,
     GetDiscoverTagCategoriesEndpoint,
     GetDiscoverCategoriesEndpoint,
   ],
   exports: [
     GetDiscoverObjectsEndpoint,
+    GetDiscoverSectionsEndpoint,
     GetDiscoverUsersEndpoint,
     GetDiscoverTagCategoriesEndpoint,
     GetDiscoverCategoriesEndpoint,

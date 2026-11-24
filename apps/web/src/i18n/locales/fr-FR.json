@@ -2727,6 +2727,7 @@
   "profile_shop_load_more_sections": "Load more sections",
   "profile_shop_no_preview": "No preview items.",
   "profile_shop_object_count": "{count} objects",
+  "category_section_show_more": "Voir plus : {category}",
   "profile_shop_sections_empty": "No categories to show yet.",
   "profile_show_more_filters": "Show more",
   "profile_signature": "Signature",

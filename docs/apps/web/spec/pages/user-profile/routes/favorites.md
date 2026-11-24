@@ -58,7 +58,7 @@ One tab for every object the user keeps: the former Shop (`book`, `product`), Re
 | Type without categorized objects (`has_categories` false; a category path 404s) | `FavoritesObjectList` (flat, weight order) |
 | Category type, Uncategorized node or active `tags` / `rating` | `FavoritesObjectList` (flat, facet counts match rows) |
 | Category type, leaf (no child categories) | `FavoritesObjectList` for the lineage |
-| Category type, inner node | `FavoritesSections` (child categories × 3 previews); the type root appends an **Uncategorized** section after the last category once all sections are loaded |
+| Category type, inner node | `FavoritesSections` (child categories × 3 previews); the type root appends an **Uncategorized** section after the last category once all sections are loaded. Each block is the shared `CategorySectionCard` (`@/modules/feed/presentation`, also used by Discover): the title links to the category with a `›` chevron, the object count on the right, and `Show more {category}` under the previews when the category holds more objects than they show |
 
 Categories follow the client's display rules (shared with Discover): a category with fewer than 3 objects, or covering more than 60% of its level, is not listed (see [categories.md](../../../../../query-api/spec/categories.md#display-rules-client)). Displayed counts are live counts over the same scope as the lists (see [shop-feed-endpoints.md](../../../../../query-api/spec/shop-feed-endpoints.md) and [categories.md](../../../../../query-api/spec/categories.md)).
 

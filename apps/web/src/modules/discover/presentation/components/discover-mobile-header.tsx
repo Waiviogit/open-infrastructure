@@ -19,6 +19,8 @@ export type DiscoverMobileHeaderProps = {
   categoryPath: string[];
   map: DiscoverMapView | null;
   showMap: boolean;
+  /** False in category block mode (blocks are ordered by count, not by the sort). */
+  showSort?: boolean;
   mobileTab: DiscoverMobileTab;
   onMobileTabChange: (tab: DiscoverMobileTab) => void;
 };
@@ -37,13 +39,14 @@ export function DiscoverMobileHeader({
   categoryPath,
   map,
   showMap,
+  showSort: sortAllowed = true,
   mobileTab,
   onMobileTabChange,
 }: DiscoverMobileHeaderProps) {
   const { t } = useI18n();
 
   const showSort =
-    !usersMode && objectType != null && (!showMap || mobileTab === 'list');
+    sortAllowed && !usersMode && objectType != null && (!showMap || mobileTab === 'list');
 
   if (!showMap && !showSort) {
     return null;

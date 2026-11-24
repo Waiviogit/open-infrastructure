@@ -84,6 +84,7 @@ For a type whose registry supports the `category` update (`objectTypeSupportsCat
 - **Breadcrumbs** — `All › Electronics › Audio` (shared `CategoryBreadcrumbs`); `All` is the type root. Below `lg` the current crumb is a tinted pill (`bg-accent-soft`) that opens the drawer.
 - **Drawer (`< lg`)** — `DiscoverCategoryDrawer`: `DrawerRegion side="left" belowHeader size="wide" closeOnBack`, one level at a time (shared `CategoryNavDrawerList`): ‹ parent, the level itself, child categories with counts. A category with children opens its level and keeps the drawer; a leaf or the level closes it. Back closes the drawer; its links replace the URL.
 - **Toolbar (`< lg`)** — like Favorites: at the type root without filters the Filter pill shares the crumb row; with a category path or active filters it goes after the chips.
+- **Center column: blocks or feed.** Inside a category that has subcategories, without `q` / `tags` / `box`, the center shows one block per subcategory (`DiscoverSections`, BFF `GET /api/discover/sections` → query-api [`discover/sections`](../../../../query-api/spec/discover-categories.md#category-blocks)): the shared `CategorySectionCard` with the title link and `›`, the group count, the top 3 objects by rank and `Show more {category}`. More blocks load on scroll; on Back the loaded blocks are seeded from the session cache (`discover-feed-cache.ts`) so the scroll offset is restored. The type root (`All`, which also lists objects without a category), a category without subcategories and any filtered view keep the flat feed. Sort is hidden in block mode; the map still shows the whole lineage. While the category tree loads, a list skeleton.
 
 Shared components: `@/shared/presentation/category-nav` (list, ← Up links, drawer list, breadcrumbs, skeleton), used by Favorites too.
 
@@ -106,6 +107,7 @@ Shared `ActiveFilterChips` (`@/shared/presentation`), the same component as prof
 | `GET /api/discover/users` | `GET /query/v1/discover/users` |
 | `GET /api/discover/tag-categories` | `GET /query/v1/discover/tag-categories` |
 | `GET /api/discover/categories` | `GET /query/v1/discover/categories` |
+| `GET /api/discover/sections` | `GET /query/v1/discover/sections` |
 
 ### Object feed
 

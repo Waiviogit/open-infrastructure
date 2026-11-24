@@ -42,6 +42,25 @@ Response: `{ items: { name, objects_count, has_children }[], show_other }`. No `
 
 Implementation: [`GetDiscoverCategoriesEndpoint`](../../../../apps/query-api/src/domain/discover/get-discover-categories.endpoint.ts).
 
+## Category blocks
+
+`GET /query/v1/discover/sections` (MCP tool `discover_sections`), used by the Discover center column inside a category with subcategories.
+
+| Param | Role |
+|-------|------|
+| `object_type` | **Required**, one of `CATEGORY_OBJECT_TYPES`. |
+| `category_path` | **Required, non-empty**, repeatable, root first: the category whose children become blocks. |
+| `cursor` | Category name of the last block of the previous page. |
+| `section_limit` | Blocks per page, default 3, max 10. |
+
+Response: `{ sections: [{ categoryName, items, totalObjects }], cursor, hasMore }`.
+
+- Blocks = the children of `category_path` in the unfiltered type tree (`CategoryNavigationService`: display rules, near-duplicates, order by count); `totalObjects` = the child's group count.
+- `items` = the top `DISCOVER_SECTION_OBJECTS_PER_CATEGORY` (3) objects of `[...category_path, child]` by rank, one per group (`listObjects`, as the feed), projected with the feed's card pipeline (`DiscoverObjectProjector`, shared with `discover/objects`).
+- An unknown cursor returns an empty page.
+
+Implementation: [`GetDiscoverSectionsEndpoint`](../../../../apps/query-api/src/domain/discover/get-discover-sections.endpoint.ts).
+
 ## `category_path` on Discover objects and facets
 
 `GET /discover/objects` and `GET /discover/tag-categories` accept the same repeated `category_path`: only objects whose `category_names` contain every name (`EXISTS … @>`), before the group collapse. Tag facets with a category path skip the tag-facet cache. Shared filter fragments: [`discover-object-filters.sql.ts`](../../../../apps/query-api/src/repositories/discover-object-filters.sql.ts).

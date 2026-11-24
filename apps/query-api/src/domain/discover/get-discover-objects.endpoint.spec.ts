@@ -1,3 +1,4 @@
+import { DiscoverObjectProjector } from './discover-object-projector';
 import { GetDiscoverObjectsEndpoint, parseTagFilters } from './get-discover-objects.endpoint';
 import type { DiscoverRepository } from '../../repositories/discover.repository';
 import type { AggregatedObjectRepository } from '../../repositories/aggregated-object.repository';
@@ -24,11 +25,13 @@ describe('GetDiscoverObjectsEndpoint', () => {
 
     const endpoint = new GetDiscoverObjectsEndpoint(
       discoverRepo,
-      {} as AggregatedObjectRepository,
-      {} as ObjectViewService,
-      {} as GovernanceResolverService,
-      {} as ObjectProjectionService,
-      { enrich: jest.fn() } as never,
+      new DiscoverObjectProjector(
+        {} as AggregatedObjectRepository,
+        {} as ObjectViewService,
+        {} as GovernanceResolverService,
+        {} as ObjectProjectionService,
+        { enrich: jest.fn() } as never,
+      ),
     );
 
     const result = await endpoint.execute({
@@ -48,11 +51,13 @@ describe('GetDiscoverObjectsEndpoint', () => {
 
     const endpoint = new GetDiscoverObjectsEndpoint(
       discoverRepo,
-      {} as AggregatedObjectRepository,
-      {} as ObjectViewService,
-      {} as GovernanceResolverService,
-      {} as ObjectProjectionService,
-      { enrich: jest.fn() } as never,
+      new DiscoverObjectProjector(
+        {} as AggregatedObjectRepository,
+        {} as ObjectViewService,
+        {} as GovernanceResolverService,
+        {} as ObjectProjectionService,
+        { enrich: jest.fn() } as never,
+      ),
     );
 
     await endpoint.execute({
@@ -103,11 +108,13 @@ describe('GetDiscoverObjectsEndpoint', () => {
 
     const endpoint = new GetDiscoverObjectsEndpoint(
       discoverRepo,
-      aggregatedObjectRepo,
-      objectViewService,
-      governanceResolver,
-      objectProjectionService,
-      { enrich: jest.fn() } as never,
+      new DiscoverObjectProjector(
+        aggregatedObjectRepo,
+        objectViewService,
+        governanceResolver,
+        objectProjectionService,
+        { enrich: jest.fn() } as never,
+      ),
     );
 
     await endpoint.execute({

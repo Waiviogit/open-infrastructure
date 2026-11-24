@@ -4,6 +4,8 @@ import { countryQueryField } from '../../http/country-query.schema';
 import {
   DISCOVER_OBJECTS_DEFAULT_LIMIT,
   DISCOVER_OBJECTS_MAX_LIMIT,
+  DISCOVER_SECTIONS_DEFAULT_LIMIT,
+  DISCOVER_SECTIONS_MAX_LIMIT,
   DISCOVER_USERS_DEFAULT_LIMIT,
   DISCOVER_USERS_MAX_LIMIT,
 } from '../../constants/discover.constants';
@@ -172,3 +174,31 @@ export const discoverCategoriesQuerySchema = z.object({
     .describe('Map bounding box as swLng,swLat,neLng,neLat (narrows counts)'),
 });
 export type DiscoverCategoriesQuery = z.infer<typeof discoverCategoriesQuerySchema>;
+
+export const discoverSectionsQuerySchema = z.object({
+  object_type: z
+    .string()
+    .trim()
+    .refine((type) => objectTypeSupportsCategories(type), {
+      message: 'object_type must be a category object type (CATEGORY_OBJECT_TYPES)',
+    })
+    .describe('Category object type (CATEGORY_OBJECT_TYPES), e.g. product or book'),
+  category_path: discoverCategoryPathParam
+    .refine((path) => path.length > 0, { message: 'category_path must not be empty' })
+    .describe('Selected category lineage, root first; one block per child category'),
+  cursor: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe('Category name of the last block of the previous page'),
+  section_limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(DISCOVER_SECTIONS_MAX_LIMIT)
+    .default(DISCOVER_SECTIONS_DEFAULT_LIMIT)
+    .describe('Category blocks per page'),
+  country: countryQueryField,
+});
+export type DiscoverSectionsQuery = z.infer<typeof discoverSectionsQuerySchema>;

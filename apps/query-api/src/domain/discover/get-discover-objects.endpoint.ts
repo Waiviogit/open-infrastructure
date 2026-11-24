@@ -1,19 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { AggregatedObject } from '@opden-data-layer/objects-domain';
-import { ObjectViewService } from '@opden-data-layer/objects-domain';
-import { AggregatedObjectRepository, DiscoverRepository } from '../../repositories';
-import { AffiliateLinksEnricher, flattenAffiliateTargets } from '../affiliate';
-import { GovernanceResolverService } from '../governance';
-import { ObjectProjectionService } from '../object-projection/object-projection.service';
-import { USER_FAVORITES_CARD_UPDATE_TYPES } from '../favorites/favorites.constants';
-
-/** Shop card fields plus geo for discover map markers. */
-const DISCOVER_OBJECT_UPDATE_TYPES = [
-  ...USER_FAVORITES_CARD_UPDATE_TYPES,
-  'geo',
-  'title',
-  'address',
-] as const;
+import { DiscoverRepository } from '../../repositories';
+import { DiscoverObjectProjector } from './discover-object-projector';
 import type { DiscoverObjectsQuery } from './discover-query.schema';
 import type { DiscoverObjectsResponseDto } from './discover.types';
 
@@ -23,11 +10,6 @@ export interface GetDiscoverObjectsInput {
   viewerAccount?: string;
   governanceObjectIdFromHeader?: string;
   countryCode?: string | null;
-}
-
-function orderAggregatedByIds(objects: AggregatedObject[], objectIds: string[]): AggregatedObject[] {
-  const map = new Map(objects.map((o) => [o.core.object_id, o]));
-  return objectIds.map((id) => map.get(id)).filter((x): x is AggregatedObject => x != null);
 }
 
 /** Parses `category:value` query tags; skips legacy value-only strings. */
@@ -52,11 +34,7 @@ export function parseTagFilters(
 export class GetDiscoverObjectsEndpoint {
   constructor(
     private readonly discoverRepo: DiscoverRepository,
-    private readonly aggregatedObjectRepo: AggregatedObjectRepository,
-    private readonly objectViewService: ObjectViewService,
-    private readonly governanceResolver: GovernanceResolverService,
-    private readonly objectProjectionService: ObjectProjectionService,
-    private readonly affiliateLinks: AffiliateLinksEnricher,
+    private readonly projector: DiscoverObjectProjector,
   ) {}
 
   async execute(input: GetDiscoverObjectsInput): Promise<DiscoverObjectsResponseDto> {
@@ -81,37 +59,15 @@ export class GetDiscoverObjectsEndpoint {
       return { items: [], cursor: null, hasMore: false };
     }
 
-    const objectIds = rows.map((r) => r.object_id);
-    const { objects, voterWaivPowers, rankVoteProjection } =
-      await this.aggregatedObjectRepo.loadByObjectIds(objectIds, {
+    const projected = await this.projector.project(
+      rows.map((r) => r.object_id),
+      {
+        locale: input.locale,
         viewerAccount: input.viewerAccount,
-      });
-
-    const ordered = orderAggregatedByIds(objects, objectIds);
-    const governance = await this.governanceResolver.resolveMergedForObjectView(
-      input.governanceObjectIdFromHeader,
+        governanceObjectIdFromHeader: input.governanceObjectIdFromHeader,
+        countryCode: input.countryCode,
+      },
     );
-
-    const views = this.objectViewService.resolve(ordered, voterWaivPowers, {
-      update_types: [...DISCOVER_OBJECT_UPDATE_TYPES],
-      locale: input.locale,
-      include_rejected: false,
-      governance,
-    });
-
-    const projected = await this.objectProjectionService.batchProject(views, {
-      locale: input.locale,
-      includeSeo: false,
-      governanceObjectIdFromHeader: input.governanceObjectIdFromHeader,
-      viewerAccount: input.viewerAccount,
-      rankVoteProjection,
-    });
-
-    await this.affiliateLinks.enrich(flattenAffiliateTargets(projected), {
-      countryCode: input.countryCode ?? null,
-      governanceObjectIdFromHeader: input.governanceObjectIdFromHeader,
-      governance,
-    });
 
     const lastRow = rows[rows.length - 1];
     const cursor = hasMore

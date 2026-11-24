@@ -19,6 +19,7 @@ import {
   GetDiscoverObjectsEndpoint,
   GetDiscoverTagCategoriesEndpoint,
   GetDiscoverCategoriesEndpoint,
+  GetDiscoverSectionsEndpoint,
   GetDiscoverUsersEndpoint,
 } from '../domain/discover';
 import {
@@ -141,6 +142,7 @@ export class McpService {
     private readonly discoverUsers: GetDiscoverUsersEndpoint,
     private readonly discoverTagCategories: GetDiscoverTagCategoriesEndpoint,
     private readonly discoverCategories: GetDiscoverCategoriesEndpoint,
+    private readonly discoverSections: GetDiscoverSectionsEndpoint,
     private readonly getObjectById: GetObjectByIdEndpoint,
     private readonly getNestedObjects: GetNestedObjectsEndpoint,
     private readonly checkObjectExists: CheckObjectExistsEndpoint,
@@ -247,6 +249,7 @@ export class McpService {
       discoverUsers: this.discoverUsers,
       discoverTagCategories: this.discoverTagCategories,
       discoverCategories: this.discoverCategories,
+      discoverSections: this.discoverSections,
       getObjectById: this.getObjectById,
       getNestedObjects: this.getNestedObjects,
       checkObjectExists: this.checkObjectExists,

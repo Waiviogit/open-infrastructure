@@ -21,3 +21,5 @@ export type { StoryVoteButtonProps } from './components/story-vote-button';
 export { ObjectCard } from './components/object-card';
 export { ObjectPageLink } from './components/object-page-link';
 export type { ObjectCardProps } from './components/object-card';
+export { CategorySectionCard } from './components/category-section-card';
+export type { CategorySectionCardProps } from './components/category-section-card';

@@ -19,3 +19,12 @@ export const DISCOVER_TAG_CATEGORIES_CACHE_TTL_SEC = 300;
  * chain-indexer): the candidates cannot change faster than that.
  */
 export const DISCOVER_CATEGORIES_CACHE_TTL_SEC = 600;
+
+/** Preview objects per category block of `GET /discover/sections`. */
+export const DISCOVER_SECTION_OBJECTS_PER_CATEGORY = 3;
+
+/** Default number of category blocks per `GET /discover/sections` page. */
+export const DISCOVER_SECTIONS_DEFAULT_LIMIT = 3;
+
+/** Max number of category blocks per `GET /discover/sections` page. */
+export const DISCOVER_SECTIONS_MAX_LIMIT = 10;

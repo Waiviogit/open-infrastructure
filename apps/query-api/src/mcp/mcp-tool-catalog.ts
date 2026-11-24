@@ -69,6 +69,12 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     httpEquivalent: 'GET /query/v1/discover/categories',
   },
   {
+    name: 'discover_sections',
+    description:
+      'Category blocks of a category (children of category_path): per child category its top objects by rank and its group count; paged by category name.',
+    httpEquivalent: 'GET /query/v1/discover/sections',
+  },
+  {
     name: 'resolve_object',
     description:
       'Resolve one object with governance masking and optional update_types filter (empty = all present updates).',

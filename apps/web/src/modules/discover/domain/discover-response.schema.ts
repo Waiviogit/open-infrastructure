@@ -52,3 +52,20 @@ export const discoverCategoriesResponseSchema = z.object({
 });
 
 export type DiscoverCategoriesResponse = z.infer<typeof discoverCategoriesResponseSchema>;
+
+/** One category block: a child category with its preview objects and group count. */
+export const discoverSectionSchema = z.object({
+  categoryName: z.string(),
+  items: z.array(socialProjectedObjectSchema),
+  totalObjects: z.number(),
+});
+
+/** `GET /query/v1/discover/sections`: one page of category blocks. */
+export const discoverSectionsPageSchema = z.object({
+  sections: z.array(discoverSectionSchema),
+  cursor: z.string().nullable(),
+  hasMore: z.boolean(),
+});
+
+export type DiscoverSection = z.infer<typeof discoverSectionSchema>;
+export type DiscoverSectionsPage = z.infer<typeof discoverSectionsPageSchema>;
