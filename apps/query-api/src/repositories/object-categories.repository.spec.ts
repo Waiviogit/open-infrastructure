@@ -206,49 +206,78 @@ describe('ObjectCategoriesRepository.findObjectIdsByScope', () => {
   });
 });
 
-describe('ObjectCategoriesRepository.countObjectIdsByScopeForCategories', () => {
-  it('counts each name inside the full lineage and fills missing names with 0', async () => {
-    const { db, calls } = createCapturingDb([{ category_name: 'Comfort Food', object_count: '2' }]);
+describe('ObjectCategoriesRepository.countCategoryLevel', () => {
+  const userScope = { kind: 'user' as const, scope, tags: [], rating: null };
+
+  it('counts each name inside the full lineage, fills missing names with 0, returns the level total', async () => {
+    const { db, calls } = createCapturingDb([
+      { category_name: null, unit_count: '9' },
+      { category_name: 'Comfort Food', unit_count: '2' },
+    ]);
     const repo = new ObjectCategoriesRepository(db);
 
-    const counts = await repo.countObjectIdsByScopeForCategories({
-      scope,
+    const level = await repo.countCategoryLevel({
+      scope: userScope,
       parentPath: ['German Cuisine'],
       categoryNames: ['Comfort Food', 'Desserts'],
     });
 
-    expect([...counts]).toEqual([
+    expect([...level.counts]).toEqual([
       ['Comfort Food', 2],
       ['Desserts', 0],
     ]);
-    expect(calls[0]?.sql).toMatch(/cat\.category_names @> \$\d+::text\[\]/);
-    expect(calls[0]?.sql).toContain('COUNT(DISTINCT lo.object_id)');
-    expect(calls[0]?.parameters).toContainEqual(['German Cuisine']);
-    expect(calls[0]?.parameters).toContainEqual(['Comfort Food', 'Desserts']);
+    expect(level.total).toBe(9);
+    // Total and per-name counts are two parallel queries over the same scope CTE.
+    expect(calls).toHaveLength(2);
+    for (const call of calls) {
+      expect(call.sql).toMatch(/cat\.category_names @> \$\d+::text\[\]/);
+      expect(call.sql).toContain('COUNT(DISTINCT s.unit_key)');
+      expect(call.sql).toContain('s.object_id AS unit_key');
+      expect(call.parameters).toContainEqual(['German Cuisine']);
+    }
+    expect(calls[1]?.parameters).toContainEqual(['Comfort Food', 'Desserts']);
+  });
+
+  it('counts groups over every active object of the type for a type scope', async () => {
+    const { db, calls } = createCapturingDb([]);
+    const repo = new ObjectCategoriesRepository(db);
+
+    await repo.countCategoryLevel({
+      scope: { kind: 'type', objectType: 'product', q: '', tags: [], box: null },
+      parentPath: [],
+      categoryNames: ['Audio'],
+    });
+
+    expect(calls[0]?.sql).toContain('COALESCE(oc.meta_group_id, oc.object_id) AS unit_key');
+    expect(calls[0]?.sql).toContain('oc.object_type = $');
+    expect(calls[0]?.sql).not.toContain('user_favorites_scope');
+    // Root: every name is a candidate, counted with one GROUP BY (no candidate list match).
+    expect(calls.some((call) => /c\.name = ANY/.test(call.sql))).toBe(false);
   });
 
   it('returns zero counts when the query fails', async () => {
     const { db } = createCapturingDb(new Error('db down'));
     const repo = new ObjectCategoriesRepository(db);
-    const counts = await repo.countObjectIdsByScopeForCategories({
-      scope,
+    const level = await repo.countCategoryLevel({
+      scope: userScope,
       parentPath: [],
       categoryNames: ['A'],
     });
-    expect([...counts]).toEqual([['A', 0]]);
+    expect([...level.counts]).toEqual([['A', 0]]);
+    expect(level.total).toBe(0);
   });
 });
 
 describe('ObjectCategoriesRepository.countCategoryPairsByScope', () => {
   it('groups non-zero pair counts by first name', async () => {
     const { db, calls } = createCapturingDb([
-      { first_name: 'A', second_name: 'X', object_count: 3 },
-      { first_name: 'A', second_name: 'Y', object_count: '1' },
+      { first_name: 'A', second_name: 'X', unit_count: 3 },
+      { first_name: 'A', second_name: 'Y', unit_count: '1' },
     ]);
     const repo = new ObjectCategoriesRepository(db);
 
     const pairs = await repo.countCategoryPairsByScope({
-      scope,
+      scope: { kind: 'user', scope, tags: [], rating: null },
       parentPath: ['Root'],
       pairs: [
         { first: 'A', second: 'X' },
@@ -268,7 +297,11 @@ describe('ObjectCategoriesRepository.countCategoryPairsByScope', () => {
     const { db, calls } = createCapturingDb([]);
     const repo = new ObjectCategoriesRepository(db);
     await expect(
-      repo.countCategoryPairsByScope({ scope, parentPath: [], pairs: [] }),
+      repo.countCategoryPairsByScope({
+        scope: { kind: 'user', scope, tags: [], rating: null },
+        parentPath: [],
+        pairs: [],
+      }),
     ).resolves.toEqual(new Map());
     expect(calls).toHaveLength(0);
   });

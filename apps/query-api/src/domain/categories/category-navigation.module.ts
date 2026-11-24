@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { RepositoriesModule } from '../../repositories/repositories.module';
-import { UserCategoryNavigationService } from './user-category-navigation.service';
+import { CategoryNavigationService } from './category-navigation.service';
 
 /**
  * Category navigation on its own so both `CategoriesModule` and `FavoritesModule`
@@ -8,7 +8,7 @@ import { UserCategoryNavigationService } from './user-category-navigation.servic
  */
 @Module({
   imports: [RepositoriesModule],
-  providers: [UserCategoryNavigationService],
-  exports: [UserCategoryNavigationService],
+  providers: [CategoryNavigationService],
+  exports: [CategoryNavigationService],
 })
 export class CategoryNavigationModule {}

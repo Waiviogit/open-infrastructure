@@ -9,6 +9,7 @@ import type {
 } from '../domain/obl';
 import type { GetDiscoverObjectsEndpoint } from '../domain/discover/get-discover-objects.endpoint';
 import type { GetDiscoverTagCategoriesEndpoint } from '../domain/discover/get-discover-tag-categories.endpoint';
+import type { GetDiscoverCategoriesEndpoint } from '../domain/discover/get-discover-categories.endpoint';
 import type { GetDiscoverUsersEndpoint } from '../domain/discover/get-discover-users.endpoint';
 import type {
   GetPostByKeyEndpoint,
@@ -130,6 +131,7 @@ export interface McpToolDeps {
   discoverObjects: GetDiscoverObjectsEndpoint;
   discoverUsers: GetDiscoverUsersEndpoint;
   discoverTagCategories: GetDiscoverTagCategoriesEndpoint;
+  discoverCategories: GetDiscoverCategoriesEndpoint;
   getObjectById: GetObjectByIdEndpoint;
   getNestedObjects: GetNestedObjectsEndpoint;
   checkObjectExists: CheckObjectExistsEndpoint;

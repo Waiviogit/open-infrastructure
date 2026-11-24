@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ObjectCategoriesRepository } from '../../repositories';
 import { UserFavoritesScopeResolver } from '../favorites/user-favorites-scope.resolver';
 import type { UserCategoriesQuery, UserCategoriesResponse } from './categories-query.schema';
-import { UserCategoryNavigationService } from './user-category-navigation.service';
+import { CategoryNavigationService } from './category-navigation.service';
 
 const EMPTY_RESPONSE: UserCategoriesResponse = {
   items: [],
@@ -14,7 +14,7 @@ const EMPTY_RESPONSE: UserCategoriesResponse = {
 export class GetUserCategoriesEndpoint {
   constructor(
     private readonly scopeResolver: UserFavoritesScopeResolver,
-    private readonly navigation: UserCategoryNavigationService,
+    private readonly navigation: CategoryNavigationService,
     private readonly objectCategoriesRepo: ObjectCategoriesRepository,
   ) {}
 
@@ -36,7 +36,7 @@ export class GetUserCategoriesEndpoint {
 
     const [nav, uncategorizedCount] = await Promise.all([
       this.navigation.build({
-        scope,
+        scope: { kind: 'user', scope, tags: [], rating: null },
         objectType,
         lineage,
         excluded: query.excluded ?? [],

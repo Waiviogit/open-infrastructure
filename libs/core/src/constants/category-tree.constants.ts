@@ -3,6 +3,12 @@ import { objectTypeSupportsCategories } from '../object-type-registry/category-o
 /** Sentinel `category_name` row in `object_categories_related` for uncategorized group count. */
 export const UNCATEGORIZED_CATEGORY_SENTINEL = '__uncategorized__';
 
+/**
+ * Sentinel `category_name` row of a type scope (`scope_type = 'type'`): every active group of the
+ * type, uncategorized included (the root total of the display rules).
+ */
+export const TYPE_SCOPE_TOTAL_SENTINEL = '__total__';
+
 const SCOPE_KEY_SEPARATOR = ':';
 
 /**

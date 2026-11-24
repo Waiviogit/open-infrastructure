@@ -1,17 +1,18 @@
 ---
 id: docs-apps-chain-indexer-spec-object-categories
 title: Object categories
-description: Materialize governance-resolved **`category`** update values per object (`object_categories.category_names`) and per-scope category aggregates (`object_categories_related`) for Favorites category navigation.
+description: Materialize governance-resolved **`category`** update values per object (`object_categories.category_names`) and per-scope category aggregates (`object_categories_related`) for the Favorites and Discover category trees.
 type: spec
 status: active
 scope: chain-indexer
 tags: [chain-indexer, object-categories]
-updated_at: 2026-11-11
+updated_at: 2026-11-24
 related:
   - docs/apps/chain-indexer/spec/overview.md
   - docs/apps/chain-indexer/spec/odl-pipeline.md
   - docs/apps/query-api/spec/users-favorites-endpoint.md
   - docs/apps/query-api/spec/categories.md
+  - docs/apps/query-api/spec/discover-categories.md
   - docs/README.md
 ---
 
@@ -28,12 +29,16 @@ Aggregated **`object_categories_related`** rows per **`scope_type` / `scope_key`
 ## Scopes
 
 - **Global** — `('global', '_')`: all active objects; `group_keys` stored as empty arrays.
+- **Type** — `('type', <object type>)`, one per category type (`product`, `book`, …): all active objects of that type, for the Discover category tree ([discover-categories.md](../../query-api/spec/discover-categories.md)). Counts are in groups (`COALESCE(meta_group_id, object_id)`).
+  - `related_counts` (parallel to `related_names`) = groups shared with each related name, and a `__total__` row (`TYPE_SCOPE_TOTAL_SENTINEL`) = every active group of the type, uncategorized included. With them query-api serves the unfiltered root without live counts.
+  - `group_keys` are **not** stored (empty arrays: a whole type is too large; query-api finds near-duplicates with live pair counts) and there is **no** `__uncategorized__` row.
+  - Rebuilt at most once per `CATEGORY_TYPE_SCOPE_MIN_INTERVAL_SEC` (600 s) per type (see Throttling). Measured on synthetic data (5.5k category names): about 1 s for 100k products, 3 s for 500k.
 - **User** — one scope per account and **category type**: `scope_key = buildUserCategoryScopeKey(account, objectType)` → `alice:recipe` (`@opden-data-layer/core`). Category types are `CATEGORY_OBJECT_TYPES`: registry types whose `supported_updates` include `category` (today book, link, person, product, recipe, service, service_offer, service_request). Book and product are separate scopes. A type added to the registry later gets per-type scopes from its first category update; no migration is needed, because no category rows can exist before the registry allows them.
 - `parseUserCategoryScopeKey` returns `null` for legacy keys (`alice`, `alice:book,product`) and non-category types; the worker deletes such scopes instead of rebuilding them.
 
 **User scope membership** is the Favorites scope defined in [users-favorites-endpoint.md](../../query-api/spec/users-favorites-endpoint.md) (favorites ∪ authored post objects, deselect and hide-flag rules, active only), restricted to the single `objects_core.object_type` of the scope. **`object_ownership` is not part of it.** The hide flag per type comes from `resolvePostLinkedObjectTypes` / `getPostLinkedHideFlagKey` in `@opden-data-layer/core`.
 
-Sentinel category name **`__uncategorized__`** carries the count of distinct groups (`COALESCE(meta_group_id, object_id)`) in scope with empty `category_names`. It is written only when that count is above 0; an empty scope has **no rows** at all.
+Sentinel category name **`__uncategorized__`** (user scopes) carries the count of distinct groups (`COALESCE(meta_group_id, object_id)`) in scope with empty `category_names`. It is written only when that count is above 0; an empty scope has **no rows** at all.
 
 ## Triggers
 
@@ -48,8 +53,8 @@ Scope queue (`object_categories_related_sync_queue`):
 
 | Source | Enqueues |
 |--------|----------|
-| `ObjectCategoriesWorker`, when `category_names` (as a set) or `meta_group_id` changed | global + `(account, objectType)` for every favoriter and post author of the object (category types only); same transaction as the upsert |
-| `ObjectActiveStateChangedEvent` (status crossed `active` ↔ inactive) | global + `(account, objectType)` for favoriters and post authors (category types only) |
+| `ObjectCategoriesWorker`, when `category_names` (as a set) or `meta_group_id` changed | global + the object's type scope + `(account, objectType)` for every favoriter and post author of the object (category types only); same transaction as the upsert |
+| `ObjectActiveStateChangedEvent` (status crossed `active` ↔ inactive) | global + the object's type scope + `(account, objectType)` for favoriters and post authors (category types only) |
 | `ObjectFavoriteChangedEvent`, `UserMetadataChangedEvent`, `UserShopDeselectChangedEvent`, `PostObjectChangedEvent` | every category type scope of that account, one multi-row insert |
 
 Emitters:
@@ -84,24 +89,31 @@ Constants: [`object-categories.constants.ts`](../../../../apps/chain-indexer/src
 
 1. Claim rows from `object_categories_related_sync_queue`.
 2. **Global:** aggregate all active `objects_core`.
-3. **User:** `parseUserCategoryScopeKey`; `null` → `deleteUserScope(key)`, warn, finish the task. Otherwise load `user_metadata` flags and `user_shop_deselect` ids and aggregate the scope membership above.
-4. `related_names` = co-occurrence on the same `group_key`. Replace all rows of the scope in one transaction (delete + insert).
+3. **Type:** a non-category type is skipped (warn, finish). Otherwise aggregate all active objects of the type (`replaceTypeCategoryScope`), then mark it rebuilt (Throttling).
+4. **User:** `parseUserCategoryScopeKey`; `null` → `deleteUserScope(key)`, warn, finish the task. Otherwise load `user_metadata` flags and `user_shop_deselect` ids and aggregate the scope membership above.
+5. `related_names` = co-occurrence on the same `group_key`. Replace all rows of the scope in one transaction (delete + insert, inserted in chunks of `OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS` = 1000 rows to stay under the Postgres bind-parameter limit).
+
+### Throttling (type scopes)
+
+A type scope aggregates every active object of the type, so it is rebuilt at most once per `CATEGORY_TYPE_SCOPE_MIN_INTERVAL_SEC` (600 s). After a rebuild `CategoryTypeScopeThrottleService` sets `chain-indexer:lock:category-type-scope:{type}` with that TTL; while the key exists the claim skips the type scope (its row stays queued, `attempts` untouched). Changes in between are picked up by the next rebuild. A Redis failure fails open (the scope is rebuilt).
 
 ## Invariants
 
 - After a category create/vote, `object_categories` matches `ResolvedObjectView` for `category` under platform governance (up to 15 strings).
 - A user scope row exists only for a canonical `account:type` key of a category type.
 - A user scope never counts ownership-only objects, objects of another type, or inactive objects.
-- An empty scope has no rows; `__uncategorized__` is never stored with count 0.
+- An empty user scope has no rows; `__uncategorized__` is never stored with count 0 in a user scope (the global scope still stores it unconditionally; type scopes never store it).
+- A type scope lags its type by at most `CATEGORY_TYPE_SCOPE_MIN_INTERVAL_SEC` plus one worker tick.
 - A scope enqueued while it is being processed is processed again.
 
 ## Migration and backfill
 
 - Migration **`00073_object_categories_related_per_type_scopes`** deletes legacy user scope rows and queue rows (no `:`, empty account, or a type outside the frozen list book, product, recipe, service, service_offer, service_request) and enqueues every `account:type` pair from favorites ∪ post authors plus every surviving per-type user scope.
-- [`scripts/backfill-object-categories.ts`](../../../../scripts/backfill-object-categories.ts): enqueues category objects, the global scope and every `(account, type)` scope with one `INSERT … SELECT` (`--user` limits to one account, `--only-objects` / `--only-scopes`, `--dry-run`). `--cleanup-legacy-scopes` deletes user scope rows and queue rows whose key `parseUserCategoryScopeKey` rejects. Run chain-indexer until both queues drain.
+- Migration **`00077_object_categories_related_type_scope`** adds `'type'` to the `scope_type` CHECK, adds `related_counts INTEGER[]` (empty for global and user scopes), and enqueues one type scope per category type (frozen list book, link, person, product, recipe, service, service_offer, service_request).
+- [`scripts/backfill-object-categories.ts`](../../../../scripts/backfill-object-categories.ts): enqueues category objects, the global scope, every type scope and every `(account, type)` scope with one `INSERT … SELECT` (`--user` limits to one account, `--only-objects` / `--only-scopes`, `--dry-run`). `--cleanup-legacy-scopes` deletes user scope rows and queue rows whose key `parseUserCategoryScopeKey` rejects. Run chain-indexer until both queues drain.
 
 ## Verification
 
 - `pnpm nx test chain-indexer --testPathPatterns="category-sync|object-categories|object-status"`
 - `pnpm test:db:up`, then `POSTGRES_TEST_URL=postgres://test:test@127.0.0.1:55432/test pnpm nx test chain-indexer --testPathPatterns=object-categories-related.repository.db` (scope SQL and queue race; skipped without `POSTGRES_TEST_URL`)
-- `pnpm test:db` (migration `00073` spec)
+- `pnpm test:db` (migration `00073` and `00077` specs)

@@ -1,11 +1,15 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import {
+  GetDiscoverCategoriesEndpoint,
   GetDiscoverObjectsEndpoint,
   GetDiscoverTagCategoriesEndpoint,
   GetDiscoverUsersEndpoint,
+  discoverCategoriesQuerySchema,
   discoverObjectsQuerySchema,
   discoverTagCategoriesQuerySchema,
   discoverUsersQuerySchema,
+  type DiscoverCategoriesQuery,
+  type DiscoverCategoriesResponseDto,
   type DiscoverObjectsQuery,
   type DiscoverObjectsResponseDto,
   type DiscoverTagCategoriesQuery,
@@ -26,6 +30,7 @@ export class DiscoverController {
     private readonly getDiscoverObjects: GetDiscoverObjectsEndpoint,
     private readonly getDiscoverUsers: GetDiscoverUsersEndpoint,
     private readonly getDiscoverTagCategories: GetDiscoverTagCategoriesEndpoint,
+    private readonly getDiscoverCategories: GetDiscoverCategoriesEndpoint,
     private readonly countryResolver: CountryResolverService,
   ) {}
 
@@ -59,5 +64,12 @@ export class DiscoverController {
     @Query(new ZodQueryPipe(discoverTagCategoriesQuerySchema)) query: DiscoverTagCategoriesQuery,
   ): Promise<DiscoverTagCategoriesResponseDto> {
     return this.getDiscoverTagCategories.execute({ query });
+  }
+
+  @Get('categories')
+  async categories(
+    @Query(new ZodQueryPipe(discoverCategoriesQuerySchema)) query: DiscoverCategoriesQuery,
+  ): Promise<DiscoverCategoriesResponseDto> {
+    return this.getDiscoverCategories.execute({ query });
   }
 }

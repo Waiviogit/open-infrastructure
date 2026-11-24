@@ -45,6 +45,7 @@ const query = {
   tags: [] as string[],
   sort: 'rank' as const,
   box: null,
+  categoryPath: [] as string[],
 };
 
 describe('DiscoverObjectFeed scroll restore', () => {

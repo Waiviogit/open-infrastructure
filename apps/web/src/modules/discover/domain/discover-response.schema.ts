@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { categoryNavItemSchema } from '@/shared/domain/category-nav';
+
 import { socialProjectedObjectSchema } from '@/modules/user-social/application/dto/user-social.dto';
 
 export const discoverObjectsPageSchema = z.object({
@@ -42,3 +44,11 @@ export const discoverTagCategoriesResponseSchema = z.object({
 });
 
 export type DiscoverTagCategoriesResponse = z.infer<typeof discoverTagCategoriesResponseSchema>;
+
+/** `GET /query/v1/discover/categories`: one level of a type's category tree. */
+export const discoverCategoriesResponseSchema = z.object({
+  items: z.array(categoryNavItemSchema),
+  show_other: z.boolean(),
+});
+
+export type DiscoverCategoriesResponse = z.infer<typeof discoverCategoriesResponseSchema>;

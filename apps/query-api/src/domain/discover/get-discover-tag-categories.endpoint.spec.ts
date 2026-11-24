@@ -11,7 +11,7 @@ describe('GetDiscoverTagCategoriesEndpoint', () => {
     } as unknown as DiscoverRepository;
 
     const endpoint = new GetDiscoverTagCategoriesEndpoint(discoverRepo);
-    const result = await endpoint.execute({ query: { object_type: 'product', tags: [] } });
+    const result = await endpoint.execute({ query: { category_path: [], object_type: 'product', tags: [] } });
 
     expect(result.categories[0]?.category).toBe('Category');
     expect(result.categories[0]?.items[0]).toEqual({ value: 'Backpack', count: 10 });
@@ -24,7 +24,7 @@ describe('GetDiscoverTagCategoriesEndpoint', () => {
 
     const endpoint = new GetDiscoverTagCategoriesEndpoint(discoverRepo);
     await endpoint.execute({
-      query: { object_type: 'restaurant', tags: ['Cuisine:Asian'] },
+      query: { category_path: [], object_type: 'restaurant', tags: ['Cuisine:Asian'] },
     });
 
     expect(getTagCategories).toHaveBeenCalledWith(
@@ -32,6 +32,7 @@ describe('GetDiscoverTagCategoriesEndpoint', () => {
       [{ category: 'Cuisine', value: 'Asian' }],
       undefined,
       undefined,
+      [],
     );
   });
 
@@ -41,9 +42,23 @@ describe('GetDiscoverTagCategoriesEndpoint', () => {
 
     const endpoint = new GetDiscoverTagCategoriesEndpoint(discoverRepo);
     await endpoint.execute({
-      query: { object_type: 'product', tags: [], q: '  burger  ' },
+      query: { category_path: [], object_type: 'product', tags: [], q: '  burger  ' },
     });
 
-    expect(getTagCategories).toHaveBeenCalledWith('product', [], 'burger', undefined);
+    expect(getTagCategories).toHaveBeenCalledWith('product', [], 'burger', undefined, []);
+  });
+
+  it('passes the category lineage to repository', async () => {
+    const getTagCategories = jest.fn().mockResolvedValue([]);
+    const endpoint = new GetDiscoverTagCategoriesEndpoint({ getTagCategories } as never);
+
+    await endpoint.execute({
+      query: { category_path: ['Audio', 'Speakers'], object_type: 'product', tags: [] },
+    });
+
+    expect(getTagCategories).toHaveBeenCalledWith('product', [], undefined, undefined, [
+      'Audio',
+      'Speakers',
+    ]);
   });
 });

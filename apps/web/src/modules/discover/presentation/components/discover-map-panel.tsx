@@ -57,6 +57,8 @@ export type DiscoverMapPanelProps = {
   tags: string[];
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
+  /** Category lineage, root first (kept by every Discover link and fetch). */
+  categoryPath: string[];
   mapView: DiscoverMapView | null;
   variant?: DiscoverMapPanelVariant;
   onApplyArea: (box: DiscoverBox) => void;
@@ -83,6 +85,7 @@ export function DiscoverMapPanel({
   tags,
   sort,
   box,
+  categoryPath,
   mapView,
   variant = 'rail',
   onApplyArea,
@@ -177,13 +180,14 @@ export function DiscoverMapPanel({
         tags,
         sort,
         box: box ?? undefined,
+        categoryPath,
         limit: DISCOVER_MAP_MARKERS_LIMIT,
       });
       if (page) {
         setMarkerItems(page.items);
       }
     });
-  }, [objectType, q, tags, sort, box]);
+  }, [objectType, q, tags, sort, box, categoryPath]);
 
   const onViewportChange = useCallback(
     (viewportBox: MapBoundingBox) => {

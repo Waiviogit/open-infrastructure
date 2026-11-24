@@ -40,7 +40,7 @@ describe('GetUserCategoriesEndpoint', () => {
     });
     expect(resolver.resolve).toHaveBeenCalledWith('alice', ['recipe']);
     expect(navigation.build).toHaveBeenCalledWith({
-      scope,
+      scope: { kind: 'user', scope, tags: [], rating: null },
       objectType: 'recipe',
       lineage: [],
       excluded: [],

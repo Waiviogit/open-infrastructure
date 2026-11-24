@@ -6,6 +6,8 @@ export interface CategoryNavigationRow {
   objects_count: number;
   group_keys: string[];
   related_names: string[];
+  /** Groups shared with each `related_names` entry; type scopes only (empty otherwise). */
+  related_counts: number[];
 }
 
 export function toNavigationRow(row: ObjectCategoriesRelatedRow): CategoryNavigationRow {
@@ -16,5 +18,6 @@ export function toNavigationRow(row: ObjectCategoriesRelatedRow): CategoryNaviga
     objects_count: Number(oc),
     group_keys: row.group_keys ?? [],
     related_names: row.related_names ?? [],
+    related_counts: (row.related_counts ?? []).map(Number),
   };
 }

@@ -63,6 +63,12 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     httpEquivalent: 'GET /query/v1/discover/tag-categories',
   },
   {
+    name: 'discover_categories',
+    description:
+      'One level of the category tree of an object type (children of category_path), counted in product groups and narrowed by q / tags / box; categories with fewer than 3 groups or over 60% of the level are hidden.',
+    httpEquivalent: 'GET /query/v1/discover/categories',
+  },
+  {
     name: 'resolve_object',
     description:
       'Resolve one object with governance masking and optional update_types filter (empty = all present updates).',

@@ -1,10 +1,8 @@
 import { z } from 'zod';
 
-export const categoryNavItemSchema = z.object({
-  name: z.string(),
-  objects_count: z.number(),
-  has_children: z.boolean(),
-});
+import { categoryNavItemSchema } from '@/shared/domain/category-nav';
+
+export { categoryNavItemSchema };
 
 /** `GET /query/v1/users/:name/categories` (one category type per request). */
 export const categoryNavDataSchema = z.object({
@@ -13,6 +11,6 @@ export const categoryNavDataSchema = z.object({
   show_other: z.boolean(),
 });
 
-export type CategoryNavItem = z.infer<typeof categoryNavItemSchema>;
+export type { CategoryNavItem } from '@/shared/domain/category-nav';
 
 export type CategoryNavData = z.infer<typeof categoryNavDataSchema>;

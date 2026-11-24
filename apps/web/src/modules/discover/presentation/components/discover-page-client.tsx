@@ -3,7 +3,13 @@
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { OptimisticNavSync, useInstantNavigation } from '@/shared/presentation';
+import { objectTypeSupportsCategories } from '@opden-data-layer/core/object-type-registry';
+
+import {
+  OptimisticNavSync,
+  useEffectiveNav,
+  useInstantNavigation,
+} from '@/shared/presentation';
 import { useLoginModal } from '@/modules/auth';
 
 import {
@@ -17,6 +23,8 @@ import {
   objectTypeSupportsGeo,
 } from '../../domain/discover-registry';
 import { resolveInitialDiscoverType } from '../../domain/resolve-initial-discover-type';
+import { useDiscoverCategoryNav } from '../hooks/use-discover-category-nav';
+import { DiscoverCategoryDrawer, DiscoverCategoryRail } from './discover-category-nav';
 import { DiscoverFeed } from './discover-feed';
 import type { DiscoverMobileTab } from './discover-mobile-header';
 import { DiscoverFilters } from './discover-filters';
@@ -36,12 +44,24 @@ function DiscoverPageContent({
 }: DiscoverPageClientProps) {
   const searchParams = useSearchParams();
   const { isNavigating, navigateInstant } = useInstantNavigation();
-  const { usersMode, objectType, q, tags, sort, box, map: mapFromUrl } = useMemo(
-    () => parseDiscoverPageState(searchParams),
-    [searchParams],
+  const {
+    usersMode,
+    objectType,
+    q,
+    tags,
+    sort,
+    box,
+    map: mapFromUrl,
+    categoryPath,
+  } = useMemo(() => parseDiscoverPageState(searchParams), [searchParams]);
+  const effectiveNav = useEffectiveNav();
+  const activeCategoryPath = useMemo(
+    () => parseDiscoverPageState(new URLSearchParams(effectiveNav.search)).categoryPath,
+    [effectiveNav.search],
   );
   const { openLogin } = useLoginModal();
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [lastMapView, setLastMapView] = useState<DiscoverMapView | null>(null);
   const [mobileTab, setMobileTab] = useState<DiscoverMobileTab>('list');
@@ -108,6 +128,34 @@ function DiscoverPageContent({
   const filterObjectType =
     objectType && objectType !== 'all' ? objectType : null;
 
+  const categoryType =
+    filterObjectType && objectTypeSupportsCategories(filterObjectType) ? filterObjectType : null;
+  const categoryNav = useDiscoverCategoryNav({
+    objectType: categoryType,
+    categoryPath,
+    q,
+    tags,
+    box,
+  });
+  // While the root level loads the tree is assumed (skeleton); an empty root hides it.
+  const showCategoryTree =
+    categoryType != null &&
+    (categoryPath.length > 0 || categoryNav.status !== 'ready' || categoryNav.items.length > 0);
+
+  const categoryHref = useCallback(
+    (lineage: readonly string[]) =>
+      buildDiscoverHref({
+        type: objectType ?? undefined,
+        categoryPath: lineage,
+        q,
+        tags,
+        sort,
+        box,
+        map: mapFromUrl ?? undefined,
+      }),
+    [objectType, q, tags, sort, box, mapFromUrl],
+  );
+
   const mapObjectType = showMap && objectType ? objectType : null;
 
   const applyMapArea = useCallback(
@@ -117,6 +165,7 @@ function DiscoverPageContent({
       }
       const href = buildDiscoverHref({
         type: objectType,
+        categoryPath,
         q,
         tags,
         sort,
@@ -125,7 +174,7 @@ function DiscoverPageContent({
       });
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, objectType, q, tags, sort, effectiveMapView],
+    [navigateInstant, objectType, categoryPath, q, tags, sort, effectiveMapView],
   );
 
   const handleMapViewChange = useCallback((view: DiscoverMapView) => {
@@ -137,6 +186,7 @@ function DiscoverPageContent({
       navigateInstant({
         href: buildDiscoverHref({
           type: objectType,
+          categoryPath,
           q,
           tags,
           sort,
@@ -148,13 +198,23 @@ function DiscoverPageContent({
       });
     }
     setMapModalOpen(true);
-  }, [navigateInstant, objectType, q, tags, sort, box, effectiveMapView]);
+  }, [navigateInstant, objectType, categoryPath, q, tags, sort, box, effectiveMapView]);
 
   return (
     <div className="mx-auto w-full max-w-container-page px-1 pt-section-y-sm max-lg:-mx-gutter max-lg:w-[calc(100%+2*var(--spacing-gutter))] sm:max-lg:-mx-gutter-sm sm:max-lg:w-[calc(100%+2*var(--spacing-gutter-sm))] lg:px-gutter">
       <div className="grid items-start gap-card-padding lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)_minmax(0,var(--shell-right-width))]">
-        {/* Reserved for the active type's categories (types are in the hub's Discover band). */}
-        <aside className="hidden min-w-0 lg:block" aria-hidden />
+        {/* Categories of the active type (types are in the hub's Discover band). */}
+        <aside className="hidden min-w-0 lg:block">
+          {showCategoryTree && categoryType ? (
+            <DiscoverCategoryRail
+              objectType={categoryType}
+              nav={categoryNav}
+              categoryPath={categoryPath}
+              activeLineage={activeCategoryPath}
+              hrefFor={categoryHref}
+            />
+          ) : null}
+        </aside>
         <div className="relative z-10 min-w-0">
           {isNavigating ? (
             <div className="mb-4" aria-busy="true" aria-live="polite">
@@ -168,6 +228,7 @@ function DiscoverPageContent({
             tags={tags}
             sort={sort}
             box={box}
+            categoryPath={categoryPath}
             map={mapFromUrl}
             mapView={effectiveMapView}
             viewerUsername={viewerUsername}
@@ -177,6 +238,15 @@ function DiscoverPageContent({
             mobileTab={mobileTab}
             onMobileTabChange={setMobileTab}
             onOpenFilterSheet={() => setFilterSheetOpen(true)}
+            categoryTrail={
+              showCategoryTree
+                ? {
+                    hrefFor: categoryHref,
+                    drawerOpen: categoryDrawerOpen,
+                    onOpenDrawer: () => setCategoryDrawerOpen(true),
+                  }
+                : null
+            }
             onApplyMapArea={applyMapArea}
             onMapViewChange={handleMapViewChange}
             onExpandMap={openMapModal}
@@ -191,6 +261,7 @@ function DiscoverPageContent({
                 tags={tags}
                 sort={sort}
                 box={box}
+                categoryPath={categoryPath}
                 mapView={effectiveMapView}
                 onApplyArea={applyMapArea}
                 onViewChange={mapModalOpen ? undefined : handleMapViewChange}
@@ -204,6 +275,7 @@ function DiscoverPageContent({
                 tags={tags}
                 sort={sort}
                 box={box}
+                categoryPath={categoryPath}
                 map={mapFromUrl}
               />
             ) : null}
@@ -212,6 +284,17 @@ function DiscoverPageContent({
           <div className="hidden min-w-0 self-start lg:block" aria-hidden />
         )}
       </div>
+
+      {showCategoryTree && categoryType ? (
+        <DiscoverCategoryDrawer
+          open={categoryDrawerOpen}
+          onClose={() => setCategoryDrawerOpen(false)}
+          objectType={categoryType}
+          nav={categoryNav}
+          activeLineage={activeCategoryPath}
+          hrefFor={categoryHref}
+        />
+      ) : null}
 
       {filterSheetOpen && filterObjectType ? (
         <DiscoverFilterSheet
@@ -222,6 +305,7 @@ function DiscoverPageContent({
           tags={tags}
           sort={sort}
           box={box}
+          categoryPath={categoryPath}
           map={mapFromUrl}
         />
       ) : null}
@@ -235,6 +319,7 @@ function DiscoverPageContent({
           tags={tags}
           sort={sort}
           box={box}
+          categoryPath={categoryPath}
           mapView={effectiveMapView}
           onApplyArea={applyMapArea}
           onViewChange={handleMapViewChange}

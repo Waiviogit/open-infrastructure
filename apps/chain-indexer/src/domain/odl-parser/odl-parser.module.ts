@@ -24,6 +24,7 @@ import { TagCategoryItemSyncHandler } from './handlers/tag-category-item-sync.ha
 import { ObjectCategoriesWorker } from './object-categories.worker';
 import { UserCategoryScopeEnqueueService } from './user-category-scope-enqueue.service';
 import { ObjectCategoriesRelatedWorker } from './object-categories-related.worker';
+import { CategoryTypeScopeThrottleService } from './category-type-scope-throttle.service';
 import { ObjectTagCategoriesWorker } from './object-tag-categories.worker';
 import { RankScoreModule } from '../rank-score/rank-score.module';
 import {
@@ -74,6 +75,7 @@ import {
     TagCategoryItemSyncHandler,
     ObjectCategoriesWorker,
     ObjectCategoriesRelatedWorker,
+    CategoryTypeScopeThrottleService,
     ObjectTagCategoriesWorker,
   ],
   exports: [OdlCustomJsonParser],

@@ -1,3 +1,5 @@
+import { CATEGORY_CRUMBS_ROW_CLASS } from '@/shared/presentation/category-nav';
+
 /**
  * Layout stability of the Favorites tab. The center column starts with a one-line breadcrumb row
  * of fixed height (taller below `lg`, where the current crumb is a tinted pill and the Filter
@@ -5,8 +7,7 @@
  * instant-nav overlay) all use this class, so the content below never moves while a navigation
  * is pending.
  */
-export const FAVORITES_CRUMBS_ROW_CLASS =
-  'mb-card-padding flex h-8 min-w-0 items-center gap-2 lg:h-6';
+export const FAVORITES_CRUMBS_ROW_CLASS = CATEGORY_CRUMBS_ROW_CLASS;
 
 /**
  * Favorites left rail (categories of the active type). It stays in page flow — not sticky, no

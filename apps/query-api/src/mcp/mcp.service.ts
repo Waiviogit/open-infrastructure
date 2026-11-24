@@ -18,6 +18,7 @@ import { GetCategoryObjectsEndpoint } from '../domain/categories/get-category-ob
 import {
   GetDiscoverObjectsEndpoint,
   GetDiscoverTagCategoriesEndpoint,
+  GetDiscoverCategoriesEndpoint,
   GetDiscoverUsersEndpoint,
 } from '../domain/discover';
 import {
@@ -139,6 +140,7 @@ export class McpService {
     private readonly discoverObjects: GetDiscoverObjectsEndpoint,
     private readonly discoverUsers: GetDiscoverUsersEndpoint,
     private readonly discoverTagCategories: GetDiscoverTagCategoriesEndpoint,
+    private readonly discoverCategories: GetDiscoverCategoriesEndpoint,
     private readonly getObjectById: GetObjectByIdEndpoint,
     private readonly getNestedObjects: GetNestedObjectsEndpoint,
     private readonly checkObjectExists: CheckObjectExistsEndpoint,
@@ -244,6 +246,7 @@ export class McpService {
       discoverObjects: this.discoverObjects,
       discoverUsers: this.discoverUsers,
       discoverTagCategories: this.discoverTagCategories,
+      discoverCategories: this.discoverCategories,
       getObjectById: this.getObjectById,
       getNestedObjects: this.getNestedObjects,
       checkObjectExists: this.checkObjectExists,

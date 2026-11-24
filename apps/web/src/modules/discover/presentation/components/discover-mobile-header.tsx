@@ -15,6 +15,8 @@ export type DiscoverMobileHeaderProps = {
   tags: string[];
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
+  /** Category lineage, root first (kept by every Discover link and fetch). */
+  categoryPath: string[];
   map: DiscoverMapView | null;
   showMap: boolean;
   mobileTab: DiscoverMobileTab;
@@ -32,6 +34,7 @@ export function DiscoverMobileHeader({
   tags,
   sort,
   box,
+  categoryPath,
   map,
   showMap,
   mobileTab,
@@ -79,6 +82,7 @@ export function DiscoverMobileHeader({
             tags={tags}
             sort={sort}
             box={box}
+            categoryPath={categoryPath}
             map={map}
           />
         </div>

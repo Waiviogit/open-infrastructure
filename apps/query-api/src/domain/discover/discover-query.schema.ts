@@ -1,3 +1,4 @@
+import { objectTypeSupportsCategories } from '@opden-data-layer/core';
 import { z } from 'zod';
 import { countryQueryField } from '../../http/country-query.schema';
 import {
@@ -61,6 +62,27 @@ export const discoverBoxSchema = z
 
 export type DiscoverBox = z.infer<typeof discoverBoxSchema>;
 
+/** Repeated query value (`?x=a&x=b`) → trimmed non-empty strings, order kept. */
+function repeatedStringParam() {
+  return z
+    .union([z.string(), z.array(z.string())])
+    .optional()
+    .transform((v) => {
+      if (v == null) {
+        return [] as string[];
+      }
+      const arr = Array.isArray(v) ? v : [v];
+      return arr.map((s) => s.trim()).filter((s) => s.length > 0);
+    });
+}
+
+/** Category lineage (`category_names @> path`), root first. */
+const discoverCategoryPathParam = repeatedStringParam().describe(
+  'Category lineage filter, root first (objects must carry every name)',
+);
+
+const discoverTagsParam = repeatedStringParam();
+
 export const discoverObjectsQuerySchema = z.object({
   object_type: z
     .string()
@@ -85,6 +107,7 @@ export const discoverObjectsQuerySchema = z.object({
   box: discoverBoxSchema
     .optional()
     .describe('Map bounding box as swLng,swLat,neLng,neLat'),
+  category_path: discoverCategoryPathParam,
   cursor: z.string().optional().describe('Opaque pagination cursor from prior response'),
   limit: z.coerce
     .number()
@@ -127,5 +150,25 @@ export const discoverTagCategoriesQuerySchema = z.object({
   box: discoverBoxSchema
     .optional()
     .describe('Map bounding box as swLng,swLat,neLng,neLat'),
+  category_path: discoverCategoryPathParam,
 });
 export type DiscoverTagCategoriesQuery = z.infer<typeof discoverTagCategoriesQuerySchema>;
+
+export const discoverCategoriesQuerySchema = z.object({
+  object_type: z
+    .string()
+    .trim()
+    .refine((type) => objectTypeSupportsCategories(type), {
+      message: 'object_type must be a category object type (CATEGORY_OBJECT_TYPES)',
+    })
+    .describe('Category object type (CATEGORY_OBJECT_TYPES), e.g. product or book'),
+  category_path: discoverCategoryPathParam.describe(
+    'Selected category lineage, root first; the response lists its children (omit for the root)',
+  ),
+  q: z.string().max(100).optional().describe('Optional text filter (narrows counts)'),
+  tags: discoverTagsParam.describe('Selected tags (AND) narrowing counts'),
+  box: discoverBoxSchema
+    .optional()
+    .describe('Map bounding box as swLng,swLat,neLng,neLat (narrows counts)'),
+});
+export type DiscoverCategoriesQuery = z.infer<typeof discoverCategoriesQuerySchema>;

@@ -37,6 +37,18 @@ describe('fetchDiscoverObjects', () => {
     expect(url).toContain('box=-123.2%2C49.1%2C-123%2C49.3');
   });
 
+  it('sends the category lineage in order as repeated category_path', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], cursor: null, hasMore: false }),
+    }) as typeof fetch;
+
+    await fetchDiscoverObjects({ objectType: 'product', categoryPath: ['Electronics', 'Audio'] });
+
+    const url = new URL((global.fetch as jest.Mock).mock.calls[0][0] as string, 'http://local');
+    expect(url.searchParams.getAll('category_path')).toEqual(['Electronics', 'Audio']);
+  });
+
   it('scopes request to chosen object type', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,

@@ -2,9 +2,11 @@
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { MobileFilterButton } from '@/shared/presentation';
+import type { CategoryHrefFor } from '@/shared/presentation/category-nav';
 
 import type { DiscoverBox, DiscoverMapView } from '../../domain/discover-url';
 import { DiscoverActiveChips } from './discover-active-chips';
+import { DiscoverCategoryBreadcrumbs } from './discover-category-nav';
 import { DiscoverMapPanel } from './discover-map-panel';
 import {
   DiscoverMobileHeader,
@@ -21,6 +23,8 @@ export type DiscoverFeedProps = {
   tags: string[];
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
+  /** Category lineage, root first (kept by every Discover link and fetch). */
+  categoryPath: string[];
   map: DiscoverMapView | null;
   mapView: DiscoverMapView | null;
   viewerUsername?: string | null;
@@ -30,9 +34,17 @@ export type DiscoverFeedProps = {
   mobileTab: DiscoverMobileTab;
   onMobileTabChange: (tab: DiscoverMobileTab) => void;
   onOpenFilterSheet: () => void;
+  /** The type has a category tree: breadcrumbs, and below `lg` the crumb opens the drawer. */
+  categoryTrail: DiscoverCategoryTrail | null;
   onApplyMapArea: (box: DiscoverBox) => void;
   onMapViewChange?: (view: DiscoverMapView) => void;
   onExpandMap: () => void;
+};
+
+export type DiscoverCategoryTrail = {
+  hrefFor: CategoryHrefFor;
+  drawerOpen: boolean;
+  onOpenDrawer: () => void;
 };
 
 export function DiscoverFeed({
@@ -42,6 +54,7 @@ export function DiscoverFeed({
   tags,
   sort,
   box,
+  categoryPath,
   map,
   mapView,
   viewerUsername,
@@ -51,6 +64,7 @@ export function DiscoverFeed({
   mobileTab,
   onMobileTabChange,
   onOpenFilterSheet,
+  categoryTrail,
   onApplyMapArea,
   onMapViewChange,
   onExpandMap,
@@ -62,6 +76,16 @@ export function DiscoverFeed({
 
   const showMobileMap =
     mobileTab === 'map' && mapObjectType != null;
+
+  const filterButton = showFilters ? (
+    <span className="shrink-0 lg:hidden">
+      <MobileFilterButton onClick={onOpenFilterSheet} />
+    </span>
+  ) : null;
+  const filtersActive = q.trim().length > 0 || tags.length > 0 || box != null;
+  // Like Favorites: below `lg` the Filter button shares the crumb row at the type root without
+  // filters; with a category path or active filters it moves after the chips.
+  const singleRowToolbar = categoryTrail != null && categoryPath.length === 0 && !filtersActive;
 
   return (
     <main className="min-w-0">
@@ -75,10 +99,20 @@ export function DiscoverFeed({
             tags={tags}
             sort={sort}
             box={box}
+            categoryPath={categoryPath}
             map={map}
           />
         ) : null}
       </div>
+
+      {categoryTrail ? (
+        <DiscoverCategoryBreadcrumbs
+          categoryPath={categoryPath}
+          hrefFor={categoryTrail.hrefFor}
+          drawer={{ open: categoryTrail.drawerOpen, onOpen: categoryTrail.onOpenDrawer }}
+          trailing={singleRowToolbar ? filterButton : null}
+        />
+      ) : null}
 
       <DiscoverActiveChips
         usersMode={usersMode}
@@ -87,14 +121,9 @@ export function DiscoverFeed({
         tags={tags}
         sort={sort}
         box={box}
+        categoryPath={categoryPath}
         map={map}
-        filterButton={
-          showFilters ? (
-            <span className="shrink-0 lg:hidden">
-              <MobileFilterButton onClick={onOpenFilterSheet} />
-            </span>
-          ) : null
-        }
+        filterButton={singleRowToolbar ? null : filterButton}
       />
 
       <DiscoverMobileHeader
@@ -104,6 +133,7 @@ export function DiscoverFeed({
         tags={tags}
         sort={sort}
         box={box}
+        categoryPath={categoryPath}
         map={map}
         showMap={showMap}
         mobileTab={mobileTab}
@@ -123,6 +153,7 @@ export function DiscoverFeed({
                 tags={tags}
                 sort={sort}
                 box={box}
+                categoryPath={categoryPath}
                 mapView={mapView}
                 onApplyArea={onApplyMapArea}
                 onViewChange={onMapViewChange}
@@ -137,6 +168,7 @@ export function DiscoverFeed({
               tags={tags}
               sort={sort}
               box={box}
+              categoryPath={categoryPath}
               viewerUsername={viewerUsername}
               onRequireLogin={onRequireLogin}
               hideType={objectType !== 'all'}

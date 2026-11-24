@@ -5,7 +5,7 @@ import {
   type UserFavoritesScope,
   type UserFavoritesTypeCountRow,
 } from '../../repositories';
-import { UserCategoryNavigationService } from '../categories/user-category-navigation.service';
+import { CategoryNavigationService } from '../categories/category-navigation.service';
 import type { UserFavoritesTypeItem, UserFavoritesTypesResponse } from './favorites.schema';
 import { narrowUserFavoritesScope, UserFavoritesScopeResolver } from './user-favorites-scope.resolver';
 
@@ -14,7 +14,7 @@ export class GetUserFavoritesTypesEndpoint {
   constructor(
     private readonly scopeResolver: UserFavoritesScopeResolver,
     private readonly favoritesRepo: UserFavoritesRepository,
-    private readonly navigation: UserCategoryNavigationService,
+    private readonly navigation: CategoryNavigationService,
   ) {}
 
   async execute(username: string): Promise<UserFavoritesTypesResponse> {
@@ -52,7 +52,12 @@ export class GetUserFavoritesTypesEndpoint {
    */
   private async hasRootCategories(scope: UserFavoritesScope, objectType: string): Promise<boolean> {
     const root = await this.navigation.build({
-      scope: narrowUserFavoritesScope(scope, objectType),
+      scope: {
+        kind: 'user',
+        scope: narrowUserFavoritesScope(scope, objectType),
+        tags: [],
+        rating: null,
+      },
       objectType,
       lineage: [],
       excluded: [],

@@ -11,6 +11,7 @@ function row(
     objects_count: objectsCount,
     group_keys: [],
     related_names: related,
+    related_counts: [],
   };
 }
 

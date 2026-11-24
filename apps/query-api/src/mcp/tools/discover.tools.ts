@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import {
+  discoverCategoriesQuerySchema,
   discoverObjectsQuerySchema,
   discoverTagCategoriesQuerySchema,
   discoverUsersQuerySchema,
@@ -30,6 +31,7 @@ export function registerDiscoverTools(server: McpServer, deps: McpToolDeps): voi
           tags: args.tags,
           sort: args.sort,
           box: args.box,
+          category_path: args.category_path,
           cursor: args.cursor,
           limit: args.limit,
         },
@@ -68,6 +70,18 @@ export function registerDiscoverTools(server: McpServer, deps: McpToolDeps): voi
     },
     async (args) => {
       const result = await deps.discoverTagCategories.execute({ query: args });
+      return jsonToolResult(result);
+    },
+  );
+
+  server.registerTool(
+    'discover_categories',
+    {
+      description: catalogDescription('discover_categories'),
+      inputSchema: discoverCategoriesQuerySchema,
+    },
+    async (args) => {
+      const result = await deps.discoverCategories.execute({ query: args });
       return jsonToolResult(result);
     },
   );

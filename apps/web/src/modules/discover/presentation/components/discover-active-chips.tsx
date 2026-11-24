@@ -23,6 +23,8 @@ export type DiscoverActiveChipsProps = {
   tags: string[];
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
+  /** Category lineage, root first (kept by every Discover link and fetch). */
+  categoryPath: string[];
   map: DiscoverMapView | null;
   /** Below `lg`: the Filter button, after the chips (alone on its row when no filter is active). */
   filterButton?: ReactNode;
@@ -36,6 +38,7 @@ export function DiscoverActiveChips({
   tags,
   sort,
   box,
+  categoryPath,
   map,
   filterButton,
 }: DiscoverActiveChipsProps) {
@@ -48,6 +51,7 @@ export function DiscoverActiveChips({
       const href = buildDiscoverHref({
         users: usersMode,
         type: objectType ?? undefined,
+        categoryPath,
         q: nextQ,
         tags: nextTags,
         sort,
@@ -56,7 +60,7 @@ export function DiscoverActiveChips({
       });
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, usersMode, objectType, sort, map],
+    [navigateInstant, usersMode, objectType, categoryPath, sort, map],
   );
 
   const clearAll = useCallback(() => {

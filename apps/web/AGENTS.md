@@ -184,7 +184,7 @@ Use **`header`** / **`footer`** slots on `ModalShell` for chrome that must stay 
 
 | Pattern | Examples |
 |---------|----------|
-| Mobile nav drawer (hub feed filters, favorites categories) | **`DrawerRegion`** |
+| Mobile nav drawer (hub feed filters, favorites and discover categories) | **`DrawerRegion`** |
 | Search / typeahead dropdowns | **`search-dropdown.tsx`**, editor object search fields |
 | Floating toolbars / insert menus | **`editor-format-toolbar.tsx`**, **`editor-insert-menu.tsx`** |
 | Notification / header dropdowns | **`notification-bell.tsx`**, **`logged-in-header-actions.tsx`** |

@@ -40,7 +40,16 @@ export type {
   UserFavoritesTagCategoryRow,
   UserFavoritesTagFilter,
 } from './user-favorites-scope.sql';
-export type { CategoryNamePair, ScopedObjectRow } from './object-categories.repository';
+export type {
+  CategoryLevelCounts,
+  CategoryNamePair,
+  ScopedObjectRow,
+} from './object-categories.repository';
+export type {
+  CategoryCountScope,
+  TypeCategoryCountScope,
+  UserCategoryCountScope,
+} from './category-scope.sql';
 export { UserDelegationsRepository } from './user-delegations.repository';
 export { UserRcDelegationsRepository } from './user-rc-delegations.repository';
 export { UserAccountAuthsRepository } from './user-account-auths.repository';
@@ -53,6 +62,7 @@ export type {
   DiscoverObjectCandidateRow,
   DiscoverTagCategoryRow,
   DiscoverUserRow,
+  DiscoverTagFilter,
 } from './discover.repository';
 export { PostsRepository } from './posts.repository';
 export type {

@@ -11,6 +11,8 @@ export type DiscoverFeedCacheQuery = {
   tags: string[];
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
+  /** Category lineage, in order (not sorted: the order is the lineage). */
+  categoryPath: readonly string[];
 };
 
 export function discoverFeedCacheKey(query: DiscoverFeedCacheQuery): string {
@@ -23,6 +25,7 @@ export function discoverFeedCacheKey(query: DiscoverFeedCacheQuery): string {
     [...query.tags].sort().join('\u0001'),
     query.sort,
     box,
+    query.categoryPath.join('\u0001'),
   ].join('\u0002');
 }
 

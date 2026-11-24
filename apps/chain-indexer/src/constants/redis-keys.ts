@@ -15,4 +15,7 @@ export const redisKey = {
     buildRedisKey(APP, 'cache', 'waiv-reward-event', `${txId}:${event}:${authorperm}`),
   postWaivReconcile: () => buildRedisKey(APP, 'queue', 'post-waiv-reconcile'),
   postRewardsFinalize: () => buildRedisKey(APP, 'queue', 'post-rewards-finalize'),
+  /** Set after a category type scope rebuild; while it exists the scope is not rebuilt again. */
+  categoryTypeScopeThrottle: (objectType: string) =>
+    buildRedisKey(APP, 'lock', 'category-type-scope', objectType),
 } as const;

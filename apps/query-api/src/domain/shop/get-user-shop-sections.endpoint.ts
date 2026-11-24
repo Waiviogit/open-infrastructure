@@ -4,7 +4,7 @@ import type { AggregatedObject } from '@opden-data-layer/objects-domain';
 import { ObjectViewService } from '@opden-data-layer/objects-domain';
 import { AggregatedObjectRepository, ObjectCategoriesRepository } from '../../repositories';
 import { AffiliateLinksEnricher, flattenAffiliateTargets } from '../affiliate';
-import { UserCategoryNavigationService } from '../categories/user-category-navigation.service';
+import { CategoryNavigationService } from '../categories/category-navigation.service';
 import { parseTagFilters } from '../discover/get-discover-objects.endpoint';
 import { USER_FAVORITES_CARD_UPDATE_TYPES } from '../favorites/favorites.constants';
 import { UserFavoritesScopeResolver } from '../favorites/user-favorites-scope.resolver';
@@ -43,7 +43,7 @@ function sectionsObjectType(types: readonly string[]): string | null {
 export class GetUserShopSectionsEndpoint {
   constructor(
     private readonly scopeResolver: UserFavoritesScopeResolver,
-    private readonly navigation: UserCategoryNavigationService,
+    private readonly navigation: CategoryNavigationService,
     private readonly objectCategoriesRepo: ObjectCategoriesRepository,
     private readonly aggregatedObjectRepo: AggregatedObjectRepository,
     private readonly objectViewService: ObjectViewService,
@@ -76,13 +76,11 @@ export class GetUserShopSectionsEndpoint {
     const lineage = nameSegment.length > 0 ? [...(query.path ?? []), nameSegment] : [];
 
     const nav = await this.navigation.build({
-      scope,
+      scope: { kind: 'user', scope, tags: tags ?? [], rating: rating ?? null },
       objectType,
       lineage,
       excluded: [],
       includeHasChildren: false,
-      tags,
-      rating,
     });
     const ordered = nav.items;
 

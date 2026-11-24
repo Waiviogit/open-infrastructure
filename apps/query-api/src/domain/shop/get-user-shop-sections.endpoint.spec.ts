@@ -1,5 +1,5 @@
 import type { ObjectCategoriesRelatedRow } from '@opden-data-layer/odl-db-types';
-import { UserCategoryNavigationService } from '../categories/user-category-navigation.service';
+import { CategoryNavigationService } from '../categories/category-navigation.service';
 import type { ShopSectionsQuery } from './shop.schema';
 import { GetUserShopSectionsEndpoint } from './get-user-shop-sections.endpoint';
 
@@ -19,10 +19,14 @@ function related(name: string, objectsCount: number, relatedNames: string[] = []
     objects_count: objectsCount,
     group_keys: Array.from({ length: 12 }, (_, i) => `${name}-g${i}`),
     related_names: relatedNames,
+    related_counts: [],
   };
 }
 
 const ROOT_ROWS = [related('Desserts', 30), related('Comfort Food', 29), related('Soups', 10)];
+
+/** Units of a level; large enough that the 60% rule never hides a fixture section. */
+const LEVEL_TOTAL = 100;
 
 function createEndpoint(params: {
   rows: ObjectCategoriesRelatedRow[];
@@ -30,11 +34,12 @@ function createEndpoint(params: {
   previews?: Record<string, string[]>;
 }) {
   const objectCategoriesRepo = {
-    countObjectIdsByScopeForCategories: jest
+    countCategoryLevel: jest
       .fn()
-      .mockImplementation(async ({ categoryNames }: { categoryNames: string[] }) =>
-        new Map(categoryNames.map((n) => [n, params.liveCounts[n] ?? 0])),
-      ),
+      .mockImplementation(async ({ categoryNames }: { categoryNames: string[] }) => ({
+        counts: new Map(categoryNames.map((n) => [n, params.liveCounts[n] ?? 0])),
+        total: LEVEL_TOTAL,
+      })),
     findObjectIdsByScopeForCategories: jest
       .fn()
       .mockImplementation(async ({ categoryNames }: { categoryNames: string[] }) =>
@@ -44,7 +49,7 @@ function createEndpoint(params: {
   };
   const relatedRepo = { findByUserCategoryScope: jest.fn().mockResolvedValue(params.rows) };
   const resolver = { resolve: jest.fn().mockResolvedValue(scope) };
-  const navigation = new UserCategoryNavigationService(
+  const navigation = new CategoryNavigationService(
     relatedRepo as never,
     objectCategoriesRepo as never,
   );
@@ -71,24 +76,26 @@ function createEndpoint(params: {
 
 const query: ShopSectionsQuery = { types: ['recipe'], path: [], tags: [], sectionLimit: 3 };
 
+const userScope = { kind: 'user', scope, tags: [], rating: null };
+
 describe('GetUserShopSectionsEndpoint', () => {
   it('uses the live lineage count as totalObjects, not the precomputed objects_count', async () => {
     const { endpoint } = createEndpoint({
       rows: ROOT_ROWS,
-      liveCounts: { Desserts: 2, 'Comfort Food': 0, Soups: 5 },
+      liveCounts: { Desserts: 4, 'Comfort Food': 0, Soups: 5 },
       previews: { Desserts: ['d1', 'd2'], Soups: ['s1'] },
     });
 
     const result = await endpoint.execute('alice', query, 'en-US', undefined, undefined);
 
     expect(result?.sections.map((s) => [s.categoryName, s.totalObjects])).toEqual([
-      ['Desserts', 2],
       ['Soups', 5],
+      ['Desserts', 4],
     ]);
-    expect(result?.sections[0]?.items.map((i) => i.object_id)).toEqual(['d1', 'd2']);
+    expect(result?.sections[1]?.items.map((i) => i.object_id)).toEqual(['d1', 'd2']);
   });
 
-  it('drops a section whose lineage intersection is empty (count 0 never shows an empty leaf)', async () => {
+  it('drops a section whose live count fails the display rules (empty or fewer than 3)', async () => {
     const { endpoint, objectCategoriesRepo } = createEndpoint({
       rows: [
         related('German Cuisine', 100),
@@ -98,7 +105,7 @@ describe('GetUserShopSectionsEndpoint', () => {
         related('Cakes', 20, ['German Cuisine']),
         related('Salads', 20, ['German Cuisine']),
       ],
-      liveCounts: { 'Comfort Food': 0, Stews: 3, Breads: 1, Cakes: 2, Salads: 0 },
+      liveCounts: { 'Comfort Food': 0, Stews: 5, Breads: 3, Cakes: 4, Salads: 2 },
     });
 
     const result = await endpoint.execute(
@@ -109,10 +116,10 @@ describe('GetUserShopSectionsEndpoint', () => {
       undefined,
     );
 
-    expect(result?.sections.map((s) => s.categoryName)).toEqual(['Stews', 'Breads', 'Cakes']);
-    expect(result?.sections.map((s) => s.totalObjects)).toEqual([3, 1, 2]);
+    expect(result?.sections.map((s) => s.categoryName)).toEqual(['Stews', 'Cakes', 'Breads']);
+    expect(result?.sections.map((s) => s.totalObjects)).toEqual([5, 4, 3]);
     // Comfort Food was a precomputed candidate (29 objects) and was dropped only by its live count.
-    expect(objectCategoriesRepo.countObjectIdsByScopeForCategories).toHaveBeenCalledWith(
+    expect(objectCategoriesRepo.countCategoryLevel).toHaveBeenCalledWith(
       expect.objectContaining({ categoryNames: expect.arrayContaining(['Comfort Food']) }),
     );
     expect(result?.sections.every((s) => s.totalObjects > 0)).toBe(true);
@@ -128,7 +135,7 @@ describe('GetUserShopSectionsEndpoint', () => {
         related('Cakes', 20, ['German Cuisine']),
         related('Salads', 20, ['German Cuisine']),
       ],
-      liveCounts: { 'Comfort Food': 4, Stews: 3, Breads: 1, Cakes: 2 },
+      liveCounts: { 'Comfort Food': 4, Stews: 3, Breads: 3, Cakes: 3 },
     });
 
     await endpoint.execute(
@@ -139,8 +146,8 @@ describe('GetUserShopSectionsEndpoint', () => {
       undefined,
     );
 
-    expect(objectCategoriesRepo.countObjectIdsByScopeForCategories).toHaveBeenCalledWith(
-      expect.objectContaining({ scope, parentPath: ['German Cuisine'] }),
+    expect(objectCategoriesRepo.countCategoryLevel).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: userScope, parentPath: ['German Cuisine'] }),
     );
     expect(objectCategoriesRepo.findObjectIdsByScopeForCategories).toHaveBeenCalledWith(
       expect.objectContaining({ scope, parentPath: ['German Cuisine'] }),
@@ -150,7 +157,7 @@ describe('GetUserShopSectionsEndpoint', () => {
   it('counts with the active filters in the same unit as without (live object_id count)', async () => {
     const { endpoint, objectCategoriesRepo } = createEndpoint({
       rows: ROOT_ROWS,
-      liveCounts: { Desserts: 1, 'Comfort Food': 1, Soups: 0 },
+      liveCounts: { Desserts: 3, 'Comfort Food': 3, Soups: 0 },
     });
 
     const result = await endpoint.execute(
@@ -162,11 +169,18 @@ describe('GetUserShopSectionsEndpoint', () => {
     );
 
     expect(result?.sections.map((s) => [s.categoryName, s.totalObjects])).toEqual([
-      ['Desserts', 1],
-      ['Comfort Food', 1],
+      ['Desserts', 3],
+      ['Comfort Food', 3],
     ]);
-    expect(objectCategoriesRepo.countObjectIdsByScopeForCategories).toHaveBeenCalledWith(
-      expect.objectContaining({ tags: [{ category: 'Cuisine', value: 'asian' }], rating: 8 }),
+    expect(objectCategoriesRepo.countCategoryLevel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scope: {
+          kind: 'user',
+          scope,
+          tags: [{ category: 'Cuisine', value: 'asian' }],
+          rating: 8,
+        },
+      }),
     );
     expect(objectCategoriesRepo.findObjectIdsByScopeForCategories).toHaveBeenCalledWith(
       expect.objectContaining({ tags: [{ category: 'Cuisine', value: 'asian' }], rating: 8 }),
@@ -176,7 +190,7 @@ describe('GetUserShopSectionsEndpoint', () => {
   it('pages sections by category name cursor', async () => {
     const { endpoint } = createEndpoint({
       rows: ROOT_ROWS,
-      liveCounts: { Desserts: 2, 'Comfort Food': 1, Soups: 5 },
+      liveCounts: { Desserts: 5, 'Comfort Food': 4, Soups: 3 },
     });
 
     const first = await endpoint.execute(
@@ -200,7 +214,7 @@ describe('GetUserShopSectionsEndpoint', () => {
   });
 
   it('returns empty response when section cursor is unknown', async () => {
-    const { endpoint } = createEndpoint({ rows: ROOT_ROWS, liveCounts: { Desserts: 1 } });
+    const { endpoint } = createEndpoint({ rows: ROOT_ROWS, liveCounts: { Desserts: 3 } });
 
     const result = await endpoint.execute(
       'alice',

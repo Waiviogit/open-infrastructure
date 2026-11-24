@@ -1,5 +1,5 @@
 import type { UserFavoritesRepository, UserFavoritesScope } from '../../repositories';
-import type { UserCategoryNavigationService } from '../categories/user-category-navigation.service';
+import type { CategoryNavigationService } from '../categories/category-navigation.service';
 import { GetUserFavoritesTypesEndpoint } from './get-user-favorites-types.endpoint';
 import type { UserFavoritesScopeResolver } from './user-favorites-scope.resolver';
 
@@ -17,7 +17,7 @@ describe('GetUserFavoritesTypesEndpoint', () => {
     const endpoint = new GetUserFavoritesTypesEndpoint(
       {} as UserFavoritesScopeResolver,
       {} as UserFavoritesRepository,
-      {} as UserCategoryNavigationService,
+      {} as CategoryNavigationService,
     );
     await expect(endpoint.execute('  ')).resolves.toEqual({ types: [], items: [] });
   });
@@ -38,7 +38,7 @@ describe('GetUserFavoritesTypesEndpoint', () => {
     const endpoint = new GetUserFavoritesTypesEndpoint(
       { resolve } as unknown as UserFavoritesScopeResolver,
       { findTypesByScope } as unknown as UserFavoritesRepository,
-      { build } as unknown as UserCategoryNavigationService,
+      { build } as unknown as CategoryNavigationService,
     );
 
     await expect(endpoint.execute('alice')).resolves.toEqual({
@@ -68,7 +68,12 @@ describe('GetUserFavoritesTypesEndpoint', () => {
       expect.objectContaining({
         objectType: 'recipe',
         lineage: [],
-        scope: { ...scope, types: ['recipe'], postLinkedTypes: ['recipe'] },
+        scope: {
+          kind: 'user',
+          scope: { ...scope, types: ['recipe'], postLinkedTypes: ['recipe'] },
+          tags: [],
+          rating: null,
+        },
       }),
     );
   });

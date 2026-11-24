@@ -20,6 +20,8 @@ export type DiscoverUrlParams = {
   sort?: 'newest' | 'oldest' | 'rank';
   box?: DiscoverBox | null;
   map?: DiscoverMapView | null;
+  /** Category lineage, root first (`cat` repeated, order kept). */
+  categoryPath?: readonly string[];
 };
 
 export type DiscoverPageState = {
@@ -30,7 +32,12 @@ export type DiscoverPageState = {
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
   map: DiscoverMapView | null;
+  /** Category lineage of the type's tree, root first; empty = the type root (`All`). */
+  categoryPath: string[];
 };
+
+/** Query param of one category lineage segment (repeated, root first). */
+export const DISCOVER_CATEGORY_PARAM = 'cat';
 
 /** Discover route pathname. */
 export const DISCOVER_PATH = '/discover';
@@ -156,8 +163,14 @@ export function parseDiscoverPageState(source: DiscoverSearchParamsSource): Disc
     sortRaw === 'oldest' || sortRaw === 'rank' || sortRaw === 'newest' ? sortRaw : 'rank';
   const box = parseDiscoverBoxParam(readSearchParam(source, 'box'));
   const map = parseDiscoverMapParam(readSearchParam(source, 'map'));
+  const categoryPath =
+    objectType == null
+      ? []
+      : readSearchParamAll(source, DISCOVER_CATEGORY_PARAM)
+          .map((segment) => segment.trim())
+          .filter((segment) => segment.length > 0);
 
-  return { usersMode, objectType, q, tags, sort, box, map };
+  return { usersMode, objectType, q, tags, sort, box, map, categoryPath };
 }
 
 /** Encodes tag filter for URL/API: `category:value` (split on first `:`). */
@@ -185,6 +198,12 @@ export function buildDiscoverHref(params: DiscoverUrlParams): string {
     sp.set('users', '1');
   } else if (params.type?.trim()) {
     sp.set('type', params.type.trim());
+    for (const segment of params.categoryPath ?? []) {
+      const trimmed = segment.trim();
+      if (trimmed) {
+        sp.append(DISCOVER_CATEGORY_PARAM, trimmed);
+      }
+    }
   }
   const q = params.q?.trim();
   if (q) {

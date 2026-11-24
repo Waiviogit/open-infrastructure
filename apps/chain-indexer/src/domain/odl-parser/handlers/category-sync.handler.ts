@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { objectTypeSupportsCategories } from '@opden-data-layer/core';
 import { ObjectCategoriesRelatedSyncQueueRepository } from '../../../repositories/object-categories-related-sync-queue.repository';
 import { ObjectCategoriesSyncQueueRepository } from '../../../repositories/object-categories-sync-queue.repository';
 import {
@@ -34,7 +35,7 @@ const GLOBAL_SCOPE_KEY = '_';
  * Enqueues per-object category recompute and dependent scope aggregation jobs.
  *
  * Category changes enqueue only the object recompute: `ObjectCategoriesWorker` enqueues the
- * global and user scopes after it has written the new `category_names`, so scopes are never
+ * global, type and user scopes after it has written the new `category_names`, so scopes are never
  * rebuilt from stale categories.
  * @see docs/apps/chain-indexer/spec/object-categories.md
  */
@@ -79,6 +80,9 @@ export class CategorySyncHandler {
     try {
       const t = this.enqueuedAt();
       await this.objectCategoriesRelatedSyncQueueRepository.enqueue('global', GLOBAL_SCOPE_KEY, t);
+      if (objectTypeSupportsCategories(event.objectType)) {
+        await this.objectCategoriesRelatedSyncQueueRepository.enqueue('type', event.objectType, t);
+      }
       await this.userCategoryScopeEnqueueService.enqueueObjectAudience(
         objectId,
         event.objectType,

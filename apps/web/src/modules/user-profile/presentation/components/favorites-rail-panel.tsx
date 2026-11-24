@@ -1,6 +1,10 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import {
+  CategoryNavPendingSkeleton,
+  sameCategoryLineage,
+} from '@/shared/presentation/category-nav';
 
 import { parseFavoritesPath } from '../../domain/favorites-path';
 import type { CategoryNavData } from '../../domain/types/category-nav';
@@ -18,8 +22,6 @@ import {
 } from './favorites-layout-classes';
 import { useEffectiveProfileNav } from './user-profile-pending-nav-context';
 
-const CATEGORY_NAV_SKELETON_ROWS = 4;
-
 export type FavoritesRailPanelProps = {
   accountName: string;
   items: readonly FavoritesTypeSummary[];
@@ -32,22 +34,6 @@ export type FavoritesRailPanelProps = {
   /** Lineage whose children `navData.items` are. */
   navLineage: readonly string[];
 };
-
-function CategoryNavPendingSkeleton() {
-  return (
-    <ul className="list-none space-y-1 p-0" aria-hidden>
-      {Array.from({ length: CATEGORY_NAV_SKELETON_ROWS }, (_, i) => (
-        <li key={i}>
-          <div className="h-7 w-full animate-pulse rounded-btn bg-surface-control" />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function sameLineage(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === b.length && a.every((segment, index) => segment === b[index]);
-}
 
 /**
  * Left rail of the Favorites tab: the category navigation of the active type. Types live in the
@@ -81,7 +67,7 @@ export function FavoritesRailPanel({
   if (drawer) {
     const pending =
       activeType !== serverObjectType ||
-      (effectivePath !== null && !sameLineage(effectivePath.lineage, lineageSegments));
+      (effectivePath !== null && !sameCategoryLineage(effectivePath.lineage, lineageSegments));
     return (
       <nav aria-label={t('favorites_categories_aria')} className="px-3 pb-gutter pt-3">
         {pending ? (

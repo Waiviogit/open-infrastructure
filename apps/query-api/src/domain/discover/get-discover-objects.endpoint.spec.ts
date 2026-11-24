@@ -32,7 +32,7 @@ describe('GetDiscoverObjectsEndpoint', () => {
     );
 
     const result = await endpoint.execute({
-      query: { tags: [], sort: 'newest', limit: 20 },
+      query: { category_path: [], tags: [], sort: 'newest', limit: 20 },
       locale: 'en-US',
     });
 
@@ -56,7 +56,7 @@ describe('GetDiscoverObjectsEndpoint', () => {
     );
 
     await endpoint.execute({
-      query: { tags: ['Cuisine:asian'], sort: 'newest', limit: 20 },
+      query: { category_path: [], tags: ['Cuisine:asian'], sort: 'newest', limit: 20 },
       locale: 'en-US',
     });
 
@@ -111,7 +111,7 @@ describe('GetDiscoverObjectsEndpoint', () => {
     );
 
     await endpoint.execute({
-      query: { object_type: 'restaurant', tags: [], sort: 'rank', limit: 20 },
+      query: { category_path: [], object_type: 'restaurant', tags: [], sort: 'rank', limit: 20 },
       locale: 'en-US',
     });
 

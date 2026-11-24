@@ -19,7 +19,7 @@ Decision table:
 | Intent | Tool |
 |--------|------|
 | Quick object/user lookup | search (+ search_counts for tab totals) |
-| Browse catalog by type/tags | discover_objects, discover_tag_categories |
+| Browse catalog by type/tags/categories | discover_objects, discover_tag_categories, discover_categories |
 | Full object projection | resolve_object |
 | Object rails (related/similar/add-on) | get_object_related / get_object_similar / get_object_add_on |
 | User profile | get_user_profile |

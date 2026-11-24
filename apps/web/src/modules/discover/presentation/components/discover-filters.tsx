@@ -17,22 +17,40 @@ export type DiscoverFiltersProps = {
   tags: string[];
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
+  /** Category lineage, root first (kept by every Discover link and fetch). */
+  categoryPath: string[];
   map: DiscoverMapView | null;
 };
 
-export function DiscoverFilters({ objectType, q, tags, sort, box, map }: DiscoverFiltersProps) {
+export function DiscoverFilters({
+  objectType,
+  q,
+  tags,
+  sort,
+  box,
+  categoryPath,
+  map,
+}: DiscoverFiltersProps) {
   const { t } = useI18n();
   const { navigateInstant } = useInstantNavigation();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { loading, orderedSections, collapsedCategories, toggleCollapse } =
-    useDiscoverTagCategories({ objectType, q, tags, box });
+    useDiscoverTagCategories({ objectType, q, tags, box, categoryPath });
 
   const pushTags = useCallback(
     (nextTags: string[]) => {
-      const href = buildDiscoverHref({ type: objectType, q, tags: nextTags, sort, box, map: map ?? undefined });
+      const href = buildDiscoverHref({
+        type: objectType,
+        categoryPath,
+        q,
+        tags: nextTags,
+        sort,
+        box,
+        map: map ?? undefined,
+      });
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, objectType, q, sort, box, map],
+    [navigateInstant, objectType, categoryPath, q, sort, box, map],
   );
 
   const onToggleTag = useCallback(

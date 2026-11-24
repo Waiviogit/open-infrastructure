@@ -34,3 +34,16 @@ export interface DiscoverTagCategorySectionDto {
 export interface DiscoverTagCategoriesResponseDto {
   categories: DiscoverTagCategorySectionDto[];
 }
+
+export interface DiscoverCategoryItemDto {
+  name: string;
+  /** Live count of active groups (`COALESCE(meta_group_id, object_id)`) under the lineage. */
+  objects_count: number;
+  has_children: boolean;
+}
+
+export interface DiscoverCategoriesResponseDto {
+  items: DiscoverCategoryItemDto[];
+  /** Root only: more categories pass the display rules than the root limit shows. */
+  show_other: boolean;
+}

@@ -14,10 +14,18 @@ import {
   type UserFavoritesTagCategoryRow,
   type UserFavoritesTagFilter,
 } from './user-favorites-scope.sql';
+import { categoryScopeCtes, type CategoryCountScope } from './category-scope.sql';
 
 export type ScopedObjectRow = { object_id: string; weight: number | null };
 
 export type CategoryNamePair = { first: string; second: string };
+
+/** Live counts of one category level (see `countCategoryLevel`). */
+export type CategoryLevelCounts = {
+  counts: Map<string, number>;
+  /** Scope units under the parent path, uncategorized included. */
+  total: number;
+};
 
 type ScopeObjectFilters = {
   tags?: readonly UserFavoritesTagFilter[];
@@ -146,70 +154,91 @@ export class ObjectCategoriesRepository {
   }
 
   /**
-   * Live `COUNT(DISTINCT object_id)` per category name over scope objects whose
-   * `category_names` contain `parentPath` and the name (same set the leaf list pages through).
-   * Names with no matching object map to 0.
+   * Live counts of one category level: per candidate name, the scope units (objects for a user
+   * scope, groups for a type scope) whose `category_names` contain `parentPath` and the name, plus
+   * `total` = every scope unit under `parentPath` (uncategorized units included at the root).
+   * Names with no matching unit map to 0. Same set the leaf list pages through.
+   * @see docs/apps/query-api/spec/categories.md
    */
-  async countObjectIdsByScopeForCategories(
-    params: {
-      scope: UserFavoritesScope;
-      parentPath: readonly string[];
-      categoryNames: readonly string[];
-    } & ScopeObjectFilters,
-  ): Promise<Map<string, number>> {
-    const result = new Map<string, number>(params.categoryNames.map((n) => [n, 0]));
-    if (isEmptyUserFavoritesScope(params.scope) || params.categoryNames.length === 0) {
-      return result;
+  async countCategoryLevel(params: {
+    scope: CategoryCountScope;
+    parentPath: readonly string[];
+    categoryNames: readonly string[];
+  }): Promise<CategoryLevelCounts> {
+    const counts = new Map<string, number>(params.categoryNames.map((n) => [n, 0]));
+    const ctes = categoryScopeCtes(params.scope);
+    if (ctes == null) {
+      return { counts, total: 0 };
     }
-    const objectFilter = objectFilterClause(sql`s.object_id`, params.tags ?? [], params.rating ?? null);
+    const isRoot = params.parentPath.length === 0;
+    const lineageJoin = isRoot
+      ? sql``
+      : sql`INNER JOIN object_categories cat ON cat.object_id = s.object_id
+          AND cat.category_names @> ${textArraySql(params.parentPath)}`;
+    // The root candidates are every name of the scope: one GROUP BY over all names is cheaper
+    // than matching each unnested name against thousands of candidates.
+    const candidateFilter = isRoot
+      ? sql`TRUE`
+      : sql`c.name = ANY(${textArraySql(params.categoryNames)})`;
+    const lineageFilter = isRoot
+      ? sql`TRUE`
+      : sql`cat.category_names @> ${textArraySql(params.parentPath)}`;
 
     try {
-      const rows = await sql<{ category_name: string; object_count: number | string }>`
-        WITH ${userFavoritesScopeCte(params.scope)},
-        lineage_objects AS (
-          SELECT s.object_id, cat.category_names
-          FROM user_favorites_scope s
+      // Two queries in parallel: one shared CTE for both would be materialized (scanned once,
+      // then re-read twice), about twice slower on a large type.
+      const [totalRows, nameRows] = await Promise.all([
+        sql<{ unit_count: number | string }>`
+          WITH ${ctes}
+          SELECT COUNT(DISTINCT s.unit_key)::int AS unit_count
+          FROM category_scope s
+          ${lineageJoin}
+        `.execute(this.db),
+        sql<{ category_name: string | null; unit_count: number | string }>`
+          WITH ${ctes}
+          SELECT c.name AS category_name, COUNT(DISTINCT s.unit_key)::int AS unit_count
+          FROM category_scope s
           INNER JOIN object_categories cat ON cat.object_id = s.object_id
-          WHERE cat.category_names @> ${textArraySql(params.parentPath)}
-            AND (${objectFilter})
-        )
-        SELECT c.name AS category_name, COUNT(DISTINCT lo.object_id)::int AS object_count
-        FROM lineage_objects lo
-        CROSS JOIN LATERAL unnest(lo.category_names) AS c(name)
-        WHERE c.name = ANY(${textArraySql(params.categoryNames)})
-        GROUP BY c.name
-      `.execute(this.db);
+          CROSS JOIN LATERAL unnest(cat.category_names) AS c(name)
+          WHERE ${lineageFilter}
+            AND ${candidateFilter}
+          GROUP BY c.name
+        `.execute(this.db),
+      ]);
 
-      for (const row of rows.rows) {
-        result.set(row.category_name, Number(row.object_count));
+      for (const row of nameRows.rows) {
+        if (row.category_name != null && counts.has(row.category_name)) {
+          counts.set(row.category_name, Number(row.unit_count));
+        }
       }
-      return result;
+      return { counts, total: Number(totalRows.rows[0]?.unit_count ?? 0) };
     } catch (error) {
-      this.logger.error(`countObjectIdsByScopeForCategories failed: ${errorMessage(error)}`);
-      return result;
+      this.logger.error(`countCategoryLevel failed: ${errorMessage(error)}`);
+      return { counts, total: 0 };
     }
   }
 
   /**
-   * Live counts of scope objects under `parentPath` carrying both names of each pair
+   * Live counts of scope units under `parentPath` carrying both names of each pair
    * (`first` → `second` → count). Only non-zero pairs are present.
    */
   async countCategoryPairsByScope(params: {
-    scope: UserFavoritesScope;
+    scope: CategoryCountScope;
     parentPath: readonly string[];
     pairs: readonly CategoryNamePair[];
   }): Promise<Map<string, Map<string, number>>> {
     const result = new Map<string, Map<string, number>>();
-    if (isEmptyUserFavoritesScope(params.scope) || params.pairs.length === 0) {
+    const ctes = categoryScopeCtes(params.scope);
+    if (ctes == null || params.pairs.length === 0) {
       return result;
     }
 
     try {
-      const rows = await sql<{ first_name: string; second_name: string; object_count: number | string }>`
-        WITH ${userFavoritesScopeCte(params.scope)},
-        lineage_objects AS (
-          SELECT s.object_id, cat.category_names
-          FROM user_favorites_scope s
+      const rows = await sql<{ first_name: string; second_name: string; unit_count: number | string }>`
+        WITH ${ctes},
+        lineage_units AS (
+          SELECT s.unit_key, cat.category_names
+          FROM category_scope s
           INNER JOIN object_categories cat ON cat.object_id = s.object_id
           WHERE cat.category_names @> ${textArraySql(params.parentPath)}
         ),
@@ -220,17 +249,17 @@ export class ObjectCategoriesRepository {
             ${textArraySql(params.pairs.map((p) => p.second))}
           ) AS p(first_name, second_name)
         )
-        SELECT p.first_name, p.second_name, COUNT(DISTINCT lo.object_id)::int AS object_count
-        FROM lineage_objects lo
-        CROSS JOIN LATERAL unnest(lo.category_names) AS a(name)
-        CROSS JOIN LATERAL unnest(lo.category_names) AS b(name)
+        SELECT p.first_name, p.second_name, COUNT(DISTINCT lu.unit_key)::int AS unit_count
+        FROM lineage_units lu
+        CROSS JOIN LATERAL unnest(lu.category_names) AS a(name)
+        CROSS JOIN LATERAL unnest(lu.category_names) AS b(name)
         INNER JOIN pairs p ON p.first_name = a.name AND p.second_name = b.name
         GROUP BY p.first_name, p.second_name
       `.execute(this.db);
 
       for (const row of rows.rows) {
         const inner = result.get(row.first_name) ?? new Map<string, number>();
-        inner.set(row.second_name, Number(row.object_count));
+        inner.set(row.second_name, Number(row.unit_count));
         result.set(row.first_name, inner);
       }
       return result;

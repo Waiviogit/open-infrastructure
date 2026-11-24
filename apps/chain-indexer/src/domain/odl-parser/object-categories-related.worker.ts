@@ -4,6 +4,8 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { ObjectCategoriesRelatedSyncQueueRow } from '@opden-data-layer/odl-db-types';
 
 import {
+  CATEGORY_OBJECT_TYPES,
+  objectTypeSupportsCategories,
   parseUserCategoryScopeKey,
   resolvePostLinkedObjectTypes,
 } from '@opden-data-layer/core';
@@ -11,6 +13,7 @@ import { ObjectCategoriesRelatedRepository } from '../../repositories/object-cat
 import { ObjectCategoriesRelatedSyncQueueRepository } from '../../repositories/object-categories-related-sync-queue.repository';
 import { UserMetadataRepository } from '../../repositories/user-metadata.repository';
 import { UserShopDeselectRepository } from '../../repositories/user-shop-deselect.repository';
+import { CategoryTypeScopeThrottleService } from './category-type-scope-throttle.service';
 import {
   OBJECT_CATEGORIES_RELATED_WORKER_BATCH_SIZE,
   OBJECT_CATEGORIES_RELATED_WORKER_INTERVAL_NAME,
@@ -21,8 +24,9 @@ const DEFAULT_INTERVAL_MS = 5_000;
 const DEFAULT_MAX_ATTEMPTS = 10;
 
 /**
- * Drains `object_categories_related_sync_queue`: rebuilds the global scope or one per-type user
- * scope (`account:objectType`).
+ * Drains `object_categories_related_sync_queue`: rebuilds the global scope, one type scope
+ * (all active objects of a category type, rate limited) or one per-type user scope
+ * (`account:objectType`).
  * @see docs/apps/chain-indexer/spec/object-categories.md
  */
 @Injectable()
@@ -36,6 +40,7 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
     private readonly objectCategoriesRelatedRepository: ObjectCategoriesRelatedRepository,
     private readonly userMetadataRepository: UserMetadataRepository,
     private readonly userShopDeselectRepository: UserShopDeselectRepository,
+    private readonly typeScopeThrottle: CategoryTypeScopeThrottleService,
   ) {}
 
   onModuleInit(): void {
@@ -69,9 +74,11 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
     );
     const limit = batchSize > 0 ? batchSize : OBJECT_CATEGORIES_RELATED_WORKER_BATCH_SIZE;
 
+    const throttledTypes = await this.typeScopeThrottle.throttledTypes(CATEGORY_OBJECT_TYPES);
     const tasks = await this.relatedSyncQueueRepository.claimBatch(
       limit,
       OBJECT_CATEGORIES_RETRY_AFTER_SEC,
+      throttledTypes,
     );
 
     for (const task of tasks) {
@@ -86,6 +93,8 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
     try {
       if (task.scope_type === 'global') {
         await this.objectCategoriesRelatedRepository.replaceGlobalScope();
+      } else if (task.scope_type === 'type') {
+        await this.rebuildTypeScope(task.scope_key);
       } else {
         await this.rebuildUserScope(task.scope_key);
       }
@@ -102,6 +111,15 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
         await this.relatedSyncQueueRepository.resetAttempt(task.scope_type, task.scope_key);
       }
     }
+  }
+
+  private async rebuildTypeScope(objectType: string): Promise<void> {
+    if (!objectTypeSupportsCategories(objectType)) {
+      this.logger.warn(`object_categories_related: '${objectType}' is not a category type; skipped`);
+      return;
+    }
+    await this.objectCategoriesRelatedRepository.replaceTypeCategoryScope(objectType);
+    await this.typeScopeThrottle.markRebuilt(objectType);
   }
 
   private async rebuildUserScope(scopeKey: string): Promise<void> {

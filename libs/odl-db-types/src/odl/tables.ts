@@ -985,7 +985,8 @@ export type NewObjectCategoriesSyncQueueRow = Insertable<ObjectCategoriesSyncQue
 // object_categories_related (per-scope aggregates for navigation)
 // ---------------------------------------------------------------------------
 
-export type ObjectCategoriesRelatedScopeType = 'global' | 'user';
+/** `global`: all active objects (key `_`); `user`: `account:type`; `type`: one category object type. */
+export type ObjectCategoriesRelatedScopeType = 'global' | 'user' | 'type';
 
 export interface ObjectCategoriesRelatedTable {
   scope_type: ObjectCategoriesRelatedScopeType;
@@ -994,6 +995,8 @@ export interface ObjectCategoriesRelatedTable {
   objects_count: number | bigint;
   group_keys: ColumnType<string[], string[] | undefined, string[]>;
   related_names: ColumnType<string[], string[] | undefined, string[]>;
+  /** Groups shared with each `related_names` entry (same order); filled for type scopes only. */
+  related_counts: ColumnType<number[], number[] | undefined, number[]>;
 }
 
 export type ObjectCategoriesRelatedRow = Selectable<ObjectCategoriesRelatedTable>;

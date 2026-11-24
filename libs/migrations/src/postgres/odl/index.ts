@@ -74,6 +74,7 @@ import * as m00073 from './00073_object_categories_related_per_type_scopes';
 import * as m00074 from './00074_activity_message_notes';
 import * as m00075 from './00075_hub_feed_filters';
 import * as m00076 from './00076_feed_activity_presence';
+import * as m00077 from './00077_object_categories_related_type_scope';
 import type { Migration } from 'kysely';
 
 /** Ordered migrations for OdlMigrationProvider. Schema matches @opden-data-layer/odl-db-types OdlDatabase and docs/spec/data-model/schema.sql */
@@ -163,4 +164,5 @@ export const MIGRATIONS: Record<string, Migration> = {
   '00074_activity_message_notes': { up: m00074.up, down: m00074.down },
   '00075_hub_feed_filters': { up: m00075.up, down: m00075.down },
   '00076_feed_activity_presence': { up: m00076.up, down: m00076.down },
+  '00077_object_categories_related_type_scope': { up: m00077.up, down: m00077.down },
 };

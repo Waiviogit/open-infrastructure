@@ -5,6 +5,9 @@ const APP = 'query-api';
 export const redisKey = {
   discoverTagCategories: (objectType: string) =>
     buildRedisKey(APP, 'cache', 'tag-categories', objectType),
+  /** `lineageHash` is a sha256 of the category lineage (names never become key segments). */
+  discoverCategories: (objectType: string, lineageHash: string) =>
+    buildRedisKey(APP, 'cache', 'discover-categories', objectType, lineageHash),
   listItemCount: (parentObjectId: string, listRefId: string) =>
     buildRedisKey(APP, 'cache', 'list-count', parentObjectId, listRefId),
   objectRefExpansion: (

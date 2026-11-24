@@ -9,6 +9,8 @@ export type DiscoverMapRailProps = {
   tags: string[];
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
+  /** Category lineage, root first (kept by every Discover link and fetch). */
+  categoryPath: string[];
   mapView: DiscoverMapView | null;
   onApplyArea: (box: DiscoverBox) => void;
   onViewChange?: (view: DiscoverMapView) => void;
@@ -21,6 +23,7 @@ export function DiscoverMapRail({
   tags,
   sort,
   box,
+  categoryPath,
   mapView,
   onApplyArea,
   onViewChange,
@@ -34,6 +37,7 @@ export function DiscoverMapRail({
         tags={tags}
         sort={sort}
         box={box}
+        categoryPath={categoryPath}
         mapView={mapView}
         onApplyArea={onApplyArea}
         onViewChange={onViewChange}

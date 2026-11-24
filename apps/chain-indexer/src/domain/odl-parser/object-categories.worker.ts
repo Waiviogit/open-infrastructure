@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nest
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import type { Kysely } from 'kysely';
-import { UPDATE_TYPES } from '@opden-data-layer/core';
+import { objectTypeSupportsCategories, UPDATE_TYPES } from '@opden-data-layer/core';
 import type { ObjectCategoriesSyncQueueRow } from '@opden-data-layer/odl-db-types';
 import { ObjectViewService } from '@opden-data-layer/objects-domain';
 import { AggregatedObjectRepository } from '../../repositories/aggregated-object.repository';
@@ -173,6 +173,9 @@ export class ObjectCategoriesWorker implements OnModuleInit, OnModuleDestroy {
           return;
         }
         await this.relatedSyncQueueRepository.enqueue('global', GLOBAL_SCOPE_KEY, enqueuedAt, trx);
+        if (objectTypeSupportsCategories(coreRow.object_type)) {
+          await this.relatedSyncQueueRepository.enqueue('type', coreRow.object_type, enqueuedAt, trx);
+        }
         await this.relatedSyncQueueRepository.enqueueMany('user', userScopeKeys, enqueuedAt, trx);
       });
 

@@ -34,7 +34,8 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [User social lists](user-social-lists.md) | `GET .../:name/followers`, `/following`, `/following-objects` |
 | [OSL messaging](osl-messaging.md) | Channels, object activity, `POST .../:name/following-objects/messages` |
 | [User account authority lists](user-account-auths-endpoint.md) | `GET .../:name/authority-grantors`, `/authority-grantees` |
-| [Favorites categories](categories.md) | `GET /query/v1/users/:name/categories` (one category type, live counts) |
+| [Categories](categories.md) | `GET /query/v1/users/:name/categories` (one category type, live counts, display rules) |
+| [Discover categories](discover-categories.md) | `GET /query/v1/discover/categories`; `category_path` on Discover objects and facets |
 | [Category objects feed](category-objects.md) | `GET /query/v1/categories/objects` |
 | [Favorites lists, sections, filters](shop-feed-endpoints.md) | `GET .../shop-objects`, `GET .../shop-sections`, `GET .../shop/filters` |
 | [User favorites + Favorites scope](users-favorites-endpoint.md) | `GET .../favorites/types`, `GET .../favorites`, `POST .../favorites/map` |

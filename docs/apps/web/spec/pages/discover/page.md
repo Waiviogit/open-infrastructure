@@ -25,6 +25,7 @@ Hub chrome: under `(app)/(hub)` with FEED / DISCOVER / MARKET section nav (`AppS
 | `/discover?type={object_type}` | Object feed for one registry type |
 | `/discover?type=all` | Mixed object-type feed (no `object_type` sent to query-api) |
 | `/discover?users=1` | User list (optional `q` prefix search) |
+| `/discover?type={category type}&cat=A&cat=B` | Object feed inside a category lineage (root first); `cat` is kept only with a type |
 | `q`, `tags`, `sort`, `box`, `map` | Shared query params |
 
 Bare `/discover` always resolves to a type. A valid remembered cookie wins; first-time visitors land on **Product**. The automatic redirect does not write the cookie.
@@ -70,9 +71,21 @@ Type links replace the URL and keep `q` and `sort`; `tags`, `box` and `map` are 
 
 Three columns from `lg` up, on the hub shell grid (`--shell-left-width` / feed / `--shell-right-width`):
 
-- **Left** — reserved for the active type's categories (next step: category tree for registry types with the `category` update, breadcrumbs from `All`, `?cat=` lineage in the URL). Empty until then.
-- **Center** — `Discover` title + sort, active-filter chips, then the object or user feed.
+- **Left** — the active type's [category tree](#categories) (category types only); empty otherwise.
+- **Center** — `Discover` title + sort, category breadcrumbs, active-filter chips, then the object or user feed.
 - **Right** — map rail (geo types) above the tag-category filters; sticky under the hub section nav.
+
+### Categories
+
+For a type whose registry supports the `category` update (`objectTypeSupportsCategories`), Discover shows the type's category tree, like profile Favorites. Data: BFF `GET /api/discover/categories` → query-api [`discover/categories`](../../../../query-api/spec/discover-categories.md), one level per request, counted in groups and narrowed by `q`, `tags` and `box`. Categories with fewer than 3 groups or over 60% of the level are not listed; there is no Uncategorized node (those objects are in `All`).
+
+- **URL:** repeated `cat`, root first (`?type=product&cat=Electronics&cat=Audio`). The feed, map markers and tag facets send it as `category_path`. A type change drops it; a category link keeps `q`, `tags`, `sort`, `box` and `map`; every Discover control (sort, chips, filters, map area) keeps it.
+- **Rail (`lg+`)** — `DiscoverCategoryRail`: a card in page flow (not sticky) with the type label, ← Up / All categories below the root, then the level's categories with their group counts (`›` when they have children). A leaf shows its siblings with the leaf highlighted (`useDiscoverCategoryNav`). A skeleton while a level loads; a type whose root has no category hides the rail.
+- **Breadcrumbs** — `All › Electronics › Audio` (shared `CategoryBreadcrumbs`); `All` is the type root. Below `lg` the current crumb is a tinted pill (`bg-accent-soft`) that opens the drawer.
+- **Drawer (`< lg`)** — `DiscoverCategoryDrawer`: `DrawerRegion side="left" belowHeader size="wide" closeOnBack`, one level at a time (shared `CategoryNavDrawerList`): ‹ parent, the level itself, child categories with counts. A category with children opens its level and keeps the drawer; a leaf or the level closes it. Back closes the drawer; its links replace the URL.
+- **Toolbar (`< lg`)** — like Favorites: at the type root without filters the Filter pill shares the crumb row; with a category path or active filters it goes after the chips.
+
+Shared components: `@/shared/presentation/category-nav` (list, ← Up links, drawer list, breadcrumbs, skeleton), used by Favorites too.
 
 ### Active filters
 
@@ -92,6 +105,7 @@ Shared `ActiveFilterChips` (`@/shared/presentation`), the same component as prof
 | `GET /api/discover/objects` | `GET /query/v1/discover/objects` |
 | `GET /api/discover/users` | `GET /query/v1/discover/users` |
 | `GET /api/discover/tag-categories` | `GET /query/v1/discover/tag-categories` |
+| `GET /api/discover/categories` | `GET /query/v1/discover/categories` |
 
 ### Object feed
 

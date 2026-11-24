@@ -10,6 +10,7 @@ import {
 import type { Database } from '../database';
 import type { WeightObjectCursorPayload } from '../domain/pagination/weight-object-cursor';
 import { ObjectCategoriesRepository } from './object-categories.repository';
+import type { UserCategoryCountScope } from './category-scope.sql';
 import type { UserFavoritesScope, UserFavoritesTagFilter } from './user-favorites-scope.sql';
 import { UserFavoritesRepository } from './user-favorites.repository';
 
@@ -58,6 +59,10 @@ const RECIPE_SCOPE: UserFavoritesScope = {
   postLinkedTypes: ['recipe'],
   deselectObjectIds: ['r-desel'],
 };
+
+function userScope(tags: UserFavoritesTagFilter[] = []): UserCategoryCountScope {
+  return { kind: 'user', scope: RECIPE_SCOPE, tags, rating: null };
+}
 
 async function seed(trx: Trx): Promise<void> {
   for (const [index, f] of FIXTURES.entries()) {
@@ -206,8 +211,8 @@ describeDb('Favorites scope and live category counts (test Postgres)', () => {
     await withRollback(db, async (trx) => {
       await seed(trx);
       const repo = categoriesRepo(trx);
-      const counts = await repo.countObjectIdsByScopeForCategories({
-        scope: RECIPE_SCOPE,
+      const { counts } = await repo.countCategoryLevel({
+        scope: userScope(),
         parentPath: ['A'],
         categoryNames: ['B', 'X'],
       });
@@ -225,11 +230,10 @@ describeDb('Favorites scope and live category counts (test Postgres)', () => {
       await seed(trx);
       const repo = categoriesRepo(trx);
       const tags = [{ category: 'Cuisine', value: 'german' }];
-      const counts = await repo.countObjectIdsByScopeForCategories({
-        scope: RECIPE_SCOPE,
+      const { counts } = await repo.countCategoryLevel({
+        scope: userScope(tags),
         parentPath: ['A'],
         categoryNames: ['B'],
-        tags,
       });
       const leaf = await listAll(repo, { scope: RECIPE_SCOPE, categoryPath: ['A', 'B'], tags });
 
@@ -243,23 +247,23 @@ describeDb('Favorites scope and live category counts (test Postgres)', () => {
       await seed(trx);
       const repo = categoriesRepo(trx);
 
-      const underA = await repo.countObjectIdsByScopeForCategories({
-        scope: RECIPE_SCOPE,
+      const { counts: underA } = await repo.countCategoryLevel({
+        scope: userScope(),
         parentPath: ['A'],
         categoryNames: ['X'],
       });
-      const underB = await repo.countObjectIdsByScopeForCategories({
-        scope: RECIPE_SCOPE,
+      const { counts: underB } = await repo.countCategoryLevel({
+        scope: userScope(),
         parentPath: ['B'],
         categoryNames: ['X'],
       });
-      const underAB = await repo.countObjectIdsByScopeForCategories({
-        scope: RECIPE_SCOPE,
+      const { counts: underAB } = await repo.countCategoryLevel({
+        scope: userScope(),
         parentPath: ['A', 'B'],
         categoryNames: ['X', 'Y'],
       });
       const pairs = await repo.countCategoryPairsByScope({
-        scope: RECIPE_SCOPE,
+        scope: userScope(),
         parentPath: ['A'],
         pairs: [
           { first: 'B', second: 'X' },
@@ -304,6 +308,128 @@ describeDb('Favorites scope and live category counts (test Postgres)', () => {
         { object_type: 'recipe', objects_count: 7, categorized_count: 5 },
         { object_type: 'restaurant', objects_count: 1, categorized_count: 1 },
       ]);
+    });
+  });
+
+  describe('type scope (Discover)', () => {
+    /** Fixture-only type, so other rows never join the scope. */
+    const TYPE = 'dbspec-gadget';
+
+    async function insertTyped(
+      trx: Trx,
+      objectId: string,
+      metaGroupId: string | null,
+      categories: string[] | null,
+      opts: { status?: 'active' | 'unavailable'; tag?: [string, string] } = {},
+    ): Promise<void> {
+      await trx
+        .insertInto('objects_core')
+        .values({
+          object_id: objectId,
+          object_type: TYPE,
+          creator: 'creator',
+          transaction_id: `tx-${objectId}`,
+          status: opts.status ?? 'active',
+          weight: 1,
+          meta_group_id: metaGroupId,
+          created_at: CREATED_AT,
+        })
+        .execute();
+      if (categories) {
+        await trx
+          .insertInto('object_categories')
+          .values({
+            object_id: objectId,
+            meta_group_id: metaGroupId,
+            category_names: categories,
+            updated_at_seq: BigInt(1),
+          })
+          .execute();
+      }
+      if (opts.tag) {
+        await trx
+          .insertInto('object_tag_category_items')
+          .values({
+            object_id: objectId,
+            object_type: TYPE,
+            category: opts.tag[0],
+            value: opts.tag[1],
+          })
+          .execute();
+      }
+    }
+
+    async function seedType(trx: Trx): Promise<void> {
+      // Two variants of one group, both Audio.
+      await insertTyped(trx, 'g-v1', 'grp', ['Audio', 'Speakers'], { tag: ['Brand', 'Sony'] });
+      await insertTyped(trx, 'g-v2', 'grp', ['Audio']);
+      await insertTyped(trx, 'g-h1', null, ['Audio', 'Headphones'], { tag: ['Brand', 'Sony'] });
+      await insertTyped(trx, 'g-h2', null, ['Audio', 'Headphones']);
+      await insertTyped(trx, 'g-none', null, null);
+      await insertTyped(trx, 'g-dead', null, ['Audio'], { status: 'unavailable' });
+    }
+
+    const typeScope = (tags: { category: string; value: string }[] = []) => ({
+      kind: 'type' as const,
+      objectType: TYPE,
+      q: '',
+      tags,
+      box: null,
+    });
+
+    it('counts groups of active objects; the root total includes uncategorized groups', async () => {
+      await withRollback(db, async (trx) => {
+        await seedType(trx);
+        const level = await categoriesRepo(trx).countCategoryLevel({
+          scope: typeScope(),
+          parentPath: [],
+          categoryNames: ['Audio', 'Headphones', 'Speakers'],
+        });
+
+        // Groups: grp, g-h1, g-h2, g-none → 4; Audio = grp + g-h1 + g-h2.
+        expect(level.total).toBe(4);
+        expect(Object.fromEntries(level.counts)).toEqual({ Audio: 3, Headphones: 2, Speakers: 1 });
+      });
+    });
+
+    it('narrows the level by lineage and by tag filters', async () => {
+      await withRollback(db, async (trx) => {
+        await seedType(trx);
+        const repo = categoriesRepo(trx);
+
+        const underAudio = await repo.countCategoryLevel({
+          scope: typeScope(),
+          parentPath: ['Audio'],
+          categoryNames: ['Headphones'],
+        });
+        const sonyOnly = await repo.countCategoryLevel({
+          scope: typeScope([{ category: 'Brand', value: 'Sony' }]),
+          parentPath: ['Audio'],
+          categoryNames: ['Headphones', 'Speakers'],
+        });
+
+        expect(underAudio.total).toBe(3);
+        expect(underAudio.counts.get('Headphones')).toBe(2);
+        expect(sonyOnly.total).toBe(2);
+        expect(Object.fromEntries(sonyOnly.counts)).toEqual({ Headphones: 1, Speakers: 1 });
+      });
+    });
+
+    it('counts pairs in groups', async () => {
+      await withRollback(db, async (trx) => {
+        await seedType(trx);
+        const pairs = await categoriesRepo(trx).countCategoryPairsByScope({
+          scope: typeScope(),
+          parentPath: [],
+          pairs: [
+            { first: 'Audio', second: 'Headphones' },
+            { first: 'Headphones', second: 'Speakers' },
+          ],
+        });
+
+        expect(pairs.get('Audio')?.get('Headphones')).toBe(2);
+        expect(pairs.has('Headphones')).toBe(false);
+      });
     });
   });
 });

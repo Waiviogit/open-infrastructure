@@ -26,6 +26,8 @@ export type DiscoverObjectFeedProps = {
   tags: string[];
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
+  /** Category lineage, root first (kept by every Discover link and fetch). */
+  categoryPath: string[];
   viewerUsername?: string | null;
   onRequireLogin?: () => void;
   hideType?: boolean;
@@ -37,12 +39,13 @@ export function DiscoverObjectFeed({
   tags,
   sort,
   box,
+  categoryPath,
   viewerUsername,
   onRequireLogin,
   hideType = false,
 }: DiscoverObjectFeedProps) {
   const { t } = useI18n();
-  const cacheKey = discoverFeedCacheKey({ objectType, q, tags, sort, box });
+  const cacheKey = discoverFeedCacheKey({ objectType, q, tags, sort, box, categoryPath });
   const [cachedOnRestore] = useState(() =>
     isScrollRestorePending() ? readDiscoverFeedCache(cacheKey) : null,
   );
@@ -64,6 +67,7 @@ export function DiscoverObjectFeed({
         tags,
         sort,
         box: box ?? undefined,
+        categoryPath,
         cursor: nextCursor,
         limit: PAGE_LIMIT,
         signal,
@@ -84,7 +88,7 @@ export function DiscoverObjectFeed({
       setCursor(page.cursor);
       setHasMore(page.hasMore);
     },
-    [cacheKey, objectType, q, tags, sort, box],
+    [cacheKey, objectType, q, tags, sort, box, categoryPath],
   );
 
   useEffect(() => {

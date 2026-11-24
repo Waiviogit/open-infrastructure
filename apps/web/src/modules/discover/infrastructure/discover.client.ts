@@ -1,7 +1,9 @@
 import {
+  discoverCategoriesResponseSchema,
   discoverObjectsPageSchema,
   discoverTagCategoriesResponseSchema,
   discoverUsersPageSchema,
+  type DiscoverCategoriesResponse,
   type DiscoverObjectsPage,
   type DiscoverTagCategoriesResponse,
   type DiscoverUsersPage,
@@ -20,10 +22,22 @@ export type FetchDiscoverObjectsParams = {
   tags?: string[];
   sort?: 'newest' | 'oldest' | 'rank';
   box?: DiscoverBox;
+  /** Category lineage, root first. */
+  categoryPath?: readonly string[];
   cursor?: string | null;
   limit?: number;
   signal?: AbortSignal;
 };
+
+/** Repeated `category_path` query values, root first (query-api `category_names @> path`). */
+function appendCategoryPath(sp: URLSearchParams, categoryPath: readonly string[] | undefined): void {
+  for (const segment of categoryPath ?? []) {
+    const trimmed = segment.trim();
+    if (trimmed) {
+      sp.append('category_path', trimmed);
+    }
+  }
+}
 
 export async function fetchDiscoverObjects(
   params: FetchDiscoverObjectsParams,
@@ -45,6 +59,7 @@ export async function fetchDiscoverObjects(
   if (params.box) {
     sp.set('box', formatDiscoverBoxParam(params.box));
   }
+  appendCategoryPath(sp, params.categoryPath);
   if (params.cursor?.trim()) {
     sp.set('cursor', params.cursor.trim());
   }
@@ -114,6 +129,7 @@ export function buildDiscoverTagCategoriesSearchParams(
   tags: readonly string[] = [],
   q?: string,
   box?: DiscoverBox,
+  categoryPath: readonly string[] = [],
 ): URLSearchParams {
   const sp = new URLSearchParams({ object_type: objectType.trim() });
   const qTrimmed = q?.trim();
@@ -129,18 +145,26 @@ export function buildDiscoverTagCategoriesSearchParams(
   if (box) {
     sp.set('box', formatDiscoverBoxParam(box));
   }
+  appendCategoryPath(sp, categoryPath);
   return sp;
 }
 
 export async function fetchDiscoverTagCategories(
   objectType: string,
-  init?: { tags?: readonly string[]; q?: string; box?: DiscoverBox; signal?: AbortSignal },
+  init?: {
+    tags?: readonly string[];
+    q?: string;
+    box?: DiscoverBox;
+    categoryPath?: readonly string[];
+    signal?: AbortSignal;
+  },
 ): Promise<DiscoverTagCategoriesResponse | null> {
   const sp = buildDiscoverTagCategoriesSearchParams(
     objectType,
     init?.tags ?? [],
     init?.q,
     init?.box,
+    init?.categoryPath ?? [],
   );
   try {
     const res = await fetch(`/api/discover/tag-categories?${sp.toString()}`, {
@@ -154,6 +178,45 @@ export async function fetchDiscoverTagCategories(
     }
     const raw: unknown = await res.json();
     const parsed = discoverTagCategoriesResponseSchema.safeParse(raw);
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One level of the type's category tree (children of `categoryPath`), counted in groups and
+ * narrowed by the search, tags and map area. Null when the request fails.
+ */
+export async function fetchDiscoverCategories(
+  objectType: string,
+  init: {
+    categoryPath: readonly string[];
+    tags?: readonly string[];
+    q?: string;
+    box?: DiscoverBox;
+    signal?: AbortSignal;
+  },
+): Promise<DiscoverCategoriesResponse | null> {
+  const sp = buildDiscoverTagCategoriesSearchParams(
+    objectType,
+    init.tags ?? [],
+    init.q,
+    init.box,
+    init.categoryPath,
+  );
+  try {
+    const res = await fetch(`/api/discover/categories?${sp.toString()}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      signal: init.signal,
+    });
+    if (!res.ok) {
+      return null;
+    }
+    const raw: unknown = await res.json();
+    const parsed = discoverCategoriesResponseSchema.safeParse(raw);
     return parsed.success ? parsed.data : null;
   } catch {
     return null;

@@ -206,6 +206,7 @@ describe('parseDiscoverPageState', () => {
       sort: 'rank',
       box: null,
       map: null,
+      categoryPath: [],
     });
   });
 
@@ -218,6 +219,7 @@ describe('parseDiscoverPageState', () => {
       sort: 'rank',
       box: null,
       map: null,
+      categoryPath: [],
     });
   });
 
@@ -230,6 +232,7 @@ describe('parseDiscoverPageState', () => {
       sort: 'rank',
       box: null,
       map: null,
+      categoryPath: [],
     });
   });
 
@@ -242,6 +245,7 @@ describe('parseDiscoverPageState', () => {
       sort: 'rank',
       box: null,
       map: null,
+      categoryPath: [],
     });
   });
 
@@ -261,6 +265,7 @@ describe('parseDiscoverPageState', () => {
       sort: 'rank',
       box: null,
       map: null,
+      categoryPath: [],
     });
   });
 
@@ -274,7 +279,23 @@ describe('parseDiscoverPageState', () => {
       sort: 'oldest',
       box: null,
       map: null,
+      categoryPath: [],
     });
+  });
+
+  it('parses the category lineage in order and keeps it only with a type', () => {
+    const params = new URLSearchParams('type=product&cat=Electronics&cat=%20Audio%20&cat=');
+    expect(parseDiscoverPageState(params).categoryPath).toEqual(['Electronics', 'Audio']);
+    expect(parseDiscoverPageState(new URLSearchParams('users=1&cat=Audio')).categoryPath).toEqual(
+      [],
+    );
+  });
+
+  it('builds the category lineage after the type, in order, and drops it in users mode', () => {
+    expect(
+      buildDiscoverHref({ type: 'product', categoryPath: ['Electronics', 'Audio & Video'] }),
+    ).toBe('/discover?type=product&cat=Electronics&cat=Audio+%26+Video');
+    expect(buildDiscoverHref({ users: true, categoryPath: ['Audio'] })).toBe('/discover?users=1');
   });
 
   it('parses box from URLSearchParams', () => {
@@ -291,7 +312,7 @@ describe('parseDiscoverPageState', () => {
     expect(parseDiscoverPageState(params).map).toEqual(SAMPLE_MAP);
   });
 
-  it('round-trips type, query, tags, sort, box, and map through the URL', () => {
+  it('round-trips type, category lineage, query, tags, sort, box, and map through the URL', () => {
     const href = buildDiscoverHref({
       type: 'restaurant',
       q: 'sushi',
@@ -299,6 +320,7 @@ describe('parseDiscoverPageState', () => {
       sort: 'newest',
       box: SAMPLE_BOX,
       map: SAMPLE_MAP,
+      categoryPath: ['Asian', 'Sushi bars'],
     });
     const parsed = parseDiscoverPageState(new URL(href, 'http://local').searchParams);
     expect(parsed).toEqual({
@@ -309,6 +331,7 @@ describe('parseDiscoverPageState', () => {
       sort: 'newest',
       box: SAMPLE_BOX,
       map: SAMPLE_MAP,
+      categoryPath: ['Asian', 'Sushi bars'],
     });
   });
 });

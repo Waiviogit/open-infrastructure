@@ -29,7 +29,11 @@ function task(
   };
 }
 
-function setup(opts: { tasks: ObjectCategoriesRelatedSyncQueueRow[]; flags?: Flags | undefined }) {
+function setup(opts: {
+  tasks: ObjectCategoriesRelatedSyncQueueRow[];
+  flags?: Flags | undefined;
+  throttled?: string[];
+}) {
   const queue = {
     claimBatch: jest.fn().mockResolvedValue(opts.tasks),
     deleteClaimed: jest.fn().mockResolvedValue(true),
@@ -38,7 +42,12 @@ function setup(opts: { tasks: ObjectCategoriesRelatedSyncQueueRow[]; flags?: Fla
   const related = {
     replaceGlobalScope: jest.fn().mockResolvedValue(undefined),
     replaceUserCategoryScope: jest.fn().mockResolvedValue(undefined),
+    replaceTypeCategoryScope: jest.fn().mockResolvedValue(undefined),
     deleteUserScope: jest.fn().mockResolvedValue(undefined),
+  };
+  const throttle = {
+    throttledTypes: jest.fn().mockResolvedValue(opts.throttled ?? []),
+    markRebuilt: jest.fn().mockResolvedValue(undefined),
   };
   const userMetadata = { findByAccount: jest.fn().mockResolvedValue(opts.flags) };
   const deselect = { findObjectIdsByAccount: jest.fn().mockResolvedValue(['gone']) };
@@ -54,8 +63,9 @@ function setup(opts: { tasks: ObjectCategoriesRelatedSyncQueueRow[]; flags?: Fla
     related as never,
     userMetadata as never,
     deselect as never,
+    throttle as never,
   );
-  return { worker, queue, related, userMetadata };
+  return { worker, queue, related, userMetadata, throttle };
 }
 
 describe('ObjectCategoriesRelatedWorker', () => {
@@ -134,6 +144,42 @@ describe('ObjectCategoriesRelatedWorker', () => {
     expect(related.replaceGlobalScope).toHaveBeenCalledTimes(1);
     expect(related.replaceUserCategoryScope).not.toHaveBeenCalled();
     expect(queue.deleteClaimed).toHaveBeenCalledWith('global', '_', 100);
+  });
+
+  describe('type scope', () => {
+    it('rebuilds a category type scope and marks it rebuilt', async () => {
+      const { worker, queue, related, throttle } = setup({
+        tasks: [task('product', { scope_type: 'type' })],
+      });
+
+      await worker.runBatch();
+
+      expect(related.replaceTypeCategoryScope).toHaveBeenCalledWith('product');
+      expect(throttle.markRebuilt).toHaveBeenCalledWith('product');
+      expect(queue.deleteClaimed).toHaveBeenCalledWith('type', 'product', 100);
+    });
+
+    it('skips a non-category type and drops the task', async () => {
+      const { worker, queue, related, throttle } = setup({
+        tasks: [task('restaurant', { scope_type: 'type' })],
+      });
+
+      await worker.runBatch();
+
+      expect(related.replaceTypeCategoryScope).not.toHaveBeenCalled();
+      expect(throttle.markRebuilt).not.toHaveBeenCalled();
+      expect(queue.deleteClaimed).toHaveBeenCalledWith('type', 'restaurant', 100);
+    });
+
+    it('does not claim type scopes rebuilt within the rate-limit interval', async () => {
+      const { worker, queue } = setup({ tasks: [], throttled: ['product'] });
+
+      await worker.runBatch();
+
+      expect(queue.claimBatch).toHaveBeenCalledWith(expect.any(Number), expect.any(Number), [
+        'product',
+      ]);
+    });
   });
 
   describe('queue race and retries', () => {

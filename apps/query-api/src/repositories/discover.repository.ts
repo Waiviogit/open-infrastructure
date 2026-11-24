@@ -1,6 +1,5 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { RedisClientFactory } from '@opden-data-layer/clients';
-import { UPDATE_TYPES } from '@opden-data-layer/core';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import {
@@ -16,14 +15,14 @@ import {
   encodeDiscoverUserCursor,
 } from '../domain/discover/discover-cursor';
 import type { DiscoverSort, DiscoverBox } from '../domain/discover/discover-query.schema';
-import { buildAutocompleteTsQuery } from './search-fts.utils';
-import { prefixUpperBound, shouldSearchObjectIdSubstring, shouldSearchPrefix } from './search-prefix.utils';
+import {
+  buildDiscoverObjectFilters,
+  escapeIlikePattern,
+  type DiscoverTagFilter,
+} from './discover-object-filters.sql';
+import { prefixUpperBound } from './search-prefix.utils';
 
-const FTS_TEXT_UPDATE_TYPES = [
-  UPDATE_TYPES.NAME,
-  UPDATE_TYPES.TITLE,
-  UPDATE_TYPES.DESCRIPTION,
-] as const;
+export type { DiscoverTagFilter } from './discover-object-filters.sql';
 
 export interface DiscoverObjectCandidateRow {
   object_id: string;
@@ -53,11 +52,6 @@ export interface DiscoverUserRow {
   wobjects_weight: number | null;
 }
 
-export interface DiscoverTagFilter {
-  category: string;
-  value: string;
-}
-
 export interface ListDiscoverObjectsParams {
   objectType?: string;
   q?: string;
@@ -67,109 +61,13 @@ export interface ListDiscoverObjectsParams {
   limit: number;
   viewerAccount?: string;
   box?: DiscoverBox;
+  /** Category lineage (`category_names @> path`); empty = no category filter. */
+  categoryPath?: readonly string[];
 }
 
 export interface ListDiscoverObjectsResult {
   rows: DiscoverObjectCandidateRow[];
   hasMore: boolean;
-}
-
-function escapeIlikePattern(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
-}
-
-function canDiscoverObjectTextSearch(qTrimmed: string): boolean {
-  if (qTrimmed.length === 0) {
-    return true;
-  }
-  const tsQueryCheck = buildAutocompleteTsQuery(qTrimmed);
-  return (
-    tsQueryCheck !== null ||
-    shouldSearchObjectIdSubstring(qTrimmed) ||
-    shouldSearchPrefix(qTrimmed)
-  );
-}
-
-function buildDiscoverObjectTextMatchFilter(params: {
-  qTrimmed: string;
-  tsQuery: string | null;
-  includeIdSubstring: boolean;
-  idSubstringPattern: string | null;
-}) {
-  const { qTrimmed, tsQuery, includeIdSubstring, idSubstringPattern } = params;
-  if (qTrimmed.length === 0) {
-    return sql``;
-  }
-
-  const parts: ReturnType<typeof sql>[] = [];
-
-  if (shouldSearchPrefix(qTrimmed)) {
-    const prefixLower = qTrimmed.toLowerCase();
-    const prefixUpper = prefixUpperBound(prefixLower);
-    const namePrefixPattern = `${escapeIlikePattern(prefixLower)}%`;
-    const jsonPrefixPattern = namePrefixPattern;
-    parts.push(
-      sql`(oc.object_id COLLATE "C" >= ${prefixLower} AND oc.object_id COLLATE "C" < ${prefixUpper})`,
-    );
-    parts.push(sql`EXISTS (
-      SELECT 1 FROM object_updates ou_name
-      WHERE ou_name.object_id = oc.object_id
-        AND ou_name.update_type IN (${FTS_TEXT_UPDATE_TYPES[0]}, ${FTS_TEXT_UPDATE_TYPES[1]})
-        AND ou_name.value_text_normalized LIKE ${namePrefixPattern} ESCAPE '\\'
-    )`);
-    parts.push(sql`EXISTS (
-      SELECT 1 FROM object_updates ou_identifier
-      WHERE ou_identifier.object_id = oc.object_id
-        AND ou_identifier.update_type = ${UPDATE_TYPES.IDENTIFIER}
-        AND lower(ou_identifier.value_json->>'value') LIKE ${jsonPrefixPattern} ESCAPE '\\'
-    )`);
-    parts.push(sql`EXISTS (
-      SELECT 1 FROM object_updates ou_locality
-      WHERE ou_locality.object_id = oc.object_id
-        AND ou_locality.update_type = ${UPDATE_TYPES.ADDRESS}
-        AND lower(ou_locality.value_json->>'locality') LIKE ${jsonPrefixPattern} ESCAPE '\\'
-    )`);
-  }
-
-  if (includeIdSubstring && idSubstringPattern) {
-    parts.push(sql`oc.object_id ILIKE ${idSubstringPattern} ESCAPE '\\'`);
-  }
-
-  if (tsQuery != null) {
-    parts.push(sql`EXISTS (
-      SELECT 1 FROM object_updates ou_fts
-      WHERE ou_fts.object_id = oc.object_id
-        AND ou_fts.update_type IN (${FTS_TEXT_UPDATE_TYPES[0]}, ${FTS_TEXT_UPDATE_TYPES[1]}, ${FTS_TEXT_UPDATE_TYPES[2]})
-        AND ou_fts.search_vector @@ to_tsquery('english', ${tsQuery})
-    )`);
-  }
-
-  if (parts.length === 0) {
-    return sql`AND false`;
-  }
-
-  return sql`AND (${sql.join(parts, sql` OR `)})`;
-}
-
-function buildDiscoverGeoBoxFilter(box: DiscoverBox | undefined) {
-  if (!box) {
-    return sql``;
-  }
-  return sql`AND EXISTS (
-    SELECT 1 FROM (
-      SELECT ou_geo.value_geo
-      FROM object_updates ou_geo
-      WHERE ou_geo.object_id = oc.object_id
-        AND ou_geo.update_type = 'geo'
-        AND ou_geo.value_geo IS NOT NULL
-      ORDER BY ou_geo.rank_score DESC NULLS LAST, ou_geo.created_at_unix DESC
-      LIMIT 1
-    ) geo
-    WHERE ST_Intersects(
-      geo.value_geo::geometry,
-      ST_MakeEnvelope(${box.swLng}, ${box.swLat}, ${box.neLng}, ${box.neLat}, 4326)
-    )
-  )`;
 }
 
 function discoverSortKey(sort: DiscoverSort, alias: 'oc' | 'picked') {
@@ -204,27 +102,18 @@ export class DiscoverRepository {
     const limit = params.limit;
     const fetchLimit = limit + 1;
     const cursor = params.cursor ? decodeDiscoverObjectCursor(params.cursor) : null;
-    const qTrimmed = params.q?.trim() ?? '';
-    if (qTrimmed.length > 0 && !canDiscoverObjectTextSearch(qTrimmed)) {
+    const filters = buildDiscoverObjectFilters({
+      objectType: params.objectType ?? '',
+      q: params.q ?? '',
+      tags: params.tags,
+      box: params.box,
+      categoryPath: params.categoryPath ?? [],
+    });
+    if (filters == null) {
       return { rows: [], hasMore: false };
     }
-    const tsQuery = qTrimmed.length > 0 ? buildAutocompleteTsQuery(qTrimmed) : null;
-    const includeIdSubstring =
-      qTrimmed.length > 0 ? shouldSearchObjectIdSubstring(qTrimmed) : false;
-    const idSubstringPattern =
-      qTrimmed.length > 0 ? `%${escapeIlikePattern(qTrimmed)}%` : null;
 
     try {
-      const tagExistsFragments = params.tags.map(
-        ({ category, value }) => sql`EXISTS (
-          SELECT 1 FROM object_tag_category_items tci
-          WHERE tci.object_id = oc.object_id
-            AND tci.category = ${category}
-            AND tci.value = ${value}
-            ${params.objectType ? sql`AND tci.object_type = ${params.objectType}` : sql``}
-        )`,
-      );
-
       const cursorCreatedAt =
         cursor && (params.sort === 'newest' || params.sort === 'oldest')
           ? new Date(cursor.created_at)
@@ -250,23 +139,9 @@ export class DiscoverRepository {
       const innerSort = discoverSortKey(params.sort, 'oc');
       const outerSort = discoverSortKey(params.sort, 'picked');
 
-      const textMatchFilter = buildDiscoverObjectTextMatchFilter({
-        qTrimmed,
-        tsQuery,
-        includeIdSubstring,
-        idSubstringPattern,
-      });
-
       const objectTypeFilter = params.objectType
         ? sql`AND oc.object_type = ${params.objectType}`
         : sql``;
-
-      const tagFilter =
-        tagExistsFragments.length > 0
-          ? sql`AND ${sql.join(tagExistsFragments, sql` AND `)}`
-          : sql``;
-
-      const geoBoxFilter = buildDiscoverGeoBoxFilter(params.box);
 
       const result = await sql<DiscoverObjectCandidateRow>`
         WITH picked AS (
@@ -277,9 +152,7 @@ export class DiscoverRepository {
           FROM objects_core oc
           WHERE oc.status = 'active'
             ${objectTypeFilter}
-            ${textMatchFilter}
-            ${tagFilter}
-            ${geoBoxFilter}
+            ${filters}
           ORDER BY COALESCE(oc.meta_group_id, oc.object_id), ${innerSort}
         )
         SELECT picked.object_id AS object_id, picked.created_at AS created_at, picked.weight AS weight
@@ -310,11 +183,16 @@ export class DiscoverRepository {
     });
   }
 
+  /**
+   * Tag facets of one object type. Search, map area and category path go through the uncached
+   * filtered query; the plain facets (no filter or tags only) are cached when no tag is active.
+   */
   async getTagCategories(
     objectType: string,
     activeTags: DiscoverTagFilter[] = [],
     q?: string,
     box?: DiscoverBox,
+    categoryPath: readonly string[] = [],
   ): Promise<DiscoverTagCategoryRow[]> {
     const trimmed = objectType.trim();
     if (!trimmed) {
@@ -322,11 +200,11 @@ export class DiscoverRepository {
     }
 
     const qTrimmed = q?.trim() ?? '';
-    if (qTrimmed.length > 0 || box) {
-      return this.getTagCategoriesFiltered(trimmed, activeTags, qTrimmed, box);
+    if (qTrimmed.length > 0 || box || categoryPath.length > 0) {
+      return this.getTagCategoriesFiltered(trimmed, activeTags, qTrimmed, box, categoryPath);
     }
 
-    const useCache = activeTags.length === 0 && !box;
+    const useCache = activeTags.length === 0;
     const redis = this.redisFactory.getClient(0);
     const key = redisKey.discoverTagCategories(trimmed);
     if (useCache) {
@@ -423,41 +301,19 @@ export class DiscoverRepository {
     objectType: string,
     activeTags: DiscoverTagFilter[],
     qTrimmed: string,
-    box?: DiscoverBox,
+    box: DiscoverBox | undefined,
+    categoryPath: readonly string[],
   ): Promise<DiscoverTagCategoryRow[]> {
-    if (qTrimmed.length > 0 && !canDiscoverObjectTextSearch(qTrimmed)) {
+    const filters = buildDiscoverObjectFilters({
+      objectType,
+      q: qTrimmed,
+      tags: activeTags,
+      box,
+      categoryPath,
+    });
+    if (filters == null) {
       return [];
     }
-
-    const tsQuery = qTrimmed.length > 0 ? buildAutocompleteTsQuery(qTrimmed) : null;
-    const includeIdSubstring =
-      qTrimmed.length > 0 ? shouldSearchObjectIdSubstring(qTrimmed) : false;
-    const idSubstringPattern =
-      qTrimmed.length > 0 ? `%${escapeIlikePattern(qTrimmed)}%` : null;
-
-    const tagExistsFragments = activeTags.map(
-      ({ category, value }) => sql`EXISTS (
-        SELECT 1 FROM object_tag_category_items tci_tag
-        WHERE tci_tag.object_id = oc.object_id
-          AND tci_tag.category = ${category}
-          AND tci_tag.value = ${value}
-          AND tci_tag.object_type = ${objectType}
-      )`,
-    );
-
-    const textFilter = buildDiscoverObjectTextMatchFilter({
-      qTrimmed,
-      tsQuery,
-      includeIdSubstring,
-      idSubstringPattern,
-    });
-
-    const tagFilter =
-      tagExistsFragments.length > 0
-        ? sql`AND ${sql.join(tagExistsFragments, sql` AND `)}`
-        : sql``;
-
-    const geoBoxFilter = buildDiscoverGeoBoxFilter(box);
 
     try {
       const result = await sql<{
@@ -478,9 +334,7 @@ export class DiscoverRepository {
             FROM objects_core oc
             WHERE oc.status = 'active'
               AND oc.object_type = ${objectType}
-              ${textFilter}
-              ${tagFilter}
-              ${geoBoxFilter}
+              ${filters}
           )
         GROUP BY 1, 2
         ORDER BY 1 ASC, 3 DESC, 2 ASC

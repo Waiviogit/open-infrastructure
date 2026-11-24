@@ -478,4 +478,64 @@ describeDb('DiscoverRepository meta_group collapse', () => {
       expect(result).toEqual({ rows: [], hasMore: false });
     });
   });
+
+  describe('category path filter', () => {
+    async function setCategories(trx: Trx, objectId: string, names: string[]): Promise<void> {
+      await trx
+        .insertInto('object_categories')
+        .values({ object_id: objectId, meta_group_id: null, category_names: names, updated_at_seq: BigInt(1) })
+        .execute();
+    }
+
+    it('TC-026 only objects carrying the whole lineage can represent their group', async () => {
+      await withRollback(db, async (trx) => {
+        await seedShared(trx);
+        await setCategories(trx, 'ov-a', ['Outdoor', 'Chairs']);
+        await setCategories(trx, 'ov-b', ['Outdoor']);
+        await setCategories(trx, 'solo-1', ['Outdoor', 'Chairs']);
+
+        const r = repo(trx, stubRedis().factory);
+        const chairs = await r.listObjects({
+          objectType: 'product',
+          tags: [],
+          sort: 'rank',
+          limit: 20,
+          categoryPath: ['Outdoor', 'Chairs'],
+        });
+        const outdoor = await r.listObjects({
+          objectType: 'product',
+          tags: [],
+          sort: 'rank',
+          limit: 20,
+          categoryPath: ['Outdoor'],
+        });
+
+        expect(idsOf(chairs.rows)).toEqual(['solo-1', 'ov-a']);
+        expect(idsOf(outdoor.rows)).toEqual(['ov-b', 'solo-1']);
+      });
+    });
+
+    it('TC-027 tag facets follow the category lineage and skip the cache', async () => {
+      await withRollback(db, async (trx) => {
+        await seedShared(trx);
+        await setCategories(trx, 'ov-a', ['Outdoor', 'Chairs']);
+        const redis = stubRedis();
+
+        const rows = await repo(trx, redis.factory).getTagCategories(
+          'product',
+          [],
+          undefined,
+          undefined,
+          ['Chairs'],
+        );
+
+        expect(rows).toEqual([
+          { category: 'Category', tag_value: 'Camping', object_count: 1 },
+          { category: 'Pros', tag_value: 'Heated', object_count: 1 },
+        ]);
+        expect(redis.get).not.toHaveBeenCalled();
+        expect(redis.set).not.toHaveBeenCalled();
+      });
+    });
+  });
 });

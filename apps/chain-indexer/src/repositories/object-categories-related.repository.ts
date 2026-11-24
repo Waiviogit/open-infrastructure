@@ -3,8 +3,12 @@ import type { Kysely, Transaction } from 'kysely';
 import { sql } from 'kysely';
 import type { Database } from '../database';
 import { KYSELY } from '../database';
-import { UNCATEGORIZED_CATEGORY_SENTINEL } from '@opden-data-layer/core';
+import {
+  TYPE_SCOPE_TOTAL_SENTINEL,
+  UNCATEGORIZED_CATEGORY_SENTINEL,
+} from '@opden-data-layer/core';
 import type { NewObjectCategoriesRelatedRow, ObjectCategoriesRelatedScopeType } from '@opden-data-layer/odl-db-types';
+import { OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS } from '../constants/object-categories.constants';
 
 type DbExecutor = Kysely<Database> | Transaction<Database>;
 
@@ -61,9 +65,7 @@ export class ObjectCategoriesRelatedRepository {
       await this.db.transaction().execute(async (trx) => {
         await this.deleteUserScope(key, trx);
         const rows = await this.loadUserCategoryScopeRows(trx, key, opts);
-        if (rows.length > 0) {
-          await trx.insertInto('object_categories_related').values(rows).execute();
-        }
+        await this.insertRows(trx, rows);
       });
     } catch (e) {
       this.logger.error((e as Error).message);
@@ -96,13 +98,53 @@ export class ObjectCategoriesRelatedRepository {
           .execute();
 
         const rows = await this.loadGlobalScopeRows(trx);
-        if (rows.length > 0) {
-          await trx.insertInto('object_categories_related').values(rows).execute();
-        }
+        await this.insertRows(trx, rows);
       });
     } catch (e) {
       this.logger.error((e as Error).message);
       throw e;
+    }
+  }
+
+  /**
+   * Replaces one type scope (`scope_type = 'type'`, key = object type) in a single transaction:
+   * all active objects of `objectType`, counts in groups (`COALESCE(meta_group_id, object_id)`),
+   * `related_names` by co-occurrence with `related_counts` = shared groups per related name, plus
+   * a `__total__` row (every active group of the type, uncategorized included). With these the
+   * query-api serves the unfiltered root without live counts. `group_keys` are not stored (a whole
+   * type is too large) and there is no uncategorized sentinel.
+   * @see docs/apps/chain-indexer/spec/object-categories.md
+   */
+  async replaceTypeCategoryScope(objectType: string): Promise<void> {
+    const type = objectType.trim();
+    if (type.length === 0) {
+      return;
+    }
+    try {
+      await this.db.transaction().execute(async (trx) => {
+        await trx
+          .deleteFrom('object_categories_related')
+          .where('scope_type', '=', 'type')
+          .where('scope_key', '=', type)
+          .execute();
+
+        const rows = await this.loadTypeScopeRows(trx, type);
+        await this.insertRows(trx, rows);
+      });
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
+  }
+
+  /** Inserts in chunks so a large scope stays under the Postgres bind-parameter limit. */
+  private async insertRows(
+    trx: DbExecutor,
+    rows: readonly NewObjectCategoriesRelatedRow[],
+  ): Promise<void> {
+    for (let i = 0; i < rows.length; i += OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS) {
+      const chunk = rows.slice(i, i + OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS);
+      await trx.insertInto('object_categories_related').values(chunk).execute();
     }
   }
 
@@ -278,6 +320,66 @@ export class ObjectCategoriesRelatedRepository {
         r.related_names,
       ),
     );
+  }
+
+  private async loadTypeScopeRows(
+    trx: DbExecutor,
+    objectType: string,
+  ): Promise<NewObjectCategoriesRelatedRow[]> {
+    const { rows } = await sql<AggregationRowRaw & { related_counts: number[] }>`
+      WITH exploded AS (
+        SELECT DISTINCT
+          COALESCE(oc.meta_group_id, oc.object_id) AS group_key,
+          u.cat_name AS cat_name
+        FROM objects_core oc
+        INNER JOIN object_categories cat ON cat.object_id = oc.object_id
+        CROSS JOIN LATERAL unnest(cat.category_names) AS u(cat_name)
+        WHERE oc.status = 'active'
+          AND oc.object_type = ${objectType}
+      ),
+      cnt_per_cat AS (
+        SELECT cat_name, COUNT(*)::bigint AS objects_count
+        FROM exploded
+        GROUP BY cat_name
+      ),
+      pair_counts AS (
+        SELECT e1.cat_name AS first_name, e2.cat_name AS second_name, COUNT(*)::int AS shared
+        FROM exploded e1
+        INNER JOIN exploded e2 ON e1.group_key = e2.group_key AND e2.cat_name <> e1.cat_name
+        GROUP BY e1.cat_name, e2.cat_name
+      ),
+      related_per_cat AS (
+        SELECT
+          first_name AS cat_name,
+          array_agg(second_name ORDER BY second_name) AS related_names,
+          array_agg(shared ORDER BY second_name) AS related_counts
+        FROM pair_counts
+        GROUP BY first_name
+      ),
+      total AS (
+        SELECT COUNT(DISTINCT COALESCE(oc.meta_group_id, oc.object_id))::bigint AS cnt
+        FROM objects_core oc
+        WHERE oc.status = 'active'
+          AND oc.object_type = ${objectType}
+      )
+      SELECT
+        c.cat_name AS category_name,
+        c.objects_count,
+        ARRAY[]::text[] AS group_keys,
+        COALESCE(r.related_names, ARRAY[]::text[]) AS related_names,
+        COALESCE(r.related_counts, ARRAY[]::int[]) AS related_counts
+      FROM cnt_per_cat c
+      LEFT JOIN related_per_cat r ON r.cat_name = c.cat_name
+      UNION ALL
+      SELECT ${TYPE_SCOPE_TOTAL_SENTINEL}::text, t.cnt, ARRAY[]::text[], ARRAY[]::text[], ARRAY[]::int[]
+      FROM total t
+      WHERE t.cnt > 0
+    `.execute(trx);
+
+    return rows.map((r) => ({
+      ...this.rowToInsert('type', objectType, r.category_name, r.objects_count, r.group_keys, r.related_names),
+      related_counts: r.related_counts.map(Number),
+    }));
   }
 
   private rowToInsert(

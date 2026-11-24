@@ -72,16 +72,25 @@ export class ObjectCategoriesRelatedSyncQueueRepository {
     }
   }
 
+  /**
+   * Claims up to `limit` rows. `skipTypeScopeKeys` are type scopes (`scope_type = 'type'`) that
+   * must wait (rate limit): they are left untouched, so their `attempts` do not grow.
+   */
   async claimBatch(
     limit: number,
     retryAfterSec: number,
+    skipTypeScopeKeys: readonly string[] = [],
   ): Promise<ObjectCategoriesRelatedSyncQueueRow[]> {
+    const skipKeys = [...skipTypeScopeKeys];
     const { rows } = await sql<ObjectCategoriesRelatedSyncQueueRow>`
       WITH picked AS (
         SELECT scope_type, scope_key
         FROM object_categories_related_sync_queue
-        WHERE last_attempt_at IS NULL
-          OR last_attempt_at < (EXTRACT(EPOCH FROM NOW())::bigint - ${retryAfterSec})
+        WHERE (
+            last_attempt_at IS NULL
+            OR last_attempt_at < (EXTRACT(EPOCH FROM NOW())::bigint - ${retryAfterSec})
+          )
+          AND NOT (scope_type = 'type' AND scope_key = ANY(${skipKeys}::text[]))
         ORDER BY last_attempt_at NULLS FIRST
         LIMIT ${limit}
         FOR UPDATE SKIP LOCKED

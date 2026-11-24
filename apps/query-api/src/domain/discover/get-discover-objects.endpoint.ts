@@ -74,6 +74,7 @@ export class GetDiscoverObjectsEndpoint {
       limit: input.query.limit,
       viewerAccount: input.viewerAccount,
       box: input.query.box,
+      categoryPath: input.query.category_path,
     });
 
     if (rows.length === 0) {

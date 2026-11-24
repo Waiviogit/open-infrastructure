@@ -10,7 +10,8 @@
  *
  * Scopes: one user scope per `(account, category type)` pair present in
  * object_favorite ∪ post_objects.author (see docs/apps/chain-indexer/spec/object-categories.md),
- * plus every existing per-type user scope so rows built under older rules are rebuilt.
+ * plus every existing per-type user scope so rows built under older rules are rebuilt, plus one
+ * type scope per category type (Discover tree; without `--user`).
  *
  * `--cleanup-legacy-scopes`: delete user scope rows and queue rows whose key is not a canonical
  * `account:type` key (`alice`, `alice:book,product`, non-category types).
@@ -213,7 +214,7 @@ async function main(): Promise<void> {
           doScopes &&
             (accountFilter
               ? `[dry-run] Would enqueue per-type user scopes for account=${accountFilter} (no global row).`
-              : `[dry-run] Would enqueue global scope + every (account, type) scope for types ${CATEGORY_OBJECT_TYPES.join(', ')}.`),
+              : `[dry-run] Would enqueue global scope + type scopes + every (account, type) scope for types ${CATEGORY_OBJECT_TYPES.join(', ')}.`),
         ]
           .filter(Boolean)
           .join('\n'),
@@ -237,6 +238,13 @@ async function main(): Promise<void> {
           INSERT INTO object_categories_related_sync_queue
             (scope_type, scope_key, enqueued_at, attempts, last_attempt_at)
           VALUES ('global', '_', ${enqueuedAt}::bigint, 0::integer, NULL::bigint)
+          ${RELATED_QUEUE_ON_CONFLICT}
+        `.execute(db);
+        await sql`
+          INSERT INTO object_categories_related_sync_queue
+            (scope_type, scope_key, enqueued_at, attempts, last_attempt_at)
+          SELECT 'type', t.object_type, ${enqueuedAt}::bigint, 0::integer, NULL::bigint
+          FROM unnest(${[...CATEGORY_OBJECT_TYPES]}::text[]) AS t(object_type)
           ${RELATED_QUEUE_ON_CONFLICT}
         `.execute(db);
       }
