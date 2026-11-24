@@ -20,13 +20,29 @@ export type ShopSectionEntry = {
   totalObjects: number;
 };
 
+/** The virtual Other block: scope objects of the lineage in none of the child categories. */
+export type ShopOtherSection = {
+  items: ProjectedObject[];
+  totalObjects: number;
+};
+
 export type ShopSectionsResponse = {
   sections: ShopSectionEntry[];
   cursor: string | null;
   hasMore: boolean;
+  /**
+   * Last page only (`hasMore = false`), when the lineage has objects outside its child
+   * categories (at the root: uncategorized ones and those only in hidden categories).
+   */
+  other: ShopOtherSection | null;
 };
 
-const EMPTY_SECTIONS: ShopSectionsResponse = { sections: [], cursor: null, hasMore: false };
+const EMPTY_SECTIONS: ShopSectionsResponse = {
+  sections: [],
+  cursor: null,
+  hasMore: false,
+  other: null,
+};
 
 function orderAggregatedByIds(objects: AggregatedObject[], objectIds: string[]): AggregatedObject[] {
   const map = new Map(objects.map((o) => [o.core.object_id, o]));
@@ -81,6 +97,7 @@ export class GetUserShopSectionsEndpoint {
       lineage,
       excluded: [],
       includeHasChildren: false,
+      includeOther: true,
     });
     const ordered = nav.items;
 
@@ -100,17 +117,36 @@ export class GetUserShopSectionsEndpoint {
       return { ...EMPTY_SECTIONS };
     }
 
-    const idsByCategory = await this.objectCategoriesRepo.findObjectIdsByScopeForCategories({
-      scope,
-      parentPath: lineage,
-      categoryNames: pageItems.map((item) => item.name),
-      objectsPerCategory: SHOP_SECTION_OBJECTS_PER_CATEGORY,
-      tags,
-      rating,
-    });
+    const withOther = !hasMore && nav.other_count > 0;
+    const [idsByCategory, otherPage] = await Promise.all([
+      this.objectCategoriesRepo.findObjectIdsByScopeForCategories({
+        scope,
+        parentPath: lineage,
+        categoryNames: pageItems.map((item) => item.name),
+        objectsPerCategory: SHOP_SECTION_OBJECTS_PER_CATEGORY,
+        tags,
+        rating,
+      }),
+      withOther
+        ? this.objectCategoriesRepo.findObjectIdsByScope({
+            scope,
+            categoryPath: lineage,
+            uncategorizedOnly: false,
+            excludedCategoryNames: ordered.map((item) => item.name),
+            limit: SHOP_SECTION_OBJECTS_PER_CATEGORY,
+            cursor: null,
+            tags,
+            rating,
+          })
+        : Promise.resolve(null),
+    ]);
+    const otherIds = otherPage?.rows.map((row) => row.object_id) ?? [];
 
     const uniqueIds = [
-      ...new Set(pageItems.flatMap((item) => idsByCategory.get(item.name) ?? [])),
+      ...new Set([
+        ...pageItems.flatMap((item) => idsByCategory.get(item.name) ?? []),
+        ...otherIds,
+      ]),
     ];
     const projectedById = await this.projectByIds(
       uniqueIds,
@@ -126,9 +162,14 @@ export class GetUserShopSectionsEndpoint {
         .filter((p): p is ProjectedObject => p != null),
       totalObjects: item.objects_count,
     }));
+    const otherItems = otherIds
+      .map((id) => projectedById.get(id))
+      .filter((p): p is ProjectedObject => p != null);
+    const other: ShopOtherSection | null =
+      otherItems.length > 0 ? { items: otherItems, totalObjects: nav.other_count } : null;
 
     await this.affiliateLinks.enrich(
-      flattenAffiliateTargets(sections.flatMap((section) => section.items)),
+      flattenAffiliateTargets([...sections, ...(other ? [other] : [])].flatMap((s) => s.items)),
       {
         countryCode,
         personalAccount: name,
@@ -141,6 +182,7 @@ export class GetUserShopSectionsEndpoint {
       sections,
       cursor: hasMore && lastSection ? lastSection.name : null,
       hasMore,
+      other,
     };
   }
 

@@ -537,5 +537,32 @@ describeDb('DiscoverRepository meta_group collapse', () => {
         expect(redis.set).not.toHaveBeenCalled();
       });
     });
+
+    it('TC-028 Other leaves out every group with an object in a shown child', async () => {
+      await withRollback(db, async (trx) => {
+        await seedShared(trx);
+        // ov-a puts the whole overmont group under Chairs; ov-b alone would be Other.
+        await setCategories(trx, 'ov-a', ['Outdoor', 'Chairs']);
+        await setCategories(trx, 'ov-b', ['Outdoor']);
+        await setCategories(trx, 'solo-1', ['Outdoor', 'Chairs']);
+        await setCategories(trx, 'solo-2', ['Outdoor']);
+        const r = repo(trx, stubRedis().factory);
+
+        const other = await r.listObjects({
+          objectType: 'product',
+          tags: [],
+          sort: 'rank',
+          limit: 20,
+          categoryPath: ['Outdoor'],
+          excludedCategoryNames: ['Chairs'],
+        });
+        const facets = await r.getTagCategories('product', [], undefined, undefined, ['Outdoor'], [
+          'Chairs',
+        ]);
+
+        expect(idsOf(other.rows)).toEqual(['solo-2']);
+        expect(facets).toEqual([]);
+      });
+    });
   });
 });

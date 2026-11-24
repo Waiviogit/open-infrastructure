@@ -16,12 +16,18 @@ export interface GetDiscoverSectionsInput {
   countryCode?: string | null;
 }
 
-const EMPTY_SECTIONS: DiscoverSectionsResponseDto = { sections: [], cursor: null, hasMore: false };
+const EMPTY_SECTIONS: DiscoverSectionsResponseDto = {
+  sections: [],
+  cursor: null,
+  hasMore: false,
+  other: null,
+};
 
 /**
  * Category blocks of a Discover category: one block per child category of `category_path` (the
  * category tree's children: display rules, order by count), each with its top objects by rank
- * (one per group) and its group count. Paged by the last block's category name.
+ * (one per group) and its group count. Paged by the last block's category name. The last page
+ * also carries the virtual Other block (groups of the category in none of its children).
  * @see docs/apps/query-api/spec/discover-categories.md
  */
 @Injectable()
@@ -42,6 +48,7 @@ export class GetDiscoverSectionsEndpoint {
       lineage,
       excluded: [],
       includeHasChildren: false,
+      includeOther: true,
     });
     const ordered = nav.items;
 
@@ -60,21 +67,33 @@ export class GetDiscoverSectionsEndpoint {
     }
     const hasMore = start + pageItems.length < ordered.length;
 
-    const idsByCategory = await Promise.all(
-      pageItems.map(async (item) => {
-        const { rows } = await this.discoverRepo.listObjects({
-          objectType,
-          tags: [],
-          sort: 'rank',
-          limit: DISCOVER_SECTION_OBJECTS_PER_CATEGORY,
-          viewerAccount: input.viewerAccount,
-          categoryPath: [...lineage, item.name],
-        });
-        return rows.map((row) => row.object_id);
-      }),
-    );
+    const topIds = async (
+      categoryPath: readonly string[],
+      excludedCategoryNames: readonly string[] = [],
+    ): Promise<string[]> => {
+      const { rows } = await this.discoverRepo.listObjects({
+        objectType,
+        tags: [],
+        sort: 'rank',
+        limit: DISCOVER_SECTION_OBJECTS_PER_CATEGORY,
+        viewerAccount: input.viewerAccount,
+        categoryPath,
+        excludedCategoryNames,
+      });
+      return rows.map((row) => row.object_id);
+    };
+    const withOther = !hasMore && nav.other_count > 0;
+    const [idsByCategory, otherIds] = await Promise.all([
+      Promise.all(pageItems.map((item) => topIds([...lineage, item.name]))),
+      withOther
+        ? topIds(
+            lineage,
+            ordered.map((item) => item.name),
+          )
+        : Promise.resolve([] as string[]),
+    ]);
 
-    const projected = await this.projector.project([...new Set(idsByCategory.flat())], {
+    const projected = await this.projector.project([...new Set([...idsByCategory.flat(), ...otherIds])], {
       locale: input.locale,
       viewerAccount: input.viewerAccount,
       governanceObjectIdFromHeader: input.governanceObjectIdFromHeader,
@@ -89,11 +108,15 @@ export class GetDiscoverSectionsEndpoint {
         .filter((object): object is ProjectedObject => object != null),
       totalObjects: item.objects_count,
     }));
+    const otherItems = otherIds
+      .map((id) => byId.get(id))
+      .filter((object): object is ProjectedObject => object != null);
 
     return {
       sections,
       cursor: hasMore ? (pageItems[pageItems.length - 1]?.name ?? null) : null,
       hasMore,
+      other: otherItems.length > 0 ? { items: otherItems, totalObjects: nav.other_count } : null,
     };
   }
 }

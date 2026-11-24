@@ -85,6 +85,17 @@ const discoverCategoryPathParam = repeatedStringParam().describe(
 
 const discoverTagsParam = repeatedStringParam();
 
+/**
+ * The virtual Other category of `category_path`: objects under the lineage in none of its shown
+ * child categories (same filters as the category tree). Ignored without `object_type`.
+ */
+const discoverOtherParam = z
+  .preprocess((v) => v === 'true' || v === true || v === '1' || v === 1, z.boolean())
+  .optional()
+  .describe(
+    'When true, only objects of category_path in none of its shown child categories (Other)',
+  );
+
 export const discoverObjectsQuerySchema = z.object({
   object_type: z
     .string()
@@ -110,6 +121,7 @@ export const discoverObjectsQuerySchema = z.object({
     .optional()
     .describe('Map bounding box as swLng,swLat,neLng,neLat'),
   category_path: discoverCategoryPathParam,
+  other: discoverOtherParam,
   cursor: z.string().optional().describe('Opaque pagination cursor from prior response'),
   limit: z.coerce
     .number()
@@ -153,6 +165,7 @@ export const discoverTagCategoriesQuerySchema = z.object({
     .optional()
     .describe('Map bounding box as swLng,swLat,neLng,neLat'),
   category_path: discoverCategoryPathParam,
+  other: discoverOtherParam,
 });
 export type DiscoverTagCategoriesQuery = z.infer<typeof discoverTagCategoriesQuerySchema>;
 

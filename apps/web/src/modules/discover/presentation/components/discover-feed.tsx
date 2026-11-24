@@ -26,6 +26,8 @@ export type DiscoverFeedProps = {
   box: DiscoverBox | null;
   /** Category lineage, root first (kept by every Discover link and fetch). */
   categoryPath: string[];
+  /** The Other category of `categoryPath` (kept with it by every link and fetch). */
+  categoryOther: boolean;
   map: DiscoverMapView | null;
   mapView: DiscoverMapView | null;
   viewerUsername?: string | null;
@@ -51,6 +53,8 @@ export type DiscoverCenterMode = 'feed' | 'sections' | 'pending';
 
 export type DiscoverCategoryTrail = {
   hrefFor: CategoryHrefFor;
+  /** The Other category of the current lineage (its crumb, its block's links). */
+  otherHref: string;
   drawerOpen: boolean;
   onOpenDrawer: () => void;
 };
@@ -63,6 +67,7 @@ export function DiscoverFeed({
   sort,
   box,
   categoryPath,
+  categoryOther,
   map,
   mapView,
   viewerUsername,
@@ -111,6 +116,7 @@ export function DiscoverFeed({
             sort={sort}
             box={box}
             categoryPath={categoryPath}
+            categoryOther={categoryOther}
             map={map}
           />
         ) : null}
@@ -119,7 +125,9 @@ export function DiscoverFeed({
       {categoryTrail ? (
         <DiscoverCategoryBreadcrumbs
           categoryPath={categoryPath}
+          categoryOther={categoryOther}
           hrefFor={categoryTrail.hrefFor}
+          otherHref={categoryTrail.otherHref}
           drawer={{
             open: categoryTrail.drawerOpen,
             onOpen: categoryTrail.onOpenDrawer,
@@ -136,6 +144,7 @@ export function DiscoverFeed({
         sort={sort}
         box={box}
         categoryPath={categoryPath}
+        categoryOther={categoryOther}
         map={map}
         filterButton={singleRowToolbar ? null : filterButton}
       />
@@ -148,6 +157,7 @@ export function DiscoverFeed({
         sort={sort}
         box={box}
         categoryPath={categoryPath}
+        categoryOther={categoryOther}
         map={map}
         showMap={showMap}
         showSort={centerMode === 'feed'}
@@ -169,6 +179,7 @@ export function DiscoverFeed({
                 sort={sort}
                 box={box}
                 categoryPath={categoryPath}
+                categoryOther={categoryOther}
                 mapView={mapView}
                 onApplyArea={onApplyMapArea}
                 onViewChange={onMapViewChange}
@@ -182,6 +193,7 @@ export function DiscoverFeed({
                 objectType={objectType}
                 categoryPath={categoryPath}
                 hrefFor={categoryTrail.hrefFor}
+                otherHref={categoryTrail.otherHref}
                 viewerUsername={viewerUsername}
                 onRequireLogin={onRequireLogin}
               />
@@ -203,6 +215,7 @@ export function DiscoverFeed({
                 sort={sort}
                 box={box}
                 categoryPath={categoryPath}
+                categoryOther={categoryOther}
                 viewerUsername={viewerUsername}
                 onRequireLogin={onRequireLogin}
                 hideType={objectType !== 'all'}

@@ -69,18 +69,24 @@ export function userFavoritesScopeCte(scope: UserFavoritesScope): RawBuilder<unk
 /**
  * Category membership on alias `cat` (LEFT JOIN `object_categories cat`):
  * uncategorized → empty `category_names`; otherwise `category_names @> path` (GIN-eligible).
+ * `excludedNames` (the virtual Other category): also none of these names; at the root this keeps
+ * uncategorized objects.
  */
 export function categoryMembershipFilter(
   categoryPath: readonly string[],
   uncategorizedOnly: boolean,
+  excludedNames: readonly string[] = [],
 ): RawBuilder<unknown> {
   if (uncategorizedOnly) {
     return sql`(cat.category_names IS NULL OR cardinality(cat.category_names) = 0)`;
   }
-  if (categoryPath.length === 0) {
-    return sql`TRUE`;
+  const pathFilter =
+    categoryPath.length === 0 ? sql`TRUE` : sql`cat.category_names @> ${textArraySql(categoryPath)}`;
+  if (excludedNames.length === 0) {
+    return pathFilter;
   }
-  return sql`cat.category_names @> ${textArraySql(categoryPath)}`;
+  return sql`(${pathFilter})
+    AND NOT (COALESCE(cat.category_names, ARRAY[]::text[]) && ${textArraySql(excludedNames)})`;
 }
 
 export function tagExistsFragments(

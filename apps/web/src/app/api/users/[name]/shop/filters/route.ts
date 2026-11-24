@@ -27,8 +27,8 @@ export async function GET(
       url.searchParams.append('categoryPath', trimmed);
     }
   }
-  if (request.nextUrl.searchParams.get('uncategorizedOnly') === 'true') {
-    url.searchParams.set('uncategorizedOnly', 'true');
+  if (request.nextUrl.searchParams.get('other') === 'true') {
+    url.searchParams.set('other', 'true');
   }
   for (const tag of request.nextUrl.searchParams.getAll('tags')) {
     const trimmed = tag.trim();

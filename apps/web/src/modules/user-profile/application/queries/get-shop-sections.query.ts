@@ -5,7 +5,12 @@ import { fail, ok, type Result } from '@/shared/domain/result';
 import type { FavoritesFeedError, ShopSectionsPage } from '../../domain/types/shop-objects';
 import { fetchShopSections, type FetchShopSectionsParams } from '../../infrastructure/clients/shop-objects.client';
 
-const EMPTY_SHOP_SECTIONS_PAGE: ShopSectionsPage = { sections: [], cursor: null, hasMore: false };
+const EMPTY_SHOP_SECTIONS_PAGE: ShopSectionsPage = {
+  sections: [],
+  cursor: null,
+  hasMore: false,
+  other: null,
+};
 
 /** One page of category sections; `service_unavailable` when query-api fails. */
 export async function getShopSectionsResultQuery(

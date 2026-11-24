@@ -24,3 +24,14 @@ export type CategoryNavLink = ComponentType<CategoryNavLinkProps>;
 
 /** Href of a category level (`lineage` = category names from the root, empty = the root). */
 export type CategoryHrefFor = (lineage: readonly string[]) => string;
+
+/**
+ * The virtual Other category of a level: its objects in none of the listed child categories.
+ * Rendered as the last row, without children.
+ */
+export type CategoryNavOtherRow = {
+  count: number;
+  href: string;
+  /** The page shows this Other (highlights the row instead of a category). */
+  active: boolean;
+};

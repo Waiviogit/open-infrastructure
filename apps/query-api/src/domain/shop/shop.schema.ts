@@ -43,6 +43,17 @@ const uncategorizedOnlyQuery = z.preprocess(
     .describe('When true, only objects with no category_names'),
 );
 
+/** The virtual Other category of `categoryPath` (single category type only). */
+const otherQuery = z.preprocess(
+  (v) => v === 'true' || v === true || v === '1' || v === 1,
+  z
+    .boolean()
+    .optional()
+    .describe(
+      'When true (one category type), only objects of categoryPath in none of its shown child categories (Other; at the root also uncategorized ones)',
+    ),
+);
+
 const favoritesTypesQuery = userFavoritesTypesParam.describe(
   'Repeatable; every entry must be in USER_FAVORITES_OBJECT_TYPES (Favorites scope)',
 );
@@ -53,6 +64,7 @@ export const shopObjectsQuerySchema = z.object({
     'AND filter on category_names path segments; empty = all in scope unless uncategorizedOnly',
   ),
   uncategorizedOnly: uncategorizedOnlyQuery,
+  other: otherQuery,
   tags: shopTagsQuery,
   rating: shopRatingQuery.describe('Minimum aggregate rating threshold (6, 8, or 10 legacy scale)'),
   limit: z.coerce
@@ -100,6 +112,7 @@ export const shopFiltersQuerySchema = z.object({
   types: favoritesTypesQuery,
   categoryPath: qsArray.describe('Current department path segments'),
   uncategorizedOnly: uncategorizedOnlyQuery,
+  other: otherQuery,
   tags: shopTagsQuery.describe('Selected tags (AND) to narrow facet counts'),
   rating: shopRatingQuery.describe('Minimum aggregate rating threshold to narrow facet counts'),
 });

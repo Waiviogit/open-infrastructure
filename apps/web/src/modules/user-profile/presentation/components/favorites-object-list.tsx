@@ -25,7 +25,8 @@ export type FavoritesObjectListProps = {
   initialPage: ShopObjectsPage;
   /** Category lineage of a category type; empty for the type root and other types. */
   categoryPath: readonly string[];
-  uncategorizedOnly?: boolean;
+  /** The Other category of `categoryPath`. */
+  categoryOther?: boolean;
   shopFilters: ProfileShopFiltersState;
   viewerUsername?: string | null;
 };
@@ -43,7 +44,7 @@ export function FavoritesObjectList({
   objectType,
   initialPage,
   categoryPath,
-  uncategorizedOnly = false,
+  categoryOther = false,
   shopFilters,
   viewerUsername,
 }: FavoritesObjectListProps) {
@@ -64,7 +65,7 @@ export function FavoritesObjectList({
         const result = await loadMoreFavoritesObjectsAction(accountName, {
           objectType,
           categoryPath: [...categoryPath],
-          uncategorizedOnly,
+          categoryOther,
           tags: shopFilters.tags,
           rating: shopFilters.rating,
           cursor,
@@ -92,7 +93,7 @@ export function FavoritesObjectList({
     setItems,
     shopFilters.rating,
     shopFilters.tags,
-    uncategorizedOnly,
+    categoryOther,
   ]);
 
   const { sentinelRef } = useInfiniteScroll({
@@ -105,7 +106,7 @@ export function FavoritesObjectList({
     if (profileShopFiltersActive(shopFilters)) {
       return <ProfileShopFilteredEmpty />;
     }
-    const inCategory = uncategorizedOnly || categoryPath.length > 0;
+    const inCategory = categoryOther || categoryPath.length > 0;
     return (
       <section
         className="rounded-card border border-border bg-surface/80 p-card-padding"

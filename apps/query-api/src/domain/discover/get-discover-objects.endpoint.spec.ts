@@ -32,6 +32,7 @@ describe('GetDiscoverObjectsEndpoint', () => {
         {} as ObjectProjectionService,
         { enrich: jest.fn() } as never,
       ),
+      { visibleCategoryNames: jest.fn().mockResolvedValue([]) } as never,
     );
 
     const result = await endpoint.execute({
@@ -58,6 +59,7 @@ describe('GetDiscoverObjectsEndpoint', () => {
         {} as ObjectProjectionService,
         { enrich: jest.fn() } as never,
       ),
+      { visibleCategoryNames: jest.fn().mockResolvedValue([]) } as never,
     );
 
     await endpoint.execute({
@@ -115,6 +117,7 @@ describe('GetDiscoverObjectsEndpoint', () => {
         objectProjectionService,
         { enrich: jest.fn() } as never,
       ),
+      { visibleCategoryNames: jest.fn().mockResolvedValue([]) } as never,
     );
 
     await endpoint.execute({
@@ -129,5 +132,63 @@ describe('GetDiscoverObjectsEndpoint', () => {
         update_types: expect.arrayContaining([...USER_FAVORITES_CARD_UPDATE_TYPES, 'geo']),
       }),
     );
+  });
+
+  it('lists the Other category of the lineage with the same filters as the category tree', async () => {
+    const discoverRepo = {
+      listObjects: jest.fn().mockResolvedValue({ rows: [], hasMore: false }),
+      buildObjectCursor: jest.fn(),
+    } as unknown as DiscoverRepository;
+    const navigation = { visibleCategoryNames: jest.fn().mockResolvedValue(['Audio']) };
+    const endpoint = new GetDiscoverObjectsEndpoint(
+      discoverRepo,
+      {} as DiscoverObjectProjector,
+      navigation as never,
+    );
+
+    await endpoint.execute({
+      query: {
+        object_type: 'product',
+        category_path: ['Electronics'],
+        tags: ['Brand:Sony'],
+        q: ' tv ',
+        other: true,
+        sort: 'rank',
+        limit: 20,
+      },
+      locale: 'en-US',
+    });
+
+    expect(navigation.visibleCategoryNames).toHaveBeenCalledWith({
+      scope: {
+        kind: 'type',
+        objectType: 'product',
+        q: 'tv',
+        tags: [{ category: 'Brand', value: 'Sony' }],
+        box: null,
+      },
+      objectType: 'product',
+      lineage: ['Electronics'],
+    });
+    expect(discoverRepo.listObjects).toHaveBeenCalledWith(
+      expect.objectContaining({ categoryPath: ['Electronics'], excludedCategoryNames: ['Audio'] }),
+    );
+  });
+
+  it('returns nothing for Other of a type without a category tree', async () => {
+    const discoverRepo = { listObjects: jest.fn() } as unknown as DiscoverRepository;
+    const endpoint = new GetDiscoverObjectsEndpoint(
+      discoverRepo,
+      {} as DiscoverObjectProjector,
+      { visibleCategoryNames: jest.fn() } as never,
+    );
+
+    const result = await endpoint.execute({
+      query: { object_type: 'restaurant', category_path: [], tags: [], other: true, sort: 'rank', limit: 20 },
+      locale: 'en-US',
+    });
+
+    expect(result).toEqual({ items: [], cursor: null, hasMore: false });
+    expect(discoverRepo.listObjects).not.toHaveBeenCalled();
   });
 });

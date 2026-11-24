@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DiscoverRepository } from '../../repositories';
+import { CategoryNavigationService } from '../categories/category-navigation.service';
+import { resolveDiscoverOtherExcludedNames } from './discover-other';
 import { DiscoverObjectProjector } from './discover-object-projector';
 import type { DiscoverObjectsQuery } from './discover-query.schema';
 import type { DiscoverObjectsResponseDto } from './discover.types';
@@ -35,6 +37,7 @@ export class GetDiscoverObjectsEndpoint {
   constructor(
     private readonly discoverRepo: DiscoverRepository,
     private readonly projector: DiscoverObjectProjector,
+    private readonly navigation: CategoryNavigationService,
   ) {}
 
   async execute(input: GetDiscoverObjectsInput): Promise<DiscoverObjectsResponseDto> {
@@ -43,16 +46,31 @@ export class GetDiscoverObjectsEndpoint {
       // Text search without type is allowed but may be heavy; still proceed.
     }
 
+    const tags = parseTagFilters(input.query.tags);
+    const excludedCategoryNames = input.query.other
+      ? await resolveDiscoverOtherExcludedNames(this.navigation, {
+          objectType: input.query.object_type,
+          categoryPath: input.query.category_path,
+          q: q ?? '',
+          tags,
+          box: input.query.box ?? null,
+        })
+      : [];
+    if (excludedCategoryNames == null) {
+      return { items: [], cursor: null, hasMore: false };
+    }
+
     const { rows, hasMore } = await this.discoverRepo.listObjects({
       objectType: input.query.object_type,
       q: q && q.length > 0 ? q : undefined,
-      tags: parseTagFilters(input.query.tags),
+      tags,
       sort: input.query.sort,
       cursor: input.query.cursor,
       limit: input.query.limit,
       viewerAccount: input.viewerAccount,
       box: input.query.box,
       categoryPath: input.query.category_path,
+      excludedCategoryNames,
     });
 
     if (rows.length === 0) {

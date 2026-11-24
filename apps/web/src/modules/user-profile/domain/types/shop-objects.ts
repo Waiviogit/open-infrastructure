@@ -18,10 +18,20 @@ export const shopSectionViewSchema = z.object({
 
 export type ShopSectionView = z.infer<typeof shopSectionViewSchema>;
 
+/** The Other block: objects of the node in none of its child categories. */
+export const shopOtherSectionSchema = z.object({
+  items: z.array(projectedObjectViewSchema),
+  totalObjects: z.number(),
+});
+
+export type ShopOtherSection = z.infer<typeof shopOtherSectionSchema>;
+
 export const shopSectionsPageSchema = z.object({
   sections: z.array(shopSectionViewSchema),
   cursor: z.string().nullable(),
   hasMore: z.boolean(),
+  /** Last page only. */
+  other: shopOtherSectionSchema.nullable().default(null),
 });
 
 export type ShopSectionsPage = z.infer<typeof shopSectionsPageSchema>;

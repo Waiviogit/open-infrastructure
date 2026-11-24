@@ -22,6 +22,8 @@ export type DiscoverUrlParams = {
   map?: DiscoverMapView | null;
   /** Category lineage, root first (`cat` repeated, order kept). */
   categoryPath?: readonly string[];
+  /** The Other category of `categoryPath` (`other=1`); ignored at the type root. */
+  categoryOther?: boolean;
 };
 
 export type DiscoverPageState = {
@@ -34,10 +36,18 @@ export type DiscoverPageState = {
   map: DiscoverMapView | null;
   /** Category lineage of the type's tree, root first; empty = the type root (`All`). */
   categoryPath: string[];
+  /**
+   * The virtual Other category of `categoryPath`: its objects in none of its shown child
+   * categories. Only below the root (the root is the `All` feed).
+   */
+  categoryOther: boolean;
 };
 
 /** Query param of one category lineage segment (repeated, root first). */
 export const DISCOVER_CATEGORY_PARAM = 'cat';
+
+/** Query param of the Other category of the lineage (`other=1`). */
+export const DISCOVER_CATEGORY_OTHER_PARAM = 'other';
 
 /** Discover route pathname. */
 export const DISCOVER_PATH = '/discover';
@@ -169,8 +179,10 @@ export function parseDiscoverPageState(source: DiscoverSearchParamsSource): Disc
       : readSearchParamAll(source, DISCOVER_CATEGORY_PARAM)
           .map((segment) => segment.trim())
           .filter((segment) => segment.length > 0);
+  const categoryOther =
+    categoryPath.length > 0 && readSearchParam(source, DISCOVER_CATEGORY_OTHER_PARAM) === '1';
 
-  return { usersMode, objectType, q, tags, sort, box, map, categoryPath };
+  return { usersMode, objectType, q, tags, sort, box, map, categoryPath, categoryOther };
 }
 
 /** Encodes tag filter for URL/API: `category:value` (split on first `:`). */
@@ -198,11 +210,16 @@ export function buildDiscoverHref(params: DiscoverUrlParams): string {
     sp.set('users', '1');
   } else if (params.type?.trim()) {
     sp.set('type', params.type.trim());
+    let hasCategory = false;
     for (const segment of params.categoryPath ?? []) {
       const trimmed = segment.trim();
       if (trimmed) {
         sp.append(DISCOVER_CATEGORY_PARAM, trimmed);
+        hasCategory = true;
       }
+    }
+    if (hasCategory && params.categoryOther) {
+      sp.set(DISCOVER_CATEGORY_OTHER_PARAM, '1');
     }
   }
   const q = params.q?.trim();

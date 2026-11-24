@@ -44,6 +44,7 @@ describe('DiscoverActiveChips', () => {
           tags={['Cuisine:Japanese']}
           sort="newest"
           categoryPath={[]}
+          categoryOther={false}
           box={SAMPLE_BOX}
           map={null}
         />
@@ -70,6 +71,7 @@ describe('DiscoverActiveChips', () => {
           tags={['Cuisine:Japanese']}
           sort="rank"
           categoryPath={[]}
+          categoryOther={false}
           box={null}
           map={null}
           filterButton={<button type="button">Filter</button>}
@@ -94,6 +96,7 @@ describe('DiscoverActiveChips', () => {
           tags={['Cuisine:Japanese']}
           sort="newest"
           categoryPath={[]}
+          categoryOther={false}
           box={SAMPLE_BOX}
           map={null}
         />
@@ -119,6 +122,7 @@ describe('DiscoverActiveChips', () => {
           tags={[]}
           sort="rank"
           categoryPath={[]}
+          categoryOther={false}
           box={null}
           map={null}
           filterButton={<button type="button">Filter</button>}

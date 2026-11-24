@@ -7,7 +7,12 @@ import { FeedListSkeleton } from '@/modules/feed/presentation/components/feed-sk
 import { TransfersWalletLoadingSkeleton } from '@/modules/user-wallet/presentation/components/wallet/transfers-wallet-loading-skeleton';
 import { FeedColumn } from '@/shared/presentation/layout';
 
-import { parseFavoritesPath, type FavoritesPath } from '../../domain/favorites-path';
+import {
+  parseFavoritesPath,
+  readFavoritesOtherParam,
+  resolveFavoritesCategoryView,
+  type FavoritesPath,
+} from '../../domain/favorites-path';
 import {
   parseProfileShopFilters,
   profileShopFiltersActive,
@@ -97,11 +102,15 @@ function ProfileFavoritesPendingSkeleton({
 }) {
   const accountName = getAccountFromPathname(pathname);
   const filters = parseProfileShopFilters(new URLSearchParams(search));
-  const { objectType, lineage, uncategorizedOnly } = favoritesPath;
+  const { objectType } = favoritesPath;
+  const view = resolveFavoritesCategoryView(
+    favoritesPath.lineage,
+    readFavoritesOtherParam(new URLSearchParams(search)),
+  );
   const showSections =
     objectType !== null &&
     objectTypeSupportsCategories(objectType) &&
-    !uncategorizedOnly &&
+    !view.other &&
     !profileShopFiltersActive(filters);
 
   return (
@@ -110,7 +119,8 @@ function ProfileFavoritesPendingSkeleton({
         <FavoritesBreadcrumbs
           accountName={accountName}
           objectType={objectType}
-          lineage={lineage}
+          lineage={view.lineage}
+          other={view.other}
           filters={filters}
         />
       ) : null}

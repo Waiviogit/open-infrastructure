@@ -9,6 +9,8 @@ export const categoryNavDataSchema = z.object({
   items: z.array(categoryNavItemSchema),
   uncategorized_count: z.number(),
   show_other: z.boolean(),
+  /** Objects of the level in none of `items` (the Other category; at the root also uncategorized). */
+  other_count: z.number().int().nonnegative().default(0),
 });
 
 export type { CategoryNavItem } from '@/shared/domain/category-nav';

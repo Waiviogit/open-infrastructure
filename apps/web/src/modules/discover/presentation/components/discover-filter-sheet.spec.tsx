@@ -79,6 +79,7 @@ function renderFilterSheet(
         tags={[]}
         sort="rank"
         categoryPath={[]}
+        categoryOther={false}
         box={null}
         map={null}
         {...props}

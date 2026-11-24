@@ -46,6 +46,11 @@ export interface DiscoverCategoriesResponseDto {
   items: DiscoverCategoryItemDto[];
   /** Root only: more categories pass the display rules than the root limit shows. */
   show_other: boolean;
+  /**
+   * Below the root: groups under the lineage in none of `items` (the virtual Other category);
+   * 0 at the root and when the level shows no category.
+   */
+  other_count: number;
 }
 
 export interface DiscoverSectionDto {
@@ -56,8 +61,16 @@ export interface DiscoverSectionDto {
   totalObjects: number;
 }
 
+/** The virtual Other block: groups under the lineage in none of the child categories. */
+export interface DiscoverOtherSectionDto {
+  items: ProjectedObject[];
+  totalObjects: number;
+}
+
 export interface DiscoverSectionsResponseDto {
   sections: DiscoverSectionDto[];
   cursor: string | null;
   hasMore: boolean;
+  /** Last page only (`hasMore = false`), when the category has objects outside its children. */
+  other: DiscoverOtherSectionDto | null;
 }

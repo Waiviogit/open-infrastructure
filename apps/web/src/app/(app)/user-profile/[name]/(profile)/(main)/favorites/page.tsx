@@ -1,4 +1,5 @@
 import { ProfileFavoritesMainContent } from '@/modules/user-profile';
+import { readFavoritesOtherParam } from '@/modules/user-profile/domain/favorites-path';
 import { parseProfileShopFilters } from '@/modules/user-profile/domain/profile-shop-filters-url';
 
 type PageProps = {
@@ -13,6 +14,7 @@ export default async function UserProfileFavoritesPage({ params, searchParams }:
   return (
     <ProfileFavoritesMainContent
       accountName={decodeURIComponent(name)}
+      categoryOther={readFavoritesOtherParam(resolvedSearchParams)}
       shopFilters={parseProfileShopFilters(resolvedSearchParams)}
     />
   );

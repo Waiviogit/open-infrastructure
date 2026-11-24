@@ -15,8 +15,11 @@ import {
 const mockNavigateInstant = jest.fn();
 let mockPathname = '/@alice/favorites/recipe';
 
+let mockSearch = '';
+
 jest.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
+  useSearchParams: () => new URLSearchParams(mockSearch),
 }));
 
 jest.mock('@/shared/presentation', () => {
@@ -100,6 +103,21 @@ describe('Favorites mobile filters', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Show results' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('keeps the Other category when clearing filters', () => {
+    mockPathname = '/@alice/favorites/recipe/Desserts';
+    mockSearch = 'other=1&rating=8';
+    renderSheet('recipe');
+    fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(mockNavigateInstant).toHaveBeenCalledWith({
+      href: '/@alice/favorites/recipe/Desserts?other=1',
+      method: 'replace',
+      scroll: false,
+    });
+    mockSearch = '';
   });
 
   it('shows no Filter button for a type without rating or tag facets', () => {

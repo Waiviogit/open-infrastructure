@@ -6,8 +6,9 @@ export const redisKey = {
   discoverTagCategories: (objectType: string) =>
     buildRedisKey(APP, 'cache', 'tag-categories', objectType),
   /** `lineageHash` is a sha256 of the category lineage (names never become key segments). */
+  /** `v2`: the level carries `other_count` (older cached levels lack it). */
   discoverCategories: (objectType: string, lineageHash: string) =>
-    buildRedisKey(APP, 'cache', 'discover-categories', objectType, lineageHash),
+    buildRedisKey(APP, 'cache', 'discover-categories', 'v2', objectType, lineageHash),
   listItemCount: (parentObjectId: string, listRefId: string) =>
     buildRedisKey(APP, 'cache', 'list-count', parentObjectId, listRefId),
   objectRefExpansion: (

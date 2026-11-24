@@ -16,6 +16,7 @@ import {
   parseProfileShopFilters,
   type ProfileShopFiltersState,
 } from '../../domain/profile-shop-filters-url';
+import { readFavoritesOtherParam } from '../../domain/favorites-path';
 import { shopRatingThresholdToStars } from '../../domain/profile-shop-registry';
 
 export type ProfileShopFilterChipsProps = {
@@ -32,13 +33,15 @@ export function ProfileShopFilterChips({
   const { t } = useI18n();
   const { navigateInstant } = useInstantNavigation();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const categoryOther = readFavoritesOtherParam(searchParams);
 
   const pushFilters = useCallback(
     (next: ProfileShopFiltersState) => {
-      const href = buildProfileShopHref(pathname, next);
+      const href = buildProfileShopHref(pathname, next, categoryOther);
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, pathname],
+    [navigateInstant, pathname, categoryOther],
   );
 
   const removeTag = useCallback(

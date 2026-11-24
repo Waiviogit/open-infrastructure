@@ -1,12 +1,11 @@
 'use client';
 
-import type { ReactNode } from 'react';
-
+import { useI18n } from '@/i18n/providers/i18n-provider';
 import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from '@/icons';
 
 import { sameCategoryLineage, type CategoryNavItem } from '@/shared/domain/category-nav';
 
-import type { CategoryHrefFor, CategoryNavLink } from './category-nav.types';
+import type { CategoryHrefFor, CategoryNavLink, CategoryNavOtherRow } from './category-nav.types';
 
 export type CategoryNavDrawerListProps = {
   items: readonly CategoryNavItem[];
@@ -22,12 +21,11 @@ export type CategoryNavDrawerListProps = {
   /** Closes the drawer: picking a leaf or the level itself ends the browse. */
   onPick: () => void;
   showCounts?: boolean;
-  /** Extra rows after the categories (Favorites: Uncategorized at the root). */
-  extraRows?: ReactNode;
+  /** The level's Other row, after the categories; null when the level has none. */
+  other?: CategoryNavOtherRow | null;
 };
 
-/** Row class of a drawer category (also used by `extraRows`). */
-export function categoryDrawerRowClass(active: boolean): string {
+function categoryDrawerRowClass(active: boolean): string {
   return [
     'flex w-full min-w-0 items-center justify-between gap-2 rounded-btn px-2 py-3 text-body transition-colors',
     active ? 'bg-accent-soft font-weight-label text-accent' : 'text-fg hover:bg-ghost-surface',
@@ -48,10 +46,13 @@ export function CategoryNavDrawerList({
   NavLink,
   onPick,
   showCounts = false,
-  extraRows,
+  other = null,
 }: CategoryNavDrawerListProps) {
-  const levelActive = sameCategoryLineage(activeLineage, navLineage);
-  const activeName = levelActive ? null : (activeLineage[activeLineage.length - 1] ?? null);
+  const { t } = useI18n();
+  const otherActive = other?.active === true;
+  const levelActive = !otherActive && sameCategoryLineage(activeLineage, navLineage);
+  const activeName =
+    levelActive || otherActive ? null : (activeLineage[activeLineage.length - 1] ?? null);
   const parentLineage = navLineage.slice(0, -1);
   const parentLabel = parentLineage[parentLineage.length - 1] ?? rootLabel;
   const levelLabel = navLineage[navLineage.length - 1] ?? rootLabel;
@@ -109,7 +110,24 @@ export function CategoryNavDrawerList({
             </li>
           );
         })}
-        {extraRows}
+        {other ? (
+          <li>
+            <NavLink
+              href={other.href}
+              className={categoryDrawerRowClass(other.active)}
+              aria-current={other.active ? 'page' : undefined}
+              onClick={onPick}
+            >
+              <span className="min-w-0 truncate">{t('category_other')}</span>
+              <span className="inline-flex shrink-0 items-center gap-2">
+                {showCounts ? (
+                  <span className="text-caption tabular-nums text-fg-tertiary">{other.count}</span>
+                ) : null}
+                {other.active ? <CheckIcon size={18} /> : null}
+              </span>
+            </NavLink>
+          </li>
+        ) : null}
       </ul>
     </div>
   );

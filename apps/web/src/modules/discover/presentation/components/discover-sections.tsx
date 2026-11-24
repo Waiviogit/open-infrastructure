@@ -17,7 +17,10 @@ import type { CategoryHrefFor } from '@/shared/presentation/category-nav';
 import { FeedColumn } from '@/shared/presentation/layout';
 import { isScrollRestorePending } from '@/shared/presentation/navigation/scroll-memory';
 
-import type { DiscoverSection } from '../../domain/discover-response.schema';
+import type {
+  DiscoverOtherSection,
+  DiscoverSection,
+} from '../../domain/discover-response.schema';
 import { fetchDiscoverSections } from '../../infrastructure/discover.client';
 import { DiscoverCategoryLink } from './discover-category-nav';
 import {
@@ -37,19 +40,23 @@ export type DiscoverSectionsProps = {
   /** Category with subcategories (non-empty lineage). */
   categoryPath: readonly string[];
   hrefFor: CategoryHrefFor;
+  /** The Other category of `categoryPath` (its block's title and Show more). */
+  otherHref: string;
   viewerUsername?: string | null;
   onRequireLogin?: () => void;
 };
 
 /**
  * Center column of a Discover category that has subcategories: one `CategorySectionCard` per
- * child category (top objects by rank, group count, Show more). More blocks load on scroll; a Back
- * navigation seeds the loaded blocks from the session cache so the scroll offset can be restored.
+ * child category (top objects by rank, group count, Show more), then the Other block (groups in
+ * none of the children) after the last page. More blocks load on scroll; a Back navigation seeds
+ * the loaded blocks from the session cache so the scroll offset can be restored.
  */
 export function DiscoverSections({
   objectType,
   categoryPath,
   hrefFor,
+  otherHref,
   viewerUsername,
   onRequireLogin,
 }: DiscoverSectionsProps) {
@@ -72,6 +79,9 @@ export function DiscoverSections({
     cachedOnRestore?.cursor ?? null,
   );
   const [hasMore, setHasMore] = useState(cachedOnRestore?.hasMore ?? false);
+  const [other, setOther] = useState<DiscoverOtherSection | null>(
+    cachedOnRestore?.other ?? null,
+  );
   const [loading, setLoading] = useState(cachedOnRestore == null);
   const [pending, startTransition] = useTransition();
 
@@ -107,9 +117,11 @@ export function DiscoverSections({
         sections: merged,
         cursor: page.cursor,
         hasMore: page.hasMore,
+        other: page.other,
       });
       setCursor(page.cursor);
       setHasMore(page.hasMore);
+      setOther(page.other);
     },
     [cacheKey, lineage, objectType],
   );
@@ -124,6 +136,7 @@ export function DiscoverSections({
     setSections([]);
     setCursor(null);
     setHasMore(false);
+    setOther(null);
     void (async () => {
       await loadPage(null, true, ac.signal);
       if (!ac.signal.aborted) {
@@ -188,6 +201,18 @@ export function DiscoverSections({
             onRequireLogin={onRequireLogin}
           />
         ))}
+        {!hasMore && other ? (
+          <CategorySectionCard
+            headingId="discover-section-other"
+            title={t('category_other')}
+            href={otherHref}
+            totalObjects={other.totalObjects}
+            items={other.items as unknown as ProjectedObjectView[]}
+            NavLink={DiscoverCategoryLink}
+            viewerUsername={viewerUsername}
+            onRequireLogin={onRequireLogin}
+          />
+        ) : null}
       </div>
       {hasMore ? (
         <div className="mt-4 flex flex-col items-center gap-2">

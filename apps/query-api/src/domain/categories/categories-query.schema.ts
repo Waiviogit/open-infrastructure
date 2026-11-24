@@ -38,6 +38,12 @@ export type UserCategoryNavItem = { name: string; objects_count: number; has_chi
 
 export type UserCategoriesResponse = {
   items: UserCategoryNavItem[];
+  /** Root only: objects with no category (also counted in `other_count` at the root). */
   uncategorized_count: number;
   show_other: boolean;
+  /**
+   * The virtual Other category of this level: objects in none of `items` (at the root also the
+   * uncategorized ones); 0 when the level shows no category.
+   */
+  other_count: number;
 };

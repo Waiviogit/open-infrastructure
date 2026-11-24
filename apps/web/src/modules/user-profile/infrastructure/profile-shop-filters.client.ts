@@ -6,7 +6,8 @@ import {
 export type FetchProfileShopFiltersParams = {
   types: readonly string[];
   categoryPath: string[];
-  uncategorizedOnly?: boolean;
+  /** Facets of the Other category of `categoryPath`. */
+  categoryOther?: boolean;
   tags?: readonly string[];
   rating?: number | null;
   signal?: AbortSignal;
@@ -22,8 +23,8 @@ function buildSearchParams(params: FetchProfileShopFiltersParams): string {
       sp.append('categoryPath', segment);
     }
   }
-  if (params.uncategorizedOnly === true) {
-    sp.set('uncategorizedOnly', 'true');
+  if (params.categoryOther === true) {
+    sp.set('other', 'true');
   }
   for (const tag of params.tags ?? []) {
     const trimmed = tag.trim();

@@ -38,6 +38,7 @@ function renderHeader(
         tags={[]}
         sort="rank"
         categoryPath={[]}
+        categoryOther={false}
         box={null}
         map={null}
         showMap

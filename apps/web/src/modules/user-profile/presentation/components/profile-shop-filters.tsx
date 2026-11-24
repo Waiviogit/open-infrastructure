@@ -12,7 +12,11 @@ import { PROFILE_FILTER_RAIL_STICKY_CLASS } from '@/shared/presentation/layout';
 
 import { objectTypeSupportsCategories } from '@opden-data-layer/core/object-type-registry';
 
-import { parseFavoritesPath } from '../../domain/favorites-path';
+import {
+  parseFavoritesPath,
+  readFavoritesOtherParam,
+  resolveFavoritesCategoryView,
+} from '../../domain/favorites-path';
 import type { ProfileShopFiltersResponse } from '../../domain/profile-shop-filters-response.schema';
 import {
   buildProfileShopHref,
@@ -82,7 +86,8 @@ export type ProfileShopFiltersProps = {
   accountName: string;
   types: readonly string[];
   categoryPath: string[];
-  uncategorizedOnly: boolean;
+  /** The Other category of `categoryPath` (facets of its objects; kept by filter links). */
+  categoryOther: boolean;
   filters: ProfileShopFiltersState;
   pathname: string;
   /**
@@ -98,7 +103,7 @@ export function ProfileShopFilters({
   accountName,
   types,
   categoryPath,
-  uncategorizedOnly,
+  categoryOther,
   filters,
   pathname,
   variant = 'rail',
@@ -123,7 +128,7 @@ export function ProfileShopFilters({
   useEffect(() => {
     setCollapsedCategories(new Set());
     setExpandedCategories(new Set());
-  }, [accountName, types, categoryPath, uncategorizedOnly]);
+  }, [accountName, types, categoryPath, categoryOther]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -133,7 +138,7 @@ export function ProfileShopFilters({
       const res = await fetchProfileShopFilters(accountName, {
         types,
         categoryPath,
-        uncategorizedOnly,
+        categoryOther,
         tags: filters.tags,
         rating: filters.rating,
         signal: ac.signal,
@@ -158,7 +163,7 @@ export function ProfileShopFilters({
     accountName,
     types,
     categoryPath,
-    uncategorizedOnly,
+    categoryOther,
     filters.tags,
     filters.rating,
     registryOrder,
@@ -187,10 +192,10 @@ export function ProfileShopFilters({
 
   const pushFilters = useCallback(
     (next: ProfileShopFiltersState) => {
-      const href = buildProfileShopHref(pathname, next);
+      const href = buildProfileShopHref(pathname, next, categoryOther);
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, pathname],
+    [navigateInstant, pathname, categoryOther],
   );
 
   const onToggleTag = useCallback(
@@ -293,7 +298,7 @@ export function ProfileShopFilters({
               void fetchProfileShopFilters(accountName, {
                 types,
                 categoryPath,
-                uncategorizedOnly,
+                categoryOther,
                 tags: filters.tags,
                 rating: filters.rating,
               }).then((res) => {
@@ -476,11 +481,12 @@ export function ProfileFavoritesFiltersFromUrl({
   const firstType = useFirstFavoritesType(accountName, favoritesPath !== null && routeType === null);
   const objectType = routeType ?? firstType ?? null;
   const withCategories = objectType !== null && objectTypeSupportsCategories(objectType);
-  const uncategorizedOnly = withCategories && (favoritesPath?.uncategorizedOnly ?? false);
-  const lineageKey =
-    withCategories && !uncategorizedOnly
-      ? (favoritesPath?.lineage ?? []).join(LINEAGE_KEY_SEPARATOR)
-      : '';
+  const view = resolveFavoritesCategoryView(
+    favoritesPath?.lineage ?? [],
+    readFavoritesOtherParam(searchParams),
+  );
+  const categoryOther = withCategories && view.other;
+  const lineageKey = withCategories ? view.lineage.join(LINEAGE_KEY_SEPARATOR) : '';
 
   const types = useMemo(() => (objectType ? [objectType] : []), [objectType]);
   const categoryPath = useMemo(
@@ -497,7 +503,7 @@ export function ProfileFavoritesFiltersFromUrl({
       accountName={accountName}
       types={types}
       categoryPath={categoryPath}
-      uncategorizedOnly={uncategorizedOnly}
+      categoryOther={categoryOther}
       filters={filters}
       pathname={pathname}
       variant={variant}

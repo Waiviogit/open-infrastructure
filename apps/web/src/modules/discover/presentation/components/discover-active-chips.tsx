@@ -25,6 +25,8 @@ export type DiscoverActiveChipsProps = {
   box: DiscoverBox | null;
   /** Category lineage, root first (kept by every Discover link and fetch). */
   categoryPath: string[];
+  /** The Other category of `categoryPath` (kept with it by every link and fetch). */
+  categoryOther: boolean;
   map: DiscoverMapView | null;
   /** Below `lg`: the Filter button, after the chips (alone on its row when no filter is active). */
   filterButton?: ReactNode;
@@ -39,6 +41,7 @@ export function DiscoverActiveChips({
   sort,
   box,
   categoryPath,
+  categoryOther,
   map,
   filterButton,
 }: DiscoverActiveChipsProps) {
@@ -52,6 +55,7 @@ export function DiscoverActiveChips({
         users: usersMode,
         type: objectType ?? undefined,
         categoryPath,
+        categoryOther,
         q: nextQ,
         tags: nextTags,
         sort,
@@ -60,7 +64,7 @@ export function DiscoverActiveChips({
       });
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, usersMode, objectType, categoryPath, sort, map],
+    [navigateInstant, usersMode, objectType, categoryPath, categoryOther, sort, map],
   );
 
   const clearAll = useCallback(() => {

@@ -52,7 +52,7 @@ const messages = {
   favorites_categories_aria: 'Favorites categories',
   profile_categories_up: '← Up',
   profile_categories_all: 'All categories',
-  profile_categories_uncategorized: 'Uncategorized',
+  category_other: 'Other',
   profile_categories_unavailable: 'Categories unavailable.',
 } as Messages;
 
@@ -69,6 +69,7 @@ const RECIPE_NAV: CategoryNavData = {
   ],
   uncategorized_count: 4,
   show_other: false,
+  other_count: 4,
 };
 
 function renderPanel(overrides: Partial<FavoritesRailPanelProps> = {}): HTMLElement | null {
@@ -109,10 +110,39 @@ describe('FavoritesRailPanel', () => {
       'href',
       '/@alice/favorites/recipe/German%20Cuisine',
     );
-    expect(within(nav).getByRole('link', { name: 'Uncategorized' })).toHaveAttribute(
+    expect(within(nav).getByRole('link', { name: 'Other' })).toHaveAttribute(
       'href',
-      '/@alice/favorites/recipe/uncategorized',
+      '/@alice/favorites/recipe?other=1',
     );
+  });
+
+  it('highlights Other on the Other page and leads Up to its category', () => {
+    mockPathname = '/@alice/favorites/recipe/German%20Cuisine';
+    mockSearch = 'other=1';
+    const nav = renderRail({
+      lineageSegments: ['German Cuisine'],
+      navLineage: ['German Cuisine'],
+      navData: {
+        items: [{ name: 'Stews', objects_count: 3, has_children: false }],
+        uncategorized_count: 0,
+        show_other: false,
+        other_count: 2,
+      },
+    });
+    const other = within(nav).getByRole('link', { name: 'Other' });
+    expect(other).toHaveAttribute('aria-current', 'page');
+    expect(other).toHaveAttribute('href', '/@alice/favorites/recipe/German%20Cuisine?other=1');
+    expect(within(nav).getByRole('link', { name: /Stews/ })).not.toHaveAttribute('aria-current');
+    expect(within(nav).getByRole('link', { name: '← Up' })).toHaveAttribute(
+      'href',
+      '/@alice/favorites/recipe/German%20Cuisine',
+    );
+  });
+
+  it('treats the legacy /uncategorized link as the root Other', () => {
+    mockPathname = '/@alice/favorites/recipe/uncategorized';
+    const nav = renderRail({ lineageSegments: ['uncategorized'], navLineage: [] });
+    expect(within(nav).getByRole('link', { name: 'Other' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('keeps filters on category links', () => {
@@ -150,11 +180,11 @@ describe('FavoritesRailPanel', () => {
     ).toBeNull();
   });
 
-  it('hides a lone Uncategorized when the category root lists no categories', () => {
+  it('hides a lone Other when the category root lists no categories', () => {
     mockPathname = '/@alice/favorites/book';
     const nav = renderRail({
       serverObjectType: 'book',
-      navData: { items: [], uncategorized_count: 7, show_other: false },
+      navData: { items: [], uncategorized_count: 7, show_other: false, other_count: 7 },
     });
     expect(within(nav).queryAllByRole('link')).toHaveLength(0);
   });
@@ -236,14 +266,17 @@ describe('FavoritesRailPanel', () => {
       return screen.getByRole('dialog', { name: 'Favorites categories' });
     }
 
-    it('lists one level: the type as the current level, categories with › and Uncategorized', () => {
+    it('lists one level: the type as the current level, categories with › and Other', () => {
       const drawer = renderDrawer();
       expect(within(drawer).getByRole('link', { name: 'Recipe' })).toHaveAttribute('aria-current', 'page');
       expect(within(drawer).getByRole('link', { name: 'German Cuisine' })).toHaveAttribute(
         'href',
         '/@alice/favorites/recipe/German%20Cuisine',
       );
-      expect(within(drawer).getByRole('link', { name: 'Uncategorized' })).toBeInTheDocument();
+      expect(within(drawer).getByRole('link', { name: 'Other' })).toHaveAttribute(
+        'href',
+        '/@alice/favorites/recipe?other=1',
+      );
       expect(within(drawer).queryByRole('link', { name: '← Up' })).toBeNull();
     });
 
@@ -268,6 +301,7 @@ describe('FavoritesRailPanel', () => {
           ],
           uncategorized_count: 4,
           show_other: false,
+          other_count: 0,
         },
       });
       expect(within(drawer).getByRole('link', { name: 'Recipe' })).toHaveAttribute(
@@ -281,7 +315,7 @@ describe('FavoritesRailPanel', () => {
         'aria-current',
         'page',
       );
-      expect(within(drawer).queryByRole('link', { name: 'Uncategorized' })).toBeNull();
+      expect(within(drawer).queryByRole('link', { name: 'Other' })).toBeNull();
     });
 
     it('shows a skeleton while a newly opened category level loads', () => {

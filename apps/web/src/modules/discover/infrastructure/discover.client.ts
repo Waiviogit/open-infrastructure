@@ -26,18 +26,32 @@ export type FetchDiscoverObjectsParams = {
   box?: DiscoverBox;
   /** Category lineage, root first. */
   categoryPath?: readonly string[];
+  /** The Other category of `categoryPath`. */
+  categoryOther?: boolean;
   cursor?: string | null;
   limit?: number;
   signal?: AbortSignal;
 };
 
-/** Repeated `category_path` query values, root first (query-api `category_names @> path`). */
-function appendCategoryPath(sp: URLSearchParams, categoryPath: readonly string[] | undefined): void {
+/**
+ * Repeated `category_path` query values, root first (query-api `category_names @> path`), and
+ * `other=true` for the Other category of a non-empty lineage.
+ */
+function appendCategoryPath(
+  sp: URLSearchParams,
+  categoryPath: readonly string[] | undefined,
+  categoryOther = false,
+): void {
+  let hasCategory = false;
   for (const segment of categoryPath ?? []) {
     const trimmed = segment.trim();
     if (trimmed) {
       sp.append('category_path', trimmed);
+      hasCategory = true;
     }
+  }
+  if (hasCategory && categoryOther) {
+    sp.set('other', 'true');
   }
 }
 
@@ -61,7 +75,7 @@ export async function fetchDiscoverObjects(
   if (params.box) {
     sp.set('box', formatDiscoverBoxParam(params.box));
   }
-  appendCategoryPath(sp, params.categoryPath);
+  appendCategoryPath(sp, params.categoryPath, params.categoryOther);
   if (params.cursor?.trim()) {
     sp.set('cursor', params.cursor.trim());
   }
@@ -132,6 +146,7 @@ export function buildDiscoverTagCategoriesSearchParams(
   q?: string,
   box?: DiscoverBox,
   categoryPath: readonly string[] = [],
+  categoryOther = false,
 ): URLSearchParams {
   const sp = new URLSearchParams({ object_type: objectType.trim() });
   const qTrimmed = q?.trim();
@@ -147,7 +162,7 @@ export function buildDiscoverTagCategoriesSearchParams(
   if (box) {
     sp.set('box', formatDiscoverBoxParam(box));
   }
-  appendCategoryPath(sp, categoryPath);
+  appendCategoryPath(sp, categoryPath, categoryOther);
   return sp;
 }
 
@@ -158,6 +173,7 @@ export async function fetchDiscoverTagCategories(
     q?: string;
     box?: DiscoverBox;
     categoryPath?: readonly string[];
+    categoryOther?: boolean;
     signal?: AbortSignal;
   },
 ): Promise<DiscoverTagCategoriesResponse | null> {
@@ -167,6 +183,7 @@ export async function fetchDiscoverTagCategories(
     init?.q,
     init?.box,
     init?.categoryPath ?? [],
+    init?.categoryOther ?? false,
   );
   try {
     const res = await fetch(`/api/discover/tag-categories?${sp.toString()}`, {

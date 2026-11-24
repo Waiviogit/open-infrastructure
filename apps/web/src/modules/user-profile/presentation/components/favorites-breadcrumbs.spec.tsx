@@ -38,19 +38,24 @@ jest.mock('./user-profile-nav-link', () => ({
 const messages = {
   all: 'All',
   favorites_breadcrumb_aria: 'Favorites path',
-  profile_categories_uncategorized: 'Uncategorized',
+  category_other: 'Other',
   favorites_categories_aria: 'Favorites categories',
 } as Messages;
 
 const NO_FILTERS: ProfileShopFiltersState = { tags: [], rating: null };
 
-function renderCrumbs(lineage: string[], filters: ProfileShopFiltersState = NO_FILTERS) {
+function renderCrumbs(
+  lineage: string[],
+  filters: ProfileShopFiltersState = NO_FILTERS,
+  other = false,
+) {
   render(
     <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
       <FavoritesBreadcrumbs
         accountName="alice"
         objectType="recipe"
         lineage={lineage}
+        other={other}
         filters={filters}
       />
     </I18nProvider>,
@@ -102,10 +107,19 @@ describe('FavoritesBreadcrumbs', () => {
     expect(within(nav).getByText('All')).toHaveAttribute('aria-current', 'page');
   });
 
-  it('labels the Uncategorized node', () => {
-    const nav = renderCrumbs(['uncategorized']);
+  it('ends with an Other crumb for the Other category; its category crumb is a link', () => {
+    const nav = renderCrumbs(['German Cuisine'], NO_FILTERS, true);
+    expect(within(nav).getByRole('link', { name: 'German Cuisine' })).toHaveAttribute(
+      'href',
+      '/@alice/favorites/recipe/German%20Cuisine',
+    );
+    expect(within(nav).getByText('Other')).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('labels the root Other after All', () => {
+    const nav = renderCrumbs([], NO_FILTERS, true);
     expect(within(nav).getByRole('link', { name: 'All' })).toBeInTheDocument();
-    expect(within(nav).getByText('Uncategorized')).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByText('Other')).toHaveAttribute('aria-current', 'page');
   });
 
   it('renders trailing controls on the crumb row, outside the trail', () => {

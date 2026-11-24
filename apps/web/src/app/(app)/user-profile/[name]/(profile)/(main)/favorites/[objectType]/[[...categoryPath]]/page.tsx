@@ -1,4 +1,5 @@
 import { decodeCategoryPathSegment, ProfileFavoritesMainContent } from '@/modules/user-profile';
+import { readFavoritesOtherParam } from '@/modules/user-profile/domain/favorites-path';
 import { parseProfileShopFilters } from '@/modules/user-profile/domain/profile-shop-filters-url';
 
 type PageProps = {
@@ -18,6 +19,7 @@ export default async function UserProfileFavoritesByTypePage({ params, searchPar
       accountName={decodeURIComponent(name)}
       routeObjectType={decodeCategoryPathSegment(objectType)}
       lineageSegments={categoryPath.map(decodeCategoryPathSegment)}
+      categoryOther={readFavoritesOtherParam(resolvedSearchParams)}
       shopFilters={parseProfileShopFilters(resolvedSearchParams)}
     />
   );

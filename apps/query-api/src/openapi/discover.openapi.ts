@@ -43,6 +43,9 @@ registry.registerPath({
         .union([z.string(), z.array(z.string())])
         .optional()
         .describe('Category lineage filter, root first (objects must carry every name)'),
+      other: z.union([z.boolean(), z.string()]).optional().describe(
+        'When true, only objects of `category_path` in none of its shown child categories (the Other category, same filters as the category tree)',
+      ),
       cursor: z.string().optional(),
       limit: z.coerce.number().int().min(1).optional(),
       country: z.string().trim().max(32).optional().openapi({
@@ -72,6 +75,9 @@ registry.registerPath({
         .union([z.string(), z.array(z.string())])
         .optional()
         .describe('Category lineage filter, root first'),
+      other: z.union([z.boolean(), z.string()]).optional().describe(
+        'When true, only objects of `category_path` in none of its shown child categories (the Other category, same filters as the category tree)',
+      ),
     }),
   },
   responses: {
@@ -101,6 +107,10 @@ const discoverCategoriesResponseSchema = registry.register(
   z.object({
     items: z.array(discoverCategoryItemSchema),
     show_other: z.boolean(),
+    other_count: z.number().int().nonnegative().openapi({
+      description:
+        'Below the root: groups under `category_path` in none of `items` (the Other category); 0 at the root.',
+    }),
   }),
 );
 
@@ -137,7 +147,7 @@ registry.registerPath({
   tags: [queryApiOpenApiTags.discover],
   summary: 'Category blocks of a category',
   description:
-    'One block per child category of `category_path` (the category tree children: at least 3 groups, at most 60% of the level, ordered by count). Each block has the top 3 objects by rank (one per group) and the group count. Paged by the last block category name.',
+    'One block per child category of `category_path` (the category tree children: at least 3 groups, at most 60% of the level, ordered by count). Each block has the top 3 objects by rank (one per group) and the group count. Paged by the last block category name. The last page (`hasMore = false`) carries `other`: the top 3 groups in none of the children and their count, or null.',
   request: {
     query: z.object({
       object_type: z.string().min(1).describe('Category object type, e.g. product'),
@@ -150,6 +160,9 @@ registry.registerPath({
     }),
   },
   responses: {
-    200: { description: '`{ sections: [{ categoryName, items, totalObjects }], cursor, hasMore }`.' },
+    200: {
+      description:
+        '`{ sections: [{ categoryName, items, totalObjects }], cursor, hasMore, other: { items, totalObjects } | null }`.',
+    },
   },
 });

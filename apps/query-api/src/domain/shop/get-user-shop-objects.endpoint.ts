@@ -3,6 +3,7 @@ import type { AggregatedObject } from '@opden-data-layer/objects-domain';
 import { ObjectViewService } from '@opden-data-layer/objects-domain';
 import { AggregatedObjectRepository, ObjectCategoriesRepository } from '../../repositories';
 import { AffiliateLinksEnricher, flattenAffiliateTargets } from '../affiliate';
+import { CategoryNavigationService } from '../categories/category-navigation.service';
 import { parseTagFilters } from '../discover/get-discover-objects.endpoint';
 import { USER_FAVORITES_CARD_UPDATE_TYPES } from '../favorites/favorites.constants';
 import { UserFavoritesScopeResolver } from '../favorites/user-favorites-scope.resolver';
@@ -12,6 +13,7 @@ import {
   decodeWeightObjectCursor,
   encodeWeightObjectCursor,
 } from '../pagination/weight-object-cursor';
+import { resolveFavoritesOtherExcludedNames } from './favorites-other';
 import type { ShopObjectsQuery } from './shop.schema';
 
 export type ShopObjectsResponse = {
@@ -27,11 +29,15 @@ function orderAggregatedByIds(objects: AggregatedObject[], objectIds: string[]):
   return objectIds.map((id) => map.get(id)).filter((o): o is AggregatedObject => o != null);
 }
 
-/** Flat Favorites list (leaf / uncategorized / filtered), `weight DESC NULLS LAST, object_id`. */
+/**
+ * Flat Favorites list (leaf / Other / uncategorized / filtered), `weight DESC NULLS LAST,
+ * object_id`. `other`: objects of the path in none of the child categories the tree shows.
+ */
 @Injectable()
 export class GetUserShopObjectsEndpoint {
   constructor(
     private readonly scopeResolver: UserFavoritesScopeResolver,
+    private readonly navigation: CategoryNavigationService,
     private readonly objectCategoriesRepo: ObjectCategoriesRepository,
     private readonly aggregatedObjectRepo: AggregatedObjectRepository,
     private readonly objectViewService: ObjectViewService,
@@ -59,10 +65,17 @@ export class GetUserShopObjectsEndpoint {
     }
 
     const scope = await this.scopeResolver.resolve(name, query.types);
+    const excludedCategoryNames = query.other
+      ? await resolveFavoritesOtherExcludedNames(this.navigation, scope, query.categoryPath)
+      : [];
+    if (excludedCategoryNames == null) {
+      return { ...EMPTY_PAGE };
+    }
     const page = await this.objectCategoriesRepo.findObjectIdsByScope({
       scope,
       categoryPath: query.categoryPath,
-      uncategorizedOnly: query.uncategorizedOnly,
+      uncategorizedOnly: query.other ? false : query.uncategorizedOnly,
+      excludedCategoryNames,
       limit: query.limit,
       cursor,
       tags: parseTagFilters(query.tags ?? []),

@@ -207,6 +207,7 @@ describe('parseDiscoverPageState', () => {
       box: null,
       map: null,
       categoryPath: [],
+      categoryOther: false,
     });
   });
 
@@ -220,6 +221,7 @@ describe('parseDiscoverPageState', () => {
       box: null,
       map: null,
       categoryPath: [],
+      categoryOther: false,
     });
   });
 
@@ -233,6 +235,7 @@ describe('parseDiscoverPageState', () => {
       box: null,
       map: null,
       categoryPath: [],
+      categoryOther: false,
     });
   });
 
@@ -246,6 +249,7 @@ describe('parseDiscoverPageState', () => {
       box: null,
       map: null,
       categoryPath: [],
+      categoryOther: false,
     });
   });
 
@@ -266,6 +270,7 @@ describe('parseDiscoverPageState', () => {
       box: null,
       map: null,
       categoryPath: [],
+      categoryOther: false,
     });
   });
 
@@ -280,6 +285,7 @@ describe('parseDiscoverPageState', () => {
       box: null,
       map: null,
       categoryPath: [],
+      categoryOther: false,
     });
   });
 
@@ -321,6 +327,7 @@ describe('parseDiscoverPageState', () => {
       box: SAMPLE_BOX,
       map: SAMPLE_MAP,
       categoryPath: ['Asian', 'Sushi bars'],
+      categoryOther: false,
     });
     const parsed = parseDiscoverPageState(new URL(href, 'http://local').searchParams);
     expect(parsed).toEqual({
@@ -332,6 +339,22 @@ describe('parseDiscoverPageState', () => {
       box: SAMPLE_BOX,
       map: SAMPLE_MAP,
       categoryPath: ['Asian', 'Sushi bars'],
+      categoryOther: false,
     });
+  });
+
+  it('keeps the Other category with a lineage only, and only below the root', () => {
+    const href = buildDiscoverHref({
+      type: 'product',
+      categoryPath: ['Women', 'Outerwear'],
+      categoryOther: true,
+      sort: 'newest',
+    });
+    expect(href).toBe('/discover?type=product&cat=Women&cat=Outerwear&other=1&sort=newest');
+    expect(parseDiscoverPageState(new URL(href, 'http://local').searchParams).categoryOther).toBe(
+      true,
+    );
+    expect(buildDiscoverHref({ type: 'product', categoryOther: true })).toBe('/discover?type=product');
+    expect(parseDiscoverPageState({ type: 'product', other: '1' }).categoryOther).toBe(false);
   });
 });

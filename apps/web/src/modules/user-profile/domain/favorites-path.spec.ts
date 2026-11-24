@@ -1,4 +1,10 @@
-import { buildFavoritesPath, isUncategorizedLineage, parseFavoritesPath } from './favorites-path';
+import {
+  buildFavoritesPath,
+  isUncategorizedLineage,
+  parseFavoritesPath,
+  readFavoritesOtherParam,
+  resolveFavoritesCategoryView,
+} from './favorites-path';
 
 describe('favorites-path', () => {
   describe('parseFavoritesPath', () => {
@@ -13,7 +19,6 @@ describe('favorites-path', () => {
       expect(parseFavoritesPath('/@alice/favorites')).toEqual({
         objectType: null,
         lineage: [],
-        uncategorizedOnly: false,
       });
     });
 
@@ -21,7 +26,6 @@ describe('favorites-path', () => {
       const expected = {
         objectType: 'recipe',
         lineage: ['German Cuisine', 'Comfort Food'],
-        uncategorizedOnly: false,
       };
       expect(parseFavoritesPath('/@alice/favorites/recipe/German%20Cuisine/Comfort%20Food')).toEqual(
         expected,
@@ -31,11 +35,10 @@ describe('favorites-path', () => {
       ).toEqual(expected);
     });
 
-    it('flags the Uncategorized node', () => {
+    it('keeps the legacy uncategorized segment in the lineage (resolved as the root Other)', () => {
       expect(parseFavoritesPath('/@alice/favorites/book/uncategorized')).toEqual({
         objectType: 'book',
         lineage: ['uncategorized'],
-        uncategorizedOnly: true,
       });
     });
 
@@ -61,7 +64,6 @@ describe('favorites-path', () => {
       expect(parseFavoritesPath(buildFavoritesPath('alice', 'place', lineage))).toEqual({
         objectType: 'place',
         lineage,
-        uncategorizedOnly: false,
       });
     });
   });
@@ -70,5 +72,24 @@ describe('favorites-path', () => {
     expect(isUncategorizedLineage(['uncategorized'])).toBe(true);
     expect(isUncategorizedLineage(['Food', 'uncategorized'])).toBe(false);
     expect(isUncategorizedLineage([])).toBe(false);
+  });
+
+  describe('category view (the Other category)', () => {
+    it('reads ?other=1 from page searchParams and URLSearchParams', () => {
+      expect(readFavoritesOtherParam({ other: '1' })).toBe(true);
+      expect(readFavoritesOtherParam({ other: ['1'] })).toBe(true);
+      expect(readFavoritesOtherParam(new URLSearchParams('other=1&tags=a:b'))).toBe(true);
+      expect(readFavoritesOtherParam({ other: 'true' })).toBe(false);
+      expect(readFavoritesOtherParam({})).toBe(false);
+    });
+
+    it('is the Other of the lineage with ?other=1, and the root Other for the legacy link', () => {
+      expect(resolveFavoritesCategoryView(['Women', 'Outerwear'], true)).toEqual({
+        lineage: ['Women', 'Outerwear'],
+        other: true,
+      });
+      expect(resolveFavoritesCategoryView(['Women'], false)).toEqual({ lineage: ['Women'], other: false });
+      expect(resolveFavoritesCategoryView(['uncategorized'], false)).toEqual({ lineage: [], other: true });
+    });
   });
 });

@@ -20,6 +20,8 @@ export type DiscoverCategoryNavState =
       items: CategoryNavItem[];
       /** Lineage whose children `items` are (the parent of a leaf). */
       navLineage: string[];
+      /** Groups of `navLineage` in none of `items` (its Other category); 0 at the type root. */
+      otherCount: number;
     };
 
 export type UseDiscoverCategoryNavParams = {
@@ -53,7 +55,7 @@ export function useDiscoverCategoryNav({
 
   useEffect(() => {
     if (objectType == null) {
-      setState({ status: 'ready', items: [], navLineage: [] });
+      setState({ status: 'ready', items: [], navLineage: [], otherCount: 0 });
       return;
     }
     const ac = new AbortController();
@@ -66,9 +68,9 @@ export function useDiscoverCategoryNav({
     };
     const treeKnown = treeTypeRef.current === objectType;
     setState({ status: 'loading', treeKnown });
-    const settle = (items: CategoryNavItem[], navLineage: string[]) => {
+    const settle = (items: CategoryNavItem[], navLineage: string[], otherCount: number) => {
       treeTypeRef.current = items.length > 0 || navLineage.length > 0 ? objectType : null;
-      setState({ status: 'ready', items, navLineage });
+      setState({ status: 'ready', items, navLineage, otherCount });
     };
 
     void (async () => {
@@ -81,7 +83,7 @@ export function useDiscoverCategoryNav({
         return;
       }
       if (level.items.length > 0 || lineage.length === 0) {
-        settle(level.items, lineage);
+        settle(level.items, lineage, level.other_count);
         return;
       }
       const parentLineage = lineage.slice(0, -1);
@@ -93,9 +95,9 @@ export function useDiscoverCategoryNav({
         return;
       }
       if (parent) {
-        settle(parent.items, parentLineage);
+        settle(parent.items, parentLineage, parent.other_count);
       } else {
-        settle([], lineage);
+        settle([], lineage, 0);
       }
     })();
 

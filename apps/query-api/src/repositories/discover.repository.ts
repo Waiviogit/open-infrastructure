@@ -63,6 +63,8 @@ export interface ListDiscoverObjectsParams {
   box?: DiscoverBox;
   /** Category lineage (`category_names @> path`); empty = no category filter. */
   categoryPath?: readonly string[];
+  /** Other of `categoryPath`: the shown child names to leave out (group level). */
+  excludedCategoryNames?: readonly string[];
 }
 
 export interface ListDiscoverObjectsResult {
@@ -108,6 +110,7 @@ export class DiscoverRepository {
       tags: params.tags,
       box: params.box,
       categoryPath: params.categoryPath ?? [],
+      excludedCategoryNames: params.excludedCategoryNames,
     });
     if (filters == null) {
       return { rows: [], hasMore: false };
@@ -193,6 +196,7 @@ export class DiscoverRepository {
     q?: string,
     box?: DiscoverBox,
     categoryPath: readonly string[] = [],
+    excludedCategoryNames: readonly string[] = [],
   ): Promise<DiscoverTagCategoryRow[]> {
     const trimmed = objectType.trim();
     if (!trimmed) {
@@ -200,8 +204,15 @@ export class DiscoverRepository {
     }
 
     const qTrimmed = q?.trim() ?? '';
-    if (qTrimmed.length > 0 || box || categoryPath.length > 0) {
-      return this.getTagCategoriesFiltered(trimmed, activeTags, qTrimmed, box, categoryPath);
+    if (qTrimmed.length > 0 || box || categoryPath.length > 0 || excludedCategoryNames.length > 0) {
+      return this.getTagCategoriesFiltered(
+        trimmed,
+        activeTags,
+        qTrimmed,
+        box,
+        categoryPath,
+        excludedCategoryNames,
+      );
     }
 
     const useCache = activeTags.length === 0;
@@ -303,6 +314,7 @@ export class DiscoverRepository {
     qTrimmed: string,
     box: DiscoverBox | undefined,
     categoryPath: readonly string[],
+    excludedCategoryNames: readonly string[],
   ): Promise<DiscoverTagCategoryRow[]> {
     const filters = buildDiscoverObjectFilters({
       objectType,
@@ -310,6 +322,7 @@ export class DiscoverRepository {
       tags: activeTags,
       box,
       categoryPath,
+      excludedCategoryNames,
     });
     if (filters == null) {
       return [];

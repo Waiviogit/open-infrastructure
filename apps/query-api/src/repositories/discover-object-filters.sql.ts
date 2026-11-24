@@ -30,6 +30,11 @@ export interface DiscoverObjectFilterParams {
   box: DiscoverBox | null | undefined;
   /** Category lineage; objects must carry every name (`category_names @> path`). */
   categoryPath: readonly string[];
+  /**
+   * The virtual Other category of `categoryPath`: the shown child names. A group is left out when
+   * any of its active objects carries the lineage and one of these names.
+   */
+  excludedCategoryNames?: readonly string[];
 }
 
 export function escapeIlikePattern(value: string): string {
@@ -162,6 +167,40 @@ export function buildDiscoverCategoryPathFilter(categoryPath: readonly string[])
 }
 
 /**
+ * Other of a level: drops objects whose group (the object itself, or any active object of its
+ * `meta_group_id`) carries the lineage and one of `excludedNames`, so a group shown under a child
+ * category never shows under Other (counts are in groups).
+ */
+export function buildDiscoverExcludedCategoriesFilter(
+  categoryPath: readonly string[],
+  excludedNames: readonly string[] | undefined,
+): RawBuilder<unknown> {
+  if (!excludedNames || excludedNames.length === 0) {
+    return sql``;
+  }
+  const path = [...categoryPath];
+  const names = [...excludedNames];
+  return sql`AND NOT EXISTS (
+    SELECT 1 FROM object_categories cat_ex
+    WHERE cat_ex.object_id = oc.object_id
+      AND cat_ex.category_names @> ${path}::text[]
+      AND cat_ex.category_names && ${names}::text[]
+  )
+  AND NOT (
+    oc.meta_group_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM objects_core sibling
+      INNER JOIN object_categories cat_ex ON cat_ex.object_id = sibling.object_id
+      WHERE sibling.meta_group_id = oc.meta_group_id
+        AND sibling.status = 'active'
+        AND cat_ex.category_names @> ${path}::text[]
+        AND cat_ex.category_names && ${names}::text[]
+    )
+  )`;
+}
+
+/**
  * Every Discover filter for one object type, as `AND …` fragments on alias `oc` (status and type
  * not included). `null` when the text query can match nothing.
  */
@@ -175,5 +214,6 @@ export function buildDiscoverObjectFilters(params: DiscoverObjectFilterParams): 
     ${buildDiscoverTagFilter(params.tags, params.objectType)}
     ${buildDiscoverGeoBoxFilter(params.box)}
     ${buildDiscoverCategoryPathFilter(params.categoryPath)}
+    ${buildDiscoverExcludedCategoriesFilter(params.categoryPath, params.excludedCategoryNames)}
   `;
 }

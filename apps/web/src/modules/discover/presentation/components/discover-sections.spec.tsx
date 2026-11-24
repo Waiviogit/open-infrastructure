@@ -70,6 +70,7 @@ const messages = {
   discover_no_results: 'No results found.',
   discover_loading: 'Loading…',
   profile_shop_load_more_sections: 'Load more sections',
+  category_other: 'Other',
 } as Messages;
 
 const PAGE = {
@@ -79,6 +80,14 @@ const PAGE = {
   ],
   cursor: 'Video',
   hasMore: true,
+  other: null,
+};
+
+const LAST_PAGE = {
+  sections: [{ categoryName: 'Headphones', totalObjects: 5, items: [] }],
+  cursor: null,
+  hasMore: false,
+  other: { totalObjects: 7, items: [{ object_id: 'o1' }, { object_id: 'o2' }] },
 };
 
 const hrefFor = (lineage: readonly string[]) =>
@@ -87,7 +96,12 @@ const hrefFor = (lineage: readonly string[]) =>
 function renderSections() {
   return render(
     <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
-      <DiscoverSections objectType="product" categoryPath={['Electronics']} hrefFor={hrefFor} />
+      <DiscoverSections
+        objectType="product"
+        categoryPath={['Electronics']}
+        hrefFor={hrefFor}
+        otherHref="/discover?type=product&cat=Electronics&other=1"
+      />
     </I18nProvider>,
   );
 }
@@ -126,10 +140,42 @@ describe('DiscoverSections', () => {
   });
 
   it('shows no results when the category has no blocks', async () => {
-    fetchMock.mockResolvedValue({ sections: [], cursor: null, hasMore: false });
+    fetchMock.mockResolvedValue({ sections: [], cursor: null, hasMore: false, other: null });
 
     renderSections();
 
     expect(await screen.findByText('No results found.')).toBeInTheDocument();
+  });
+
+  it('closes the last page with the Other block linking to the Other category', async () => {
+    fetchMock.mockResolvedValue(LAST_PAGE as never);
+
+    renderSections();
+
+    await waitFor(() => expect(screen.getAllByTestId('section')).toHaveLength(2));
+    const other = screen.getByRole('link', { name: 'Other' });
+    expect(other).toHaveAttribute('href', '/discover?type=product&cat=Electronics&other=1');
+    expect(other.parentElement?.textContent).toContain('7/2');
+  });
+
+  it('keeps the Other block in the cache for a restored Back', () => {
+    writeDiscoverSectionsCache(
+      discoverSectionsCacheKey('product', ['Electronics']),
+      LAST_PAGE as never,
+    );
+    mockRestorePending = true;
+
+    renderSections();
+
+    expect(screen.getByRole('link', { name: 'Other' })).toBeInTheDocument();
+  });
+
+  it('has no Other block before the last page', async () => {
+    fetchMock.mockResolvedValue({ ...PAGE, other: LAST_PAGE.other } as never);
+
+    renderSections();
+
+    await waitFor(() => expect(screen.getAllByTestId('section')).toHaveLength(2));
+    expect(screen.queryByRole('link', { name: 'Other' })).not.toBeInTheDocument();
   });
 });

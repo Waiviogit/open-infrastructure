@@ -22,6 +22,8 @@ export type DiscoverFilterSheetProps = {
   box: DiscoverBox | null;
   /** Category lineage, root first (kept by every Discover link and fetch). */
   categoryPath: string[];
+  /** The Other category of `categoryPath` (kept with it by every link and fetch). */
+  categoryOther: boolean;
   map: DiscoverMapView | null;
 };
 
@@ -34,6 +36,7 @@ export function DiscoverFilterSheet({
   sort,
   box,
   categoryPath,
+  categoryOther,
   map,
 }: DiscoverFilterSheetProps) {
   const { t } = useI18n();
@@ -41,7 +44,7 @@ export function DiscoverFilterSheet({
   const [filterSearch, setFilterSearch] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { loading, orderedSections, collapsedCategories, toggleCollapse } =
-    useDiscoverTagCategories({ objectType, q, tags, box, categoryPath });
+    useDiscoverTagCategories({ objectType, q, tags, box, categoryPath, categoryOther });
 
   useEffect(() => {
     if (!open) {
@@ -54,6 +57,7 @@ export function DiscoverFilterSheet({
       const href = buildDiscoverHref({
         type: objectType,
         categoryPath,
+        categoryOther,
         q: nextQ,
         tags: nextTags,
         sort,
@@ -62,7 +66,7 @@ export function DiscoverFilterSheet({
       });
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, objectType, categoryPath, q, sort, box, map],
+    [navigateInstant, objectType, categoryPath, categoryOther, q, sort, box, map],
   );
 
   const onToggleTag = useCallback(

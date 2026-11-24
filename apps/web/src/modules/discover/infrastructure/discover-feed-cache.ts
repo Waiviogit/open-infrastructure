@@ -18,6 +18,8 @@ export type DiscoverFeedCacheQuery = {
   box: DiscoverBox | null;
   /** Category lineage, in order (not sorted: the order is the lineage). */
   categoryPath: readonly string[];
+  /** The Other category of the lineage. */
+  categoryOther: boolean;
 };
 
 export function discoverFeedCacheKey(query: DiscoverFeedCacheQuery): string {
@@ -31,6 +33,7 @@ export function discoverFeedCacheKey(query: DiscoverFeedCacheQuery): string {
     query.sort,
     box,
     query.categoryPath.join('\u0001'),
+    query.categoryOther ? 'other' : '',
   ].join('\u0002');
 }
 

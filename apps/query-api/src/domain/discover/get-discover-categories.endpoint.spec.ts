@@ -4,6 +4,7 @@ import { GetDiscoverCategoriesEndpoint } from './get-discover-categories.endpoin
 const NAV = {
   items: [{ name: 'Audio', objects_count: 12, has_children: true }],
   show_other: false,
+  other_count: 4,
 };
 
 function setup(cached: string | null = null) {
@@ -47,14 +48,23 @@ describe('GetDiscoverCategoriesEndpoint', () => {
       lineage: ['Electronics', 'Audio'],
       excluded: [],
       includeHasChildren: true,
+      includeOther: true,
     });
+  });
+
+  it('does not count Other at the type root (the root is the All feed)', async () => {
+    const { endpoint, navigation } = setup();
+
+    await endpoint.execute({ query: ROOT });
+
+    expect(navigation.build).toHaveBeenCalledWith(expect.objectContaining({ includeOther: false }));
   });
 
   it('caches the unfiltered level and serves it from the cache', async () => {
     const first = setup();
     await first.endpoint.execute({ query: ROOT });
     expect(first.redis.set).toHaveBeenCalledWith(
-      expect.stringMatching(/^query-api:cache:discover-categories:product:[0-9a-f]{64}$/),
+      expect.stringMatching(/^query-api:cache:discover-categories:v2:product:[0-9a-f]{64}$/),
       JSON.stringify(NAV),
       600,
     );

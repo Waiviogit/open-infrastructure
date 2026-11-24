@@ -57,10 +57,11 @@ function DiscoverPageContent({
     box,
     map: mapFromUrl,
     categoryPath,
+    categoryOther,
   } = useMemo(() => parseDiscoverPageState(searchParams), [searchParams]);
   const effectiveNav = useEffectiveNav();
-  const activeCategoryPath = useMemo(
-    () => parseDiscoverPageState(new URLSearchParams(effectiveNav.search)).categoryPath,
+  const { categoryPath: activeCategoryPath, categoryOther: activeCategoryOther } = useMemo(
+    () => parseDiscoverPageState(new URLSearchParams(effectiveNav.search)),
     [effectiveNav.search],
   );
   const { openLogin } = useLoginModal();
@@ -147,8 +148,9 @@ function DiscoverPageContent({
   const filtersActive = q.trim().length > 0 || tags.length > 0 || box != null;
   // Blocks per subcategory inside a category that has subcategories, without filters (like
   // Favorites); the type root and leaves keep the flat feed.
+  // The Other category is a flat list of its own objects.
   const centerMode: DiscoverCenterMode =
-    categoryType == null || categoryPath.length === 0 || filtersActive
+    categoryType == null || categoryPath.length === 0 || filtersActive || categoryOther
       ? 'feed'
       : categoryNav.status === 'loading'
         ? 'pending'
@@ -171,6 +173,24 @@ function DiscoverPageContent({
       }),
     [objectType, q, tags, sort, box, mapFromUrl],
   );
+  const otherHref = useCallback(
+    (lineage: readonly string[]) =>
+      buildDiscoverHref({
+        type: objectType ?? undefined,
+        categoryPath: lineage,
+        categoryOther: true,
+        q,
+        tags,
+        sort,
+        box,
+        map: mapFromUrl ?? undefined,
+      }),
+    [objectType, q, tags, sort, box, mapFromUrl],
+  );
+  const categoryOtherNav = useMemo(
+    () => ({ hrefFor: otherHref, active: activeCategoryOther }),
+    [otherHref, activeCategoryOther],
+  );
 
   const mapObjectType = showMap && objectType ? objectType : null;
 
@@ -182,6 +202,7 @@ function DiscoverPageContent({
       const href = buildDiscoverHref({
         type: objectType,
         categoryPath,
+        categoryOther,
         q,
         tags,
         sort,
@@ -190,7 +211,7 @@ function DiscoverPageContent({
       });
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, objectType, categoryPath, q, tags, sort, effectiveMapView],
+    [navigateInstant, objectType, categoryPath, categoryOther, q, tags, sort, effectiveMapView],
   );
 
   const handleMapViewChange = useCallback((view: DiscoverMapView) => {
@@ -203,6 +224,7 @@ function DiscoverPageContent({
         href: buildDiscoverHref({
           type: objectType,
           categoryPath,
+          categoryOther,
           q,
           tags,
           sort,
@@ -214,7 +236,7 @@ function DiscoverPageContent({
       });
     }
     setMapModalOpen(true);
-  }, [navigateInstant, objectType, categoryPath, q, tags, sort, box, effectiveMapView]);
+  }, [navigateInstant, objectType, categoryPath, categoryOther, q, tags, sort, box, effectiveMapView]);
 
   return (
     <div className="mx-auto w-full max-w-container-page px-1 pt-section-y-sm max-lg:-mx-gutter max-lg:w-[calc(100%+2*var(--spacing-gutter))] sm:max-lg:-mx-gutter-sm sm:max-lg:w-[calc(100%+2*var(--spacing-gutter-sm))] lg:px-gutter">
@@ -226,8 +248,10 @@ function DiscoverPageContent({
               objectType={categoryType}
               nav={categoryNav}
               categoryPath={categoryPath}
+              categoryOther={categoryOther}
               activeLineage={activeCategoryPath}
               hrefFor={categoryHref}
+              other={categoryOtherNav}
             />
           ) : null}
         </aside>
@@ -245,6 +269,7 @@ function DiscoverPageContent({
             sort={sort}
             box={box}
             categoryPath={categoryPath}
+            categoryOther={categoryOther}
             map={mapFromUrl}
             mapView={effectiveMapView}
             viewerUsername={viewerUsername}
@@ -259,6 +284,7 @@ function DiscoverPageContent({
               showCategoryTree
                 ? {
                     hrefFor: categoryHref,
+                    otherHref: otherHref(categoryPath),
                     drawerOpen: categoryDrawerOpen,
                     onOpenDrawer: () => setCategoryDrawerOpen(true),
                   }
@@ -279,6 +305,7 @@ function DiscoverPageContent({
                 sort={sort}
                 box={box}
                 categoryPath={categoryPath}
+                categoryOther={categoryOther}
                 mapView={effectiveMapView}
                 onApplyArea={applyMapArea}
                 onViewChange={mapModalOpen ? undefined : handleMapViewChange}
@@ -293,6 +320,7 @@ function DiscoverPageContent({
                 sort={sort}
                 box={box}
                 categoryPath={categoryPath}
+                categoryOther={categoryOther}
                 map={mapFromUrl}
               />
             ) : null}
@@ -310,6 +338,7 @@ function DiscoverPageContent({
           nav={categoryNav}
           activeLineage={activeCategoryPath}
           hrefFor={categoryHref}
+          other={categoryOtherNav}
         />
       ) : null}
 
@@ -323,6 +352,7 @@ function DiscoverPageContent({
           sort={sort}
           box={box}
           categoryPath={categoryPath}
+          categoryOther={categoryOther}
           map={mapFromUrl}
         />
       ) : null}
@@ -337,6 +367,7 @@ function DiscoverPageContent({
           sort={sort}
           box={box}
           categoryPath={categoryPath}
+          categoryOther={categoryOther}
           mapView={effectiveMapView}
           onApplyArea={applyMapArea}
           onViewChange={handleMapViewChange}

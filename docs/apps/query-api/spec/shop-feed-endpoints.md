@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, shop-feed-endpoints, favorites]
-updated_at: 2026-11-11
+updated_at: 2026-11-24
 related:
   - docs/apps/query-api/spec/overview.md
   - docs/apps/query-api/spec/users-favorites-endpoint.md
@@ -31,7 +31,8 @@ A flat `ProjectedObject[]` of the scope.
 | Param | Notes |
 |-------|-------|
 | `categoryPath` | Repeatable. Objects whose `category_names` contain every segment (`@>`). |
-| `uncategorizedOnly` | `true` → only objects with no `object_categories` row or empty `category_names`. |
+| `uncategorizedOnly` | `true` → only objects with no `object_categories` row or empty `category_names` (API clients; the web uses `other` at the root). |
+| `other` | `true` (one category type) → the [Other category](category-other.md) of `categoryPath`: objects in none of its shown children; at the root also the uncategorized ones. Wins over `uncategorizedOnly`. |
 | `tags` | Repeatable `category:value`, AND. |
 | `rating` | `6` \| `8` \| `10` legacy threshold (see below). |
 | `limit` | Default 20, max 50. |
@@ -57,11 +58,11 @@ Grouped previews for an intermediate category node.
 - **`totalObjects`:** always the live `COUNT(DISTINCT object_id)` over the scope ∩ `[...lineage, section]`, with the same filters, with or without filters active. It equals the length of the fully paginated `shop-objects` list for `categoryPath = [...lineage, section]` with the same filters.
 - **Empty sections:** a section whose count is 0 is omitted. A section never opens an empty leaf.
 - **Previews:** up to 3 objects per section (`SHOP_SECTION_OBJECTS_PER_CATEGORY`), ordered `weight DESC NULLS LAST, object_id ASC`.
-- **Response:** `{ sections: { categoryName, items, totalObjects }[], cursor, hasMore }`.
+- **Response:** `{ sections: { categoryName, items, totalObjects }[], cursor, hasMore, other }`. `other` (last page only, else null): the [Other](category-other.md) section, objects of the lineage in none of the sections (at the root also uncategorized ones), top 3 by weight and its count.
 
 ## `GET /query/v1/users/:name/shop/filters`
 
-- Tag category facets over the scope under `categoryPath` (or `uncategorizedOnly`).
+- Tag category facets over the scope under `categoryPath` (or its `other` category, or `uncategorizedOnly`).
 - Optional `tags` (AND) and `rating` narrow the facet counts.
 - Rating thresholds are static: `[10, 8, 6]`.
 
@@ -80,6 +81,6 @@ Grouped previews for an intermediate category node.
 - `ObjectViewService` with `USER_FAVORITES_CARD_UPDATE_TYPES`, then `ObjectProjectionService.batchProject`.
 - Optional `country` + GeoIP build [affiliate links](affiliate-links.md).
 
-**Client:** the profile Favorites tab (`apps/web`) loads these routes for the active type: sections for non-leaf browsing without filters, `shop-objects` for leaves, Uncategorized and any filtered view, and `shop/filters` for the right column.
+**Client:** the profile Favorites tab (`apps/web`) loads these routes for the active type: sections for non-leaf browsing without filters, `shop-objects` for leaves, the Other category and any filtered view, and `shop/filters` for the right column.
 
 **See also:** [categories.md](categories.md), [object-categories.md](../../chain-indexer/spec/object-categories.md).

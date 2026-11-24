@@ -59,13 +59,15 @@ export class ObjectCategoriesRepository {
 
   /**
    * Flat page of scope objects under `categoryPath` (or uncategorized), ordered by
-   * `weight DESC NULLS LAST, object_id ASC` with a keyset cursor.
+   * `weight DESC NULLS LAST, object_id ASC` with a keyset cursor. `excludedCategoryNames` lists
+   * the virtual Other category: objects under the path in none of these names.
    */
   async findObjectIdsByScope(
     params: {
       scope: UserFavoritesScope;
       categoryPath: readonly string[];
       uncategorizedOnly: boolean;
+      excludedCategoryNames?: readonly string[];
       limit: number;
       cursor: WeightObjectCursorPayload | null;
     } & ScopeObjectFilters,
@@ -73,7 +75,11 @@ export class ObjectCategoriesRepository {
     if (isEmptyUserFavoritesScope(params.scope) || params.limit <= 0) {
       return { rows: [], hasMore: false };
     }
-    const categoryFilter = categoryMembershipFilter(params.categoryPath, params.uncategorizedOnly);
+    const categoryFilter = categoryMembershipFilter(
+      params.categoryPath,
+      params.uncategorizedOnly,
+      params.excludedCategoryNames,
+    );
     const objectFilter = objectFilterClause(sql`s.object_id`, params.tags ?? [], params.rating ?? null);
     const take = params.limit + 1;
 
@@ -219,6 +225,40 @@ export class ObjectCategoriesRepository {
   }
 
   /**
+   * Scope units under `parentPath` carrying at least one of `categoryNames` (a unit counts once).
+   * With the level total this gives the virtual Other category: units in none of the shown names.
+   * @see docs/apps/query-api/spec/categories.md
+   */
+  async countUnitsInAnyCategory(params: {
+    scope: CategoryCountScope;
+    parentPath: readonly string[];
+    categoryNames: readonly string[];
+  }): Promise<number> {
+    const ctes = categoryScopeCtes(params.scope);
+    if (ctes == null || params.categoryNames.length === 0) {
+      return 0;
+    }
+    const lineageFilter =
+      params.parentPath.length === 0
+        ? sql`TRUE`
+        : sql`cat.category_names @> ${textArraySql(params.parentPath)}`;
+    try {
+      const result = await sql<{ unit_count: number | string }>`
+        WITH ${ctes}
+        SELECT COUNT(DISTINCT s.unit_key)::int AS unit_count
+        FROM category_scope s
+        INNER JOIN object_categories cat ON cat.object_id = s.object_id
+        WHERE ${lineageFilter}
+          AND cat.category_names && ${textArraySql(params.categoryNames)}
+      `.execute(this.db);
+      return Number(result.rows[0]?.unit_count ?? 0);
+    } catch (error) {
+      this.logger.error(`countUnitsInAnyCategory failed: ${errorMessage(error)}`);
+      return 0;
+    }
+  }
+
+  /**
    * Live counts of scope units under `parentPath` carrying both names of each pair
    * (`first` → `second` → count). Only non-zero pairs are present.
    */
@@ -295,18 +335,26 @@ export class ObjectCategoriesRepository {
     }
   }
 
-  /** Tag facet rows for scope objects under `categoryPath`, narrowed by active tags/rating. */
+  /**
+   * Tag facet rows for scope objects under `categoryPath` (Other: minus `excludedCategoryNames`),
+   * narrowed by active tags/rating.
+   */
   async getTagCategoriesByScope(
     params: {
       scope: UserFavoritesScope;
       categoryPath: readonly string[];
       uncategorizedOnly: boolean;
+      excludedCategoryNames?: readonly string[];
     } & ScopeObjectFilters,
   ): Promise<UserFavoritesTagCategoryRow[]> {
     if (isEmptyUserFavoritesScope(params.scope)) {
       return [];
     }
-    const categoryFilter = categoryMembershipFilter(params.categoryPath, params.uncategorizedOnly);
+    const categoryFilter = categoryMembershipFilter(
+      params.categoryPath,
+      params.uncategorizedOnly,
+      params.excludedCategoryNames,
+    );
     const objectFilter = objectFilterClause(sql`s.object_id`, params.tags ?? [], params.rating ?? null);
 
     try {

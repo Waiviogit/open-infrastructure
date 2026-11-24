@@ -56,10 +56,13 @@ export class GetDiscoverCategoriesEndpoint {
       lineage,
       excluded: [],
       includeHasChildren: true,
+      // The type root is the `All` feed (no Other there).
+      includeOther: lineage.length > 0,
     });
     const response: DiscoverCategoriesResponseDto = {
       items: nav.items,
       show_other: nav.show_other,
+      other_count: nav.other_count,
     };
 
     if (cacheable) {

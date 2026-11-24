@@ -43,15 +43,24 @@ describe('profile-shop-filters-url', () => {
     expect(isUserProfileFavoritesTab('/@alice/recipe')).toBe(false);
   });
 
-  it('buildShopListScopeKey encodes type, path, uncategorized, and filters', () => {
+  it('buildShopListScopeKey encodes type, path, Other, and filters', () => {
     expect(
       buildShopListScopeKey('recipe', ['Desserts'], false, { tags: ['Cuisine:asian'], rating: 8 }),
     ).toBe('recipe::Desserts::Cuisine:asian::8');
-    expect(buildShopListScopeKey('book', [], true, { tags: [], rating: null })).toBe(
-      'book::__uncategorized__::::',
+    expect(buildShopListScopeKey('book', ['Fiction'], true, { tags: [], rating: null })).toBe(
+      'book::Fiction::other::::',
     );
     expect(buildShopListScopeKey('book', [], false, { tags: [], rating: null })).not.toBe(
       buildShopListScopeKey('product', [], false, { tags: [], rating: null }),
+    );
+  });
+
+  it('buildProfileShopHref keeps the Other category only when asked (filter links)', () => {
+    expect(
+      buildProfileShopHref('/@alice/favorites/book/Fiction', { tags: ['Genre:sf'], rating: null }, true),
+    ).toBe('/@alice/favorites/book/Fiction?other=1&tags=Genre%3Asf');
+    expect(buildProfileShopHref('/@alice/favorites/book/Fiction', { tags: [], rating: null })).toBe(
+      '/@alice/favorites/book/Fiction',
     );
   });
 });

@@ -17,6 +17,7 @@ describe('GetUserShopFiltersEndpoint', () => {
     };
     const endpoint = new GetUserShopFiltersEndpoint(
       resolver as never,
+      { visibleCategoryNames: jest.fn().mockResolvedValue([]) } as never,
       objectCategoriesRepo as never,
     );
 
@@ -38,7 +39,7 @@ describe('GetUserShopFiltersEndpoint', () => {
   });
 
   it('returns null for blank username', async () => {
-    const endpoint = new GetUserShopFiltersEndpoint({} as never, {} as never);
+    const endpoint = new GetUserShopFiltersEndpoint({} as never, {} as never, {} as never);
     expect(
       await endpoint.execute('  ', {
         types: ['product'],
@@ -55,6 +56,7 @@ describe('GetUserShopFiltersEndpoint', () => {
     };
     const endpoint = new GetUserShopFiltersEndpoint(
       { resolve: jest.fn().mockResolvedValue(scope) } as never,
+      { visibleCategoryNames: jest.fn().mockResolvedValue([]) } as never,
       objectCategoriesRepo as never,
     );
 

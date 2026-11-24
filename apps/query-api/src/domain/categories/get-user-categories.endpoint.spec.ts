@@ -14,6 +14,7 @@ function createEndpoint(resolvedScope: UserFavoritesScope = scope) {
     build: jest.fn().mockResolvedValue({
       items: [{ name: 'Desserts', objects_count: 2, has_children: true }],
       show_other: false,
+      other_count: 5,
     }),
   };
   const objectCategoriesRepo = {
@@ -37,6 +38,7 @@ describe('GetUserCategoriesEndpoint', () => {
       items: [{ name: 'Desserts', objects_count: 2, has_children: true }],
       uncategorized_count: 3,
       show_other: false,
+      other_count: 5,
     });
     expect(resolver.resolve).toHaveBeenCalledWith('alice', ['recipe']);
     expect(navigation.build).toHaveBeenCalledWith({
@@ -45,6 +47,7 @@ describe('GetUserCategoriesEndpoint', () => {
       lineage: [],
       excluded: [],
       includeHasChildren: true,
+      includeOther: true,
     });
     expect(objectCategoriesRepo.countUncategorizedObjectIdsByScope).toHaveBeenCalledWith({ scope });
   });
@@ -73,7 +76,7 @@ describe('GetUserCategoriesEndpoint', () => {
     const { endpoint, resolver } = createEndpoint();
     await expect(
       endpoint.execute('  ', { types: ['recipe'], path: [], excluded: [] }),
-    ).resolves.toEqual({ items: [], uncategorized_count: 0, show_other: false });
+    ).resolves.toEqual({ items: [], uncategorized_count: 0, show_other: false, other_count: 0 });
     expect(resolver.resolve).not.toHaveBeenCalled();
   });
 
@@ -81,7 +84,7 @@ describe('GetUserCategoriesEndpoint', () => {
     const { endpoint, navigation } = createEndpoint({ ...scope, types: [] });
     await expect(
       endpoint.execute('alice', { types: ['recipe'], path: [], excluded: [] }),
-    ).resolves.toEqual({ items: [], uncategorized_count: 0, show_other: false });
+    ).resolves.toEqual({ items: [], uncategorized_count: 0, show_other: false, other_count: 0 });
     expect(navigation.build).not.toHaveBeenCalled();
   });
 });

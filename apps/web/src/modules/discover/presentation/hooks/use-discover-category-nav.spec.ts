@@ -18,8 +18,9 @@ const fetchMock = jest.mocked(fetchDiscoverCategories);
 const LEVEL = {
   items: [{ name: 'Audio', objects_count: 5, has_children: false }],
   show_other: false,
+  other_count: 2,
 };
-const EMPTY = { items: [], show_other: false };
+const EMPTY = { items: [], show_other: false, other_count: 0 };
 
 describe('useDiscoverCategoryNav', () => {
   beforeEach(() => fetchMock.mockReset());
@@ -42,6 +43,7 @@ describe('useDiscoverCategoryNav', () => {
       status: 'ready',
       items: LEVEL.items,
       navLineage: ['Electronics'],
+      otherCount: 2,
     });
     expect(fetchMock).toHaveBeenCalledWith(
       'product',
@@ -73,6 +75,7 @@ describe('useDiscoverCategoryNav', () => {
       status: 'ready',
       items: LEVEL.items,
       navLineage: ['Electronics'],
+      otherCount: 2,
     });
   });
 
@@ -104,6 +107,7 @@ describe('useDiscoverCategoryNav', () => {
         status: 'ready',
         items: [],
         navLineage: [],
+        otherCount: 0,
       }),
     );
     expect(fetchMock).not.toHaveBeenCalled();

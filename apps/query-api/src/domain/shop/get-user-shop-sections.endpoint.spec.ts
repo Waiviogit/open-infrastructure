@@ -32,6 +32,10 @@ function createEndpoint(params: {
   rows: ObjectCategoriesRelatedRow[];
   liveCounts: Record<string, number>;
   previews?: Record<string, string[]>;
+  /** Units of the level in a shown child (default: all, so there is no Other). */
+  covered?: number;
+  /** Other preview ids. */
+  other?: string[];
 }) {
   const objectCategoriesRepo = {
     countCategoryLevel: jest
@@ -46,6 +50,11 @@ function createEndpoint(params: {
         new Map(categoryNames.map((n) => [n, params.previews?.[n] ?? []])),
       ),
     countCategoryPairsByScope: jest.fn().mockResolvedValue(new Map()),
+    countUnitsInAnyCategory: jest.fn().mockResolvedValue(params.covered ?? LEVEL_TOTAL),
+    findObjectIdsByScope: jest.fn().mockResolvedValue({
+      rows: (params.other ?? []).map((id) => ({ object_id: id, weight: null })),
+      hasMore: false,
+    }),
   };
   const relatedRepo = { findByUserCategoryScope: jest.fn().mockResolvedValue(params.rows) };
   const resolver = { resolve: jest.fn().mockResolvedValue(scope) };
@@ -53,7 +62,7 @@ function createEndpoint(params: {
     relatedRepo as never,
     objectCategoriesRepo as never,
   );
-  const allPreviewIds = Object.values(params.previews ?? {}).flat();
+  const allPreviewIds = [...Object.values(params.previews ?? {}).flat(), ...(params.other ?? [])];
   const endpoint = new GetUserShopSectionsEndpoint(
     resolver as never,
     navigation,
@@ -224,7 +233,7 @@ describe('GetUserShopSectionsEndpoint', () => {
       undefined,
     );
 
-    expect(result).toEqual({ sections: [], cursor: null, hasMore: false });
+    expect(result).toEqual({ sections: [], cursor: null, hasMore: false, other: null });
   });
 
   it('returns no sections for a type without categories or several types', async () => {
@@ -232,10 +241,49 @@ describe('GetUserShopSectionsEndpoint', () => {
 
     await expect(
       endpoint.execute('alice', { ...query, types: ['restaurant'] }, 'en-US', undefined, undefined),
-    ).resolves.toEqual({ sections: [], cursor: null, hasMore: false });
+    ).resolves.toEqual({ sections: [], cursor: null, hasMore: false, other: null });
     await expect(
       endpoint.execute('alice', { ...query, types: ['book', 'product'] }, 'en-US', undefined, undefined),
-    ).resolves.toEqual({ sections: [], cursor: null, hasMore: false });
+    ).resolves.toEqual({ sections: [], cursor: null, hasMore: false, other: null });
     expect(resolver.resolve).not.toHaveBeenCalled();
+  });
+
+  it('adds the Other section on the last page: objects in none of the child categories', async () => {
+    const { endpoint, objectCategoriesRepo } = createEndpoint({
+      rows: ROOT_ROWS,
+      liveCounts: { Desserts: 5, 'Comfort Food': 4, Soups: 3 },
+      covered: LEVEL_TOTAL - 7,
+      other: ['o1', 'o2'],
+    });
+
+    const first = await endpoint.execute(
+      'alice',
+      { ...query, sectionLimit: 2 },
+      'en-US',
+      undefined,
+      undefined,
+    );
+    const last = await endpoint.execute(
+      'alice',
+      { ...query, sectionLimit: 2, cursor: first?.cursor ?? undefined },
+      'en-US',
+      undefined,
+      undefined,
+    );
+
+    expect(first?.other).toBeNull();
+    expect(last?.other).toEqual({
+      items: [{ object_id: 'o1' }, { object_id: 'o2' }],
+      totalObjects: 7,
+    });
+    expect(objectCategoriesRepo.findObjectIdsByScope).toHaveBeenCalledTimes(1);
+    expect(objectCategoriesRepo.findObjectIdsByScope).toHaveBeenCalledWith(
+      expect.objectContaining({
+        categoryPath: [],
+        uncategorizedOnly: false,
+        excludedCategoryNames: ['Desserts', 'Comfort Food', 'Soups'],
+        cursor: null,
+      }),
+    );
   });
 });

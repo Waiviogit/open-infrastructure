@@ -15,7 +15,8 @@ import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/co
 export type LoadMoreFavoritesObjectsParams = {
   objectType: string;
   categoryPath: string[];
-  uncategorizedOnly: boolean;
+  /** The Other category of `categoryPath`. */
+  categoryOther: boolean;
   tags: string[];
   rating: number | null;
   cursor: string;
@@ -47,8 +48,8 @@ export async function loadMoreFavoritesObjectsAction(
       accountName,
       {
         objectType: params.objectType,
-        categoryPath: params.uncategorizedOnly ? [] : params.categoryPath,
-        uncategorizedOnly: params.uncategorizedOnly ? true : undefined,
+        categoryPath: params.categoryPath,
+        categoryOther: params.categoryOther ? true : undefined,
         tags: params.tags,
         rating: params.rating,
         cursor: params.cursor,

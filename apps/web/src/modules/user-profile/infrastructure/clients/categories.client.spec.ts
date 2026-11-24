@@ -23,6 +23,7 @@ const NAV = {
   items: [{ name: 'Comfort Food', objects_count: 4, has_children: false }],
   uncategorized_count: 2,
   show_other: false,
+  other_count: 3,
 };
 
 function mockFetchJson(body: unknown): void {

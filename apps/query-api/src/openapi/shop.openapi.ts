@@ -60,6 +60,10 @@ registry.registerPath({
       uncategorizedOnly: z.union([z.boolean(), z.string()]).optional().openapi({
         description: 'When true, only objects with no category_names.',
       }),
+      other: z.union([z.boolean(), z.string()]).optional().openapi({
+        description:
+          'When true (one category type), only objects of categoryPath in none of its shown child categories (Other; at the root also uncategorized ones).',
+      }),
       tags: z.union([z.string(), z.array(z.string())]).optional().openapi({
         description: 'Tag filters as category:value, combined with AND.',
       }),
@@ -118,7 +122,10 @@ registry.registerPath({
     }),
   },
   responses: {
-    200: { description: 'Sections `{ sections, cursor, hasMore }` with optional affiliateLinks on items.' },
+    200: {
+      description:
+        'Sections `{ sections, cursor, hasMore, other }` with optional affiliateLinks on items. `other` (last page only): `{ items, totalObjects }` of the objects in none of the child categories (at the root also uncategorized ones), or null.',
+    },
     400: badRequestResponse,
   },
 });
@@ -140,6 +147,7 @@ registry.registerPath({
       }),
       categoryPath: z.union([z.string(), z.array(z.string())]).optional(),
       uncategorizedOnly: z.union([z.boolean(), z.string()]).optional(),
+      other: z.union([z.boolean(), z.string()]).optional(),
       tags: z.union([z.string(), z.array(z.string())]).optional(),
       rating: z.coerce.number().optional(),
     }),

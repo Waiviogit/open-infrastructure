@@ -8,6 +8,7 @@ const EMPTY_RESPONSE: UserCategoriesResponse = {
   items: [],
   uncategorized_count: 0,
   show_other: false,
+  other_count: 0,
 };
 
 @Injectable()
@@ -41,6 +42,7 @@ export class GetUserCategoriesEndpoint {
         lineage,
         excluded: query.excluded ?? [],
         includeHasChildren: true,
+        includeOther: true,
       }),
       isRoot
         ? this.objectCategoriesRepo.countUncategorizedObjectIdsByScope({ scope })
@@ -51,6 +53,7 @@ export class GetUserCategoriesEndpoint {
       items: nav.items,
       uncategorized_count: uncategorizedCount,
       show_other: nav.show_other,
+      other_count: nav.other_count,
     };
   }
 }

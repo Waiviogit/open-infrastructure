@@ -16,8 +16,11 @@ export type FetchShopObjectsParams = FavoritesListFilterParams & {
   /** One Favorites object type (query-api `types`, exactly one value). */
   objectType: string;
   categoryPath: readonly string[];
-  /** When true, only objects with no category tags (query-api `uncategorizedOnly`). */
-  uncategorizedOnly?: boolean;
+  /**
+   * The Other category of `categoryPath` (query-api `other`): objects in none of its shown child
+   * categories; at the root also the uncategorized ones.
+   */
+  categoryOther?: boolean;
   limit?: number;
   cursor?: string | null;
 };
@@ -64,8 +67,8 @@ function buildShopObjectsSearchParams(params: FetchShopObjectsParams): string {
   const sp = new URLSearchParams();
   sp.append('types', params.objectType.trim());
   appendNonEmpty(sp, 'categoryPath', params.categoryPath);
-  if (params.uncategorizedOnly === true) {
-    sp.set('uncategorizedOnly', 'true');
+  if (params.categoryOther === true) {
+    sp.set('other', 'true');
   }
   appendFilterParams(sp, params);
   if (params.limit != null) {

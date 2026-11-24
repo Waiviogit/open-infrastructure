@@ -49,6 +49,8 @@ function createService(params: {
   total: number;
   /** `first>second` → count */
   pairCounts?: Record<string, number>;
+  /** Units of the level in any shown name (`countUnitsInAnyCategory`). */
+  covered?: number;
 }) {
   const objectCategoriesRepo = {
     countCategoryLevel: jest
@@ -71,6 +73,7 @@ function createService(params: {
         }
         return result;
       }),
+    countUnitsInAnyCategory: jest.fn().mockResolvedValue(params.covered ?? 0),
   };
   const relatedRepo = {
     findByUserCategoryScope: jest.fn().mockResolvedValue(params.rows),
@@ -403,5 +406,55 @@ describe('CategoryNavigationService', () => {
     expect(objectCategoriesRepo.countCategoryLevel).toHaveBeenCalledWith(
       expect.objectContaining({ scope: filtered }),
     );
+  });
+
+  describe('other_count (the virtual Other category)', () => {
+    it('is the level total minus the units in any shown child', async () => {
+      const { service, objectCategoriesRepo } = createService({
+        rows: LINEAGE_ROWS,
+        liveCounts: { Stews: 5, Breads: 3, Cakes: 1 },
+        total: 12,
+        covered: 7,
+      });
+
+      const nav = await build(service, { lineage: DEEP, includeOther: true });
+
+      expect(nav.items.map((item) => item.name)).toEqual(['Stews', 'Breads']);
+      expect(nav.other_count).toBe(5);
+      expect(objectCategoriesRepo.countUnitsInAnyCategory).toHaveBeenCalledWith({
+        scope: userScope,
+        parentPath: DEEP,
+        categoryNames: ['Stews', 'Breads'],
+      });
+    });
+
+    it('is 0 without includeOther or when the level shows no category', async () => {
+      const shown = createService({
+        rows: LINEAGE_ROWS,
+        liveCounts: { Stews: 5 },
+        total: 12,
+        covered: 5,
+      });
+      expect((await build(shown.service, { lineage: DEEP })).other_count).toBe(0);
+      expect(shown.objectCategoriesRepo.countUnitsInAnyCategory).not.toHaveBeenCalled();
+
+      const leaf = createService({ rows: LINEAGE_ROWS, liveCounts: {}, total: 12 });
+      const nav = await build(leaf.service, { lineage: DEEP, includeOther: true });
+      expect(nav.items).toEqual([]);
+      expect(nav.other_count).toBe(0);
+      expect(leaf.objectCategoriesRepo.countUnitsInAnyCategory).not.toHaveBeenCalled();
+    });
+
+    it('lists the shown names for an Other listing', async () => {
+      const { service } = createService({
+        rows: LINEAGE_ROWS,
+        liveCounts: { Stews: 5, Breads: 3, Cakes: 1 },
+        total: 12,
+      });
+
+      await expect(
+        service.visibleCategoryNames({ scope: userScope, objectType: 'recipe', lineage: DEEP }),
+      ).resolves.toEqual(['Stews', 'Breads']);
+    });
   });
 });

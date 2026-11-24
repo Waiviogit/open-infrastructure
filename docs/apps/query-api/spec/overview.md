@@ -6,7 +6,7 @@ type: overview
 status: active
 scope: query-api
 tags: [query-api, overview]
-updated_at: 2026-11-12
+updated_at: 2026-11-24
 related:
   - docs/README.md
   - docs/spec/objects-domain.md
@@ -36,6 +36,7 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [User account authority lists](user-account-auths-endpoint.md) | `GET .../:name/authority-grantors`, `/authority-grantees` |
 | [Categories](categories.md) | `GET /query/v1/users/:name/categories` (one category type, live counts, display rules) |
 | [Discover categories](discover-categories.md) | `GET /query/v1/discover/categories`; `category_path` on Discover objects and facets |
+| [The Other category](category-other.md) | Objects of a category level in none of its shown children: `other_count`, `other`, the last-page block |
 | [Category objects feed](category-objects.md) | `GET /query/v1/categories/objects` |
 | [Favorites lists, sections, filters](shop-feed-endpoints.md) | `GET .../shop-objects`, `GET .../shop-sections`, `GET .../shop/filters` |
 | [User favorites + Favorites scope](users-favorites-endpoint.md) | `GET .../favorites/types`, `GET .../favorites`, `POST .../favorites/map` |

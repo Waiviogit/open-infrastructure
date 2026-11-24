@@ -42,7 +42,7 @@ Category navigation (sidebar tree) for one category object type. One service, [`
 | `path` | Repeatable; ancestors before `name` when drilling down. |
 | `excluded` | Repeatable; names to hide from the sibling list. |
 
-Response: `{ items: { name, objects_count, has_children }[], uncategorized_count, show_other }`.
+Response: `{ items: { name, objects_count, has_children }[], uncategorized_count, show_other, other_count }` (`other_count`: [The Other category](category-other.md)).
 
 ## Display rules (client)
 
@@ -50,7 +50,7 @@ Applied at **every level**, Favorites and Discover alike (`passesCategoryDisplay
 
 1. A category with **fewer than 3** units (`CATEGORY_MIN_OBJECTS`) is not shown.
 2. A category covering **more than 60%** (`CATEGORY_MAX_SHARE`) of the level's units is not shown.
-3. Objects outside every shown category stay reachable from the level itself (`All` / the type).
+3. Objects outside every shown category stay reachable: from the level itself (`All` / the type) and from the level's [Other category](category-other.md).
 
 The **level total** = scope units whose `category_names` contain the lineage (at the root: every scope unit, uncategorized included), after the scope's filters. These rules replaced the former level-2 thresholds (share in 1%–30%, more than 10 objects); the root had none before.
 
@@ -64,9 +64,10 @@ Let `lineage = [...path, name]` (empty at the root).
 - **Hidden children:** a candidate whose count fails the display rules (including 0) is not returned, even when it co-occurs pairwise with every ancestor.
 - **Order:** by live count, descending.
 - **`has_children`** is true only when drilling into the child would list at least one item: some grandchild candidate whose live pair count with the child passes the display rules against the child's own count. One grouped pair-count query per request.
-- **`uncategorized_count`** (user endpoint only):
+- **`other_count`**: units of the level in none of `items` ([The Other category](category-other.md)); at the user root it includes the uncategorized objects.
+- **`uncategorized_count`** (user endpoint only, kept for API clients; the web uses the root Other instead):
   - at the **root**, the live count of scope objects with no `object_categories` row or empty `category_names` (equals the `shop-objects?uncategorizedOnly=true` list length);
-  - **below the root, always `0`**. Uncategorized is a type-level node, not a child of a category.
+  - **below the root, always `0`**.
 - **No precomputed numbers:** the precomputed `objects_count` and the `__uncategorized__` sentinel row are never returned.
 
 Implementation:
@@ -95,7 +96,7 @@ A request runs at most these grouped queries over the scope CTE (`category_scope
 
 1. level total and candidate counts (two parallel queries);
 2. pair counts for `has_children`;
-3. the uncategorized count (user root only);
+3. the uncategorized count (user root only) and the Other count (units in any shown name);
 4. near-duplicate pair counts (type scope, level ≥ 2).
 
 The lineage filter uses `category_names @> …`, which the GIN index `idx_object_categories_category_names_gin` can serve. The user endpoint has no Redis cache; the Discover endpoint caches unfiltered levels ([discover-categories.md](discover-categories.md)).

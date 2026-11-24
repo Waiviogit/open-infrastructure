@@ -17,6 +17,8 @@ export type DiscoverMobileHeaderProps = {
   box: DiscoverBox | null;
   /** Category lineage, root first (kept by every Discover link and fetch). */
   categoryPath: string[];
+  /** The Other category of `categoryPath` (kept with it by every link and fetch). */
+  categoryOther: boolean;
   map: DiscoverMapView | null;
   showMap: boolean;
   /** False in category block mode (blocks are ordered by count, not by the sort). */
@@ -37,6 +39,7 @@ export function DiscoverMobileHeader({
   sort,
   box,
   categoryPath,
+  categoryOther,
   map,
   showMap,
   showSort: sortAllowed = true,
@@ -86,6 +89,7 @@ export function DiscoverMobileHeader({
             sort={sort}
             box={box}
             categoryPath={categoryPath}
+            categoryOther={categoryOther}
             map={map}
           />
         </div>

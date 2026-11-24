@@ -11,9 +11,11 @@ import {
   CategoryNavList,
   CategoryNavPendingSkeleton,
   CategoryNavUpLinks,
+  sameCategoryLineage,
   type CategoryCrumb,
   type CategoryHrefFor,
   type CategoryNavLinkProps,
+  type CategoryNavOtherRow,
 } from '@/shared/presentation/category-nav';
 import { DrawerRegion } from '@/shared/presentation/layout';
 
@@ -28,14 +30,41 @@ export function DiscoverCategoryLink(props: CategoryNavLinkProps) {
 const RAIL_CARD_CLASS =
   'relative z-0 min-w-0 w-full self-start rounded-card border border-border bg-surface/60 p-card-padding';
 
+/** The Other category of a level, for the rail and the drawer. */
+export type DiscoverCategoryOtherNav = {
+  /** Href of the Other category of a lineage. */
+  hrefFor: CategoryHrefFor;
+  /** The page shows the Other category of the active lineage (optimistic). */
+  active: boolean;
+};
+
+/** The level's Other row: shown when the level lists categories and has groups outside them. */
+function otherRow(
+  nav: DiscoverCategoryNavState,
+  other: DiscoverCategoryOtherNav,
+  activeLineage: readonly string[],
+): CategoryNavOtherRow | null {
+  if (nav.status !== 'ready' || nav.items.length === 0 || nav.otherCount <= 0) {
+    return null;
+  }
+  return {
+    count: nav.otherCount,
+    href: other.hrefFor(nav.navLineage),
+    active: other.active && sameCategoryLineage(nav.navLineage, activeLineage),
+  };
+}
+
 export type DiscoverCategoryRailProps = {
   objectType: string;
   nav: DiscoverCategoryNavState;
   /** Lineage of the URL (drives ← Up / All categories). */
   categoryPath: readonly string[];
+  /** The URL shows the Other category of `categoryPath` (← Up goes to the category). */
+  categoryOther: boolean;
   /** Optimistic lineage (highlights the clicked category before the URL settles). */
   activeLineage: readonly string[];
   hrefFor: CategoryHrefFor;
+  other: DiscoverCategoryOtherNav;
 };
 
 /** Desktop left rail of Discover: the active type's category tree, counted in groups. */
@@ -43,10 +72,14 @@ export function DiscoverCategoryRail({
   objectType,
   nav,
   categoryPath,
+  categoryOther,
   activeLineage,
   hrefFor,
+  other,
 }: DiscoverCategoryRailProps) {
   const { t } = useI18n();
+  // Other is one level below its category, like a leaf: Up goes to the category itself.
+  const upLineage = categoryOther ? categoryPath : categoryPath.slice(0, -1);
   return (
     <nav aria-label={t('discover_categories_aria')} className={RAIL_CARD_CLASS}>
       <p className="mb-2 truncate font-weight-label text-body-sm text-fg">
@@ -54,7 +87,7 @@ export function DiscoverCategoryRail({
       </p>
       {categoryPath.length > 0 ? (
         <CategoryNavUpLinks
-          upHref={hrefFor(categoryPath.slice(0, -1))}
+          upHref={hrefFor(upLineage)}
           allHref={hrefFor([])}
           NavLink={DiscoverCategoryLink}
         />
@@ -71,6 +104,7 @@ export function DiscoverCategoryRail({
           hrefFor={hrefFor}
           NavLink={DiscoverCategoryLink}
           showCounts
+          other={otherRow(nav, other, activeLineage)}
         />
       )}
     </nav>
@@ -79,16 +113,25 @@ export function DiscoverCategoryRail({
 
 export type DiscoverCategoryBreadcrumbsProps = {
   categoryPath: readonly string[];
+  /** Adds the `Other` crumb after the lineage. */
+  categoryOther: boolean;
   hrefFor: CategoryHrefFor;
+  /** Href of the Other category of `categoryPath`. */
+  otherHref: string;
   /** Below `lg` the current crumb opens the category drawer. */
   drawer: { open: boolean; onOpen: () => void } | null;
   trailing?: ReactNode;
 };
 
-/** `All › Category › Subcategory`; `All` is the type root (every object of the type). */
+/**
+ * `All › Category › Subcategory` (`› Other` for the Other category); `All` is the type root
+ * (every object of the type).
+ */
 export function DiscoverCategoryBreadcrumbs({
   categoryPath,
+  categoryOther,
   hrefFor,
+  otherHref,
   drawer,
   trailing,
 }: DiscoverCategoryBreadcrumbsProps) {
@@ -100,6 +143,7 @@ export function DiscoverCategoryBreadcrumbs({
       label: segment,
       href: hrefFor(categoryPath.slice(0, index + 1)),
     })),
+    ...(categoryOther ? [{ key: 'other', label: t('category_other'), href: otherHref }] : []),
   ];
   return (
     <CategoryBreadcrumbs
@@ -122,6 +166,7 @@ export type DiscoverCategoryDrawerProps = {
   nav: DiscoverCategoryNavState;
   activeLineage: readonly string[];
   hrefFor: CategoryHrefFor;
+  other: DiscoverCategoryOtherNav;
 };
 
 /**
@@ -135,6 +180,7 @@ export function DiscoverCategoryDrawer({
   nav,
   activeLineage,
   hrefFor,
+  other,
 }: DiscoverCategoryDrawerProps) {
   const { t } = useI18n();
   return (
@@ -162,6 +208,7 @@ export function DiscoverCategoryDrawer({
             NavLink={DiscoverCategoryLink}
             onPick={onClose}
             showCounts
+            other={otherRow(nav, other, activeLineage)}
           />
         )}
       </nav>

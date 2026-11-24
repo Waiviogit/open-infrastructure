@@ -25,6 +25,10 @@ const categoriesResponseSchema = registry.register(
       description: 'Live count of scope objects without categories at the root; always 0 below the root.',
     }),
     show_other: z.boolean(),
+    other_count: z.number().int().nonnegative().openapi({
+      description:
+        'Objects of the level in none of `items` (the Other category); at the root also the uncategorized ones; 0 when no item is listed.',
+    }),
   }),
 );
 

@@ -6,7 +6,7 @@ import { env } from '@/config/env';
 
 /** Repeated params forwarded as-is (trimmed, empty values dropped). */
 const REPEATED_PARAMS = ['tags', 'category_path'] as const;
-const SINGLE_PARAMS = ['q', 'box'] as const;
+const SINGLE_PARAMS = ['q', 'box', 'other'] as const;
 
 /**
  * BFF proxy for a Discover query-api route keyed by one object type (`tag-categories`,

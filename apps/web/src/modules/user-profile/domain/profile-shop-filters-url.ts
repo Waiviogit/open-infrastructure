@@ -47,11 +47,19 @@ export function parseProfileShopFilters(
   return { tags, rating };
 }
 
+/**
+ * Favorites URL with the filters. `other` keeps the Other category of the path's lineage
+ * (`?other=1`): filter changes keep it, category links drop it.
+ */
 export function buildProfileShopHref(
   pathname: string,
   filters: ProfileShopFiltersState,
+  other = false,
 ): string {
   const sp = new URLSearchParams();
+  if (other) {
+    sp.set('other', '1');
+  }
   for (const tag of filters.tags) {
     const trimmed = tag.trim();
     if (trimmed) {
@@ -103,9 +111,9 @@ export function profileShopFiltersActive(filters: ProfileShopFiltersState): bool
 export function buildShopListScopeKey(
   objectType: string,
   lineageSegments: readonly string[],
-  uncategorizedOnly: boolean,
+  categoryOther: boolean,
   filters: ProfileShopFiltersState,
 ): string {
-  const pathPart = uncategorizedOnly ? '__uncategorized__' : lineageSegments.join('/');
+  const pathPart = `${lineageSegments.join('/')}${categoryOther ? '::other' : ''}`;
   return `${objectType}::${pathPart}::${filters.tags.join('|')}::${filters.rating ?? ''}`;
 }

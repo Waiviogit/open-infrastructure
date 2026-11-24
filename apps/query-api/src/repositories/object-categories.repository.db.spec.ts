@@ -295,6 +295,40 @@ describeDb('Favorites scope and live category counts (test Postgres)', () => {
     });
   });
 
+  it('Other: the path minus the shown names; at the root it keeps uncategorized objects', async () => {
+    await withRollback(db, async (trx) => {
+      await seed(trx);
+      const repo = categoriesRepo(trx);
+      const page = (categoryPath: string[], excludedCategoryNames: string[]) =>
+        repo.findObjectIdsByScope({
+          scope: RECIPE_SCOPE,
+          categoryPath,
+          uncategorizedOnly: false,
+          excludedCategoryNames,
+          limit: 20,
+          cursor: null,
+        });
+
+      const rootOther = await page([], ['A']);
+      const underA = await page(['A'], ['B']);
+      const covered = await repo.countUnitsInAnyCategory({
+        scope: userScope(),
+        parentPath: [],
+        categoryNames: ['A'],
+      });
+      const level = await repo.countCategoryLevel({
+        scope: userScope(),
+        parentPath: [],
+        categoryNames: ['A'],
+      });
+
+      expect(rootOther.rows.map((r) => r.object_id)).toEqual(['r-bx', 'r-unc', 'r-unc2']);
+      expect(underA.rows.map((r) => r.object_id)).toEqual(['r-ax']);
+      // Other count = level total − units in a shown name = the Other list.
+      expect(level.total - covered).toBe(rootOther.rows.length);
+    });
+  });
+
   it('favorites/types counts per type over the same scope', async () => {
     await withRollback(db, async (trx) => {
       await seed(trx);
@@ -412,6 +446,19 @@ describeDb('Favorites scope and live category counts (test Postgres)', () => {
         expect(underAudio.counts.get('Headphones')).toBe(2);
         expect(sonyOnly.total).toBe(2);
         expect(Object.fromEntries(sonyOnly.counts)).toEqual({ Headphones: 1, Speakers: 1 });
+      });
+    });
+
+    it('counts groups in any of several names once', async () => {
+      await withRollback(db, async (trx) => {
+        await seedType(trx);
+        const repo = categoriesRepo(trx);
+        const count = (parentPath: string[], categoryNames: string[]) =>
+          repo.countUnitsInAnyCategory({ scope: typeScope(), parentPath, categoryNames });
+
+        await expect(count([], ['Headphones', 'Speakers'])).resolves.toBe(3);
+        await expect(count(['Audio'], ['Headphones'])).resolves.toBe(2);
+        await expect(count([], [])).resolves.toBe(0);
       });
     });
 

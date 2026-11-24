@@ -913,11 +913,12 @@ export function registerUserTools(server: McpServer, deps: McpToolDeps): void {
       inputSchema: shopFiltersQuerySchema.extend(accountField),
     },
     async (args) => {
-      const { account, types, categoryPath, uncategorizedOnly, tags, rating } = args;
+      const { account, types, categoryPath, uncategorizedOnly, other, tags, rating } = args;
       const result = await deps.getUserShopFilters.execute(account, {
         types,
         categoryPath,
         uncategorizedOnly,
+        other,
         tags,
         rating,
       });
@@ -935,10 +936,11 @@ export function registerUserTools(server: McpServer, deps: McpToolDeps): void {
     },
     async (args) => {
       const ctx = pickMcpContext(args);
-      const { account, types, categoryPath, uncategorizedOnly, limit, cursor, tags, rating, country } = args;
+      const { account, types, categoryPath, uncategorizedOnly, other, limit, cursor, tags, rating, country } =
+        args;
       const result = await deps.getUserShopObjects.execute(
         account,
-        { types, categoryPath, uncategorizedOnly, limit, cursor, tags, rating },
+        { types, categoryPath, uncategorizedOnly, other, limit, cursor, tags, rating },
         ctx.locale,
         ctx.governanceObjectIdFromHeader,
         ctx.viewerAccount,

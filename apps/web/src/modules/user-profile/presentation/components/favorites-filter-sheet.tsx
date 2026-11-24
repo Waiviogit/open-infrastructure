@@ -1,11 +1,11 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { MobileFilterButton, MobileFilterSheet, useInstantNavigation } from '@/shared/presentation';
 
-import { parseFavoritesPath } from '../../domain/favorites-path';
+import { parseFavoritesPath, readFavoritesOtherParam } from '../../domain/favorites-path';
 import { buildProfileShopHref } from '../../domain/profile-shop-filters-url';
 import { favoritesTypeHasFilters } from '../../domain/profile-shop-registry';
 import { ProfileFavoritesFiltersFromUrl } from './profile-shop-filters';
@@ -60,6 +60,7 @@ export function FavoritesMobileFilterButton({ objectType }: { objectType: string
 export function FavoritesFilterSheet({ accountName }: { accountName: string }) {
   const sheet = useContext(SheetStateContext);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { navigateInstant } = useInstantNavigation();
   if (!sheet) {
     return null;
@@ -67,7 +68,11 @@ export function FavoritesFilterSheet({ accountName }: { accountName: string }) {
 
   const clearFilters = () => {
     navigateInstant({
-      href: buildProfileShopHref(pathname, { tags: [], rating: null }),
+      href: buildProfileShopHref(
+        pathname,
+        { tags: [], rating: null },
+        readFavoritesOtherParam(searchParams),
+      ),
       method: 'replace',
       scroll: false,
     });

@@ -22,6 +22,8 @@ export type DiscoverMapModalProps = {
   box: DiscoverBox | null;
   /** Category lineage, root first (kept by every Discover link and fetch). */
   categoryPath: string[];
+  /** The Other category of `categoryPath` (kept with it by every link and fetch). */
+  categoryOther: boolean;
   mapView: DiscoverMapView | null;
   onApplyArea: (box: DiscoverBox) => void;
   onViewChange?: (view: DiscoverMapView) => void;
@@ -36,6 +38,7 @@ export function DiscoverMapModal({
   sort,
   box,
   categoryPath,
+  categoryOther,
   mapView,
   onApplyArea,
   onViewChange,
@@ -74,6 +77,7 @@ export function DiscoverMapModal({
           sort={sort}
           box={box}
           categoryPath={categoryPath}
+          categoryOther={categoryOther}
           mapView={mapView}
           onApplyArea={(nextBox) => {
             onApplyArea(nextBox);

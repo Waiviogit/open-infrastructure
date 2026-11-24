@@ -61,6 +61,8 @@ export type UseDiscoverTagCategoriesParams = {
   box: DiscoverBox | null;
   /** Category lineage; facets count only objects in it. */
   categoryPath: string[];
+  /** The Other category of the lineage: facets of its objects only. */
+  categoryOther: boolean;
 };
 
 export function useDiscoverTagCategories({
@@ -69,6 +71,7 @@ export function useDiscoverTagCategories({
   tags,
   box,
   categoryPath,
+  categoryOther,
 }: UseDiscoverTagCategoriesParams) {
   const [data, setData] = useState<DiscoverTagCategoriesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +100,7 @@ export function useDiscoverTagCategories({
         q: q.trim() || undefined,
         box: box ?? undefined,
         categoryPath,
+        categoryOther,
         signal: ac.signal,
       });
       if (!ac.signal.aborted) {
@@ -110,7 +114,7 @@ export function useDiscoverTagCategories({
       }
     })();
     return () => ac.abort();
-  }, [objectType, tags, q, box, categoryPath, registryOrder]);
+  }, [objectType, tags, q, box, categoryPath, categoryOther, registryOrder]);
 
   useEffect(() => {
     if (tags.length === 0 || !data?.categories) {

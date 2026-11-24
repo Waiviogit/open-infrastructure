@@ -19,6 +19,8 @@ export type DiscoverSortSelectProps = {
   box: DiscoverBox | null;
   /** Category lineage, root first (kept by every Discover link and fetch). */
   categoryPath: string[];
+  /** The Other category of `categoryPath` (kept with it by every link and fetch). */
+  categoryOther: boolean;
   map: DiscoverMapView | null;
 };
 
@@ -30,6 +32,7 @@ export function DiscoverSortSelect({
   sort,
   box,
   categoryPath,
+  categoryOther,
   map,
 }: DiscoverSortSelectProps) {
   const { t } = useI18n();
@@ -55,6 +58,7 @@ export function DiscoverSortSelect({
           users: usersMode,
           type: objectType ?? undefined,
           categoryPath,
+          categoryOther,
           q,
           tags,
           sort: next,

@@ -7,7 +7,7 @@ import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/co
 import { getFavoritesTypesQuery } from '../../application/queries/get-favorites.query';
 import { getShopObjectsQuery } from '../../application/queries/get-shop-objects.query';
 import { apiNavContextFromLineage } from '../../domain/category-nav-path';
-import { isUncategorizedLineage } from '../../domain/favorites-path';
+import { resolveFavoritesCategoryView } from '../../domain/favorites-path';
 import {
   buildShopListScopeKey,
   profileShopFiltersActive,
@@ -30,6 +30,8 @@ export type ProfileFavoritesMainContentProps = {
   routeObjectType?: string;
   /** Decoded category segments after the type. */
   lineageSegments?: readonly string[];
+  /** `?other=1`: the Other category of the lineage. */
+  categoryOther?: boolean;
   shopFilters: ProfileShopFiltersState;
 };
 
@@ -45,6 +47,7 @@ export async function ProfileFavoritesMainContent({
   accountName,
   routeObjectType,
   lineageSegments = [],
+  categoryOther = false,
   shopFilters,
 }: ProfileFavoritesMainContentProps) {
   const routeType = routeObjectType?.trim();
@@ -70,26 +73,24 @@ export async function ProfileFavoritesMainContent({
   if (!withCategories && lineageSegments.length > 0) {
     notFound();
   }
-  const uncategorizedOnly = withCategories && isUncategorizedLineage(lineageSegments);
+  const view = resolveFavoritesCategoryView(lineageSegments, withCategories && categoryOther);
   const nav = withCategories
-    ? await getCategoryNav(
-        accountName,
-        objectType,
-        apiNavContextFromLineage(uncategorizedOnly ? [] : lineageSegments),
-      )
+    ? await getCategoryNav(accountName, objectType, apiNavContextFromLineage(view.lineage))
     : null;
 
   const filterButton = favoritesTypeHasFilters(objectType) ? (
     <FavoritesMobileFilterButton objectType={objectType} />
   ) : null;
-  const singleRowToolbar = lineageSegments.length === 0 && !profileShopFiltersActive(shopFilters);
+  const singleRowToolbar =
+    view.lineage.length === 0 && !view.other && !profileShopFiltersActive(shopFilters);
 
   return (
     <>
       <FavoritesBreadcrumbs
         accountName={accountName}
         objectType={objectType}
-        lineage={lineageSegments}
+        lineage={view.lineage}
+        other={view.other}
         filters={shopFilters}
         categoryMenu={withCategories}
         trailing={singleRowToolbar ? filterButton : null}
@@ -101,8 +102,8 @@ export async function ProfileFavoritesMainContent({
         <FavoritesCategoryContent
           accountName={accountName}
           objectType={objectType}
-          lineageSegments={lineageSegments}
-          uncategorizedOnly={uncategorizedOnly}
+          lineageSegments={view.lineage}
+          categoryOther={view.other}
           nav={nav}
           shopFilters={shopFilters}
           viewerUsername={viewerUsername}

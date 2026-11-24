@@ -28,16 +28,26 @@ export type CategoryNavigationInput = {
   excluded: readonly string[];
   /** Compute `has_children` (one extra grouped query). */
   includeHasChildren: boolean;
+  /** Compute `other_count` (one extra count query when the level shows a category). */
+  includeOther?: boolean;
 };
 
 export type CategoryNavigation = {
   items: UserCategoryNavItem[];
   show_other: boolean;
+  /**
+   * The virtual Other category: scope units under the lineage in none of `items` (0 unless
+   * `includeOther` and the level shows a category). At the root it includes uncategorized units.
+   */
+  other_count: number;
 };
+
+/** The level whose children (and Other) a request is about. */
+export type CategoryLevelInput = Pick<CategoryNavigationInput, 'scope' | 'objectType' | 'lineage'>;
 
 type PairCounts = Map<string, Map<string, number>>;
 
-const EMPTY_NAVIGATION: CategoryNavigation = { items: [], show_other: false };
+const EMPTY_NAVIGATION: CategoryNavigation = { items: [], show_other: false, other_count: 0 };
 
 /**
  * Category navigation for one type and lineage, over a user's Favorites or a whole type
@@ -100,9 +110,14 @@ export class CategoryNavigationService {
             parentPath: input.lineage,
             pairs,
           });
-    const withChildren = input.includeHasChildren
-      ? await findNamesWithChildren(navRows, input.lineage, visible, countOf, pairCountsFor)
-      : new Set<string>();
+    const [withChildren, otherCount] = await Promise.all([
+      input.includeHasChildren
+        ? findNamesWithChildren(navRows, input.lineage, visible, countOf, pairCountsFor)
+        : Promise.resolve(new Set<string>()),
+      input.includeOther && visible.length > 0
+        ? this.countOther(input, visible, level.total)
+        : Promise.resolve(0),
+    ]);
 
     return {
       items: visible.map((name) => ({
@@ -111,7 +126,31 @@ export class CategoryNavigationService {
         has_children: withChildren.has(name),
       })),
       show_other,
+      other_count: otherCount,
     };
+  }
+
+  /**
+   * Names of the categories a level shows (its children): what the virtual Other category of the
+   * level leaves out. Same filters as the level's navigation.
+   */
+  async visibleCategoryNames(input: CategoryLevelInput): Promise<string[]> {
+    const nav = await this.build({ ...input, excluded: [], includeHasChildren: false });
+    return nav.items.map((item) => item.name);
+  }
+
+  /** Units of the level (`total`) minus the ones in any shown name. */
+  private async countOther(
+    input: CategoryNavigationInput,
+    visible: readonly string[],
+    total: number,
+  ): Promise<number> {
+    const covered = await this.objectCategoriesRepo.countUnitsInAnyCategory({
+      scope: input.scope,
+      parentPath: input.lineage,
+      categoryNames: visible,
+    });
+    return Math.max(0, total - covered);
   }
 
   private loadRelatedRows(input: CategoryNavigationInput) {

@@ -59,6 +59,8 @@ export type DiscoverMapPanelProps = {
   box: DiscoverBox | null;
   /** Category lineage, root first (kept by every Discover link and fetch). */
   categoryPath: string[];
+  /** The Other category of `categoryPath` (kept with it by every link and fetch). */
+  categoryOther: boolean;
   mapView: DiscoverMapView | null;
   variant?: DiscoverMapPanelVariant;
   onApplyArea: (box: DiscoverBox) => void;
@@ -86,6 +88,7 @@ export function DiscoverMapPanel({
   sort,
   box,
   categoryPath,
+  categoryOther,
   mapView,
   variant = 'rail',
   onApplyArea,
@@ -181,13 +184,14 @@ export function DiscoverMapPanel({
         sort,
         box: box ?? undefined,
         categoryPath,
+        categoryOther,
         limit: DISCOVER_MAP_MARKERS_LIMIT,
       });
       if (page) {
         setMarkerItems(page.items);
       }
     });
-  }, [objectType, q, tags, sort, box, categoryPath]);
+  }, [objectType, q, tags, sort, box, categoryPath, categoryOther]);
 
   const onViewportChange = useCallback(
     (viewportBox: MapBoundingBox) => {

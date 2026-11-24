@@ -20,10 +20,12 @@ const baseQuery: ShopObjectsQuery = {
   limit: 20,
 };
 
-function createEndpoint(objectCategoriesRepo: unknown) {
+function createEndpoint(objectCategoriesRepo: unknown, otherExcluded: string[] = []) {
   const resolver = { resolve: jest.fn().mockResolvedValue(scope) };
+  const navigation = { visibleCategoryNames: jest.fn().mockResolvedValue(otherExcluded) };
   const endpoint = new GetUserShopObjectsEndpoint(
     resolver as never,
+    navigation as never,
     objectCategoriesRepo as never,
     {
       loadByObjectIds: jest.fn().mockResolvedValue({
@@ -117,5 +119,45 @@ describe('GetUserShopObjectsEndpoint', () => {
   it('returns null for blank username', async () => {
     const { endpoint } = createEndpoint({});
     expect(await endpoint.execute('  ', baseQuery, 'en-US', undefined, undefined)).toBeNull();
+  });
+
+  it('lists the Other category: the path minus the child categories the tree shows', async () => {
+    const objectCategoriesRepo = {
+      findObjectIdsByScope: jest.fn().mockResolvedValue({ rows: [], hasMore: false }),
+    };
+    const { endpoint } = createEndpoint(objectCategoriesRepo, ['Desserts', 'Soups']);
+
+    await endpoint.execute(
+      'alice',
+      { ...baseQuery, categoryPath: ['Mains'], uncategorizedOnly: true, other: true },
+      'en-US',
+      undefined,
+      undefined,
+    );
+
+    expect(objectCategoriesRepo.findObjectIdsByScope).toHaveBeenCalledWith(
+      expect.objectContaining({
+        categoryPath: ['Mains'],
+        uncategorizedOnly: false,
+        excludedCategoryNames: ['Desserts', 'Soups'],
+      }),
+    );
+  });
+
+  it('returns no Other for a scope that is not one category type', async () => {
+    const objectCategoriesRepo = { findObjectIdsByScope: jest.fn() };
+    const { endpoint, resolver } = createEndpoint(objectCategoriesRepo);
+    resolver.resolve.mockResolvedValue({ ...scope, types: ['book', 'product'] });
+
+    const result = await endpoint.execute(
+      'alice',
+      { ...baseQuery, types: ['book', 'product'], other: true },
+      'en-US',
+      undefined,
+      undefined,
+    );
+
+    expect(result).toEqual({ items: [], cursor: null, hasMore: false });
+    expect(objectCategoriesRepo.findObjectIdsByScope).not.toHaveBeenCalled();
   });
 });

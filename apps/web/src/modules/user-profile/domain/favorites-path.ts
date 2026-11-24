@@ -13,15 +13,48 @@ export const FAVORITES_TAB_SEGMENT = 'favorites';
  */
 export type FavoritesPath = {
   objectType: string | null;
-  /** Decoded category segments after the type (`['uncategorized']` for the Uncategorized node). */
+  /** Decoded category segments after the type (`['uncategorized']` on a legacy root Other link). */
   lineage: string[];
-  /** True for `/@account/favorites/:type/uncategorized`. */
-  uncategorizedOnly: boolean;
 };
 
-/** True when the lineage selects the reserved Uncategorized node. */
+/** Query param of the Other category of the lineage (`?other=1`). */
+export const FAVORITES_OTHER_PARAM = 'other';
+
+/** True for the legacy `/@account/favorites/:type/uncategorized` link (now the root Other). */
 export function isUncategorizedLineage(lineage: readonly string[]): boolean {
   return lineage.length === 1 && lineage[0] === UNCATEGORIZED_SHOP_PATH_SEGMENT;
+}
+
+/** What a Favorites URL shows: a category lineage, or the Other category of that lineage. */
+export type FavoritesCategoryView = {
+  /** Category names from the type root (the legacy Uncategorized segment removed). */
+  lineage: string[];
+  /**
+   * The virtual Other category of `lineage`: its objects in none of the child categories the tree
+   * shows (at the root also the uncategorized ones).
+   */
+  other: boolean;
+};
+
+/** Reads `?other=1` from page `searchParams` or `URLSearchParams`. */
+export function readFavoritesOtherParam(
+  source: URLSearchParams | Record<string, string | string[] | undefined>,
+): boolean {
+  const raw =
+    source instanceof URLSearchParams ? source.get(FAVORITES_OTHER_PARAM) : source[FAVORITES_OTHER_PARAM];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value === '1';
+}
+
+/** Category view of a Favorites URL; the legacy `/uncategorized` segment is the root Other. */
+export function resolveFavoritesCategoryView(
+  lineageSegments: readonly string[],
+  otherParam: boolean,
+): FavoritesCategoryView {
+  if (isUncategorizedLineage(lineageSegments)) {
+    return { lineage: [], other: true };
+  }
+  return { lineage: [...lineageSegments], other: otherParam };
 }
 
 /**
@@ -39,7 +72,6 @@ export function parseFavoritesPath(pathname: string): FavoritesPath | null {
   return {
     objectType: objectType.length > 0 ? objectType : null,
     lineage,
-    uncategorizedOnly: isUncategorizedLineage(lineage),
   };
 }
 

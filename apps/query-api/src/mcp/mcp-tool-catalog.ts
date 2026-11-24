@@ -48,7 +48,7 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   {
     name: 'discover_objects',
     description:
-      'Browse objects by type, tags (AND), sort, optional text query, and optional map bounding box (swLng,swLat,neLng,neLat). Use for catalog/discover pages, not quick search.',
+      'Browse objects by type, tags (AND), sort, optional text query, optional map bounding box (swLng,swLat,neLng,neLat) and category_path; other=true lists the Other category of category_path (objects in none of its shown child categories). Use for catalog/discover pages, not quick search.',
     httpEquivalent: 'GET /query/v1/discover/objects',
     specPath: 'docs/apps/query-api/spec/search.md',
   },
@@ -59,19 +59,19 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   },
   {
     name: 'discover_tag_categories',
-    description: 'Tag category facets for an object type (discover filters).',
+    description: 'Tag category facets for an object type (discover filters), optionally within category_path or its Other category (other=true).',
     httpEquivalent: 'GET /query/v1/discover/tag-categories',
   },
   {
     name: 'discover_categories',
     description:
-      'One level of the category tree of an object type (children of category_path), counted in product groups and narrowed by q / tags / box; categories with fewer than 3 groups or over 60% of the level are hidden.',
+      'One level of the category tree of an object type (children of category_path), counted in product groups and narrowed by q / tags / box; categories with fewer than 3 groups or over 60% of the level are hidden. Below the root, other_count = groups in none of the listed children (the Other category).',
     httpEquivalent: 'GET /query/v1/discover/categories',
   },
   {
     name: 'discover_sections',
     description:
-      'Category blocks of a category (children of category_path): per child category its top objects by rank and its group count; paged by category name.',
+      'Category blocks of a category (children of category_path): per child category its top objects by rank and its group count; paged by category name. The last page adds the Other block (groups in none of the children).',
     httpEquivalent: 'GET /query/v1/discover/sections',
   },
   {
@@ -483,7 +483,7 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   {
     name: 'get_user_categories',
     description:
-      'Category navigation for exactly one category type (types=[recipe|book|…]) of a user Favorites scope; live counts over the full lineage.',
+      'Category navigation for exactly one category type (types=[recipe|book|…]) of a user Favorites scope; live counts over the full lineage; other_count = objects in none of the listed children (the Other category; at the root also uncategorized ones).',
     httpEquivalent: 'GET /query/v1/users/:name/categories',
     specPath: 'docs/apps/query-api/spec/categories.md',
   },
@@ -504,14 +504,14 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   {
     name: 'get_user_shop_objects',
     description:
-      'Flat Favorites object list (types required) with categoryPath/uncategorized/tags/rating filters; weight DESC keyset cursor.',
+      'Flat Favorites object list (types required) with categoryPath/uncategorized/other/tags/rating filters (other=true: objects of categoryPath in none of its shown child categories); weight DESC keyset cursor.',
     httpEquivalent: 'GET /query/v1/users/:name/shop-objects',
     specPath: 'docs/apps/query-api/spec/shop-feed-endpoints.md',
   },
   {
     name: 'get_user_shop_sections',
     description:
-      'Category sections (non-empty child categories with live counts and weight-ordered previews) for one category type.',
+      'Category sections (non-empty child categories with live counts and weight-ordered previews) for one category type; the last page adds the Other section (objects in none of the children).',
     httpEquivalent: 'GET /query/v1/users/:name/shop-sections',
     specPath: 'docs/apps/query-api/spec/shop-feed-endpoints.md',
   },

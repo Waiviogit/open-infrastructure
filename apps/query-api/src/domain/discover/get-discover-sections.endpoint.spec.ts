@@ -13,11 +13,21 @@ const IDS: Record<string, string[]> = {
   Headphones: ['shared', 'h2'],
 };
 
-function setup() {
-  const navigation = { build: jest.fn().mockResolvedValue({ items: NAV_ITEMS, show_other: false }) };
+const OTHER_IDS = ['o1', 'o2'];
+
+type ListParams = { categoryPath: string[]; excludedCategoryNames?: string[] };
+
+function setup(otherCount = 0) {
+  const navigation = {
+    build: jest.fn().mockResolvedValue({ items: NAV_ITEMS, show_other: false, other_count: otherCount }),
+  };
+  const idsFor = ({ categoryPath, excludedCategoryNames }: ListParams) =>
+    excludedCategoryNames && excludedCategoryNames.length > 0
+      ? OTHER_IDS
+      : (IDS[categoryPath[categoryPath.length - 1] ?? ''] ?? []);
   const discoverRepo = {
-    listObjects: jest.fn().mockImplementation(async ({ categoryPath }: { categoryPath: string[] }) => ({
-      rows: (IDS[categoryPath[categoryPath.length - 1] ?? ''] ?? []).map((object_id) => ({
+    listObjects: jest.fn().mockImplementation(async (params: ListParams) => ({
+      rows: idsFor(params).map((object_id) => ({
         object_id,
         created_at: new Date(),
         weight: 1,
@@ -57,6 +67,7 @@ describe('GetDiscoverSectionsEndpoint', () => {
       lineage: ['Electronics'],
       excluded: [],
       includeHasChildren: false,
+      includeOther: true,
     });
     expect(discoverRepo.listObjects).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -78,6 +89,7 @@ describe('GetDiscoverSectionsEndpoint', () => {
       ],
       cursor: 'Video',
       hasMore: true,
+      other: null,
     });
   });
 
@@ -97,7 +109,7 @@ describe('GetDiscoverSectionsEndpoint', () => {
 
     const result = await endpoint.execute({ query: query({ cursor: 'Missing' }), locale: 'en-US' });
 
-    expect(result).toEqual({ sections: [], cursor: null, hasMore: false });
+    expect(result).toEqual({ sections: [], cursor: null, hasMore: false, other: null });
     expect(discoverRepo.listObjects).not.toHaveBeenCalled();
   });
 });
@@ -112,5 +124,31 @@ describe('discoverSectionsQuerySchema', () => {
       discoverSectionsQuerySchema.safeParse({ object_type: 'restaurant', category_path: ['A'] })
         .success,
     ).toBe(false);
+  });
+
+  it('adds the Other block on the last page: groups of the category in none of its children', async () => {
+    const { endpoint, discoverRepo } = setup(7);
+
+    const first = await endpoint.execute({ query: query(), locale: 'en-US' });
+    const last = await endpoint.execute({ query: query({ cursor: 'Video' }), locale: 'en-US' });
+
+    expect(first.other).toBeNull();
+    expect(last.other).toEqual({ items: [{ object_id: 'o1' }, { object_id: 'o2' }], totalObjects: 7 });
+    expect(discoverRepo.listObjects).toHaveBeenCalledWith(
+      expect.objectContaining({
+        categoryPath: ['Electronics'],
+        excludedCategoryNames: ['Audio', 'Video', 'Headphones'],
+        sort: 'rank',
+        limit: 3,
+      }),
+    );
+  });
+
+  it('has no Other block when every group is in a child', async () => {
+    const { endpoint } = setup(0);
+
+    const last = await endpoint.execute({ query: query({ cursor: 'Video' }), locale: 'en-US' });
+
+    expect(last.other).toBeNull();
   });
 });

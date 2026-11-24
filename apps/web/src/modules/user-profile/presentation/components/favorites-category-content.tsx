@@ -12,16 +12,17 @@ import {
 } from '../../domain/types/shop-objects';
 import { apiNavContextFromLineage } from '../../domain/category-nav-path';
 import { FavoritesObjectList } from './favorites-object-list';
-import { FavoritesSections, type FavoritesUncategorizedSection } from './favorites-sections';
+import { FavoritesSections } from './favorites-sections';
 
 export type FavoritesCategoryContentProps = {
   accountName: string;
   /** A type that supports the `category` update. */
   objectType: string;
-  /** Decoded category segments from the URL (`['uncategorized']` for the Uncategorized node). */
+  /** Category lineage of the URL (decoded segments). */
   lineageSegments: readonly string[];
-  uncategorizedOnly: boolean;
-  /** Category nav at `lineageSegments` (the type root for Uncategorized); null when unavailable. */
+  /** The URL shows the Other category of `lineageSegments`. */
+  categoryOther: boolean;
+  /** Category nav at `lineageSegments`; null when unavailable. */
   nav: CategoryNavData | null;
   shopFilters: ProfileShopFiltersState;
   viewerUsername: string | null;
@@ -29,30 +30,31 @@ export type FavoritesCategoryContentProps = {
 
 /**
  * Center column of a category type. Three modes:
- * - Uncategorized node or active tag/rating filters → flat object list (facet counts match rows);
+ * - the Other category or active tag/rating filters → flat object list (facet counts match rows);
  * - leaf node (no child categories) → flat object list of the lineage;
- * - inner node → child category sections; the type root appends an Uncategorized section.
+ * - inner node (the type root included) → child category sections, then the Other section (its
+ *   objects in none of them; at the root also the uncategorized ones).
  */
 export async function FavoritesCategoryContent({
   accountName,
   objectType,
   lineageSegments,
-  uncategorizedOnly,
+  categoryOther,
   nav,
   shopFilters,
   viewerUsername,
 }: FavoritesCategoryContentProps) {
   const filterQuery = { tags: shopFilters.tags, rating: shopFilters.rating };
-  const categoryPath = uncategorizedOnly ? [] : [...lineageSegments];
+  const categoryPath = [...lineageSegments];
   const isLeaf = nav === null || nav.items.length === 0;
 
-  if (uncategorizedOnly || profileShopFiltersActive(shopFilters) || isLeaf) {
+  if (categoryOther || profileShopFiltersActive(shopFilters) || isLeaf) {
     const page = await getShopObjectsQuery(
       accountName,
       {
         objectType,
         categoryPath,
-        uncategorizedOnly: uncategorizedOnly ? true : undefined,
+        categoryOther: categoryOther ? true : undefined,
         limit: FAVORITES_OBJECTS_PAGE_SIZE,
         ...filterQuery,
       },
@@ -61,12 +63,12 @@ export async function FavoritesCategoryContent({
 
     return (
       <FavoritesObjectList
-        key={buildShopListScopeKey(objectType, lineageSegments, uncategorizedOnly, shopFilters)}
+        key={buildShopListScopeKey(objectType, lineageSegments, categoryOther, shopFilters)}
         accountName={accountName}
         objectType={objectType}
         initialPage={page}
         categoryPath={categoryPath}
-        uncategorizedOnly={uncategorizedOnly}
+        categoryOther={categoryOther}
         shopFilters={shopFilters}
         viewerUsername={viewerUsername}
       />
@@ -74,36 +76,17 @@ export async function FavoritesCategoryContent({
   }
 
   const { parentName, path } = apiNavContextFromLineage(lineageSegments);
-  const showUncategorized = lineageSegments.length === 0 && nav.uncategorized_count > 0;
-  const [sections, uncategorizedPage] = await Promise.all([
-    getShopSectionsQuery(
-      accountName,
-      {
-        objectType,
-        name: parentName,
-        path,
-        sectionLimit: FAVORITES_SECTION_PREVIEW_LIMIT,
-        ...filterQuery,
-      },
-      viewerUsername,
-    ),
-    showUncategorized
-      ? getShopObjectsQuery(
-          accountName,
-          {
-            objectType,
-            categoryPath: [],
-            uncategorizedOnly: true,
-            limit: FAVORITES_SECTION_PREVIEW_LIMIT,
-          },
-          viewerUsername,
-        )
-      : null,
-  ]);
-  const uncategorizedSection: FavoritesUncategorizedSection | null =
-    uncategorizedPage && uncategorizedPage.items.length > 0
-      ? { items: uncategorizedPage.items, totalObjects: nav.uncategorized_count }
-      : null;
+  const sections = await getShopSectionsQuery(
+    accountName,
+    {
+      objectType,
+      name: parentName,
+      path,
+      sectionLimit: FAVORITES_SECTION_PREVIEW_LIMIT,
+      ...filterQuery,
+    },
+    viewerUsername,
+  );
 
   return (
     <FavoritesSections
@@ -114,7 +97,6 @@ export async function FavoritesCategoryContent({
       lineageSegments={lineageSegments}
       navName={parentName}
       navPath={path}
-      uncategorizedSection={uncategorizedSection}
       shopFilters={shopFilters}
       viewerUsername={viewerUsername}
     />

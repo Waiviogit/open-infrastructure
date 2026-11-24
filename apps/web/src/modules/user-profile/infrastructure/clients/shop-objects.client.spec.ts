@@ -66,13 +66,15 @@ describe('shop objects client', () => {
     expect(new Headers(init?.headers).get('x-forwarded-for')).toBe(INCOMING_XFF);
   });
 
-  it('sends uncategorizedOnly for the Uncategorized node', async () => {
+  it('sends other with the lineage for the Other category', async () => {
     await fetchShopObjects('alice', {
       objectType: 'book',
-      categoryPath: [],
-      uncategorizedOnly: true,
+      categoryPath: ['Fiction'],
+      categoryOther: true,
     });
-    expect(outboundCall().url.searchParams.get('uncategorizedOnly')).toBe('true');
+    expect(outboundCall().url.searchParams.get('other')).toBe('true');
+    expect(outboundCall().url.searchParams.getAll('categoryPath')).toEqual(['Fiction']);
+    expect(outboundCall().url.searchParams.has('uncategorizedOnly')).toBe(false);
   });
 
   it('tags shop objects and sections with the user favorites tag', async () => {

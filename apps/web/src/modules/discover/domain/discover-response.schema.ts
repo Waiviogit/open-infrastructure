@@ -49,6 +49,8 @@ export type DiscoverTagCategoriesResponse = z.infer<typeof discoverTagCategories
 export const discoverCategoriesResponseSchema = z.object({
   items: z.array(categoryNavItemSchema),
   show_other: z.boolean(),
+  /** Groups of the level in none of `items` (the Other category); 0 at the type root. */
+  other_count: z.number().int().nonnegative().default(0),
 });
 
 export type DiscoverCategoriesResponse = z.infer<typeof discoverCategoriesResponseSchema>;
@@ -60,12 +62,22 @@ export const discoverSectionSchema = z.object({
   totalObjects: z.number(),
 });
 
+/** The Other block: groups of the category in none of its children. */
+export const discoverOtherSectionSchema = z.object({
+  items: z.array(socialProjectedObjectSchema),
+  totalObjects: z.number(),
+});
+
 /** `GET /query/v1/discover/sections`: one page of category blocks. */
 export const discoverSectionsPageSchema = z.object({
   sections: z.array(discoverSectionSchema),
   cursor: z.string().nullable(),
   hasMore: z.boolean(),
+  /** Last page only. */
+  other: discoverOtherSectionSchema.nullable().default(null),
 });
+
+export type DiscoverOtherSection = z.infer<typeof discoverOtherSectionSchema>;
 
 export type DiscoverSection = z.infer<typeof discoverSectionSchema>;
 export type DiscoverSectionsPage = z.infer<typeof discoverSectionsPageSchema>;

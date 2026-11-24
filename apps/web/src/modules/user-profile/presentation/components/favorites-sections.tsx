@@ -15,14 +15,10 @@ import {
   buildProfileShopHref,
   type ProfileShopFiltersState,
 } from '../../domain/profile-shop-filters-url';
-import type { ShopSectionView, ShopSectionsPage } from '../../domain/types/shop-objects';
-import { UNCATEGORIZED_SHOP_PATH_SEGMENT } from '../../domain/category-nav-path';
+import type { ShopOtherSection, ShopSectionsPage } from '../../domain/types/shop-objects';
 import { formatFavoritesTypeLabel } from './favorites-type-label';
 import { FavoritesLoadMoreFooter } from './favorites-load-more-footer';
 import { FavoritesNavLink } from './favorites-nav-links';
-
-/** Objects with no category; rendered after the last category section on the type root. */
-export type FavoritesUncategorizedSection = Pick<ShopSectionView, 'items' | 'totalObjects'>;
 
 export type FavoritesSectionsProps = {
   accountName: string;
@@ -34,16 +30,14 @@ export type FavoritesSectionsProps = {
   navName?: string;
   /** Ancestors before `navName`. */
   navPath: readonly string[];
-  /** Shown once every category section is loaded (type root only). */
-  uncategorizedSection?: FavoritesUncategorizedSection | null;
   shopFilters: ProfileShopFiltersState;
   viewerUsername?: string | null;
 };
 
 /**
  * Child categories of the current node of a category type, each a `CategorySectionCard` (preview
- * objects, count, Show more). More sections load on scroll; the Uncategorized section closes the
- * type root.
+ * objects, count, Show more). More sections load on scroll; the Other section (objects in none of
+ * them; at the type root also the uncategorized ones) comes with the last page and closes the list.
  */
 export function FavoritesSections({
   accountName,
@@ -52,7 +46,6 @@ export function FavoritesSections({
   lineageSegments,
   navName,
   navPath,
-  uncategorizedSection = null,
   shopFilters,
   viewerUsername,
 }: FavoritesSectionsProps) {
@@ -72,6 +65,8 @@ export function FavoritesSections({
   });
   const [pending, startTransition] = useTransition();
   const [loadError, setLoadError] = useState(false);
+  // The Other section comes with the last page: the server-rendered one, or the last loaded one.
+  const [loadedOther, setLoadedOther] = useState<ShopOtherSection | null>(null);
 
   const onLoadMore = useCallback(() => {
     if (!hasMore || !cursor || pending) {
@@ -101,6 +96,7 @@ export function FavoritesSections({
         });
         setCursor(result.value.cursor);
         setHasMore(result.value.hasMore);
+        setLoadedOther(result.value.other);
       } catch {
         setLoadError(true);
       }
@@ -126,9 +122,9 @@ export function FavoritesSections({
     onLoadMore,
   });
 
-  const trailingUncategorized = hasMore ? null : uncategorizedSection;
+  const trailingOther = hasMore ? null : (loadedOther ?? initialSections.other);
 
-  if (sections.length === 0 && trailingUncategorized === null) {
+  if (sections.length === 0 && trailingOther === null) {
     return (
       <section
         className="rounded-card border border-border bg-surface/80 p-card-padding"
@@ -164,16 +160,17 @@ export function FavoritesSections({
             onRequireLogin={openLogin}
           />
         ))}
-        {trailingUncategorized ? (
+        {trailingOther ? (
           <CategorySectionCard
-            headingId="favorites-section-uncategorized"
-            title={t('profile_categories_uncategorized')}
+            headingId="favorites-section-other"
+            title={t('category_other')}
             href={buildProfileShopHref(
-              buildFavoritesPath(accountName, objectType, [UNCATEGORIZED_SHOP_PATH_SEGMENT]),
+              buildFavoritesPath(accountName, objectType, lineageSegments),
               shopFilters,
+              true,
             )}
-            totalObjects={trailingUncategorized.totalObjects}
-            items={trailingUncategorized.items}
+            totalObjects={trailingOther.totalObjects}
+            items={trailingOther.items}
             NavLink={FavoritesNavLink}
             viewerUsername={viewerUsername}
             onRequireLogin={openLogin}
