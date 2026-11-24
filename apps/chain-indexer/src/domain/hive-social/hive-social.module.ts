@@ -8,6 +8,7 @@ import { AccountAuthorityService } from './account-authority.service';
 import { AccountEnsureService } from './account-ensure.service';
 import { AccountSyncWorker } from './account-sync.worker';
 import { AccountLastActivityService } from './account-last-activity.service';
+import { QueryApiAccountCacheInvalidator } from './query-api-account-cache-invalidator';
 
 @Module({
   imports: [RepositoriesModule, NotificationAdapterModule],
@@ -19,6 +20,7 @@ import { AccountLastActivityService } from './account-last-activity.service';
     AccountEnsureService,
     AccountSyncWorker,
     AccountLastActivityService,
+    QueryApiAccountCacheInvalidator,
   ],
   exports: [
     FollowSocialService,

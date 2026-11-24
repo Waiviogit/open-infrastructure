@@ -66,7 +66,7 @@ So the cursor always moves forward by one height per loop iteration.
 |-----------|---------|
 | `custom_json` | [`HiveCustomJsonParser`](../../../../apps/chain-indexer/src/domain/hive-parser/hive-custom-json-parser.ts) — ODL id, follow, RC (`id` = `rc`); see [hive-delegations](hive-delegations.md) |
 | `comment` / `delete_comment` | Comment orchestrator |
-| `account_update` / `account_update2` | Profile update + [account authority grants](account-authority-grants.md) |
+| `account_update` / `account_update2` | Profile update + [account authority grants](account-authority-grants.md); after a metadata change, deletes query-api's cached live account (`sharedRedisKey.queryApiHiveAccount`, `QueryApiAccountCacheInvalidator`) so the profile and sidebar show it right away |
 | `account_create` / `create_claimed_account` | Account ensure + authority snapshot |
 | `recover_account` | Owner authority replacement |
 | `vote` | Vote indexing |

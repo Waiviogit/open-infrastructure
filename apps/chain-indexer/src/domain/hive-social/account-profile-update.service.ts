@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AccountsCurrentRepository } from '../../repositories/accounts-current.repository';
 import { AccountSyncQueueRepository } from '../../repositories/account-sync-queue.repository';
 import { AccountCurrentUpdate } from '@opden-data-layer/odl-db-types';
@@ -6,6 +7,10 @@ import { AccountCurrentUpdate } from '@opden-data-layer/odl-db-types';
 import { parseJsonObject, profileAliasAndImageFromHiveStrings } from './account-hive-metadata.util';
 import type { HiveOperationHandlerContext } from '../hive-parser/hive-handler-context';
 import { NotificationEmitterService } from '../notification-adapter/notification-emitter.service';
+import {
+  ACCOUNT_METADATA_UPDATED_EVENT,
+  AccountMetadataUpdatedEvent,
+} from './account-metadata-updated.event';
 
 /**
  * Hive `account_update` → display fields on accounts_current only (no upsert).
@@ -19,6 +24,7 @@ export class AccountProfileUpdateService {
     private readonly accounts: AccountsCurrentRepository,
     private readonly accountSyncQueue: AccountSyncQueueRepository,
     private readonly notificationEmitter: NotificationEmitterService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async handleAccountUpdate(
@@ -90,9 +96,14 @@ export class AccountProfileUpdateService {
       this.logger.debug(
         `account_update: no accounts_current row for ${account}; enqueued account sync`,
       );
-      return;
+    } else {
+      await this.accounts.update(account, update);
     }
 
-    await this.accounts.update(account, update);
+    // Awaited so the cached chain account is gone before the block's trx confirmations go out.
+    await this.eventEmitter.emitAsync(
+      ACCOUNT_METADATA_UPDATED_EVENT,
+      new AccountMetadataUpdatedEvent(account),
+    );
   }
 }

@@ -14,6 +14,10 @@ describe('AccountProfileUpdateService', () => {
     hiveContext: jest.fn(),
   };
 
+  const eventEmitter = {
+    emitAsync: jest.fn().mockResolvedValue([]),
+  };
+
   let service: AccountProfileUpdateService;
 
   beforeEach(() => {
@@ -22,7 +26,44 @@ describe('AccountProfileUpdateService', () => {
       accounts as never,
       accountSyncQueue as never,
       notificationEmitter as never,
+      eventEmitter as never,
     );
+  });
+
+  it('announces the metadata change after updating the row', async () => {
+    accounts.findByName.mockResolvedValue({ name: 'grampo' });
+    accounts.update.mockResolvedValue(undefined);
+
+    await service.handleAccountUpdate({
+      account: 'grampo',
+      posting_json_metadata: JSON.stringify({ profile: { tiktok: 'grampo' } }),
+    });
+
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      'account.metadata.updated',
+      expect.objectContaining({ account: 'grampo' }),
+    );
+  });
+
+  it('announces the metadata change when the row is not indexed yet', async () => {
+    accounts.findByName.mockResolvedValue(null);
+
+    await service.handleAccountUpdate({
+      account: 'newbie',
+      posting_json_metadata: JSON.stringify({ profile: { name: 'New' } }),
+    });
+
+    expect(accountSyncQueue.enqueue).toHaveBeenCalled();
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      'account.metadata.updated',
+      expect.objectContaining({ account: 'newbie' }),
+    );
+  });
+
+  it('does not announce anything without metadata', async () => {
+    await service.handleAccountUpdate({ account: 'grampo', json_metadata: '' });
+
+    expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
   });
 
   it('updates posting_json_metadata and alias when row exists', async () => {

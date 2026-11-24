@@ -54,7 +54,9 @@ Every value is capped at 5000 characters. Rules apply only to fields the user ch
 1. The client sends only the changed fields (`HiveProfilePatch`) to `buildProfileUpdateOpAction`.
 2. The action checks the cookie user is the account, re-validates the patch, reads the account live and merges with `mergeHiveProfileMetadata` (every other profile key and every other top-level key of `posting_json_metadata` is kept; `version: 2` added when missing).
 3. It returns a typed `account_update2` with empty `json_metadata` → **posting key** (Keychain `Posting`, HiveSigner token broadcast, HAS posting).
-4. `awaitTrxConfirmation` → `refreshAfterBroadcast` with `revalidateUserSocialAfterBroadcast` (profile hero + account sidebar caches) → navigate to `/@name`.
+4. `awaitTrxConfirmation` → `refreshAfterBroadcast` with `revalidateUserSocialAfterBroadcast` (profile hero + account sidebar caches) → navigate to `/@name`. By then chain-indexer has already deleted query-api's 60 s cache of the live account (it does that while indexing the block, before trx confirmations go out), so the hero, sidebar (socials, wallets) and header avatar read the new metadata.
+
+The header avatar and the Keychain sign-in history use the same query-api `avatarUrl` (not the Hive CDN, which stays stale after a change).
 
 Errors: field errors inline under each input; action and wallet errors in one `role="alert"` line. A HiveSigner redirect is not an error.
 
