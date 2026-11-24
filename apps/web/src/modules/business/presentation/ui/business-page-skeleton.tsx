@@ -39,7 +39,7 @@ export function BusinessPageSkeleton({
       : '';
 
   return (
-    <div className={GRID_CLASS} aria-busy="true">
+    <div className={GRID_CLASS} aria-busy="true" aria-label="Loading business">
       {scrollKey ? <ScrollToTopOnEnter routeKey={scrollKey} /> : null}
       {fullWidth ? null : (
         <div className="hidden min-w-0 lg:block" aria-hidden>

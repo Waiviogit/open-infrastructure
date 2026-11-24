@@ -93,37 +93,40 @@ test.describe('instant navigation', () => {
     await expect(page).toHaveURL(/\/discover\?type=/);
   });
 
-  // `business/loading.tsx` is shared by both tabs, so each page streams its body behind its own
-  // `<Suspense fallback={<BusinessContentSkeleton/>}>`.
+  // `business/loading.tsx` is shared by both kinds, so each page streams its body behind its own
+  // `<Suspense fallback={<BusinessPageSkeleton/>}>`. The Market tab band lives in the hub layout
+  // and stays mounted, so the gate is the destination's own rail row, rendered with its data.
   test('business Offers → Requests paints the business skeleton', async ({ page }) => {
     await page.goto('/business/offers');
-    const trigger = page.locator('a[href="/business/requests"]');
+    const trigger = page.locator('aside a[href="/business/requests"]');
     await expect(trigger).toBeVisible();
 
-    // `:visible` — Next keeps the previous route (same nav) hidden in the DOM.
-    const businessNav = page.locator('nav[aria-label="Business navigation"]:visible');
+    // `:visible` — Next keeps the previous route (same rail) hidden in the DOM.
+    const requestsRow = page.locator('aside a[href="/business/requests"][aria-current="page"]:visible');
     await instant(page, async () => {
       await trigger.click();
       await expect(page.locator('[aria-label="Loading business"]')).toBeVisible();
-      await expect(businessNav).toHaveCount(0);
+      await expect(requestsRow).toHaveCount(0);
     });
-    await expect(businessNav).toBeVisible();
+    await expect(requestsRow).toBeVisible();
   });
 
   // Signed-in routes: proxy.ts sends the anonymous 307, so pages read the user behind their tab
   // segment's own loading.tsx (the shared `manage/offers` segment does not change on tab switches).
   test('business manage Drafts → Published paints the list skeleton', async ({ page }) => {
     await page.goto('/business/manage/offers/drafts');
-    const trigger = page.locator('a[href="/business/manage/offers/published"]');
+    const trigger = page.locator('aside a[href="/business/manage/offers/published"]');
     await expect(trigger).toBeVisible();
 
-    const businessNav = page.locator('nav[aria-label="Business navigation"]:visible');
+    const publishedRow = page.locator(
+      'aside a[href="/business/manage/offers/published"][aria-current="page"]:visible',
+    );
     await instant(page, async () => {
       await trigger.click();
-      await expect(page.locator('[aria-label="Loading offers"]')).toBeVisible();
-      await expect(businessNav).toHaveCount(0);
+      await expect(page.locator('[aria-label="Loading business"]')).toBeVisible();
+      await expect(publishedRow).toHaveCount(0);
     });
-    await expect(businessNav).toBeVisible();
+    await expect(publishedRow).toBeVisible();
   });
 
   test('tools Notification settings → Drafts paints the drafts skeleton', async ({ page }) => {
