@@ -15,6 +15,8 @@ import { HomeFeedMobileFilters } from './home-feed-mobile-filters';
 let mockSearch = '';
 
 jest.mock('@/shared/presentation', () => ({
+  MOBILE_MENU_PILL_CLASS: jest.requireActual('@/shared/presentation/components/mobile-pill-class')
+    .MOBILE_MENU_PILL_CLASS,
   useEffectiveNav: () => ({ pathname: '/', search: mockSearch }),
 }));
 

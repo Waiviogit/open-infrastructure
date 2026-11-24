@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 
 import { ChevronDownIcon } from '@/icons';
 import {
+  MOBILE_MENU_PILL_CLASS,
   OptimisticNavLink,
   railItemClass,
   useEffectiveNav,
@@ -76,7 +77,9 @@ export type BusinessMobileRailProps = {
 
 /**
  * Below `lg` the context rail lives in a left drawer under the app header, opened from a
- * trigger named after the active row (Feed / Discover pattern). Navigating closes it.
+ * trigger named after the active row (Feed / Discover pattern). Navigating closes it. The
+ * trigger draws the shared tinted pill (same as Feed's `My feed ▾` and the `All ▾` crumb)
+ * inside a 44px tap area, the Market touch-target height.
  */
 export function BusinessMobileRail({
   label,
@@ -95,7 +98,7 @@ export function BusinessMobileRail({
     <div className="lg:hidden">
       <button
         type="button"
-        className={`inline-flex min-h-11 max-w-full items-center gap-1 rounded-btn text-section font-weight-label text-accent ${BUSINESS_FOCUS_RING}`}
+        className={`inline-flex min-h-11 max-w-full items-center rounded-pill ${BUSINESS_FOCUS_RING}`}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => {
@@ -103,8 +106,10 @@ export function BusinessMobileRail({
           setOpen(true);
         }}
       >
-        <span className="min-w-0 truncate">{label}</span>
-        <ChevronDownIcon size={16} className="shrink-0" />
+        <span className={`${MOBILE_MENU_PILL_CLASS} max-w-full`}>
+          <span className="min-w-0 truncate">{label}</span>
+          <ChevronDownIcon size={16} className="shrink-0" />
+        </span>
       </button>
       <DrawerRegion
         open={open}

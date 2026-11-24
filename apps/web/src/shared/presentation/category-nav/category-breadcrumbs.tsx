@@ -5,6 +5,8 @@ import type { ReactNode } from 'react';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { ChevronDownIcon } from '@/icons';
 
+import { MOBILE_MENU_PILL_CLASS } from '../components/mobile-pill-class';
+
 import type { CategoryNavLink } from './category-nav.types';
 
 /**
@@ -41,7 +43,7 @@ function CurrentCrumb({ label, menu }: { label: string; menu: CategoryCrumbMenu 
       </span>
       <button
         type="button"
-        className="inline-flex min-w-0 items-center gap-1 rounded-pill bg-accent-soft px-3 py-1 font-weight-label text-accent lg:hidden"
+        className={`${MOBILE_MENU_PILL_CLASS} lg:hidden`}
         aria-haspopup="dialog"
         aria-expanded={menu.open}
         aria-label={`${label}, ${menu.ariaLabel}`}

@@ -80,6 +80,7 @@ export {
   profileSectionVerticalLinkClass,
 } from './components/profile-section-tab-classes';
 export { railItemClass } from './components/rail-item-class';
+export { MOBILE_ACTION_PILL_CLASS, MOBILE_MENU_PILL_CLASS } from './components/mobile-pill-class';
 export type { ProfileSectionTabSize } from './components/profile-section-tab-classes';
 export { PlaceholderSlot } from './components/placeholder-slot';
 export { ShellModeSwitcher } from './components/shell-mode-switcher';

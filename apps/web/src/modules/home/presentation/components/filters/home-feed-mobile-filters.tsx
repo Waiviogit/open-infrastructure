@@ -4,14 +4,14 @@ import { useState, type ReactNode } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { ChevronDownIcon } from '@/icons';
-import { useEffectiveNav } from '@/shared/presentation';
+import { MOBILE_MENU_PILL_CLASS, useEffectiveNav } from '@/shared/presentation';
 import { DrawerRegion } from '@/shared/presentation/layout';
 
 import { useHomeFeedActiveFilterLabel } from './home-feed-active-filter-label';
 
 /**
- * Below `lg` the rail lives in a left drawer under the app header, opened from a button
- * above the feed named after the active filter (same pattern as the Discover type picker).
+ * Below `lg` the rail lives in a left drawer under the app header, opened from a tinted pill
+ * above the feed named after the active filter (same pill as the Discover / Favorites `All ▾`).
  * Picking a filter changes the URL, which closes the drawer.
  */
 export function HomeFeedMobileFilters({ children }: { children: ReactNode }) {
@@ -28,7 +28,7 @@ export function HomeFeedMobileFilters({ children }: { children: ReactNode }) {
     <div className="mb-card-padding lg:hidden">
       <button
         type="button"
-        className="inline-flex max-w-full items-center gap-1 text-section font-weight-label text-accent"
+        className={`${MOBILE_MENU_PILL_CLASS} max-w-full`}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => {

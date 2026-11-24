@@ -32,7 +32,7 @@ Market follows the Feed hub layout:
 - **Titles**: every page has `generateMetadata`; entity pages read `<entity> · <kind>` (`Logo design · v2 · Invoice`) so tabs of the same contract stay apart (`infrastructure/business-metadata.server.ts`).
 - **i18n**: every `business_*` key is translated in all 24 locales (only true cognates such as `Status`, `Null`, `v{version}` stay as in English). Add keys with `pnpm i18n:add-keys`; `--overwrite` updates values in place.
 - **Page grid** (`BusinessPageShell`): context rail | content | right column (`--shell-left-width` / `--shell-right-width`). List pages put their context in the rail (catalog kind + filters, Drafts / Published / Retired, Open / Resolved); entity pages (`variant="entity"`) use a display heading and, without a rail, span the whole grid (no empty rail column).
-- **Below `lg`**: the rail opens in a left drawer from a trigger named after the active row (`BusinessMobileRail`, e.g. `Drafts ▾`); catalog filters use `MobileFilterButton` + `MobileFilterSheet` and applied filters show as chips.
+- **Below `lg`**: the rail opens in a left drawer from a trigger named after the active row (`BusinessMobileRail`, e.g. `Drafts ▾`): the same tinted pill as Feed's `My feed ▾` and the Discover / Favorites `All ▾` crumb (`MOBILE_MENU_PILL_CLASS`), inside a 44px tap area; catalog filters use `MobileFilterButton` + `MobileFilterSheet` and applied filters show as chips.
 - **Loading**: every route uses `BusinessPageSkeleton` (same grid), entry routes reset scroll with `ScrollToTopOnEnter`; the public offer page uses `PublicOfferSkeleton`.
 
 ## Theme tokens (mandatory)

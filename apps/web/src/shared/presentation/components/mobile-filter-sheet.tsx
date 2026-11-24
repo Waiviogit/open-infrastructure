@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { FilterIcon } from '@/icons';
 
+import { MOBILE_ACTION_PILL_CLASS } from './mobile-pill-class';
 import { ModalShell } from './modal-shell';
 
 export type MobileFilterButtonProps = {
@@ -22,7 +23,7 @@ export function MobileFilterButton({ onClick, expanded }: MobileFilterButtonProp
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1 rounded-pill border border-accent px-3 py-1 text-body-sm font-weight-label text-accent"
+      className={MOBILE_ACTION_PILL_CLASS}
       aria-haspopup="dialog"
       aria-expanded={expanded}
       onClick={onClick}
