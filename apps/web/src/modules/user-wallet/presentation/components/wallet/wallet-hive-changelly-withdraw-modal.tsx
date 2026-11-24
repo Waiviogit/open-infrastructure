@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import { QrCodeIcon } from '@/icons';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton, AppLoader } from '@/shared/presentation';
 
 import { buildHiveChangellyWithdrawTransferOps } from '../../../domain/build-hive-changelly-withdraw-ops';
@@ -25,6 +25,7 @@ import {
   fetchHiveChangellyWithdrawRange,
 } from '../../../infrastructure/clients/hive-changelly-withdraw.client';
 import { useHiveBroadcast } from '../../hooks/use-hive-broadcast';
+import { engineTokenBroadcastErrorMessageKey } from '../../utils/engine-token-broadcast-error-message';
 import { WalletModalBalanceLine } from '../shared/wallet-modal-balance-line';
 import { WalletModalFieldLabel } from '../shared/wallet-modal-field-label';
 import { useWalletBalances } from './wallet-balances-context';
@@ -37,7 +38,7 @@ export type WalletHiveChangellyWithdrawModalProps = {
   state: WalletHiveChangellyWithdrawModalState;
 };
 
-const CHANGELLY_COIN_LABEL_KEYS: Record<HiveChangellyOutputCoin, string> = {
+const CHANGELLY_COIN_LABEL_KEYS: Record<HiveChangellyOutputCoin, MessageKey> = {
   btc: 'wallet_changelly_coin_btc',
   ltc: 'wallet_changelly_coin_ltc',
   eth: 'wallet_changelly_coin_eth',
@@ -281,8 +282,8 @@ export function WalletHiveChangellyWithdrawModal({
                   ].join(' ')}
                   role={hiveAmount.trim() !== '' && belowMin ? 'alert' : undefined}
                 >
-                  {interpolateMessage(t('wallet_changelly_min_amount'), {
-                    min: String(minAmount),
+                  {t('wallet_changelly_min_amount', {
+                    min: minAmount,
                   })}
                 </p>
               ) : null}
@@ -330,7 +331,7 @@ export function WalletHiveChangellyWithdrawModal({
                 ].join(' ')}
                 role={exceedsUsdCap ? 'alert' : undefined}
               >
-                {interpolateMessage(t('est_account_value_withdraw'), {
+                {t('est_account_value_withdraw', {
                   amount: usdDisplay,
                 })}
               </p>
@@ -397,8 +398,8 @@ export function WalletHiveChangellyWithdrawModal({
           ) : null}
           {needsTrackingReserve ? (
             <p className="mt-2 text-body-sm text-error" role="alert">
-              {interpolateMessage(t('wallet_changelly_tracking_reserve'), {
-                amount: String(HIVE_CHANGELLY_TRACKING_HIVE_RESERVE),
+              {t('wallet_changelly_tracking_reserve', {
+                amount: HIVE_CHANGELLY_TRACKING_HIVE_RESERVE,
               })}
             </p>
           ) : null}
@@ -409,7 +410,7 @@ export function WalletHiveChangellyWithdrawModal({
           ) : null}
           {hiveBroadcast.error ? (
             <p className="mt-3 text-body-sm text-error" role="alert">
-              {t(hiveBroadcast.error)}
+              {t(engineTokenBroadcastErrorMessageKey(hiveBroadcast.error))}
             </p>
           ) : null}
 

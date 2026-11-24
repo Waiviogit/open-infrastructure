@@ -1,10 +1,12 @@
+import type { MessageKey } from '@/i18n/types';
+
 import { businessRoutes, type BusinessNavId } from './routes';
 
 /** Market sections in the hub tab band, in display order. */
 export const BUSINESS_NAV_ITEMS: ReadonlyArray<{
   id: BusinessNavId;
   href: string;
-  labelKey: string;
+  labelKey: MessageKey;
 }> = [
   {
     id: 'discover',

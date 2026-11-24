@@ -5,7 +5,6 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import type { HiveEngineCustomJsonPayload } from '@opden-data-layer/hive-broadcast';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton, AppLoader } from '@/shared/presentation';
 
 import { fetchEngineSwapList, fetchEngineSwapQuote } from '../../../infrastructure/clients/engine-swap.client';
@@ -338,7 +337,7 @@ export function WalletSwapModal({ open, onClose, account, state }: WalletSwapMod
 
           <div className="space-y-1 text-body-sm text-muted">
             <p>
-              {interpolateMessage(t('wallet_swap_transaction_value'), {
+              {t('wallet_swap_transaction_value', {
                 amount: estimatedUsd.toFixed(2),
               })}
             </p>

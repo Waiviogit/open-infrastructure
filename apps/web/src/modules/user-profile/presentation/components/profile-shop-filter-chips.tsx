@@ -64,10 +64,9 @@ export function ProfileShopFilterChips({
     if (filters.rating != null) {
       chips.push({
         key: 'rating',
-        label: t('profile_rating_filter_chip').replace(
-          '{stars}',
-          String(shopRatingThresholdToStars(filters.rating)),
-        ),
+        label: t('profile_rating_filter_chip', {
+          stars: shopRatingThresholdToStars(filters.rating),
+        }),
         removeLabel: t('profile_remove_rating_filter'),
         onRemove: removeRating,
       });
@@ -78,7 +77,7 @@ export function ProfileShopFilterChips({
       chips.push({
         key: `tag:${tag}`,
         label,
-        removeLabel: t('discover_remove_filter').replace('{tag}', label),
+        removeLabel: t('discover_remove_filter', { tag: label }),
         onRemove: () => removeTag(tag),
       });
     }

@@ -164,10 +164,7 @@ export function EditorCreateObjectModal({
   }
 
   const createLabel = objectType
-    ? t('object_create_create_type').replace(
-        '{type}',
-        labelForObjectType(objectType),
-      )
+    ? t('object_create_create_type', { type: labelForObjectType(objectType) })
     : t('create_new_object');
 
   const header = (

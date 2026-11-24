@@ -1,4 +1,5 @@
-import type { LocaleId, Messages } from '../types';
+import { DEFAULT_LOCALE } from '../config/default-locale';
+import type { CatalogMessages, LocaleId, Messages } from '../types';
 import { getOrLoadMessages } from './messages-cache';
 
 const loaders: Record<LocaleId, () => Promise<Messages>> = {
@@ -28,6 +29,19 @@ const loaders: Record<LocaleId, () => Promise<Messages>> = {
   'zh-CN': () => import('../locales/zh-CN.json').then((m) => m.default),
 };
 
-export async function loadMessages(locale: LocaleId): Promise<Messages> {
-  return getOrLoadMessages(locale, loaders[locale]);
+/**
+ * The default-locale catalog is the reference: a key missing from another locale falls back to
+ * its default-locale text instead of rendering the raw key.
+ */
+async function loadCatalogWithFallback(locale: LocaleId): Promise<CatalogMessages> {
+  const fallback = (await loaders[DEFAULT_LOCALE]()) as CatalogMessages;
+  if (locale === DEFAULT_LOCALE) {
+    return fallback;
+  }
+  const own = await loaders[locale]();
+  return Object.freeze({ ...fallback, ...own });
+}
+
+export async function loadMessages(locale: LocaleId): Promise<CatalogMessages> {
+  return getOrLoadMessages(locale, () => loadCatalogWithFallback(locale));
 }

@@ -1,8 +1,10 @@
+import type { Translate } from '@/i18n/types';
+
 import type { BroadcastOdlOverflowError } from './broadcast-odl-op-with-overflow';
 
 export function broadcastOverflowErrorMessage(
   error: BroadcastOdlOverflowError,
-  t: (key: string) => string,
+  t: Translate,
 ): string {
   if (error === 'unauthorized') {
     return t('object_edit_upload_unauthorized');

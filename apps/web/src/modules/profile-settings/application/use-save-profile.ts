@@ -4,6 +4,7 @@ import type { HiveProfilePatch } from '@opden-data-layer/hive-broadcast';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
+import type { MessageKey } from '@/i18n/types';
 import { getWalletFacade } from '@/modules/auth';
 import { hydrateWalletProviderFromStorage } from '@/modules/auth/presentation/hooks/hydrate-wallet-provider';
 import { awaitTrxConfirmation } from '@/modules/notifications';
@@ -23,7 +24,9 @@ import { primeViewerSignature } from './viewer-signature';
 
 export type SaveProfileOutcome = 'saved' | 'redirected' | 'failed';
 
-function buildOpErrorMessageKey(code: BuildProfileUpdateOpErrorCode): string {
+function buildOpErrorMessageKey(
+  code: BuildProfileUpdateOpErrorCode,
+): MessageKey {
   switch (code) {
     case 'not_authorized':
       return 'wallet_broadcast_not_logged_in';
@@ -40,7 +43,7 @@ function buildOpErrorMessageKey(code: BuildProfileUpdateOpErrorCode): string {
 export function useSaveProfile(username: string) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
 
   const save = useCallback(
     async (patch: HiveProfilePatch): Promise<SaveProfileOutcome> => {

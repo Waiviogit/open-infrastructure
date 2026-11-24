@@ -306,9 +306,10 @@ export function ObjectTagsLeftRailSection({
                   })}
                   prefetch={false}
                   className="rounded-btn bg-surface px-2 py-1 text-caption text-fg transition-colors hover:bg-ghost-surface hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                  aria-label={t('object_tag_discover_aria')
-                    .replace('{category}', section.categoryTitle)
-                    .replace('{tag}', tag.value)}
+                  aria-label={t('object_tag_discover_aria', {
+                    category: section.categoryTitle,
+                    tag: tag.value,
+                  })}
                   suppressHydrationWarning
                 >
                   {tag.value}
@@ -430,10 +431,7 @@ export function ObjectTagsLeftRailSection({
                         ? () => void onVote(updateId, 'against')
                         : undefined
                     }
-                    approveAria={t('object_tags_approve_aria').replace(
-                      '{tag}',
-                      tag.value,
-                    )}
+                    approveAria={t('object_tags_approve_aria', { tag: tag.value })}
                     rejectAria={t('object_tags_reject_aria')}
                   />
                 );

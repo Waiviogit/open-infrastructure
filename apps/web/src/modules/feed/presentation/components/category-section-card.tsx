@@ -56,10 +56,7 @@ export function CategorySectionCard({
           </NavLink>
         </h2>
         <p className="text-caption text-fg-secondary tabular-nums">
-          {t('profile_shop_object_count').replace(
-            '{count}',
-            String(totalObjects),
-          )}
+          {t('profile_shop_object_count', { count: totalObjects })}
         </p>
       </div>
       {items.length === 0 ? (
@@ -84,7 +81,7 @@ export function CategorySectionCard({
             href={href}
             className="text-body-sm font-weight-label text-accent underline-offset-2 hover:underline"
           >
-            {t('category_section_show_more').replace('{category}', title)}
+            {t('category_section_show_more', { category: title })}
           </NavLink>
         </p>
       ) : null}

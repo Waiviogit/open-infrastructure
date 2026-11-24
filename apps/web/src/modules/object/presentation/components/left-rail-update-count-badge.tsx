@@ -29,7 +29,7 @@ export function LeftRailUpdateCountBadge({
   }
 
   const ariaLabel = fieldLabel
-    ? t('object_edit_view_field_updates').replace('{field}', fieldLabel)
+    ? t('object_edit_view_field_updates', { field: fieldLabel })
     : label;
 
   return (

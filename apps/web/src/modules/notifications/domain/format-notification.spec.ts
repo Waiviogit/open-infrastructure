@@ -1,5 +1,4 @@
 import {
-  applyNotificationParams,
   formatNotification,
   notificationIconType,
   resolveNotificationHref,
@@ -158,21 +157,5 @@ describe('notificationIconType', () => {
             }
           : base;
     expect(notificationIconType(withPayload)).toBe(expected);
-  });
-});
-
-describe('applyNotificationParams', () => {
-  it('substitutes placeholders in template', () => {
-    expect(
-      applyNotificationParams('{username} started following you', {
-        username: 'alice',
-      }),
-    ).toBe('alice started following you');
-  });
-
-  it('returns template unchanged when params omitted', () => {
-    expect(applyNotificationParams('You have a new notification')).toBe(
-      'You have a new notification',
-    );
   });
 });

@@ -1,8 +1,10 @@
+import type { MessageKey } from '@/i18n/types';
+
 import type { EngineTokenBroadcastErrorCode } from '../../domain/engine-token-broadcast-errors';
 
 export function engineTokenBroadcastErrorMessageKey(
   code: EngineTokenBroadcastErrorCode,
-): string {
+): MessageKey {
   switch (code) {
     case 'not_logged_in':
       return 'wallet_broadcast_not_logged_in';

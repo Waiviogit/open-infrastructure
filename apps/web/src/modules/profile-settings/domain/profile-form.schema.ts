@@ -6,6 +6,8 @@ import {
 } from '@opden-data-layer/hive-broadcast';
 import { z } from 'zod';
 
+import type { MessageKey } from '@/i18n/types';
+
 import { PROFILE_FORM_FIELDS, type ProfileFormValues } from './profile-fields';
 
 /** Keeps one profile update well under the Hive transaction size limit. */
@@ -185,7 +187,7 @@ export function parseProfilePatch(input: unknown): HiveProfilePatch | null {
   return patch;
 }
 
-export function profileFieldErrorMessageKey(code: ProfileFieldErrorCode): string {
+export function profileFieldErrorMessageKey(code: ProfileFieldErrorCode): MessageKey {
   switch (code) {
     case 'too_long':
       return 'profile_value_too_long';

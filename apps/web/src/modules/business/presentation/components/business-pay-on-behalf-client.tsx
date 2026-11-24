@@ -90,12 +90,11 @@ export function BusinessPayOnBehalfClient({
   const canSubmit =
     !isBusy && partiesError === null && parsePositiveUsdAmount(amount);
 
-  function fillAccount(template: string): string {
-    return template
-      .replace('{debtor}', `@${parties.debtor}`)
-      .replace('{receiver}', `@${parties.receiver}`)
-      .replace('{account}', `@${parties.debtor}`);
-  }
+  const partyValues = {
+    debtor: `@${parties.debtor}`,
+    receiver: `@${parties.receiver}`,
+    account: `@${parties.debtor}`,
+  };
 
   async function payWithWaiv() {
     setSent(false);
@@ -191,19 +190,19 @@ export function BusinessPayOnBehalfClient({
         ) : (
           <div className={`${BUSINESS_CALLOUT_CLASS} flex flex-col gap-1`}>
             {parties.debtor !== normalizeHiveAccountInput(username) ? (
-              <p>{fillAccount(t('business_pay_on_behalf_you_pay_for'))}</p>
+              <p>{t('business_pay_on_behalf_you_pay_for', partyValues)}</p>
             ) : null}
             {debtUsd !== null && debtUsd > 0 ? (
               <p>
-                {fillAccount(t('business_pay_on_behalf_debt_hint')).replace(
-                  '{amount}',
-                  formatUsd(debtUsd),
-                )}
+                {t('business_pay_on_behalf_debt_hint', {
+                  ...partyValues,
+                  amount: formatUsd(debtUsd),
+                })}
               </p>
             ) : null}
             {debtUsd === 0 ? (
               <p className="text-error">
-                {fillAccount(t('business_pay_on_behalf_no_debt_warning'))}
+                {t('business_pay_on_behalf_no_debt_warning', partyValues)}
               </p>
             ) : null}
           </div>
@@ -213,7 +212,7 @@ export function BusinessPayOnBehalfClient({
         {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
         {sent ? (
           <p className="text-body-sm text-fg" role="status">
-            {fillAccount(t('business_pay_on_behalf_sent'))}
+            {t('business_pay_on_behalf_sent', partyValues)}
           </p>
         ) : null}
 
@@ -241,7 +240,7 @@ export function BusinessPayOnBehalfClient({
           </BusinessButton>
         </div>
         <p className="text-caption text-fg-secondary">
-          {fillAccount(t('business_pay_on_behalf_declare_hint'))}
+          {t('business_pay_on_behalf_declare_hint', partyValues)}
         </p>
       </div>
     </BusinessPageShell>

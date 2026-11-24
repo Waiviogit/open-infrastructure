@@ -50,12 +50,7 @@ export function ActivityMessagePreviewModal({
     void copyPermalinkToClipboard(href);
   }, [href]);
 
-  const caption = formatActivityMessageCaption(
-    message,
-    locale,
-    t('object_activity_original_date_caption'),
-    t('messaging_edited'),
-  );
+  const caption = formatActivityMessageCaption(message, locale, t);
   const duplicateCount = message.duplicate_count ?? 1;
 
   const openFullPage = (className: string, children: ReactNode) => (
@@ -122,7 +117,7 @@ export function ActivityMessagePreviewModal({
               href={buildObjectActivityFeedPath(message.source_object.object_id)}
               className="text-link hover:underline"
             >
-              {t('object_activity_source_from').replace('{name}', message.source_object.name)}
+              {t('object_activity_source_from', { name: message.source_object.name })}
             </OptimisticNavLink>
           </p>
         ) : null}
@@ -135,7 +130,7 @@ export function ActivityMessagePreviewModal({
         <p className="mt-3 text-caption text-muted">{caption}</p>
         {duplicateCount > 1 ? (
           <p className="mt-0.5 text-caption text-muted">
-            {t('object_activity_duplicate_badge').replace('{count}', String(duplicateCount - 1))}
+            {t('object_activity_duplicate_badge', { count: duplicateCount - 1 })}
           </p>
         ) : null}
       </article>

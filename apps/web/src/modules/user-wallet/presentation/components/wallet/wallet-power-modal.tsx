@@ -9,7 +9,6 @@ import {
 } from '@opden-data-layer/hive-broadcast';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation';
 
 import {
@@ -156,7 +155,6 @@ export function WalletPowerModal({
       liquidSymbol,
       engineMeta: findPowerEligibleEngineRow(engineSummary, asset),
       translate: t,
-      interpolate: interpolateMessage,
     });
   }, [amount, asset, balanceConfig, engineSummary, state.mode, t]);
 

@@ -1,3 +1,5 @@
+import type { MessageKey } from '@/i18n/types';
+
 import {
   isEngineTokenAmountWithinMax,
   parseEngineTokenAmount,
@@ -42,7 +44,7 @@ export function isEngineTokenAmountOverMax(
 
 export function engineTokenFormValidationMessageKey(
   code: EngineTokenFormValidationCode,
-): string {
+): MessageKey {
   switch (code) {
     case 'recipient_required':
       return 'wallet_validation_recipient_required';

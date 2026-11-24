@@ -144,7 +144,7 @@ export function MessagingMessageList({
                   bodyNode = (
                     <p className="flex items-center gap-2 text-body-sm text-muted">
                       <LockIcon className="size-4 shrink-0" />
-                      {t('messaging_message_one_way').replace('{to}', presentation.to)}
+                      {t('messaging_message_one_way', { to: presentation.to })}
                     </p>
                   );
                 } else {

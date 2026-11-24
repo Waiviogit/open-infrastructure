@@ -89,10 +89,9 @@ export function UpdateCard({
   const txExplorerHref = hiveUpdateExplorerHref(hiveTxExplorerBaseUrl, transactionId);
   const weightLabel = formatReputation(item.creator_wobjects_weight, loc);
 
-  const minLine = t('object_updates_min_required').replace(
-    '{percent}',
-    String(OBJECT_UPDATES_MIN_APPROVAL_PERCENT),
-  );
+  const minLine = t('object_updates_min_required', {
+    percent: OBJECT_UPDATES_MIN_APPROVAL_PERCENT,
+  });
 
   const hasTextOrGeo =
     (item.value_text?.trim().length ?? 0) > 0 || item.value_geo != null;

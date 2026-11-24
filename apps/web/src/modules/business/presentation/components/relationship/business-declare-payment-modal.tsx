@@ -91,10 +91,9 @@ export function BusinessDeclarePaymentModal({
       />
       {isReceiverConfirm ? (
         <p className={BUSINESS_CALLOUT_CLASS}>
-          {t('business_payment_receiver_confirm_warning').replace(
-            '{account}',
-            `@${parties.payer}`,
-          )}
+          {t('business_payment_receiver_confirm_warning', {
+            account: `@${parties.payer}`,
+          })}
         </p>
       ) : null}
       <BusinessField label={t('business_field_amount_usd')}>

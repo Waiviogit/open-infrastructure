@@ -6,7 +6,6 @@ import { buildCancelTransferFromSavingsOp } from '@opden-data-layer/hive-broadca
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 
 import { useHiveBroadcast } from '../../hooks/use-hive-broadcast';
 import { engineTokenBroadcastErrorMessageKey } from '../../utils/engine-token-broadcast-error-message';
@@ -50,8 +49,8 @@ export function HiveCancelSavingsWithdrawModal({
           <AppModalCloseButton onClose={onClose} />
         </div>
         <p className="text-body-sm text-muted">
-          {interpolateMessage(t('withdraw_from_savings'), {
-            requestId: String(state.requestId),
+          {t('withdraw_from_savings', {
+            requestId: state.requestId,
           })}{' '}
           — {state.amount}
         </p>

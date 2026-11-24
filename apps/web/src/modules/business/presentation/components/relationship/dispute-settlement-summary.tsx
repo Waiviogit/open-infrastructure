@@ -41,10 +41,9 @@ export function DisputeSettlementSummary({
           value={formatUsd(originalUsd)}
         />
         <SettlementRow
-          label={t('business_dispute_proposed_by').replace(
-            '@account',
-            `@${dispute.disputant}`,
-          )}
+          label={t('business_dispute_proposed_by', {
+            account: dispute.disputant,
+          })}
           value={formatUsd(proposedUsd)}
         />
         {isResolved && finalUsd != null ? (

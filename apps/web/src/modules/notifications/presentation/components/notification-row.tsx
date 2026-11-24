@@ -9,7 +9,6 @@ import { UserAvatar } from '@/shared/presentation';
 import { formatRelativeFeedTime } from '@/shared/utils/format-relative-time';
 
 import {
-  applyNotificationParams,
   formatNotification,
   notificationIconType,
   resolveNotificationHref,
@@ -44,7 +43,7 @@ export function NotificationRow({
   const formatted = formatNotification(item);
   const contextHref = resolveNotificationHref(item, formatted, viewerUsername);
   const template = t(formatted.key);
-  const messageLabel = applyNotificationParams(template, formatted.params);
+  const messageLabel = t(formatted.key, formatted.params);
   const timeLabel = formatRelativeFeedTime(item.occurredAt, locale);
   const actor = formatted.actor?.trim();
   const rowClassName = `relative flex gap-3 px-3 py-2.5${

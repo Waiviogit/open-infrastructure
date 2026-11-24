@@ -3,7 +3,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton, AppLoader } from '@/shared/presentation';
 
 import type { EngineDepositListApiResponse } from '../../../application/dto/engine-swap-api.schema';
@@ -39,7 +38,7 @@ function WalletDepositInstructionsParagraph({
   return (
     <p className="mt-2 text-body-sm text-muted">
       <span className={highlight}>
-        {interpolateMessage(t(leadKey), { symbol })}
+        {t(leadKey, { symbol })}
       </span>{' '}
       {t('wallet_deposit_instructions_confirmed_prefix')}{' '}
       <span className={highlight}>{swapSymbol}</span>{' '}

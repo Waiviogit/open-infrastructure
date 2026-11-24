@@ -496,11 +496,11 @@ export function WaivAdvancedReportTable({
     ? t('totals_calculated')
     : loadingReport
       ? reportMeta.hasMore
-        ? t('advanced_report_loading_count').replace('{count}', String(wallet.length))
+        ? t('advanced_report_loading_count', { count: wallet.length })
         : t('advanced_report_loading')
       : truncated
-        ? t('advanced_report_partial').replace('{count}', String(wallet.length))
-        : t('advanced_report_completed_count').replace('{count}', String(wallet.length));
+        ? t('advanced_report_partial', { count: wallet.length })
+        : t('advanced_report_completed_count', { count: wallet.length });
 
   return (
     <div className="w-full min-w-0">

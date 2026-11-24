@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import type { ProjectedListItem } from '@/modules/object/domain/projected-list-item.types';
 
 import {
@@ -30,7 +31,7 @@ export type ListSortCustomFormProps = {
   label?: string;
 };
 
-const AUTO_SORT_I18N: Record<ListSortCustomAutoSortType, string> = {
+const AUTO_SORT_I18N: Record<ListSortCustomAutoSortType, MessageKey> = {
   reverse_recency: 'catalog_sort_newest',
   recency: 'catalog_sort_oldest',
   'by-name-asc': 'catalog_sort_az',

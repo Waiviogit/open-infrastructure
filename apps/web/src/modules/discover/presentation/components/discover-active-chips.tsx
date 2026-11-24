@@ -72,8 +72,8 @@ export function DiscoverActiveChips({
     if (trimmedQ.length > 0) {
       chips.push({
         key: 'q',
-        label: t('discover_active_search_chip').replace('{query}', trimmedQ),
-        removeLabel: t('discover_remove_search').replace('{query}', trimmedQ),
+        label: t('discover_active_search_chip', { query: trimmedQ }),
+        removeLabel: t('discover_remove_search', { query: trimmedQ }),
         onRemove: () => pushHref(tags, '', box),
       });
     }
@@ -83,7 +83,7 @@ export function DiscoverActiveChips({
       chips.push({
         key: `tag:${tag}`,
         label,
-        removeLabel: t('discover_remove_filter').replace('{tag}', label),
+        removeLabel: t('discover_remove_filter', { tag: label }),
         onRemove: () =>
           pushHref(
             tags.filter((item) => item !== tag),

@@ -68,7 +68,7 @@ export function ActivityNoteComposer({
       />
       {tooLong ? (
         <p role="alert" className="text-caption text-error">
-          {t('activity_notes_too_long').replace('{max}', String(ACTIVITY_NOTE_BODY_MAX_CHARS))}
+          {t('activity_notes_too_long', { max: ACTIVITY_NOTE_BODY_MAX_CHARS })}
         </p>
       ) : null}
       {onCancel ? (

@@ -274,10 +274,7 @@ export function PublicOfferPageClient({
               <span>{t(`business_kind_label_${offer.kind}`)}</span>
               <span aria-hidden>·</span>
               <span>
-                {t('business_version_short').replace(
-                  '{version}',
-                  String(offer.version),
-                )}
+                {t('business_version_short', { version: offer.version })}
               </span>
               <StateBadge variant={isActive ? 'active' : 'retired'} />
             </div>

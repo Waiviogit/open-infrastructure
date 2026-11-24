@@ -4,7 +4,6 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 
 import type { HiveEngineCustomJsonPayload } from '@opden-data-layer/hive-broadcast';
 
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { AppModal, AppModalCloseButton, AppLoader } from '@/shared/presentation';
 
@@ -498,7 +497,7 @@ export function WalletWithdrawModal({
                     />
                   ) : null}
                   <p className="mt-2 text-body-sm text-muted">
-                    {interpolateMessage(t('wallet_withdraw_value_usd'), {
+                    {t('wallet_withdraw_value_usd', {
                       amount: estimatedUsd.toFixed(2),
                     })}
                   </p>

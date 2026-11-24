@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 
 export type StateBadgeVariant =
   | 'active'
@@ -15,7 +16,7 @@ export type StateBadgeVariant =
 
 type StateTone = 'success' | 'progress' | 'danger' | 'neutral';
 
-const LABEL_KEYS: Record<StateBadgeVariant, string> = {
+const LABEL_KEYS: Record<StateBadgeVariant, MessageKey> = {
   active: 'business_state_active',
   confirmed: 'business_state_confirmed',
   pending: 'business_state_pending',

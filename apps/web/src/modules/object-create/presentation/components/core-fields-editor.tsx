@@ -6,6 +6,7 @@ import { UPDATE_REGISTRY } from '@opden-data-layer/core/update-registry';
 import { UPDATE_TYPES } from '@opden-data-layer/core/update-types';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import { labelForUpdateType } from '@/modules/object/domain/object-update-labels';
 import { UpdateValueForm } from '@/modules/object-updates/presentation/components/update-value-form';
 import { TagChip } from '@/modules/object-updates/presentation/components/tag-chip';
@@ -41,7 +42,7 @@ export type CoreFieldsEditorProps = {
   disabled?: boolean;
 };
 
-const BLOCK_I18N: Record<SemanticBlockId, string> = {
+const BLOCK_I18N: Record<SemanticBlockId, MessageKey> = {
   required: 'object_create_fields_required',
   identity: 'object_create_block_identity',
   context: 'object_create_block_context',

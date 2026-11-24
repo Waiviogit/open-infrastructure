@@ -61,10 +61,7 @@ export function BusinessServiceOrderCard({
             <StateBadge variant={cancelled ? 'cancelled' : 'active'} />
           </div>
           <p className="mt-0.5 text-caption text-fg-secondary">
-            {t('business_service_order_by').replace(
-              '{account}',
-              `@${so.creator}`,
-            )}
+            {t('business_service_order_by', { account: `@${so.creator}` })}
             {' · '}
             <ActivityTimestamp timestamp={so.created_at} />
           </p>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 
 import {
   computeStepCompleteness,
@@ -37,7 +38,7 @@ const STATUS_DOT_CLASS: Record<ChecklistStatus, string> = {
   blocked: 'bg-error',
 };
 
-const STATUS_LABEL_KEY: Record<ChecklistStatus, string> = {
+const STATUS_LABEL_KEY: Record<ChecklistStatus, MessageKey> = {
   ready: 'business_review_checklist_ok',
   optional: 'business_review_checklist_optional',
   incomplete: 'business_step_incomplete',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import { InfoIcon } from '@/icons';
 
 import { BUSINESS_CALLOUT_CLASS } from '../ui/classes';
@@ -13,7 +14,7 @@ export type BusinessDisclosureVariant =
   | 'sign_metadata_hint'
   | 'payment_partial_confirm';
 
-const KEYS: Record<BusinessDisclosureVariant, string> = {
+const KEYS: Record<BusinessDisclosureVariant, MessageKey> = {
   ledger_start: 'business_disclosure_ledger',
   auto_payments: 'business_disclosure_auto_payments',
   legal_ref_warning: 'business_disclosure_legal_ref',

@@ -24,10 +24,9 @@ export function HomeFeedFilterNotice({ notice, requested }: HomeFeedFilterNotice
 
   const message =
     notice === 'sort_unavailable' && requested && requested.kind in SORT_LABEL_KEYS
-      ? t('home_feed_filter_sort_unavailable').replace(
-          '{sort}',
-          t(SORT_LABEL_KEYS[requested.kind as keyof typeof SORT_LABEL_KEYS]),
-        )
+      ? t('home_feed_filter_sort_unavailable', {
+          sort: t(SORT_LABEL_KEYS[requested.kind as keyof typeof SORT_LABEL_KEYS]),
+        })
       : notice === 'entity_unavailable'
         ? t('home_feed_filter_entity_unavailable')
         : t('home_feed_filter_signin_required');

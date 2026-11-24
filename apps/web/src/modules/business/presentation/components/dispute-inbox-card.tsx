@@ -69,9 +69,10 @@ export function DisputeInboxCard({
           <p
             className={`mt-0.5 text-caption text-fg-secondary ${BUSINESS_BREAK_TEXT}`}
           >
-            {t('business_dispute_pair')
-              .replace('{provider}', `@${row.pair.provider}`)
-              .replace('{client}', `@${row.pair.client}`)}{' '}
+            {t('business_dispute_pair', {
+              provider: `@${row.pair.provider}`,
+              client: `@${row.pair.client}`,
+            })}{' '}
             · <ActivityTimestamp timestamp={row.dispute.created_at} />
           </p>
           <DisputeSettlementSummary

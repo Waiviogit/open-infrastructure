@@ -1,15 +1,20 @@
 import { UPDATE_TYPES } from '@opden-data-layer/core/update-types';
 
+import { formatMessage } from '@/i18n/domain/format-message';
+import type { MessageValues } from '@/i18n/types';
+
 import { formatDuplicateRefMessage } from './format-duplicate-ref-message';
 
-const t = (key: string) =>
-  ({
-    object_create_duplicate_user_ref:
-      'Account {account} is already listed under {field}.',
-    object_create_duplicate_object_ref:
-      'Object {object} is already listed under {field}.',
-    object_create_duplicate_ref_value: 'Already added.',
-  })[key] ?? key;
+const messages: Readonly<Record<string, string>> = {
+  object_create_duplicate_user_ref:
+    'Account {account} is already listed under {field}.',
+  object_create_duplicate_object_ref:
+    'Object {object} is already listed under {field}.',
+  object_create_duplicate_ref_value: 'Already added.',
+};
+
+const t = (key: string, values?: MessageValues) =>
+  formatMessage(messages[key] ?? key, values);
 
 describe('formatDuplicateRefMessage', () => {
   it('formats user_ref duplicate with account and field', () => {

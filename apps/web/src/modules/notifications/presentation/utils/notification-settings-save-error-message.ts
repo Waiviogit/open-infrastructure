@@ -1,8 +1,9 @@
+import type { MessageKey } from '@/i18n/types';
 import type { EngineTokenBroadcastErrorCode } from '@/modules/user-wallet/domain/engine-token-broadcast-errors';
 
 export function notificationSettingsSaveErrorMessageKey(
   code: EngineTokenBroadcastErrorCode,
-): string {
+): MessageKey {
   switch (code) {
     case 'not_logged_in':
       return 'wallet_broadcast_not_logged_in';

@@ -59,9 +59,10 @@ export function BusinessOfferEditorClient({
   const stepCount = OFFER_EDITOR_STEPS.length;
   const isLastStep = editor.stepIndex >= stepCount - 1;
   const stepLabel = t(`business_editor_step_${editor.step}`);
-  const stepProgress = t('business_editor_step_progress')
-    .replace('{current}', String(editor.stepIndex + 1))
-    .replace('{total}', String(stepCount));
+  const stepProgress = t('business_editor_step_progress', {
+    current: editor.stepIndex + 1,
+    total: stepCount,
+  });
 
   const completeness = useMemo(
     () =>

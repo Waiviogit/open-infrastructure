@@ -4,6 +4,7 @@ import { useCallback, useId, useState } from 'react';
 
 import { UserRefSearchField } from '@/modules/object-updates/presentation/components/user-ref-search-field';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 
 import {
   addPostEditorTag,
@@ -28,7 +29,7 @@ const REWARD_MODES: readonly PostEditorRewardMode[] = [
   'declined',
 ];
 
-const REWARD_MODE_I18N: Record<PostEditorRewardMode, string> = {
+const REWARD_MODE_I18N: Record<PostEditorRewardMode, MessageKey> = {
   fifty_fifty: 'reward_option_50',
   hive_power: 'reward_option_100',
   declined: 'reward_option_0',
@@ -77,9 +78,7 @@ export function EditorAdvancedSettingsPanel({
       return;
     }
     if (!canAddPostEditorTag(tags, raw)) {
-      setTagError(
-        t('hashtags_error_invalid_hashtag').replace('{hashtag}', raw),
-      );
+      setTagError(t('hashtags_error_invalid_hashtag', { hashtag: raw }));
       return;
     }
     setTagError(null);

@@ -7,7 +7,7 @@ import type { NotificationSettingsFormState } from '../../application/notificati
 
 jest.mock('@/i18n/providers/i18n-provider', () => ({
   useI18n: () => ({
-    t: (key: string) => key,
+    t: (key: string) => (key === 'min_amount' ? 'min. amount: {input} USD' : key),
   }),
 }));
 
@@ -51,6 +51,22 @@ describe('NotificationSettingsForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'save' }));
 
     expect(onSave).toHaveBeenCalledWith(initialSettings);
+  });
+
+  it('renders the minimal transfer input inside the min amount sentence', () => {
+    render(
+      <NotificationSettingsForm
+        initialSettings={{ ...initialSettings, minimal_transfer: 5 }}
+        pending={false}
+        onSave={jest.fn()}
+      />,
+    );
+
+    const input = screen.getByRole('spinbutton');
+    expect(input).toHaveValue(5);
+    expect(input.previousElementSibling).toHaveTextContent('(min. amount:');
+    expect(input.nextElementSibling).toHaveTextContent('USD)');
+    expect(input.parentElement).not.toHaveTextContent('{input}');
   });
 
   it('shows save error when provided', () => {

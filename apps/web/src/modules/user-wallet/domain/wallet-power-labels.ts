@@ -1,3 +1,5 @@
+import type { Translate } from '@/i18n/types';
+
 import type { WalletMainAsset } from './wallet-modal-types';
 
 export type PowerModalMode = 'up' | 'down';
@@ -48,7 +50,7 @@ export function getWalletDelegateAmountAssetLabel(asset: WalletMainAsset): strin
 /** Manage-delegations asset selector label (WAIV Power (WP) / HIVE Power (HP)). */
 export function getWalletManageDelegationsAssetLabel(
   asset: WalletMainAsset,
-  translate: (key: string) => string,
+  translate: Translate,
 ): string {
   if (asset === 'WAIV') {
     return `${translate('wallet_waiv_power')} (WP)`;

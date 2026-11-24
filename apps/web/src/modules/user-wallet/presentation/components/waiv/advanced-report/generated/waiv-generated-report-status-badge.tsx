@@ -1,10 +1,11 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 
 import type { WaivGeneratedReportSummaryApi } from '../../../../../application/dto/waiv-generated-report-api.schema';
 
-const STATUS_KEY: Record<string, string> = {
+const STATUS_KEY: Record<string, MessageKey> = {
   pending: 'generated_report_status_pending',
   in_progress: 'generated_report_status_in_progress',
   completed: 'generated_report_status_completed',

@@ -1,7 +1,9 @@
+import type { MessageKey } from '@/i18n/types';
+
 import type { ActivityNoteErrorCode } from '../domain/activity-note.types';
 
 /** Stable action error code → i18n key shown in the notes UI. */
-export function activityNoteErrorMessageKey(code: ActivityNoteErrorCode): string {
+export function activityNoteErrorMessageKey(code: ActivityNoteErrorCode): MessageKey {
   switch (code) {
     case 'limit_reached':
       return 'activity_notes_limit_reached';

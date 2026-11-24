@@ -132,9 +132,7 @@ export function ActivityNotesSection({
           {t('activity_notes_title')}{' '}
           <span className="text-body-sm font-weight-body text-muted">
             ·{' '}
-            {t('activity_notes_count')
-              .replace('{count}', String(notes.length))
-              .replace('{limit}', String(limit))}
+            {t('activity_notes_count', { count: notes.length, limit })}
           </span>
         </h2>
         {notes.length > 0 ? (

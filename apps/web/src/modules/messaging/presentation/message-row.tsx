@@ -81,12 +81,7 @@ export function MessageRow({
   const editedLabel = t('messaging_edited');
 
   const timeCaption = activityCaption
-    ? formatActivityMessageCaption(
-        message,
-        locale,
-        t('object_activity_original_date_caption'),
-        editedLabel,
-      )
+    ? formatActivityMessageCaption(message, locale, t)
     : formatMessageTimeCaption(
         message.created_at_unix,
         locale,
@@ -297,10 +292,7 @@ export function MessageRow({
                 href={buildObjectActivityFeedPath(message.source_object.object_id)}
                 className="text-link hover:underline"
               >
-                {t('object_activity_source_from').replace(
-                  '{name}',
-                  message.source_object.name,
-                )}
+                {t('object_activity_source_from', { name: message.source_object.name })}
               </OptimisticNavLink>
             </p>
           ) : null}
@@ -309,10 +301,9 @@ export function MessageRow({
           <p className="mt-1 text-caption text-muted">{timeCaption}</p>
           {activityCaption && (message.duplicate_count ?? 1) > 1 ? (
             <p className="mt-0.5 text-caption text-muted">
-              {t('object_activity_duplicate_badge').replace(
-                '{count}',
-                String((message.duplicate_count ?? 1) - 1),
-              )}
+              {t('object_activity_duplicate_badge', {
+                count: (message.duplicate_count ?? 1) - 1,
+              })}
             </p>
           ) : null}
         </div>

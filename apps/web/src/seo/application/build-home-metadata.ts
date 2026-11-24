@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 
+import type { CatalogMessages, MessageKey } from '@/i18n/types';
+
 import { homeCanonical } from '../domain/canonical';
 import { SEO_FALLBACKS, SEO_I18N_KEYS } from '../domain/constants';
 import type { SeoBuildContext } from '../domain/metadata.types';
 import { seoPublicOrigin } from '../infrastructure/seo-public-origin';
 
 function messageOrFallback(
-  messages: Readonly<Record<string, string>>,
-  key: string,
+  messages: CatalogMessages,
+  key: MessageKey,
   fallback: string,
 ): string {
   const value = messages[key]?.trim();

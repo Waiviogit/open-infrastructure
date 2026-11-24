@@ -9,7 +9,9 @@ import { buildOdlUpdateCreateOp } from '@opden-data-layer/hive-broadcast';
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
 import { useOdlCustomJsonId } from '@/config/odl-network-provider';
 import { locales } from '@/i18n/config/locales';
+import { splitMessage } from '@/i18n/domain/format-message';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import { useHydrateWalletProvider } from '@/modules/auth';
 import { LexicalPostEditor, editorBodyToMarkdown } from '@/modules/editor';
 import { broadcastOdlOpWithOverflow } from '@/modules/object-updates/application/broadcast-odl-op-with-overflow';
@@ -31,10 +33,10 @@ import { HtmlSandboxFrame } from './html-sandbox-frame';
 import { ObjectPageContentBody } from './object-page-content-body';
 
 type FormatMessageKeys = {
-  hint: string;
-  placeholder: string;
-  previewHint: string;
-  errors: Record<HostBodyExtractError, string>;
+  hint: MessageKey;
+  placeholder: MessageKey;
+  previewHint: MessageKey;
+  errors: Record<HostBodyExtractError, MessageKey>;
 };
 
 const MESSAGE_KEYS: Record<HostBodyFormat, FormatMessageKeys> = {
@@ -91,7 +93,8 @@ function DraftBanner({
 }) {
   const { t, locale } = useI18n();
   const iso = new Date(draft.updatedAt).toISOString();
-  const [before, after = ''] = t('object_body_draft_found').split('{time}');
+  const message = t('object_body_draft_found');
+  const [before, after] = splitMessage(message, 'time') ?? [message, ''];
   return (
     <div
       role="status"

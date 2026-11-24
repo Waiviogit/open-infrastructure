@@ -8,7 +8,6 @@ import {
 } from '@opden-data-layer/hive-broadcast';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation';
 
 import {
@@ -23,6 +22,7 @@ import {
 import { parseHiveAmount } from '../../../domain/hive-wallet-amount';
 import type { WalletConvertHbdModalState } from '../../../domain/wallet-modal-types';
 import { useHiveBroadcast } from '../../hooks/use-hive-broadcast';
+import { engineTokenBroadcastErrorMessageKey } from '../../utils/engine-token-broadcast-error-message';
 import { WalletModalBalanceLine } from '../shared/wallet-modal-balance-line';
 import { WalletModalFieldLabel } from '../shared/wallet-modal-field-label';
 import { useWalletBalances } from './wallet-balances-context';
@@ -189,7 +189,7 @@ export function WalletConvertHbdModal({
           {t('estimated_transaction_value')}: {estimatedUsd} USD
         </p>
         <p className="mt-2 text-body-sm text-muted">
-          {interpolateMessage(t('wallet_convert_hbd_immediate'), {
+          {t('wallet_convert_hbd_immediate', {
             amount: immediateHbd,
           })}
         </p>
@@ -201,7 +201,7 @@ export function WalletConvertHbdModal({
         ) : null}
         {hiveBroadcast.error ? (
           <p className="mt-3 text-body-sm text-error" role="alert">
-            {t(hiveBroadcast.error)}
+            {t(engineTokenBroadcastErrorMessageKey(hiveBroadcast.error))}
           </p>
         ) : null}
 

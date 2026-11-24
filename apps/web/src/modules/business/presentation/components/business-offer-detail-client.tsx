@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import { useOblCustomJsonId } from '@/config/odl-network-provider';
 
 import { buildRetireOfferOp } from '../../application/build-obl-ops';
@@ -33,9 +34,8 @@ export function BusinessOfferDetailClient({
   const oblCustomJsonId = useOblCustomJsonId();
   const { broadcast, phase, isBusy, error, setError } =
     useOblBroadcast(username);
-  const [newVersionErrorKey, setNewVersionErrorKey] = useState<string | null>(
-    null,
-  );
+  const [newVersionErrorKey, setNewVersionErrorKey] =
+    useState<MessageKey | null>(null);
   const [creatingVersion, setCreatingVersion] = useState(false);
   const [retireOpen, setRetireOpen] = useState(false);
   const isOwner = username === offer.author;
@@ -193,10 +193,7 @@ export function BusinessOfferDetailClient({
             href={businessRoutes.offerVersion(offer.offer_id, offer.version)}
             className="text-body-sm text-link"
           >
-            {t('business_open_version').replace(
-              '{version}',
-              String(offer.version),
-            )}
+            {t('business_open_version', { version: offer.version })}
           </Link>
         </div>
 

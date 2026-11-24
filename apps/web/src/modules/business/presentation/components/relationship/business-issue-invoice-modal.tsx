@@ -554,10 +554,9 @@ export function BusinessIssueInvoiceModal({
                   className={`${BUSINESS_CALLOUT_CLASS} border-error`}
                   role="alert"
                 >
-                  {t('business_invoice_self_beneficiary_warning').replace(
-                    '@debtor',
-                    `@${normalizeHiveAccountInput(splitDebtor)}`,
-                  )}
+                  {t('business_invoice_self_beneficiary_warning', {
+                    debtor: normalizeHiveAccountInput(splitDebtor),
+                  })}
                 </p>
               ) : null}
               {attestor ? (

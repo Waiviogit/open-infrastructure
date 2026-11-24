@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { BookIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 
 import {
   buildObjectAddOnPath,
@@ -12,6 +13,7 @@ import {
   buildObjectRelatedPath,
   buildObjectSimilarPath,
 } from '../../domain/object-page-url.constants';
+import { objectTypeLabelKey } from '../../domain/object-type-label-key';
 import type { ObjectRefCardView } from '../../domain/object-page.types';
 import type { ObjectFieldReferenceGroupView } from '../../infrastructure/object-field-references.client';
 import type { PaginatedUserFollowListView } from '@/modules/user-social/application/dto/user-social.dto';
@@ -85,19 +87,15 @@ function ObjectRefSection({
   );
 }
 
-function fieldReferenceSectionTitle(
-  t: (key: string) => string,
-  objectType: string,
-): string {
+function fieldReferenceSectionTitle(t: Translate, objectType: string): string {
   if (objectType === 'book') {
     return t('books');
   }
   if (objectType === 'product') {
     return t('products');
   }
-  const typeKey = `object_type_${objectType.replace(/&/g, '')}`;
-  const label = t(typeKey);
-  return label !== typeKey ? label : t('references');
+  const typeKey = objectTypeLabelKey(objectType);
+  return typeKey ? t(typeKey) : t('references');
 }
 
 /** Matches profile `RightSidebar` surface tokens (`rounded-card`, `border-border`, `bg-surface/60`). */

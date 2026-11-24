@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 
 import { formatBroadcastJsonBytes } from '../../domain/format-broadcast-json-size';
 import {
@@ -17,7 +18,7 @@ const CATEGORY_ORDER: readonly PendingOpsCategory[] = [
   'metadata',
 ];
 
-const CATEGORY_I18N: Record<PendingOpsCategory, string> = {
+const CATEGORY_I18N: Record<PendingOpsCategory, MessageKey> = {
   identity: 'object_create_dim_identity',
   relations: 'object_create_dim_relations',
   metadata: 'object_create_dock_category_metadata',
@@ -75,21 +76,18 @@ export function PendingOpsDock({
     return `${t(CATEGORY_I18N[id])}(${count})`;
   }).join(' ');
 
-  const readyLine = t('object_create_dock_ready').replace(
-    '{n}',
-    String(summary.total),
-  );
+  const readyLine = t('object_create_dock_ready', { count: summary.total });
 
   const broadcastSizeLine =
     jsonBytes !== undefined
       ? broadcastViaIpfs
-        ? t('object_create_broadcast_size_ipfs').replace(
-            '{size}',
-            formatBroadcastJsonBytes(jsonBytes),
-          )
-        : t('object_create_broadcast_size_direct')
-            .replace('{size}', formatBroadcastJsonBytes(jsonBytes))
-            .replace('{n}', String(opCount ?? 1))
+        ? t('object_create_broadcast_size_ipfs', {
+            size: formatBroadcastJsonBytes(jsonBytes),
+          })
+        : t('object_create_broadcast_size_direct', {
+            size: formatBroadcastJsonBytes(jsonBytes),
+            n: opCount ?? 1,
+          })
       : null;
 
   const broadcastSizeNearLimit =
@@ -97,7 +95,7 @@ export function PendingOpsDock({
 
   const ipfsObjectIdLine =
     broadcastViaIpfs && ipfsObjectId
-      ? t('object_create_ipfs_object_id').replace('{id}', ipfsObjectId)
+      ? t('object_create_ipfs_object_id', { id: ipfsObjectId })
       : null;
 
   const publishLabel = (() => {

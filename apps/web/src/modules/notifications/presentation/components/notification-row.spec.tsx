@@ -2,19 +2,22 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { formatMessage } from '@/i18n/domain/format-message';
+import type { MessageValues } from '@/i18n/types';
+
 import type { UserNotificationItem } from '../../infrastructure/notifications-ws-client';
 import { NotificationRow } from './notification-row';
 
 jest.mock('@/i18n/providers/i18n-provider', () => ({
   useI18n: () => ({
-    t: (key: string) => {
+    t: (key: string, values?: MessageValues) => {
       const map: Record<string, string> = {
         notification_reply_username_comment: '{username} has replied to your comment',
         notification_transfer_username_amount: '{username} transferred {amount} to {to}',
         notification_message_direct: 'You have a new message from {author}',
         import_update: 'Import completed for {cid}',
       };
-      return map[key] ?? key;
+      return formatMessage(map[key] ?? key, values);
     },
     locale: 'en-US',
   }),

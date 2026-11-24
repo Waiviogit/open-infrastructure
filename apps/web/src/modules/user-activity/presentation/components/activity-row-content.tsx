@@ -3,10 +3,10 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
 
+import { splitMessage } from '@/i18n/domain/format-message';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 
 import type { ActivityRowView } from '../../domain/types/activity-row-view';
-import { interpolateMessage } from '../utils/interpolate-message';
 import { ActivityRowShell } from './activity-row-shell';
 
 type ProfileLinkProps = { name: string; children: React.ReactNode };
@@ -118,9 +118,7 @@ export function ActivityRowContent({ row }: { row: ActivityRowView }) {
             </>
           ) : (
             <>
-              {interpolateMessage(t(`user_${voteKey}`), {
-                username: `@${row.voter}`,
-              })}{' '}
+              {t(`user_${voteKey}`, { username: `@${row.voter}` })}{' '}
               {weightSuffix}
               <PostLink author={row.author} permlink={row.permlink}>
                 @{row.author}/{row.permlink}
@@ -152,9 +150,7 @@ export function ActivityRowContent({ row }: { row: ActivityRowView }) {
             </>
           ) : (
             <>
-              {interpolateMessage(t('activity_user_replied_to'), {
-                username: `@${row.author}`,
-              })}{' '}
+              {t('activity_user_replied_to', { username: `@${row.author}` })}{' '}
               <ProfileLink name={row.parentAuthor}>@{row.parentAuthor}</ProfileLink> (
               <PostLink author={row.author} permlink={row.permlink}>
                 {row.permlink}
@@ -181,10 +177,22 @@ export function ActivityRowContent({ row }: { row: ActivityRowView }) {
           : row.what === 'ignore'
             ? 'ignored_user'
             : 'unfollowed_user';
+      const label = t(labelKey);
+      const labelParts = splitMessage(label, 'following');
+      const followingLink = <ProfileLink name={row.following}>@{row.following}</ProfileLink>;
       return (
         <ActivityRowShell timestamp={row.timestamp}>
-          {interpolateMessage(t(labelKey), { following: '' }).trim()}{' '}
-          <ProfileLink name={row.following}>@{row.following}</ProfileLink>
+          {labelParts ? (
+            <>
+              {labelParts[0]}
+              {followingLink}
+              {labelParts[1]}
+            </>
+          ) : (
+            <>
+              {label.trim()} {followingLink}
+            </>
+          )}
         </ActivityRowShell>
       );
     }
@@ -200,10 +208,9 @@ export function ActivityRowContent({ row }: { row: ActivityRowView }) {
     case 'custom_follow_object':
       return (
         <ActivityRowShell timestamp={row.timestamp}>
-          {interpolateMessage(
-            t(row.isFollow ? 'activity_follow_object' : 'activity_unfollow_object'),
-            { objectType: row.objectType },
-          )}{' '}
+          {t(row.isFollow ? 'activity_follow_object' : 'activity_unfollow_object', {
+            objectType: row.objectType,
+          })}{' '}
           <ObjectLink permlink={row.objectPermlink}>{row.objectName}</ObjectLink>
         </ActivityRowShell>
       );
@@ -346,17 +353,17 @@ export function ActivityRowContent({ row }: { row: ActivityRowView }) {
       return (
         <ActivityRowShell timestamp={row.timestamp}>
           {row.openPays
-            ? interpolateMessage(t('cancel_order'), { open_pays: row.openPays })
+            ? t('cancel_order', { open_pays: row.openPays })
             : t('cancel_limit_order')}
         </ActivityRowShell>
       );
     case 'wallet_proposal_pay':
       return (
         <ActivityRowShell timestamp={row.timestamp}>
-          {interpolateMessage(
-            t(row.direction === 'in' ? 'proposal_payment_from' : 'proposal_payment_to'),
-            { steem_dao: row.payer, receiver: row.receiver },
-          )}{' '}
+          {t(row.direction === 'in' ? 'proposal_payment_from' : 'proposal_payment_to', {
+            steem_dao: row.payer,
+            receiver: row.receiver,
+          })}{' '}
           {row.amount}
         </ActivityRowShell>
       );

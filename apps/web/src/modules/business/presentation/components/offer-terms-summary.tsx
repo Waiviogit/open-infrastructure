@@ -91,7 +91,7 @@ export function OfferTermsSummary({
             : t('business_not_specified')}
           {termination?.mode === 'notice' &&
           termination.noticeDays !== undefined
-            ? ` · ${t('business_notice_days').replace('{days}', String(termination.noticeDays))}`
+            ? ` · ${t('business_notice_days', { count: termination.noticeDays })}`
             : null}
         </TermRow>
         <TermRow label={t('business_field_dispute_rule')}>

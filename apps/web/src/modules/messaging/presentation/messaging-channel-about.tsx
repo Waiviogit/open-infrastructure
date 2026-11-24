@@ -80,7 +80,7 @@ export function MessagingChannelAbout({
           ) : null}
           {showMemberRoster ? (
             <p className="mt-1 text-caption text-muted">
-              {t('messaging_members_count').replace('{count}', String(channel.members.length))}
+              {t('messaging_members_count', { count: channel.members.length })}
             </p>
           ) : null}
           {isGroupAdmin && onEdit ? (
@@ -117,10 +117,7 @@ export function MessagingChannelAbout({
           </ul>
           {channel.members.length > 8 ? (
             <p className="mt-2 text-caption text-muted">
-              {t('messaging_members_more').replace(
-                '{count}',
-                String(channel.members.length - 8),
-              )}
+              {t('messaging_members_more', { count: channel.members.length - 8 })}
             </p>
           ) : null}
         </div>

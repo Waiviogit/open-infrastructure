@@ -11,7 +11,6 @@ import {
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { UserRefSearchField } from '@/modules/object-updates/presentation/components/user-ref-search-field';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation';
 
 import {
@@ -323,7 +322,7 @@ export function WalletTransferModal({
             showTokenOnlyOnAssetTrigger
           />
           <p className="text-body-sm text-muted">
-            {interpolateMessage(t('wallet_transfer_value_usd'), {
+            {t('wallet_transfer_value_usd', {
               amount: estimatedUsdAmount,
             })}
           </p>

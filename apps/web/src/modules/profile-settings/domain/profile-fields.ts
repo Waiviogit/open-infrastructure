@@ -5,6 +5,7 @@ import {
   type HiveProfileField,
 } from '@opden-data-layer/hive-broadcast';
 
+import type { MessageKey } from '@/i18n/types';
 import {
   linkKindDisplayLabel,
   linkKindPublicIconSrc,
@@ -20,8 +21,8 @@ export const PROFILE_FORM_FIELDS: readonly HiveProfileField[] = HIVE_PROFILE_FIE
 
 export type ProfileTextFieldRow = {
   id: 'name' | 'about' | 'location' | 'email' | 'website';
-  labelKey: string;
-  placeholderKey: string;
+  labelKey: MessageKey;
+  placeholderKey: MessageKey;
   /** Legacy Waivio marks fields that are shown on the public profile. */
   isPublic: boolean;
   multiline: boolean;

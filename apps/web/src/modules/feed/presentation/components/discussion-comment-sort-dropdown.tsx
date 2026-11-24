@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 
 import { ChevronDownIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 
 import {
   DISCUSSION_COMMENT_SORTS,
   type DiscussionCommentSort,
 } from '../../domain/sort-discussion-comments';
 
-const SORT_I18N_KEYS: Record<DiscussionCommentSort, string> = {
+const SORT_I18N_KEYS: Record<DiscussionCommentSort, MessageKey> = {
   BEST: 'sort_best',
   NEWEST: 'sort_newest',
   OLDEST: 'sort_oldest',

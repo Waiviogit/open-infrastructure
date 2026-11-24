@@ -1,3 +1,5 @@
+import type { CatalogMessages } from '@/i18n/types';
+
 export type ObjectSeoInput = {
   objectId: string;
   title: string;
@@ -47,5 +49,5 @@ export type OfferSeoInput = {
 
 export type SeoBuildContext = {
   locale: string;
-  messages: Readonly<Record<string, string>>;
+  messages: CatalogMessages;
 };

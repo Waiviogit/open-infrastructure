@@ -25,6 +25,7 @@ Specialization for this app. **Shared policy** (monorepo, docs standards, cross-
 | **husky `pre-push`** | When pushed commits touch `apps/web/**` or `libs/**`, runs `pnpm typecheck:web` automatically (bypass: `git push --no-verify`; CI still enforces) |
 | `pnpm typecheck:web` / `pnpm nx run web:typecheck` | `tsc --noEmit` (fast; same class of TS errors as prod build; CI `verify.yml`) |
 | `pnpm check:web-i18n-utf8` | Locale JSON strict UTF-8 (CI `verify.yml`) |
+| `pnpm check:web-i18n-keys` | Locale key parity with en-US, placeholders, plural forms (CI `verify.yml`) |
 | `pnpm nx run web:verify-production-build` | Full `next build ./apps/web` — manual smoke before Docker image (same as `apps/web/Dockerfile` builder) |
 
 `next dev` does **not** typecheck — do not rely on dev alone. Does **not** run `docker build`; use that only when you need the full image. On Windows, standalone copy may warn (see `next.config.js`); TypeScript failures are what typecheck and production build catch.
@@ -74,8 +75,17 @@ index.ts         public barrel — other features import only from here
 
 - Message catalogs: `src/i18n/locales/*.json`. **Strict UTF-8, no BOM**, valid JSON — enforced in CI (`verify.yml` → `scripts/verify-web-locale-json-utf8.cjs`); local: `pnpm check:web-i18n-utf8`.
 - Scripts/agents that edit catalogs: **explicit UTF-8** on every read/write (Python `encoding='utf-8'`; Node **Buffer** + `TextDecoder('utf-8', { fatal: true })`). See repo root [`AGENTS.md`](../../AGENTS.md) **Web i18n locale catalogs**.
-- Server: **`getRequestLocale()`** (cookies + `Accept-Language`), **`loadMessages()`** for the active catalog.
-- Client: **`I18nProvider`** and **`useI18n()`** for `t(key)` lookups.
+- Server: **`getRequestLocale()`** (cookies + `Accept-Language`), **`loadMessages()`** for the active catalog (merged over en-US, so a missing translation shows English), **`createTranslator(messages, locale)`** for `t` in server code.
+- Client: **`I18nProvider`** and **`useI18n()`** for `t`.
+- Full catalog and translator rules: [`i18n-messages.md`](../../docs/apps/web/spec/i18n-messages.md).
+
+| Do | Don't |
+|----|-------|
+| `t('key', { name, count })` — fills every `{name}`; a numeric `count` picks the plural form `key_one/_few/_many/_other` | `t('key').replace('{name}', …)`, local interpolate helpers, `count === 1 ? 'a' : 'b'` |
+| Type keys as `MessageKey` / `Translate` from `@/i18n/types` (`labelKey: MessageKey`, `Record<Status, MessageKey>`); `pnpm typecheck:web` then catches typos and deleted keys | Carry keys as `string`, or cast to silence the type (one cast only at a library boundary, plus an `*.i18n.spec.ts`) |
+| Keys `<module>_<area>_<meaning>`, ASCII snake_case, `{name}` placeholders; put `@` in the text before `{account}` | `${x}`, `@x`, `$x` tokens or HTML in catalog values |
+| Element inside a sentence: `splitMessage(t('key'), 'name')` and render the parts around it | Append the link after the text — word order differs per language |
+| Add keys with `pnpm i18n:add-keys <file>` (every locale; plural messages as form objects), remove with `pnpm i18n:remove-keys`, find dead ones with `pnpm i18n:unused` | Read a catalog whole (2 000+ lines) — grep it; hand-edit 24 files; one-off catalog scripts |
 - Locale is **not** a URL segment — do **not** introduce `[locale]` segment routing.
 - RTL: use **`isRtl(locale)`** from `src/i18n/domain/`; set **`dir`** on `<html>` in the root layout only.
 - New locale: add JSON under `i18n/locales/` and register the locale in `i18n/config/locales.ts`.
@@ -372,7 +382,7 @@ Plan error paths **when adding a feature**, not only after a production failure.
 
 **Reference implementations:** `upload-image.action.ts` + `useIpfsImageUpload` + `IpfsImageDropZone` / `ImageCidOrUrlForm` (IPFS upload unavailable).
 
-**New user-facing i18n keys:** add to **every** `src/i18n/locales/*.json` file (strict UTF-8, no BOM) or provide a deliberate fallback to an existing key in client code.
+**New user-facing i18n keys:** add to **every** `src/i18n/locales/*.json` file with `pnpm i18n:add-keys` (strict UTF-8, no BOM); `pnpm check:web-i18n-keys` fails on a locale without the key.
 
 ## Form Rules
 

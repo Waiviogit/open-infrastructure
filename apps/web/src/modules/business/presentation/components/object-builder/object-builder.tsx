@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 import { PlusIcon, TrashIcon } from '@/icons';
 
 import {
@@ -49,7 +50,7 @@ const VALUE_NOTE_CLASS =
 const NESTED_CLASS = 'flex flex-col gap-2 border-s-2 border-border ps-3';
 
 function issueMessage(
-  t: (key: string) => string,
+  t: Translate,
   issue: ObjectBuilderValidationIssue,
 ): string {
   switch (issue.code) {
@@ -68,7 +69,7 @@ function issueMessage(
   }
 }
 
-function typeLabel(t: (key: string) => string, type: ObjectBuilderType): string {
+function typeLabel(t: Translate, type: ObjectBuilderType): string {
   switch (type) {
     case 'string':
       return t('business_object_builder_type_string');
@@ -170,7 +171,7 @@ function ScalarValueEditor({
 type ArrayItemsEditorProps = {
   items: ObjectBuilderArrayItem[];
   disabled: boolean;
-  t: (key: string) => string;
+  t: Translate;
   onChange: (items: ObjectBuilderArrayItem[]) => void;
 };
 
@@ -251,7 +252,7 @@ type PropertyRowsEditorProps = {
   disabled: boolean;
   maxProperties: number;
   issuesByRowId: Map<string, ObjectBuilderValidationIssue[]>;
-  t: (key: string) => string;
+  t: Translate;
   onChange: (rows: ObjectBuilderRow[]) => void;
 };
 
@@ -332,10 +333,9 @@ function PropertyRowsEditor({
                 <span
                   className={`${PROPERTY_VALUE_CELL_CLASS} ${VALUE_NOTE_CLASS}`}
                 >
-                  {t('business_object_builder_edit_n_properties').replace(
-                    '{count}',
-                    String(countNestedProperties(row.children)),
-                  )}
+                  {t('business_object_builder_edit_n_properties', {
+                    count: countNestedProperties(row.children),
+                  })}
                 </span>
               ) : row.type === 'array' ? null : (
                 <div className={PROPERTY_VALUE_CELL_CLASS}>

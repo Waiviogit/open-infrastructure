@@ -3,6 +3,9 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
+import { formatMessage } from '@/i18n/domain/format-message';
+import type { MessageValues } from '@/i18n/types';
+
 import { GalleryRankModal } from './gallery-rank-modal';
 
 const broadcast = jest.fn().mockResolvedValue({ transactionId: 'tx1' });
@@ -46,7 +49,7 @@ jest.mock('@/shared/presentation', () => ({
 
 jest.mock('@/i18n/providers/i18n-provider', () => ({
   useI18n: () => ({
-    t: (key: string) => {
+    t: (key: string, values?: MessageValues) => {
       const map: Record<string, string> = {
         gallery_rank_label: 'Gallery rank',
         gallery_rank_current: 'Current rank: {value}',
@@ -55,7 +58,7 @@ jest.mock('@/i18n/providers/i18n-provider', () => ({
         gallery_rank_cancel: 'Cancel',
         gallery_rank_confirming: 'Confirming…',
       };
-      return map[key] ?? key;
+      return formatMessage(map[key] ?? key, values);
     },
   }),
 }));

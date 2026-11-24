@@ -1,4 +1,9 @@
-import { formatWalletModalBalanceDisplay } from './wallet-modal-format';
+import type { Translate } from '@/i18n/types';
+
+import {
+  formatWalletModalBalanceDisplay,
+  WALLET_MODAL_BALANCE_DISPLAY_DECIMALS,
+} from './wallet-modal-format';
 import type { WalletMainAsset } from './wallet-modal-types';
 import { isEngineTokenAsset } from './wallet-modal-types';
 
@@ -88,10 +93,16 @@ export function computePowerDownPeriodDays(
   return unstakingCooldown / numberTransactions;
 }
 
-export function formatPowerDownPeriodDaysLabel(periodDays: number): string {
-  return Number.isInteger(periodDays)
-    ? String(periodDays)
-    : formatWalletModalBalanceDisplay(String(periodDays));
+/**
+ * Period length as the unlock preview shows it: whole days, or truncated to the
+ * wallet display precision.
+ */
+export function roundPowerDownPeriodDays(periodDays: number): number {
+  if (Number.isInteger(periodDays)) {
+    return periodDays;
+  }
+  const factor = 10 ** WALLET_MODAL_BALANCE_DISPLAY_DECIMALS;
+  return Math.floor(periodDays * factor) / factor;
 }
 
 export type FormatPowerDownUnlockPreviewParams = {
@@ -102,18 +113,13 @@ export type FormatPowerDownUnlockPreviewParams = {
     | PowerDownUnlockMeta
     | { unstakingCooldown?: unknown; numberTransactions?: unknown }
     | null;
-  translate: (key: string) => string;
-  interpolate: (
-    template: string,
-    values: Record<string, string>,
-  ) => string;
+  translate: Translate;
 };
 
 export function formatPowerDownUnlockPreview(
   params: FormatPowerDownUnlockPreviewParams,
 ): string {
-  const { asset, parsedAmount, liquidSymbol, engineMeta, translate, interpolate } =
-    params;
+  const { asset, parsedAmount, liquidSymbol, engineMeta, translate } = params;
 
   if (asset === 'HIVE' || asset === 'WAIV') {
     const weeks = getWalletPowerDownWeeks(asset);
@@ -121,7 +127,7 @@ export function formatPowerDownUnlockPreview(
     if (!installment) {
       return '';
     }
-    return interpolate(translate('wallet_power_unlock_weekly'), {
+    return translate('wallet_power_unlock_weekly', {
       amount: installment,
       symbol: liquidSymbol,
     });
@@ -141,15 +147,15 @@ export function formatPowerDownUnlockPreview(
       return '';
     }
     if (periodDays === 7) {
-      return interpolate(translate('wallet_power_unlock_weekly'), {
+      return translate('wallet_power_unlock_weekly', {
         amount: installment,
         symbol: liquidSymbol,
       });
     }
-    return interpolate(translate('wallet_power_unlock_every_days'), {
+    return translate('wallet_power_unlock_every_days', {
       amount: installment,
       symbol: liquidSymbol,
-      days: formatPowerDownPeriodDaysLabel(periodDays),
+      count: roundPowerDownPeriodDays(periodDays),
     });
   }
 

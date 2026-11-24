@@ -28,7 +28,7 @@ export function useOfferPriceLabel(): (
     }
     const amount = formatUsd(summary.amountUsd);
     return summary.pricingModel === 'hourly'
-      ? t('business_price_per_hour').replace('{amount}', amount)
+      ? t('business_price_per_hour', { amount })
       : amount;
   };
 }
@@ -101,10 +101,7 @@ export function OfferCard({
               <span className={BUSINESS_BREAK_TEXT}>@{offer.author}</span>
             ) : null}
             <span>
-              {t('business_version_short').replace(
-                '{version}',
-                String(offer.version),
-              )}
+              {t('business_version_short', { version: offer.version })}
             </span>
             {summary.billingCycle ? (
               <span className={BUSINESS_BREAK_TEXT}>

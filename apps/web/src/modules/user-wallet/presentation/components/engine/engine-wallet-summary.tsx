@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 
 import {
   buildEnginePinnedTokenQuickActions,
@@ -35,11 +34,9 @@ export function EngineWalletSummary({
 
   const actionLabels = useMemo(
     () => ({
-      swapTo: (symbol: string) =>
-        interpolateMessage(t('wallet_swap_to'), { symbol }),
+      swapTo: (symbol: string) => t('wallet_swap_to', { symbol }),
       swap: t('swap'),
-      withdrawTo: (symbol: string) =>
-        interpolateMessage(t('wallet_withdraw_to'), { symbol }),
+      withdrawTo: (symbol: string) => t('wallet_withdraw_to', { symbol }),
     }),
     [t],
   );

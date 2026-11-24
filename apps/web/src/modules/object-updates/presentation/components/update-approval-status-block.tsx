@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 
 import type { ObjectUpdateFeedItemView } from '../../application/dto/object-updates-feed.dto';
 import { OBJECT_UPDATES_MIN_APPROVAL_PERCENT } from '../../constants';
@@ -20,7 +21,7 @@ export function approvalStatusBadgeClass(positive: boolean): string {
 export function decisivePrivilegedVoteLabelKey(
   tier: 'admin' | 'trusted',
   vote: 'for' | 'against',
-): string {
+): MessageKey {
   if (tier === 'admin') {
     return vote === 'for'
       ? 'object_updates_approved_by_admin'

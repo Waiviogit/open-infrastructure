@@ -147,9 +147,10 @@ export function LedgerInvoiceCard({
       }
       meta={
         <>
-          {t('business_invoice_parties')
-            .replace('{debtor}', `@${invoice.debtor}`)
-            .replace('{creditor}', `@${invoice.creditor}`)}
+          {t('business_invoice_parties', {
+            debtor: `@${invoice.debtor}`,
+            creditor: `@${invoice.creditor}`,
+          })}
           {' · '}
           <ActivityTimestamp timestamp={invoice.created_at} />
         </>
@@ -228,10 +229,9 @@ export function LedgerDisputeCard({
       }
       meta={
         <>
-          {t('business_dispute_opened_by').replace(
-            '{account}',
-            `@${dispute.disputant}`,
-          )}
+          {t('business_dispute_opened_by', {
+            account: `@${dispute.disputant}`,
+          })}
           {' · '}
           <ActivityTimestamp timestamp={dispute.created_at} />
         </>
@@ -279,9 +279,10 @@ export function LedgerContractCard({
       }
       meta={
         <>
-          {t('business_contract_parties')
-            .replace('{provider}', `@${contract.provider}`)
-            .replace('{client}', `@${contract.client}`)}
+          {t('business_contract_parties', {
+            provider: `@${contract.provider}`,
+            client: `@${contract.client}`,
+          })}
           {' · '}
           <ActivityTimestamp timestamp={contract.created_at} />
         </>
@@ -319,7 +320,7 @@ export function LedgerReportCard({
       href={businessRoutes.report(report.report_id)}
       meta={
         <>
-          {t('business_report_by').replace('{account}', `@${report.author}`)}
+          {t('business_report_by', { account: `@${report.author}` })}
           {' · '}
           <ActivityTimestamp timestamp={report.created_at} />
         </>

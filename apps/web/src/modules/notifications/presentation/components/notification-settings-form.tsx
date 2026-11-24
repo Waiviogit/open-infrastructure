@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
+import { splitMessage } from '@/i18n/domain/format-message';
 import { useI18n } from '@/i18n/providers/i18n-provider';
 
 import type { NotificationSettingsFormState } from '../../application/notification-settings.types';
@@ -72,7 +73,11 @@ function IncomingTransferField({
   onMinimalTransferChange,
 }: IncomingTransferFieldProps) {
   const { t } = useI18n();
-  const [minAmountBefore = '', minAmountAfter = ''] = t('min_amount').split('{input}');
+  const minAmountLabel = t('min_amount');
+  const [minAmountBefore, minAmountAfter] = splitMessage(minAmountLabel, 'input') ?? [
+    minAmountLabel,
+    '',
+  ];
 
   return (
     <label className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body leading-snug text-fg">
@@ -195,17 +200,17 @@ export function NotificationSettingsForm({
 
       <SettingsSection title={t('my_actions')}>
         <CheckboxField
-          label={t('my_post_notify')}
+          label={t('posts')}
           checked={form.my_post}
           onChange={setBool('my_post')}
         />
         <CheckboxField
-          label={t('my_comment_notify')}
+          label={t('replies')}
           checked={form.my_comment}
           onChange={setBool('my_comment')}
         />
         <CheckboxField
-          label={t('my_like_notify')}
+          label={t('likes')}
           checked={form.my_like}
           onChange={setBool('my_like')}
         />

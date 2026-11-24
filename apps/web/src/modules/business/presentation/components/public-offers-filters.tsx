@@ -210,10 +210,9 @@ export function CatalogActiveFilters({
           <button
             type="button"
             onClick={() => router.push(hrefWithout(chip.field))}
-            aria-label={t('business_catalog_remove_filter').replace(
-              '{filter}',
-              chip.label,
-            )}
+            aria-label={t('business_catalog_remove_filter', {
+              filter: chip.label,
+            })}
             className={`inline-flex size-5 shrink-0 items-center justify-center rounded-circle text-fg-secondary hover:bg-surface hover:text-fg ${BUSINESS_FOCUS_RING}`}
           >
             <CloseIcon size={12} />

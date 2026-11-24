@@ -3,7 +3,9 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 
+import { splitMessage } from '@/i18n/domain/format-message';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 import { ActivityTimestamp } from '@/modules/user-activity/presentation/components/activity-timestamp';
 
 import {
@@ -63,12 +65,10 @@ function PostLink({
   );
 }
 
-const ACCOUNT_PLACEHOLDER = '{account}';
-
 function paymentDescription(
   payment: LedgerPaymentRow,
   viewer: string,
-  t: (key: string) => string,
+  t: Translate,
 ): ReactNode {
   const postRef =
     payment.method === 'upvote_reward'
@@ -89,9 +89,10 @@ function paymentDescription(
   const counterparty = isOutgoing ? payment.receiver : payment.payer;
   // One sentence per direction: word order differs by language, so the link goes where
   // `{account}` sits in the translation.
-  const [before, after = ''] = t(
+  const text = t(
     isOutgoing ? 'business_payment_sent_to' : 'business_payment_received_from',
-  ).split(ACCOUNT_PLACEHOLDER);
+  );
+  const [before, after] = splitMessage(text, 'account') ?? [text, ''];
 
   return (
     <>

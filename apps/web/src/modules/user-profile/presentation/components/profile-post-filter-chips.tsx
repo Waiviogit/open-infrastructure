@@ -75,7 +75,7 @@ export function ProfilePostFilterChips({ accountName, objectIds }: ProfilePostFi
     <div className="mb-4">
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <span className="text-caption font-weight-label text-fg-tertiary">
-          {t('profile_active_filters').replace('{count}', String(activeCount))}
+          {t('profile_active_filters', { count: activeCount })}
         </span>
         <button
           type="button"
@@ -93,7 +93,7 @@ export function ProfilePostFilterChips({ accountName, objectIds }: ProfilePostFi
               type="button"
               className="shrink-0 rounded-full p-0.5 text-fg-secondary hover:bg-surface-control hover:text-fg"
               onClick={() => removeObject(id)}
-              aria-label={t('discover_remove_filter')}
+              aria-label={t('discover_remove_filter', { tag: label })}
             >
               <CloseIcon size={16} />
             </button>

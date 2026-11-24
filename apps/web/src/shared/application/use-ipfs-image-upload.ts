@@ -8,6 +8,7 @@ import {
   imageContentUrlForCid,
 } from '@/config/ipfs-content-url';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 import {
   type UploadImageToIpfsErrorCode,
   uploadImageToIpfs,
@@ -16,7 +17,7 @@ import { uploadImageFromUrl } from '@/modules/object-create/infrastructure/actio
 
 function messageForImageUploadError(
   code: UploadImageToIpfsErrorCode | string | undefined,
-  t: (key: string) => string,
+  t: Translate,
 ): string {
   if (code === 'service_unavailable') {
     const specific = t('object_create_image_service_unavailable');

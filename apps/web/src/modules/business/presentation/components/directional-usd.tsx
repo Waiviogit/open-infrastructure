@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 
 import type { DirectionalUsdView } from '../../domain/ledger.types';
 import { accountNetUsd } from '../../domain/pair-balance';
@@ -25,18 +26,20 @@ export function formatPendingBalanceLine(
   accountA: string,
   accountB: string,
   pending: DirectionalUsdView,
-  t: (key: string) => string,
+  t: Translate,
 ): string {
   const viewerNet = accountNetUsd(viewer, accountA, accountB, pending.netUsd);
   if (viewerNet > 0) {
-    return t('business_balance_pending_counterparty_owes_you')
-      .replace('@account', `@${counterparty}`)
-      .replace('$amount', formatUsd(viewerNet));
+    return t('business_balance_pending_counterparty_owes_you', {
+      account: counterparty,
+      amount: formatUsd(viewerNet),
+    });
   }
   if (viewerNet < 0) {
-    return t('business_balance_pending_you_owe_counterparty')
-      .replace('@account', `@${counterparty}`)
-      .replace('$amount', formatUsd(Math.abs(viewerNet)));
+    return t('business_balance_pending_you_owe_counterparty', {
+      account: counterparty,
+      amount: formatUsd(Math.abs(viewerNet)),
+    });
   }
   return '';
 }
@@ -64,19 +67,21 @@ export const BALANCE_DIRECTION_TEXT_CLASS: Record<BalanceDirection, string> = {
 export function directionalUsdText(
   viewerNet: number,
   counterparty: string,
-  t: (key: string) => string,
+  t: Translate,
   zeroLabel?: string,
 ): string {
   const direction = balanceDirection(viewerNet);
   if (direction === 'owed') {
-    return t('business_balance_counterparty_owes_you')
-      .replace('@account', `@${counterparty}`)
-      .replace('$amount', formatUsd(viewerNet));
+    return t('business_balance_counterparty_owes_you', {
+      account: counterparty,
+      amount: formatUsd(viewerNet),
+    });
   }
   if (direction === 'owing') {
-    return t('business_balance_you_owe_counterparty')
-      .replace('@account', `@${counterparty}`)
-      .replace('$amount', formatUsd(Math.abs(viewerNet)));
+    return t('business_balance_you_owe_counterparty', {
+      account: counterparty,
+      amount: formatUsd(Math.abs(viewerNet)),
+    });
   }
   return zeroLabel ?? t('business_balance_settled');
 }

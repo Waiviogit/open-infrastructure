@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import {
   EyeOffIcon,
   BriefcaseIcon,
@@ -74,7 +75,7 @@ export function BusinessOffersListClient({
   const { t } = useI18n();
   const router = useRouter();
   const [creating, setCreating] = useState(false);
-  const [createErrorKey, setCreateErrorKey] = useState<string | null>(null);
+  const [createErrorKey, setCreateErrorKey] = useState<MessageKey | null>(null);
   const [pending, startTransition] = useTransition();
   const draftsState = useSyncedPaginatedList(initialDrafts);
   const publishedState = useSyncedPaginatedList(initialPublished);

@@ -1,5 +1,7 @@
 import { UPDATE_TYPES } from '@opden-data-layer/core/update-types';
 
+import type { MessageKey } from '@/i18n/types';
+
 import { HTML_OBJECT_TYPE, HTML_PRIMARY_TAB_SEGMENT } from './html-object.constants';
 import type { ObjectPageViewModel } from './object-page.types';
 
@@ -23,7 +25,7 @@ export type HostBodyTabDefinition = {
   updateType: string;
   format: HostBodyFormat;
   /** i18n key of the empty view. */
-  emptyMessageKey: string;
+  emptyMessageKey: MessageKey;
 };
 
 export const PAGE_PRIMARY_TAB_SEGMENT = 'page';

@@ -1,12 +1,12 @@
 import Link from 'next/link';
 
+import { createTranslator } from '@/i18n/domain/create-translator';
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import { loadMessages } from '@/i18n/runtime/load-messages';
 
 export default async function UserProfileNotFound() {
   const locale = await getRequestLocale();
-  const messages = await loadMessages(locale);
-  const t = (key: string) => messages[key] ?? key;
+  const t = createTranslator(await loadMessages(locale), locale);
 
   return (
     <div className="mx-auto max-w-container-narrow px-gutter py-section-y-hero text-center">

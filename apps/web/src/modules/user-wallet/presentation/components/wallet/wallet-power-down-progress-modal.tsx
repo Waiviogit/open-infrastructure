@@ -3,7 +3,6 @@
 import { useId, useMemo } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation/components/app-modal';
 
 import { resolvePowerDownProgress } from '../../../domain/hive-wallet-amount';
@@ -112,8 +111,8 @@ export function WalletPowerDownProgressModal({
       <div className="space-y-1 px-card-padding pb-card-padding text-body-sm">
         {progress ? (
           <p className="font-weight-strong text-fg">
-            {interpolateMessage(t('wallet_power_down_installment'), {
-              number: String(installmentIndex),
+            {t('wallet_power_down_installment', {
+              number: installmentIndex,
             })}
           </p>
         ) : null}
@@ -128,9 +127,9 @@ export function WalletPowerDownProgressModal({
         {progress ? (
           <div className="space-y-3 pt-1">
             <p className="text-muted">
-              {interpolateMessage(t('wallet_power_down_remaining'), {
-                remaining: String(progress.remaining),
-                total: String(progress.total),
+              {t('wallet_power_down_remaining', {
+                count: progress.remaining,
+                total: progress.total,
               })}
             </p>
             <PowerDownWeekSteps completed={progress.completed} total={progress.total} />

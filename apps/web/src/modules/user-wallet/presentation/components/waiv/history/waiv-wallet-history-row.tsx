@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 import type {
   WaivMarketOrderType,
   WaivWalletHistoryRowView,
@@ -55,7 +56,7 @@ function PostLink({
 }
 
 function marketOrderLabel(
-  t: (key: string) => string,
+  t: Translate,
   orderType: WaivMarketOrderType,
   isLimitOrder: boolean,
 ): string {

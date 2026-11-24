@@ -84,10 +84,9 @@ export function BusinessContractClient({
                   className="text-link hover:underline"
                   suppressHydrationWarning
                 >
-                  {t('business_open_version').replace(
-                    '{version}',
-                    String(contract.offer_version),
-                  )}
+                  {t('business_open_version', {
+                    version: contract.offer_version,
+                  })}
                 </Link>
               ),
             },

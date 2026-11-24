@@ -135,10 +135,9 @@ export function GalleryRankModal({
     viewerUsername,
   ]);
 
-  const currentRankLabel = t('gallery_rank_current').replace(
-    '{value}',
-    formatGalleryRankLabel(rankScore),
-  );
+  const currentRankLabel = t('gallery_rank_current', {
+    value: formatGalleryRankLabel(rankScore),
+  });
 
   const sliderFillPercent = useMemo(() => {
     const span = GALLERY_RANK_MAX - GALLERY_RANK_MIN;

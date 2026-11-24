@@ -9,6 +9,8 @@ import {
   generateGroupChannelId,
 } from '@opden-data-layer/hive-broadcast';
 
+import type { Translate } from '@/i18n/types';
+
 import type {
   ChannelDetail,
   ChannelListItem,
@@ -489,18 +491,16 @@ export function formatActivityMessageCaption(
     'created_at_unix' | 'original_created_at_unix' | 'updated_at_unix'
   >,
   locale: string,
-  originallyLabel: string,
-  editedLabel?: string,
+  t: Translate,
 ): string {
-  let base: string;
-  if (message.original_created_at_unix != null) {
-    const datetime = formatOriginalCreatedAtLabel(message.original_created_at_unix, locale);
-    base = originallyLabel.replace('{datetime}', datetime);
-  } else {
-    base = formatActivityMessageTime(message, locale);
-  }
-  if (message.updated_at_unix != null && editedLabel) {
-    return `${base} ${editedLabel}`;
+  const base =
+    message.original_created_at_unix != null
+      ? t('object_activity_original_date_caption', {
+          datetime: formatOriginalCreatedAtLabel(message.original_created_at_unix, locale),
+        })
+      : formatActivityMessageTime(message, locale);
+  if (message.updated_at_unix != null) {
+    return `${base} ${t('messaging_edited')}`;
   }
   return base;
 }

@@ -276,7 +276,7 @@ export function resolveEditModeUpdateTypes(
 }
 
 /** i18n key suffix for each group (`object_edit_group_<id>`). */
-export const EDIT_FIELD_GROUP_I18N_KEY: Readonly<Record<EditFieldGroupId, string>> = {
+export const EDIT_FIELD_GROUP_I18N_KEY = {
   header: 'object_edit_group_header',
   publication: 'object_edit_group_publication',
   details: 'object_edit_group_details',
@@ -297,7 +297,7 @@ export const EDIT_FIELD_GROUP_I18N_KEY: Readonly<Record<EditFieldGroupId, string
   governance: 'object_edit_group_governance',
   skill: 'object_edit_group_skill',
   object: 'object_edit_group_object',
-};
+} as const satisfies Readonly<Record<EditFieldGroupId, string>>;
 
 /** Ensures catalog completeness at module load (dev/test guard). */
 export function assertEditFieldGroupCatalogComplete(): void {

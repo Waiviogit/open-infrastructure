@@ -103,7 +103,7 @@ export function BlogPostScreen({
         {/* Comment count — accent link, shown below title in modal */}
         {isModal && story.children != null && story.children > 0 ? (
           <p className="mt-1.5 text-body-sm font-weight-label text-accent">
-            {story.children} {story.children === 1 ? 'comment' : 'comments'}
+            {t('post_comment_count', { count: story.children })}
           </p>
         ) : null}
 

@@ -3,8 +3,8 @@
 import Link from 'next/link';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey, Translate } from '@/i18n/types';
 import type { ActivityRowView } from '@/modules/user-activity/domain/types/activity-row-view';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { UserAvatar } from '@/shared/presentation';
 
 import {
@@ -35,7 +35,7 @@ function isWalletKind(row: ActivityRowView): boolean {
 }
 
 function savingsLabel(
-  t: (key: string) => string,
+  t: Translate,
   operationType: string,
   requestId?: string,
 ): string {
@@ -48,7 +48,7 @@ function savingsLabel(
     (operationType === 'cancel_transfer_from_savings' ||
       operationType === 'transfer_from_savings')
   ) {
-    return interpolateMessage(t(messageKey), { requestId });
+    return t(messageKey, { requestId });
   }
   return t(messageKey);
 }
@@ -195,7 +195,7 @@ export function WalletHistoryRow({ row, accountName }: { row: ActivityRowView; a
               ) : undefined
             }
           >
-            {interpolateMessage(t(routeKey), {
+            {t(routeKey, {
               from_account: row.from ?? '',
               to_account: row.to ?? '',
             })}{' '}
@@ -287,7 +287,7 @@ export function WalletHistoryRow({ row, accountName }: { row: ActivityRowView; a
         >
           {row.isSeller ? (
             <>
-              {interpolateMessage(t('fillOrder_wallet_transferred'), {
+              {t('fillOrder_wallet_transferred', {
                 current_pays: row.transferAmount,
                 exchanger: '',
               }).trimEnd()}{' '}
@@ -295,7 +295,7 @@ export function WalletHistoryRow({ row, accountName }: { row: ActivityRowView; a
             </>
           ) : (
             <>
-              {interpolateMessage(t('fillOrder_wallet_get'), {
+              {t('fillOrder_wallet_get', {
                 open_pays: row.openPays,
                 exchanger: '',
               }).trimEnd()}{' '}
@@ -330,7 +330,7 @@ export function WalletHistoryRow({ row, accountName }: { row: ActivityRowView; a
           }
         >
           {row.openPays
-            ? interpolateMessage(t('cancel_order'), { open_pays: row.openPays })
+            ? t('cancel_order', { open_pays: row.openPays })
             : t('cancel_limit_order')}
         </WalletHistoryRowShell>
       );
@@ -350,7 +350,7 @@ export function WalletHistoryRow({ row, accountName }: { row: ActivityRowView; a
             ) : undefined
           }
         >
-          {interpolateMessage(t(labelKey), {
+          {t(labelKey, {
             steem_dao: row.payer,
             receiver: row.receiver,
           })}
@@ -362,7 +362,7 @@ export function WalletHistoryRow({ row, accountName }: { row: ActivityRowView; a
   }
 }
 
-function savingsMessageKey(operationType: string): string | null {
+function savingsMessageKey(operationType: string): MessageKey | null {
   switch (operationType) {
     case 'transfer_to_savings':
       return 'deposit_to_savings';
@@ -383,7 +383,7 @@ function savingsMessageKey(operationType: string): string | null {
 
 function convertLabelKey(
   subtype: 'hbd_request' | 'hbd_completed' | 'hive_request' | 'hive_completed',
-): string {
+): MessageKey {
   switch (subtype) {
     case 'hbd_request':
       return 'wallet_hbd_hive_conversion_request';

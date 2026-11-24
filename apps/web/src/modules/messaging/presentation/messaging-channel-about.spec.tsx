@@ -27,7 +27,8 @@ jest.mock('next/link', () => ({
 const messages = {
   messaging_about: 'About',
   messaging_members: 'Members',
-  messaging_members_count: '{count} members',
+  messaging_members_count_one: '{count} member',
+  messaging_members_count_other: '{count} members',
   messaging_members_more: '+{count} more',
   messaging_edit_group: 'Edit',
   messaging_leave_group: 'Leave group',
@@ -102,6 +103,18 @@ describe('MessagingChannelAbout', () => {
     expect(screen.getByRole('button', { name: 'Leave group' })).toBeInTheDocument();
   });
 
+  it('uses the singular member count form for one member', () => {
+    render(
+      <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
+        <MessagingChannelAbout
+          channel={{ ...groupChannel, members: [{ account: 'alice', role: 'admin' }] }}
+          variant="rail"
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByText('1 member')).toBeInTheDocument();
+  });
+
   it('hides leave when policy disallows', () => {
     render(
       <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
@@ -140,7 +153,7 @@ describe('MessagingChannelAbout', () => {
       </I18nProvider>,
     );
 
-    expect(screen.queryByText('1 members')).not.toBeInTheDocument();
+    expect(screen.queryByText('1 member')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Members' })).not.toBeInTheDocument();
   });
 });

@@ -71,7 +71,7 @@ export function ObjectIngredientsLeftRailSection({
             >
               {expanded
                 ? t('object_updates_show_less')
-                : t('show_all_ingredients').replace('{count}', String(items.length))}
+                : t('show_all_ingredients', { count: items.length })}
             </button>
           ) : null}
         </>

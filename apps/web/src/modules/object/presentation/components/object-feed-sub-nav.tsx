@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 import { profileSectionTabClass } from '@/shared/presentation';
 import { HORIZONTAL_TAB_NAV_SUB_ROW_CLASS } from '@/shared/presentation/layout/horizontal-tab-nav-classes';
 import { ScrollableHorizontalTabNav } from '@/shared/presentation/layout/scrollable-horizontal-tab-nav';
@@ -9,7 +10,7 @@ import type { ObjectFeedSubTabView } from '../../domain/object-page.types';
 
 function resolveFeedSubTabLabel(
   tab: ObjectFeedSubTabView,
-  t: (key: string) => string,
+  t: Translate,
 ): string {
   switch (tab.segment) {
     case 'posts':

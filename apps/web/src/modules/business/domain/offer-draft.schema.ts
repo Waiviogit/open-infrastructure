@@ -5,6 +5,8 @@ import {
   sanitizeServiceOrderSchema,
 } from '@opden-data-layer/core/utils/service-order-schema';
 
+import type { MessageKey } from '@/i18n/types';
+
 import {
   OFFER_EDITOR_STEPS,
   type OfferDraftFields,
@@ -278,7 +280,7 @@ function publishIssueCode(message: string, path: readonly PropertyKey[]): Publis
   return 'field_invalid';
 }
 
-export function publishErrorMessageKey(code: string): string {
+export function publishErrorMessageKey(code: string): MessageKey {
   switch (code as PublishErrorCode) {
     case 'name_required':
       return 'business_publish_error_name_required';

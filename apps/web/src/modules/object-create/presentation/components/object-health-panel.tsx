@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey, Translate } from '@/i18n/types';
 import { labelForUpdateType } from '@/modules/object/domain/object-update-labels';
 
 import type {
@@ -14,7 +15,7 @@ export type ObjectHealthPanelProps = {
   completeness: SemanticCompleteness;
 };
 
-const DIMENSION_I18N: Record<SemanticDimensionId, string> = {
+const DIMENSION_I18N: Record<SemanticDimensionId, MessageKey> = {
   identity: 'object_create_dim_identity',
   media: 'object_create_dim_media',
   seo: 'object_create_dim_seo',
@@ -23,7 +24,7 @@ const DIMENSION_I18N: Record<SemanticDimensionId, string> = {
   aiReadability: 'object_create_dim_ai_readability',
 };
 
-const RATING_I18N: Record<SemanticDimensionRating, string> = {
+const RATING_I18N: Record<SemanticDimensionRating, MessageKey> = {
   excellent: 'object_create_rating_excellent',
   good: 'object_create_rating_good',
   medium: 'object_create_rating_medium',
@@ -39,7 +40,7 @@ const RATING_BADGE_CLASS: Record<SemanticDimensionRating, string> = {
   missing: 'border-border bg-bg text-muted',
 };
 
-function hintLabel(hint: string, t: (key: string) => string): string {
+function hintLabel(hint: string, t: Translate): string {
   if (hint === 'description_length') {
     return t('object_create_completeness_hint_description_length');
   }
@@ -52,13 +53,7 @@ function hintLabel(hint: string, t: (key: string) => string): string {
   return labelForUpdateType(hint);
 }
 
-function DimensionRow({
-  dim,
-  t,
-}: {
-  dim: SemanticDimension;
-  t: (key: string) => string;
-}) {
+function DimensionRow({ dim, t }: { dim: SemanticDimension; t: Translate }) {
   const visibleHints = dim.hints.filter((h) => h !== 'not_applicable');
 
   return (

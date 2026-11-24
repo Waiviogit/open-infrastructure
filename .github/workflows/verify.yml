@@ -250,6 +250,9 @@ jobs:
       - name: Verify apps/web locale catalogs (strict UTF-8, no BOM, valid JSON)
         run: node scripts/verify-web-locale-json-utf8.cjs
 
+      - name: Verify apps/web locale catalogs (key parity, placeholders, plural forms)
+        run: pnpm check:web-i18n-keys
+
       - name: Typecheck apps/web (tsc --noEmit)
         run: pnpm nx run web:typecheck
 

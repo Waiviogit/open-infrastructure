@@ -330,8 +330,9 @@ Full standards: [`docs/standards/docs-standards.md`](docs/standards/docs-standar
 - When agents or scripts **read or write** these catalogs: use an **explicit UTF-8** API so the OS default encoding (e.g. Windows) never applies.
   - **Python:** `open(path, encoding='utf-8')`, `Path.read_text(encoding='utf-8')`, `Path.write_text(..., encoding='utf-8')`.
   - **Node:** read as **`Buffer`** and decode with **`TextDecoder('utf-8', { fatal: true })`** (avoid relying on helpers that substitute invalid UTF-8 bytes).
-- Local check: **`pnpm check:web-i18n-utf8`**.
-- Adding keys: put translations for **every** locale in a JSON file and run **`pnpm i18n:add-keys <file>`** (validates locales and `{placeholder}` sets, inserts after an optional anchor key). Do not write one-off catalog scripts.
+- Local checks: **`pnpm check:web-i18n-utf8`** and **`pnpm check:web-i18n-keys`** (key parity with en-US, `{placeholder}` sets, CLDR plural forms) — both run in CI.
+- Adding keys: put translations for **every** locale in a JSON file and run **`pnpm i18n:add-keys <file>`** (validates locales and `{placeholder}` sets, inserts after an optional anchor key; a plural message is an object of CLDR forms per locale). Removing keys: **`pnpm i18n:remove-keys`** (`--from-file`); **`pnpm i18n:unused`** lists keys no code references. Do not write one-off catalog scripts.
+- Catalog format, typed `t(key, values)` and plural rules: [`docs/apps/web/spec/i18n-messages.md`](docs/apps/web/spec/i18n-messages.md).
 
 ## Restrictions
 

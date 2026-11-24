@@ -1,3 +1,5 @@
+import { createTranslator } from '@/i18n/domain/create-translator';
+
 import {
   canViewerAttemptDecryptMessage,
   buildReplyQuoteJson,
@@ -252,14 +254,25 @@ describe('formatActivityMessageTime', () => {
 });
 
 describe('formatActivityMessageCaption', () => {
+  const t = createTranslator(
+    { object_activity_original_date_caption: 'Originally {datetime}', messaging_edited: 'edited' },
+    'en-US',
+  );
+
   it('prefixes originally label when stamp is present', () => {
     const caption = formatActivityMessageCaption(
-      { created_at_unix: 1_700_000_000, original_created_at_unix: 1_262_304_000 },
+      {
+        created_at_unix: 1_700_000_000,
+        original_created_at_unix: 1_262_304_000,
+        updated_at_unix: null,
+      },
       'en-US',
-      'Originally {datetime}',
+      t,
     );
     expect(caption).toContain('Originally');
     expect(caption).toContain('2010');
+    expect(caption).not.toContain('{datetime}');
+    expect(caption).not.toContain('edited');
   });
 
   it('shows original caption and edited label when both stamps are set', () => {
@@ -270,8 +283,7 @@ describe('formatActivityMessageCaption', () => {
         updated_at_unix: 1_700_000_100,
       },
       'en-US',
-      'Originally {datetime}',
-      'edited',
+      t,
     );
     expect(caption).toContain('Originally');
     expect(caption).toContain('2010');

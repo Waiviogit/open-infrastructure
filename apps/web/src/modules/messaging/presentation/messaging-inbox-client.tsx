@@ -647,10 +647,9 @@ export function MessagingInboxClient({
                   <h3 className="truncate font-weight-strong text-fg">{chatTitle}</h3>
                   {channelDetail?.kind === 'group' && channelDetail.members.length ? (
                     <p className="text-caption text-muted">
-                      {t('messaging_members_count').replace(
-                        '{count}',
-                        String(channelDetail.members.length),
-                      )}
+                      {t('messaging_members_count', {
+                        count: channelDetail.members.length,
+                      })}
                     </p>
                   ) : null}
                 </div>

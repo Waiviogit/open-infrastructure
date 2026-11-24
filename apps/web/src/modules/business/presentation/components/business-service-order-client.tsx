@@ -109,10 +109,9 @@ export function BusinessServiceOrderClient({
           {phase === 'indexing' ? <StateBadge variant="indexing" /> : null}
           {cancelled && serviceOrder.cancelled_by ? (
             <span className="text-caption text-fg-secondary">
-              {t('business_service_order_cancelled_by').replace(
-                '{account}',
-                `@${serviceOrder.cancelled_by}`,
-              )}
+              {t('business_service_order_cancelled_by', {
+                account: `@${serviceOrder.cancelled_by}`,
+              })}
             </span>
           ) : null}
         </div>

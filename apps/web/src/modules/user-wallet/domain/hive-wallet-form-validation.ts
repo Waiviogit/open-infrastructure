@@ -1,3 +1,5 @@
+import type { MessageKey } from '@/i18n/types';
+
 import { isEngineTokenAmountWithinMax } from './engine-token-amount';
 import {
   getMinHiveDelegationHp,
@@ -102,7 +104,7 @@ export function getHiveDelegationMinimumHp(
 
 export function hiveWalletFormValidationMessageKey(
   code: HiveWalletFormValidationCode,
-): string {
+): MessageKey {
   switch (code) {
     case 'recipient_required':
       return 'wallet_validation_recipient_required';

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useI18n } from '@/i18n/providers/i18n-provider';
 import { ThumbUpIcon } from '@/icons';
 import { buildVoteOp, getWalletFacade, useHydrateWalletProvider } from '@/modules/auth';
 import { awaitTrxConfirmation } from '@/modules/notifications';
@@ -40,6 +41,7 @@ export function StoryVoteButton({
 }: StoryVoteButtonProps) {
   useHydrateWalletProvider();
   const router = useRouter();
+  const { t } = useI18n();
 
   const [optimisticVoted, setOptimisticVoted] = useState(votes?.voted ?? false);
   const [optimisticCount, setOptimisticCount] = useState(votes?.totalCount ?? 0);
@@ -56,7 +58,7 @@ export function StoryVoteButton({
   }, [authorName, permlink, votes?.voted, votes?.totalCount]);
 
   const previewVoters = votes?.previewVoters ?? [];
-  const voteLine = formatVoteSummary(optimisticCount, previewVoters);
+  const voteLine = formatVoteSummary(optimisticCount, previewVoters, t);
 
   const onVoteClick = useCallback(async () => {
     if (!currentUsername?.trim() || pending) {

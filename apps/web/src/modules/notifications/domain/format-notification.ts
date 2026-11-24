@@ -4,12 +4,14 @@ import {
   type NotificationIcon,
 } from '@opden-data-layer/notifications-messages';
 import type { NotificationEventType } from '@opden-data-layer/notifications-contract';
+
+import type { MessageKey } from '@/i18n/types';
 import type { UserNotificationItem } from '../infrastructure/notifications-ws-client';
 
 export type NotificationIconType = 'follow' | 'vote' | 'reply' | 'wallet' | 'object' | 'bell' | 'generic';
 
 export type FormattedNotification = {
-  key: string;
+  key: MessageKey;
   params?: Record<string, string>;
   href: string | null;
   actor: string | null;
@@ -32,7 +34,9 @@ export function formatNotification(item: UserNotificationItem): FormattedNotific
   } as Parameters<typeof buildNotificationMessage>[0]);
 
   return {
-    key: message.key,
+    // Builder keys are plain strings from `@opden-data-layer/notifications-messages`;
+    // `notifications.i18n.spec.ts` asserts every one of them exists in en-US.
+    key: message.key as MessageKey,
     params: { ...message.params },
     href: message.href,
     actor: message.actor,
@@ -78,19 +82,4 @@ export function notificationIconType(item: UserNotificationItem): NotificationIc
     payload: item.payload,
   } as Parameters<typeof buildNotificationMessage>[0]);
   return mapIcon(message.icon);
-}
-
-/** Substitutes `{param}` placeholders in an i18n template string. */
-export function applyNotificationParams(
-  template: string,
-  params?: Record<string, string>,
-): string {
-  if (!params) {
-    return template;
-  }
-  let out = template;
-  for (const [key, value] of Object.entries(params)) {
-    out = out.replaceAll(`{${key}}`, value);
-  }
-  return out;
 }

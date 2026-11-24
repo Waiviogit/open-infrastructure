@@ -49,10 +49,7 @@ export function ActiveFilterChips({
     <div className="mb-4">
       <div className="mb-1.5 hidden items-center justify-between gap-2 lg:flex">
         <span className="text-caption font-weight-label text-fg-tertiary">
-          {t('discover_active_filters').replace(
-            '{count}',
-            String(items.length),
-          )}
+          {t('discover_active_filters', { count: items.length })}
         </span>
         <button
           type="button"

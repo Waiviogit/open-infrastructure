@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import { AppLoader } from '@/shared/presentation/components/app-loader';
 
 import { isMobileBrowser } from '../../domain/device/is-mobile-browser';
@@ -37,7 +38,7 @@ function InstructionCallout() {
         <span className="font-label font-weight-strong text-fg">
           {t('auth_keychain_has_instruction_posting')}
         </span>{' '}
-        and{' '}
+        {t('and')}{' '}
         <span className="font-label font-weight-strong text-fg">
           {t('auth_keychain_has_instruction_active')}
         </span>{' '}
@@ -69,8 +70,8 @@ function StepRow({ step, icon, children }: StepRowProps) {
 }
 
 type StepTextProps = {
-  emphasisKey: string;
-  restKey: string;
+  emphasisKey: MessageKey;
+  restKey: MessageKey;
 };
 
 function StepText({ emphasisKey, restKey }: StepTextProps) {

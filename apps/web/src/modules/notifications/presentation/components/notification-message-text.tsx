@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Fragment, type ReactNode } from 'react';
 
-const PLACEHOLDER_RE = /\{(\w+)\}/g;
+import { messagePlaceholderPattern } from '@/i18n/domain/format-message';
 
 export type NotificationMessageTextProps = {
   template: string;
@@ -38,12 +38,12 @@ export function NotificationMessageText({
   params = {},
   paramHrefs = {},
 }: NotificationMessageTextProps) {
+  const placeholderPattern = messagePlaceholderPattern();
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  PLACEHOLDER_RE.lastIndex = 0;
   let segmentIndex = 0;
-  while ((match = PLACEHOLDER_RE.exec(template)) !== null) {
+  while ((match = placeholderPattern.exec(template)) !== null) {
     const [placeholder, key] = match;
     const start = match.index;
     if (start > lastIndex) {

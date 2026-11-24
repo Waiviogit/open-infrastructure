@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 import { profileSectionTabClass, StatHoverTooltip } from '@/shared/presentation';
 import { HORIZONTAL_TAB_NAV_PRIMARY_ROW_CLASS } from '@/shared/presentation/layout/horizontal-tab-nav-classes';
 import { ScrollableHorizontalTabNav } from '@/shared/presentation/layout/scrollable-horizontal-tab-nav';
@@ -15,10 +16,7 @@ export type ObjectPrimaryNavProps = {
   onSelect: (segment: string) => void;
 };
 
-function renderTabCount(
-  tab: ObjectPrimaryTabView,
-  t: (key: string) => string,
-): ReactNode {
+function renderTabCount(tab: ObjectPrimaryTabView, t: Translate): ReactNode {
   if (typeof tab.count !== 'number') {
     return null;
   }

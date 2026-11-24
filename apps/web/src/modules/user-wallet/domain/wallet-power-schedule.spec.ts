@@ -1,3 +1,5 @@
+import { createTranslator } from '@/i18n/domain/create-translator';
+
 import {
   computePowerDownInstallmentAmount,
   computePowerDownPeriodDays,
@@ -6,6 +8,7 @@ import {
   getWalletPowerDownWeeks,
   HIVE_POWER_DOWN_WEEKS,
   resolveEnginePowerDownMeta,
+  roundPowerDownPeriodDays,
   WAIV_POWER_DOWN_WEEKS,
 } from './wallet-power-schedule';
 
@@ -66,12 +69,26 @@ describe('resolveEnginePowerDownMeta', () => {
   });
 });
 
+describe('roundPowerDownPeriodDays', () => {
+  it('keeps whole days', () => {
+    expect(roundPowerDownPeriodDays(2)).toBe(2);
+  });
+
+  it('truncates fractional days to the wallet display precision', () => {
+    expect(roundPowerDownPeriodDays(7 / 3)).toBe(2.333);
+  });
+});
+
 describe('formatPowerDownUnlockPreview', () => {
-  const interpolate = (template: string, values: Record<string, string>) =>
-    template
-      .replace('{amount}', values.amount ?? '')
-      .replace('{symbol}', values.symbol ?? '')
-      .replace('{days}', values.days ?? '');
+  const translate = createTranslator(
+    {
+      wallet_power_unlock_weekly: '{amount} {symbol} every week',
+      wallet_power_unlock_every_days_one: '{amount} {symbol} every day',
+      wallet_power_unlock_every_days_other:
+        '{amount} {symbol} every {count} days',
+    },
+    'en-US',
+  );
 
   it('uses weekly copy for POB-like metadata (28/4)', () => {
     const result = formatPowerDownUnlockPreview({
@@ -79,10 +96,9 @@ describe('formatPowerDownUnlockPreview', () => {
       parsedAmount: 40,
       liquidSymbol: 'POB',
       engineMeta: { unstakingCooldown: 28, numberTransactions: 4 },
-      translate: (key) => key,
-      interpolate,
+      translate,
     });
-    expect(result).toBe('wallet_power_unlock_weekly');
+    expect(result).toBe('10 POB every week');
   });
 
   it('uses weekly copy for WAIV', () => {
@@ -91,10 +107,9 @@ describe('formatPowerDownUnlockPreview', () => {
         asset: 'WAIV',
         parsedAmount: 40,
         liquidSymbol: 'WAIV',
-        translate: (key) => key,
-        interpolate,
+        translate,
       }),
-    ).toBe('wallet_power_unlock_weekly');
+    ).toBe('10 WAIV every week');
   });
 
   it('uses weekly copy when period is 7 days', () => {
@@ -103,10 +118,9 @@ describe('formatPowerDownUnlockPreview', () => {
       parsedAmount: 8,
       liquidSymbol: 'BEE',
       engineMeta: { unstakingCooldown: 14, numberTransactions: 2 },
-      translate: (key) => key,
-      interpolate,
+      translate,
     });
-    expect(result).toBe('wallet_power_unlock_weekly');
+    expect(result).toBe('4 BEE every week');
   });
 
   it('uses every-days copy for non-weekly HE schedules', () => {
@@ -115,9 +129,30 @@ describe('formatPowerDownUnlockPreview', () => {
       parsedAmount: 10,
       liquidSymbol: 'BEE',
       engineMeta: { unstakingCooldown: 10, numberTransactions: 5 },
-      translate: (key) => key,
-      interpolate,
+      translate,
     });
-    expect(result).toBe('wallet_power_unlock_every_days');
+    expect(result).toBe('2 BEE every 2 days');
+  });
+
+  it('picks the singular form for a one-day period', () => {
+    const result = formatPowerDownUnlockPreview({
+      asset: 'BEE',
+      parsedAmount: 9,
+      liquidSymbol: 'BEE',
+      engineMeta: { unstakingCooldown: 3, numberTransactions: 3 },
+      translate,
+    });
+    expect(result).toBe('3 BEE every day');
+  });
+
+  it('shows fractional periods at the wallet display precision', () => {
+    const result = formatPowerDownUnlockPreview({
+      asset: 'BEE',
+      parsedAmount: 9,
+      liquidSymbol: 'BEE',
+      engineMeta: { unstakingCooldown: 7, numberTransactions: 3 },
+      translate,
+    });
+    expect(result).toBe('3 BEE every 2.333 days');
   });
 });

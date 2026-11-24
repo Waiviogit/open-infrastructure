@@ -3,7 +3,6 @@
 import { useId } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation/components/app-modal';
 
 export type WalletSavingsWithdrawProgressModalProps = {
@@ -46,8 +45,8 @@ export function WalletSavingsWithdrawProgressModal({
           <p>
             {daysRemaining <= 0
               ? t('wallet_savings_withdraw_completes_today')
-              : interpolateMessage(t('wallet_savings_withdraw_completes_in_days'), {
-                  days: String(daysRemaining),
+              : t('wallet_savings_withdraw_completes_in_days', {
+                  count: daysRemaining,
                 })}
           </p>
         ) : (

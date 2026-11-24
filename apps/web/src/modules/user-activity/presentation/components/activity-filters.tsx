@@ -7,6 +7,7 @@ import {
   type ActivityFilterKey,
 } from '@opden-data-layer/core/hive-account-history';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 
 import {
   replaceProfileActivityFiltersInUrl,
@@ -15,17 +16,37 @@ import {
 import { PROFILE_FILTER_RAIL_STICKY_CLASS } from '@/shared/presentation/layout';
 import { useActivityFiltersFromUrl } from '../hooks/use-activity-filters-from-url';
 
+/** A filter the rail shows as a checkbox (one of `ACTIVITY_FILTER_GROUPS`). */
+type GroupedActivityFilterKey =
+  (typeof ACTIVITY_FILTER_GROUPS)[keyof typeof ACTIVITY_FILTER_GROUPS][number];
+
+const FILTER_LABEL_KEYS: Record<GroupedActivityFilterKey, MessageKey> = {
+  upvoted: 'activity_filter_upvoted',
+  downvoted: 'activity_filter_downvoted',
+  unvoted: 'activity_filter_unvoted',
+  followed: 'activity_filter_followed',
+  unfollowed: 'activity_filter_unfollowed',
+  replied: 'activity_filter_replied',
+  reblogged: 'activity_filter_reblogged',
+  powered_up: 'activity_filter_powered_up',
+  received: 'activity_filter_received',
+  transfer: 'activity_filter_transfer',
+  savings: 'activity_filter_savings',
+  author_reward: 'activity_filter_author_reward',
+  curation_reward: 'activity_filter_curation_reward',
+  claim_rewards: 'activity_filter_claim_rewards',
+};
+
 type ActivityFiltersProps = {
   accountName: string;
   selectedFilters: ActivityFilterKey[];
 };
 
 type FilterSectionProps = {
-  titleKey: string;
-  filterKeys: readonly ActivityFilterKey[];
+  titleKey: MessageKey;
+  filterKeys: readonly GroupedActivityFilterKey[];
   selected: Set<ActivityFilterKey>;
   onToggle: (key: ActivityFilterKey, checked: boolean) => void;
-  labelPrefix: string;
 };
 
 function FilterSection({
@@ -33,7 +54,6 @@ function FilterSection({
   filterKeys,
   selected,
   onToggle,
-  labelPrefix,
 }: FilterSectionProps) {
   const { t } = useI18n();
   return (
@@ -51,7 +71,7 @@ function FilterSection({
                 checked={selected.has(key)}
                 onChange={(e) => onToggle(key, e.target.checked)}
               />
-              <span>{t(`${labelPrefix}_${key}`)}</span>
+              <span>{t(FILTER_LABEL_KEYS[key])}</span>
             </label>
           </li>
         ))}
@@ -98,21 +118,18 @@ export function ActivityFilters({
         filterKeys={ACTIVITY_FILTER_GROUPS.general}
         selected={selected}
         onToggle={onToggle}
-        labelPrefix="activity_filter"
       />
       <FilterSection
         titleKey="activity_filters_finance"
         filterKeys={ACTIVITY_FILTER_GROUPS.finance}
         selected={selected}
         onToggle={onToggle}
-        labelPrefix="activity_filter"
       />
       <FilterSection
         titleKey="activity_filters_rewards"
         filterKeys={ACTIVITY_FILTER_GROUPS.rewards}
         selected={selected}
         onToggle={onToggle}
-        labelPrefix="activity_filter"
       />
     </aside>
   );

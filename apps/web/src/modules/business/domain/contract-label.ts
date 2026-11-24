@@ -1,3 +1,5 @@
+import type { MessageKey } from '@/i18n/types';
+
 /**
  * Human labels for OBL entities. Raw ids (`contract-{offerId}-{a}-{b}`, `inv-{uuid}`, …) are
  * secondary information: show them shortened, never as the only label.
@@ -95,14 +97,14 @@ export function reportDisplayLabel(
   return parts.length > 0 ? parts.join(' · ') : shortenId(report.report_id);
 }
 
-const PAYMENT_METHOD_KEYS: Readonly<Record<string, string>> = {
+const PAYMENT_METHOD_KEYS: Readonly<Record<string, MessageKey>> = {
   offchain: 'business_payment_method_offchain',
   token_transfer: 'business_payment_method_token_transfer',
   upvote_reward: 'business_payment_method_upvote_reward',
 };
 
 /** i18n key for a ledger payment method, or null for an unknown method (show it as is). */
-export function paymentMethodLabelKey(method: string): string | null {
+export function paymentMethodLabelKey(method: string): MessageKey | null {
   return PAYMENT_METHOD_KEYS[method] ?? null;
 }
 
@@ -114,6 +116,6 @@ const DISPUTE_RULE_KEYS = {
 
 export function disputeRuleLabelKey(
   rule: keyof typeof DISPUTE_RULE_KEYS,
-): string {
+): MessageKey {
   return DISPUTE_RULE_KEYS[rule];
 }

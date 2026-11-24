@@ -5,7 +5,6 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { buildDelegateVestingSharesOp } from '@opden-data-layer/hive-broadcast';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton, APP_MODAL_Z_INDEX } from '@/shared/presentation';
 
 import {
@@ -228,7 +227,7 @@ export function WalletEditDelegationModal({
         const key = hiveWalletFormValidationMessageKey(hiveAmountError);
         setValidationError(
           hiveAmountError === 'delegation_below_minimum'
-            ? interpolateMessage(t(key), {
+            ? t(key, {
                 minHp: formatHiveAmount(
                   getHiveDelegationMinimumHp(hiveSummary.chain),
                 ),
@@ -302,7 +301,7 @@ export function WalletEditDelegationModal({
             showTokenOnlyOnAssetTrigger={false}
           />
           <p className="text-body-sm text-muted">
-            {interpolateMessage(t('wallet_transfer_value_usd'), {
+            {t('wallet_transfer_value_usd', {
               amount: estimatedUsdAmount,
             })}
           </p>
@@ -315,9 +314,9 @@ export function WalletEditDelegationModal({
         </div>
         {balanceConfig ? (
           <p className="mt-4 text-body-sm text-muted">
-            {interpolateMessage(t('wallet_delegate_timing'), {
+            {t('wallet_delegate_timing', {
               symbol: balanceConfig.balanceSymbol,
-              days: String(balanceConfig.returnDays),
+              days: balanceConfig.returnDays,
             })}
           </p>
         ) : null}

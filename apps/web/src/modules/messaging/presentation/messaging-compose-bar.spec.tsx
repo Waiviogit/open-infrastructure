@@ -585,7 +585,7 @@ describe('MessagingComposeBar', () => {
       const json = JSON.parse(text) as { messaging_sending?: string };
       expect({ file: name, messaging_sending: json.messaging_sending }).toEqual({
         file: name,
-        messaging_sending: 'Sending…',
+        messaging_sending: expect.stringMatching(/\S/),
       });
     }
   });

@@ -1,10 +1,12 @@
+import type { Translate } from '@/i18n/types';
+
 export type ValidityVotePreviewSide = 'for' | 'against';
 
 /** Hover tooltip text for approve/reject vote counts. */
 export function formatValidityVotePreview(
   count: number,
   previewVoters: readonly string[],
-  t: (key: string) => string,
+  t: Translate,
   side: ValidityVotePreviewSide,
 ): string | null {
   if (count <= 0) {
@@ -19,18 +21,17 @@ export function formatValidityVotePreview(
   const b = previewVoters[1];
 
   if (count === 1 && a) {
-    return t(`${prefix}_one`).replace('{user}', `@${a}`);
+    return t(`${prefix}_one`, { user: `@${a}` });
   }
   if (count === 2 && a && b) {
-    return t(`${prefix}_two`)
-      .replace('{first}', `@${a}`)
-      .replace('{second}', `@${b}`);
+    return t(`${prefix}_two`, { first: `@${a}`, second: `@${b}` });
   }
   if (a && b) {
-    return t(`${prefix}_many`)
-      .replace('{first}', `@${a}`)
-      .replace('{second}', `@${b}`)
-      .replace('{more}', String(Math.max(0, count - 2)));
+    return t(`${prefix}_many`, {
+      first: `@${a}`,
+      second: `@${b}`,
+      more: Math.max(0, count - 2),
+    });
   }
-  return t(`${prefix}_count`).replace('{count}', String(count));
+  return t(`${prefix}_count`, { count });
 }

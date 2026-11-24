@@ -15,7 +15,8 @@ jest.mock('next/link', () => ({
 }));
 
 const messages: Record<string, string> = {
-  show_all_ingredients: 'Show all {count} ingredients',
+  show_all_ingredients_one: 'Show {count} ingredient',
+  show_all_ingredients_other: 'Show all {count} ingredients',
   object_updates_show_less: 'Show less',
 };
 

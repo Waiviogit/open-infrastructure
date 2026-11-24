@@ -6,6 +6,7 @@ import { UPDATE_TYPES } from '@opden-data-layer/core/update-types';
 
 import { useIpfsContentBaseUrl } from '@/config/ipfs-content-base-provider';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import { objectCanonical } from '@/seo/domain/canonical';
 
 import { extractSeoKeywords } from '../../domain/extract-seo-keywords';
@@ -21,7 +22,7 @@ type PreviewTab = 'preview' | 'seo' | 'og' | 'jsonld';
 
 type PipelineStep = {
   id: PreviewTab | 'objectData';
-  labelKey: string;
+  labelKey: MessageKey;
   tab: PreviewTab;
 };
 

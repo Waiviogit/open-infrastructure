@@ -53,7 +53,7 @@ export function LeaveGroupModal({
         <AppModalCloseButton onClose={onClose} ariaLabel={t('close')} />
       </div>
       <p className="text-body-sm text-muted">
-        {t('messaging_leave_group_confirm').replace('{title}', title)}
+        {t('messaging_leave_group_confirm', { title })}
       </p>
       {leavePolicy.requires_successor ? (
         <div className="mt-4">

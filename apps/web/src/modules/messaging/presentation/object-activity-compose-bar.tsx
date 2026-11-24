@@ -94,10 +94,9 @@ export function ObjectActivityComposeBar({
     viewer,
   ]);
 
-  const placeholder = t('object_activity_compose_placeholder').replace(
-    '{name}',
-    objectName.trim() || t('object'),
-  );
+  const placeholder = t('object_activity_compose_placeholder', {
+    name: objectName.trim() || t('object'),
+  });
 
   const chipLabel =
     originalCreatedAtUnix != null
@@ -149,10 +148,7 @@ export function ObjectActivityComposeBar({
             {chipLabel ? (
               <div className="mt-2 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-pill bg-surface-control px-3 py-1 text-caption text-muted">
-                  {t('object_activity_original_date_chip').replace(
-                    '{datetime}',
-                    chipLabel,
-                  )}
+                  {t('object_activity_original_date_chip', { datetime: chipLabel })}
                   <button
                     type="button"
                     className="text-fg-secondary hover:text-fg"

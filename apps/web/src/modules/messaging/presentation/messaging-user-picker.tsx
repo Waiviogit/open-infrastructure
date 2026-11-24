@@ -141,7 +141,7 @@ export function MessagingUserPicker({
                   <button
                     type="button"
                     className="text-caption text-muted hover:text-fg"
-                    aria-label={t('messaging_remove_selected_user').replace('{name}', hit.name)}
+                    aria-label={t('messaging_remove_selected_user', { name: hit.name })}
                     onClick={() => removeUser(hit.name)}
                   >
                     ×

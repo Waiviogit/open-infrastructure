@@ -1,5 +1,7 @@
 import { OBJECT_TYPE_REGISTRY } from '@opden-data-layer/core/object-type-registry';
 
+import type { MessageKey } from '@/i18n/types';
+
 /** Grouped categories for the object type selector. */
 export const OBJECT_TYPE_GROUPS = [
   {
@@ -43,7 +45,7 @@ export type ObjectTypeSelectorGroupId = ObjectTypeGroupId | 'other';
 /** i18n keys for section headers in the type picker. */
 export const OBJECT_TYPE_GROUP_I18N_KEY: Record<
   ObjectTypeSelectorGroupId,
-  string
+  MessageKey
 > = {
   popular: 'object_create_group_popular',
   content: 'object_create_group_content',

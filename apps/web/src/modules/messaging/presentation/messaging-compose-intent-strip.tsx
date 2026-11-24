@@ -45,9 +45,7 @@ export function MessagingComposeIntentStrip({
   const snippet = truncateQuoteBody(
     markdownToPlainText(messageDisplayBody(intent.message)),
   );
-  const label = t('messaging_replying_to')
-    .replace('{author}', intent.message.author)
-    .replace('{snippet}', snippet);
+  const label = t('messaging_replying_to', { author: intent.message.author, snippet });
 
   return (
     <div className="mb-2 flex items-start justify-between gap-2 rounded-btn border border-border bg-surface-muted px-3 py-2 text-body-sm">

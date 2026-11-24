@@ -1,5 +1,7 @@
 import { UPDATE_TYPES } from '@opden-data-layer/core/update-types';
 
+import type { MessageKey, Translate } from '@/i18n/types';
+
 import type { JsonFieldDescriptor } from './update-value-form.utils';
 
 /** Display order for structured address (`address` update) in create + edit forms. */
@@ -12,7 +14,7 @@ export const ADDRESS_JSON_FIELD_ORDER = [
   'country',
 ] as const;
 
-const ADDRESS_JSON_FIELD_LABEL_KEYS: Record<string, string> = {
+const ADDRESS_JSON_FIELD_LABEL_KEYS: Record<string, MessageKey> = {
   street: 'object_edit_address_line1',
   suite: 'object_edit_address_line2',
   locality: 'location_city',
@@ -21,12 +23,12 @@ const ADDRESS_JSON_FIELD_LABEL_KEYS: Record<string, string> = {
   country: 'location_country',
 };
 
-const LINK_JSON_FIELD_LABEL_KEYS: Record<string, string> = {
+const LINK_JSON_FIELD_LABEL_KEYS: Record<string, MessageKey> = {
   type: 'object_edit_link_platform',
   value: 'object_edit_link_profile',
 };
 
-const STATUS_JSON_FIELD_LABEL_KEYS: Record<string, string> = {
+const STATUS_JSON_FIELD_LABEL_KEYS: Record<string, MessageKey> = {
   title: 'object_edit_status_category',
   link: 'object_edit_status_relisted_object',
 };
@@ -47,7 +49,7 @@ export function orderJsonFieldDescriptors(
 export function labelForJsonFieldKey(
   updateType: string,
   fieldKey: string,
-  t: (key: string) => string,
+  t: Translate,
 ): string {
   const labelKeys =
     updateType === UPDATE_TYPES.ADDRESS

@@ -1,3 +1,5 @@
+import type { MessageKey } from '@/i18n/types';
+
 /** Venue types that show the left-rail "Permanently closed" location notice. */
 export const OBJECT_STATUS_LOCATION_CLOSED_TYPES = [
   'business',
@@ -17,7 +19,7 @@ export const OBJECT_STATUS_DISCONTINUED_TYPES = [
   'service_request',
 ] as const;
 
-const DEFAULT_STATUS_LABEL_KEYS: Record<string, string> = {
+const DEFAULT_STATUS_LABEL_KEYS: Readonly<Record<string, MessageKey>> = {
   active: 'active',
   protected: 'object_status_protected',
   unavailable: 'unavailable',
@@ -35,7 +37,7 @@ const DEFAULT_STATUS_LABEL_KEYS: Record<string, string> = {
 export function objectStatusLabelKey(
   status: string,
   objectType?: string,
-): string {
+): MessageKey {
   if (status === 'closed') {
     const type = objectType?.trim().toLowerCase() ?? '';
     if (
@@ -55,7 +57,7 @@ export function shouldShowObjectStatusBadge(status: string | null | undefined): 
 }
 
 /** i18n key for the left-rail body under "Permanently closed" on venue listings. */
-export function objectStatusClosedLocationBodyKey(): string {
+export function objectStatusClosedLocationBodyKey(): MessageKey {
   return 'object_status_closed_location_body';
 }
 

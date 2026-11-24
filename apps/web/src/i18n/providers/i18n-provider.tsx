@@ -2,18 +2,18 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useMemo,
   type ReactNode,
 } from 'react';
 
+import { createTranslator } from '../domain/create-translator';
 import { isRTL as localeIsRTL } from '../domain/is-rtl';
-import type { LocaleId, Messages } from '../types';
+import type { LocaleId, Messages, Translate } from '../types';
 
 export type I18nContextValue = {
   locale: LocaleId;
-  t: (key: string) => string;
+  t: Translate;
   isRTL: boolean;
 };
 
@@ -26,10 +26,7 @@ export type I18nProviderProps = {
 };
 
 export function I18nProvider({ locale, messages, children }: I18nProviderProps) {
-  const t = useCallback(
-    (key: string) => messages[key] ?? key,
-    [messages],
-  );
+  const t = useMemo(() => createTranslator(messages, locale), [messages, locale]);
 
   const value = useMemo<I18nContextValue>(
     () => ({

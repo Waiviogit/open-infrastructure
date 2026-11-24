@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 
 import {
   formatEngineTokenAmountDisplay,
@@ -48,7 +47,7 @@ export function WaivWalletSummary({
     if (!powerDownTooltipDate) {
       return t('wallet_wp_delegations_tooltip');
     }
-    return interpolateMessage(t('wallet_pending_power_down_tooltip'), {
+    return t('wallet_pending_power_down_tooltip', {
       date: powerDownTooltipDate,
     });
   }, [powerDownTooltipDate, t]);
@@ -101,7 +100,7 @@ export function WaivWalletSummary({
         },
         ...WAIV_WITHDRAW_OUTPUT_SYMBOLS.map((outputSymbol) => ({
           id: `withdraw-${outputSymbol}`,
-          label: interpolateMessage(t('wallet_withdraw_to'), { symbol: outputSymbol }),
+          label: t('wallet_withdraw_to', { symbol: outputSymbol }),
           onSelect: () => actions.openWithdraw(outputSymbol),
         })),
       ]

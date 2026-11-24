@@ -103,10 +103,9 @@ export function BusinessRelationshipsClient({
                         .map((role) => t(`business_field_${role}`))
                         .join(' · ')}
                       {' · '}
-                      {t('business_contracts_count').replace(
-                        '{count}',
-                        String(row.contractCount),
-                      )}
+                      {t('business_contracts_count', {
+                        count: row.contractCount,
+                      })}
                       {row.lastActivityAt ? (
                         <>
                           {' · '}

@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 
 import { buildClaimHbdInterestOps } from '@opden-data-layer/hive-broadcast';
 
@@ -67,7 +66,7 @@ export function HiveWalletSummary({
     if (!powerDownTooltipDate) {
       return undefined;
     }
-    return interpolateMessage(t('wallet_pending_power_down_tooltip'), {
+    return t('wallet_pending_power_down_tooltip', {
       date: powerDownTooltipDate,
     });
   }, [powerDownTooltipDate, t]);
@@ -75,8 +74,8 @@ export function HiveWalletSummary({
   const claimDisabledTooltip =
     summary.interest?.canClaim === true || summary.interest?.daysUntilClaim === undefined
       ? undefined
-      : interpolateMessage(t('wallet_interest_claim_in_days'), {
-          days: String(summary.interest.daysUntilClaim),
+      : t('wallet_interest_claim_in_days', {
+          count: summary.interest.daysUntilClaim,
         });
 
   const actions = canManageWallet

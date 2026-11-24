@@ -218,8 +218,8 @@ export function WaivGeneratedReportDetail({
     isRunning ||
     !canExportWaivGeneratedReport(summary.status, wallet.length);
   const statusLabel = isRunning
-    ? t('generated_report_generating').replace('{count}', String(summary.rowCount))
-    : t('advanced_report_completed_count').replace('{count}', String(summary.rowCount));
+    ? t('generated_report_generating', { count: summary.rowCount })
+    : t('advanced_report_completed_count', { count: summary.rowCount });
 
   return (
     <div className="space-y-4">

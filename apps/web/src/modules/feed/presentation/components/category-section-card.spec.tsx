@@ -17,7 +17,8 @@ jest.mock('./object-card', () => ({
 }));
 
 const messages = {
-  profile_shop_object_count: '{count} objects',
+  profile_shop_object_count_one: '{count} object',
+  profile_shop_object_count_other: '{count} objects',
   profile_shop_no_preview: 'No preview items.',
   category_section_show_more: 'Show more {category}',
 } as Messages;

@@ -6,7 +6,6 @@ import { buildDelegateVestingSharesOp } from '@opden-data-layer/hive-broadcast';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { UserRefSearchField } from '@/modules/object-updates/presentation/components/user-ref-search-field';
-import { interpolateMessage } from '@/modules/user-activity/presentation/utils/interpolate-message';
 import { AppModal, AppModalCloseButton } from '@/shared/presentation';
 
 import {
@@ -291,13 +290,13 @@ export function WalletDelegateModal({
         const key = hiveWalletFormValidationMessageKey(amountError);
         setValidationError(
           amountError === 'delegation_below_minimum' && hiveSummary
-            ? interpolateMessage(t(key), {
+            ? t(key, {
                 minHp: formatHiveAmount(
                   getHiveDelegationMinimumHp(hiveSummary.chain),
                 ),
               })
             : amountError === 'delegation_unchanged' && existingHpDelegation
-              ? interpolateMessage(t(key), {
+              ? t(key, {
                   amount: truncateHiveAmountForInput(existingHpDelegation.hp),
                 })
               : t(key),
@@ -401,7 +400,7 @@ export function WalletDelegateModal({
             showTokenOnlyOnAssetTrigger={false}
           />
           <p className="text-body-sm text-muted">
-            {interpolateMessage(t('wallet_transfer_value_usd'), {
+            {t('wallet_transfer_value_usd', {
               amount: estimatedUsdAmount,
             })}
           </p>
@@ -415,7 +414,7 @@ export function WalletDelegateModal({
           ) : null}
           {existingHpDelegation ? (
             <p className="text-body-sm text-muted">
-              {interpolateMessage(t('wallet_hive_delegate_replaces'), {
+              {t('wallet_hive_delegate_replaces', {
                 amount: truncateHiveAmountForInput(existingHpDelegation.hp),
                 account: existingHpDelegation.delegatee,
               })}
@@ -424,7 +423,7 @@ export function WalletDelegateModal({
         </div>
         {hiveDelegationMinHp != null ? (
           <p className="mt-2 text-body-sm text-muted">
-            {interpolateMessage(t('wallet_hive_delegation_min_hp'), {
+            {t('wallet_hive_delegation_min_hp', {
               minHp: formatHiveAmount(hiveDelegationMinHp),
             })}
           </p>
@@ -432,9 +431,9 @@ export function WalletDelegateModal({
         <div className="mt-4 space-y-2 text-body-sm text-muted">
           {balanceConfig ? (
             <p>
-              {interpolateMessage(t('wallet_delegate_timing'), {
+              {t('wallet_delegate_timing', {
                 symbol: balanceConfig.balanceSymbol,
-                days: String(balanceConfig.returnDays),
+                days: balanceConfig.returnDays,
               })}
             </p>
           ) : null}

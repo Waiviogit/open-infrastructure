@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { Translate } from '@/i18n/types';
 import { PlusIcon, TrashIcon } from '@/icons';
 
 import {
@@ -32,7 +33,7 @@ export type OfferEditorSchemaStepProps = {
   onFieldsChange: (fields: OfferDraftFields) => void;
 };
 
-function typeLabel(t: (key: string) => string, type: ServiceOrderSchemaType): string {
+function typeLabel(t: Translate, type: ServiceOrderSchemaType): string {
   return t(`business_schema_builder_type_${type}`);
 }
 
@@ -51,7 +52,7 @@ function rowHasAdvancedFields(row: SchemaPropertyRow): boolean {
 type PropertyEditorProps = {
   row: SchemaPropertyRow;
   depth: number;
-  t: (key: string) => string;
+  t: Translate;
   onChange: (row: SchemaPropertyRow) => void;
   onRemove: () => void;
 };

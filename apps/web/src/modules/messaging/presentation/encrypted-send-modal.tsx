@@ -249,7 +249,7 @@ export function EncryptedSendModal({
           <p className="break-all font-mono text-caption text-fg">{truncatedCiphertext}</p>
           <p className="text-body-sm text-muted">
             {preview.mode === 'ephemeral'
-              ? t('messaging_message_one_way').replace('{to}', preview.to)
+              ? t('messaging_message_one_way', { to: preview.to })
               : t('messaging_message_encrypted')}
           </p>
         </div>

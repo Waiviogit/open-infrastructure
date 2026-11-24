@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
+import type { CatalogMessages, MessageKey } from '@/i18n/types';
 import { loadMessages } from '@/i18n/runtime/load-messages';
 import { buildOfferMetadata } from '@/seo';
 
@@ -23,19 +24,21 @@ import {
 import { fetchOblDraftOne } from './clients/obl-drafts.server';
 import { fetchOblOffer } from './clients/obl-offers.server';
 
-type Messages = Readonly<Record<string, string>>;
-
 /** Same title separator as the entity headings (`Logo design · v2`). */
 const TITLE_SEPARATOR = ' · ';
 
 /** One draft read per request for the editor / preview page and its metadata. */
 export const loadOblDraftForPage = cache(fetchOblDraftOne);
 
-async function requestMessages(): Promise<Messages> {
+async function requestMessages(): Promise<CatalogMessages> {
   return loadMessages(await getRequestLocale());
 }
 
-function message(messages: Messages, key: string, fallback: string): string {
+function message(
+  messages: CatalogMessages,
+  key: MessageKey,
+  fallback: string,
+): string {
   return messages[key]?.trim() || fallback;
 }
 

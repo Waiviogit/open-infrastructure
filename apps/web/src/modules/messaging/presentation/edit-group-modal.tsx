@@ -174,7 +174,7 @@ export function EditGroupModal({
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-body-sm font-weight-label text-fg">{t('messaging_add_members')}</p>
             <p className="text-caption text-muted">
-              {t('messaging_slots_remaining').replace('{count}', String(remainingSlots))}
+              {t('messaging_slots_remaining', { count: remainingSlots })}
             </p>
           </div>
           <MessagingUserPicker

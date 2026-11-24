@@ -12,7 +12,8 @@ const messages = {
   wallet_amount: 'Amount',
   next_power_down: 'Next power down:',
   wallet_power_down_installment: 'Power down #{number}',
-  wallet_power_down_remaining: 'Remaining: {remaining} weeks out of {total}.',
+  wallet_power_down_remaining_one: 'Remaining: {count} week out of {total}.',
+  wallet_power_down_remaining_other: 'Remaining: {count} weeks out of {total}.',
   ok: 'OK',
 };
 
@@ -60,6 +61,11 @@ describe('WalletPowerDownProgressModal', () => {
     for (let step = 0; step <= 4; step += 1) {
       expect(screen.getByText(String(step))).toBeInTheDocument();
     }
+  });
+
+  it('uses the singular form for one remaining week', () => {
+    renderModal({ weeksRemaining: 1, weeksTotal: 4 });
+    expect(screen.getByText(/Remaining: 1 week out of 4\./)).toBeInTheDocument();
   });
 
   it('shows clamped remaining weeks text', () => {

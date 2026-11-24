@@ -176,7 +176,7 @@ export function ProfileAccountSidebar({
           <div className="space-y-2">
             {joinedDate && (
               <SidebarRow icon={<SidebarCalendarIcon />}>
-                {t('joined_date').replace('{date}', joinedDate)}
+                {t('joined_date', { date: joinedDate })}
               </SidebarRow>
             )}
             <SidebarRow icon={<SidebarCircleStarIcon />}>

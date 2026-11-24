@@ -147,10 +147,9 @@ export function ProfileCryptoWalletModal({
               onChange={(event) => setAmount(event.target.value)}
             />
             <p className="mt-2 text-body-sm text-muted">
-              {t('estimated_value').replace(
-                '{estimate}',
-                formatSidebarUsd(estimatedUsd, locale),
-              )}
+              {t('estimated_value', {
+                estimate: formatSidebarUsd(estimatedUsd, locale),
+              })}
             </p>
           </div>
 

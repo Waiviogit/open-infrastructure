@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey, Translate } from '@/i18n/types';
 import type { IconName } from '@/icons';
 import { formatObjectTypeLabel } from '@/modules/app-header/domain/search-nav-list';
 import { useLoginModal } from '@/modules/auth';
@@ -42,13 +43,13 @@ import {
 
 const ROW_AVATAR_SIZE = 20;
 
-const SORT_LABEL_KEYS: Readonly<Record<HomeFeedSort, string>> = {
+const SORT_LABEL_KEYS: Readonly<Record<HomeFeedSort, MessageKey>> = {
   trending: 'home_feed_filter_trending',
   hot: 'home_feed_filter_hot',
   new: 'home_feed_filter_new',
 };
 
-const SORTS: readonly { sort: HomeFeedSort; icon: IconName; labelKey: string }[] = [
+const SORTS: readonly { sort: HomeFeedSort; icon: IconName; labelKey: MessageKey }[] = [
   { sort: 'trending', icon: 'trending-up', labelKey: SORT_LABEL_KEYS.trending },
   { sort: 'hot', icon: 'zap', labelKey: SORT_LABEL_KEYS.hot },
   { sort: 'new', icon: 'clock', labelKey: SORT_LABEL_KEYS.new },
@@ -91,7 +92,7 @@ function followedObjectName(summary: HomeFeedFiltersView | null, objectId: strin
 function activeFilterLabel(
   filter: HomeFeedFilter,
   summary: HomeFeedFiltersView | null,
-  t: (key: string) => string,
+  t: Translate,
 ): string {
   switch (filter.kind) {
     case 'my':
@@ -196,8 +197,8 @@ function HomeFeedFollowSections({ tab, summary, hrefFor, isActive }: FollowSecti
   );
 }
 
-function countLabel(t: (key: string) => string, count: number | null): string {
-  return t('home_feed_filter_count_aria').replace('{count}', String(count ?? 0));
+function countLabel(t: Translate, count: number | null): string {
+  return t('home_feed_filter_count_aria', { count: count ?? 0 });
 }
 
 function HomeFeedPeopleSection({ tab, summary, hrefFor, isActive }: FollowSectionsProps) {
@@ -222,7 +223,7 @@ function HomeFeedPeopleSection({ tab, summary, hrefFor, isActive }: FollowSectio
       icon="users"
       collapsed={collapsed}
       onToggle={() => setCollapsed((value) => !value)}
-      toggleLabel={t('home_feed_filter_type_toggle').replace('{type}', title)}
+      toggleLabel={t('home_feed_filter_type_toggle', { type: title })}
     >
       {users.map((user) => {
         const filter: HomeFeedFilter = { kind: 'author', account: user.name };
@@ -281,7 +282,7 @@ function HomeFeedObjectTypeSection({ tab, type, hrefFor, isActive }: ObjectTypeS
       count={<HomeFeedFilterCount count={type.count} label={countLabel(t, type.count)} />}
       collapsed={collapsed}
       onToggle={() => setCollapsed((value) => !value)}
-      toggleLabel={t('home_feed_filter_type_toggle').replace('{type}', title)}
+      toggleLabel={t('home_feed_filter_type_toggle', { type: title })}
     >
       {objects.map((item) => {
         const filter: HomeFeedFilter = { kind: 'object', objectId: item.objectId };

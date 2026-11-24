@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import type { MessageKey } from '@/i18n/types';
 import { useLoginModal } from '@/modules/auth/presentation';
 import { StatHoverTooltip, UserAvatar } from '@/shared/presentation';
 
@@ -22,7 +23,7 @@ export type UserSocialAccountRowProps = {
   viewerUsername: string | null;
   /** When set, badge shows per-object expertise instead of global wobjectsWeight. */
   expertiseWeight?: number;
-  expertiseTooltipKey?: string;
+  expertiseTooltipKey?: MessageKey;
   onBroadcastRevalidate?: (accountName: string) => Promise<void>;
 };
 

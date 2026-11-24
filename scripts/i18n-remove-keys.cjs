@@ -5,10 +5,12 @@
  * Strict UTF-8 read (TextDecoder fatal), BOM-free write, same 2-space JSON formatting as the
  * catalogs — the I/O contract of scripts/i18n-add-keys.cjs.
  *
- * Grep the web app for each key before removing it: only drop keys no code uses any more.
+ * Only drop keys no code uses any more: `pnpm i18n:unused --out <file>` lists them, and
+ * `pnpm typecheck:web` fails when a removed key is still passed to `t()`.
  *
  * Usage (repo root):
- *   pnpm i18n:remove-keys <key> [<key> ...] [--dry-run]
+ *   pnpm i18n:remove-keys <key> [<key> ...] [--from-file <file>] [--dry-run]
+ *     --from-file  one key per line; blank lines and lines starting with # are ignored
  *
  * Fails when a key is missing from every catalog (likely a typo); a key missing from only
  * some catalogs is reported and removed where present.
@@ -32,12 +34,31 @@ function writeUtf8Json(filePath, value) {
   fs.writeFileSync(filePath, Buffer.from(`${JSON.stringify(value, null, 2)}\n`, 'utf8'));
 }
 
+function readKeyFile(filePath) {
+  const text = new TextDecoder('utf-8', { fatal: true }).decode(fs.readFileSync(filePath));
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#'));
+}
+
+function parseArgs(args) {
+  const keys = [];
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === '--from-file') {
+      keys.push(...readKeyFile(path.resolve(args[i + 1])));
+      i += 1;
+    } else if (!args[i].startsWith('--')) {
+      keys.push(args[i]);
+    }
+  }
+  return { dryRun: args.includes('--dry-run'), keys: [...new Set(keys)] };
+}
+
 function main() {
-  const args = process.argv.slice(2);
-  const dryRun = args.includes('--dry-run');
-  const keys = [...new Set(args.filter((a) => !a.startsWith('--')))];
+  const { dryRun, keys } = parseArgs(process.argv.slice(2));
   if (keys.length === 0) {
-    console.error('Usage: pnpm i18n:remove-keys <key> [<key> ...] [--dry-run]');
+    console.error('Usage: pnpm i18n:remove-keys <key> [<key> ...] [--from-file <file>] [--dry-run]');
     process.exit(2);
   }
 
