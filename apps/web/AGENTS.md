@@ -167,7 +167,7 @@ Use **`header`** / **`footer`** slots on `ModalShell` for chrome that must stay 
 |-----------|------|
 | `dialog` (default) | Centered card; optional `aside` (e.g. post modal action pills) |
 | `fullscreen` | Gallery viewer, expanded geo map — set `scrollBody={false}` when layout is flex/media, not a scrolling list |
-| `sheet` | Mobile bottom sheet — slides up from bottom, `max-h-[92dvh]`. Mobile filter panels (Discover, Favorites) use **`MobileFilterButton`** + **`MobileFilterSheet`** from `@/shared/presentation` — no per-page filter pill or sheet chrome |
+| `sheet` | Mobile bottom sheet — slides up from bottom, `max-h-[92dvh]`. Mobile filter panels (Discover, Favorites) use **`MobileFilterButton`** + **`MobileFilterSheet`** from `@/shared/presentation`, and their active-filter chips **`ActiveFilterChips`** — no per-page filter pill, chip row or sheet chrome |
 
 ### Keyboard
 
@@ -184,7 +184,7 @@ Use **`header`** / **`footer`** slots on `ModalShell` for chrome that must stay 
 
 | Pattern | Examples |
 |---------|----------|
-| Mobile nav drawer (hub feed filters, discover type picker, favorites categories) | **`DrawerRegion`** |
+| Mobile nav drawer (hub feed filters, favorites categories) | **`DrawerRegion`** |
 | Search / typeahead dropdowns | **`search-dropdown.tsx`**, editor object search fields |
 | Floating toolbars / insert menus | **`editor-format-toolbar.tsx`**, **`editor-insert-menu.tsx`** |
 | Notification / header dropdowns | **`notification-bell.tsx`**, **`logged-in-header-actions.tsx`** |

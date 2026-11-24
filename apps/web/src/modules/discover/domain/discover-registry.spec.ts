@@ -1,7 +1,9 @@
 import {
   DISCOVER_POPULAR_OBJECT_TYPES,
+  discoverMoreTypeTab,
   getRatingDimensionNamesForObjectType,
   getTagCategoryNamesForObjectType,
+  listDiscoverMoreObjectTypes,
   listDiscoverObjectTypes,
   listDiscoverPopularObjectTypes,
   matchesDiscoverTypeSearch,
@@ -16,8 +18,29 @@ describe('discover-registry', () => {
     expect(types.length).toBeGreaterThan(10);
   });
 
-  it('lists popular types in sidebar order', () => {
+  it('lists popular types in menu order', () => {
     expect(listDiscoverPopularObjectTypes()).toEqual([...DISCOVER_POPULAR_OBJECT_TYPES]);
+  });
+
+  it('lists every other registry type under More, sorted', () => {
+    const more = listDiscoverMoreObjectTypes();
+    for (const popular of DISCOVER_POPULAR_OBJECT_TYPES) {
+      expect(more).not.toContain(popular);
+    }
+    expect(more).toContain('recipe');
+    expect(more.length + DISCOVER_POPULAR_OBJECT_TYPES.length).toBe(
+      listDiscoverObjectTypes().length,
+    );
+    expect(more).toEqual([...more].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it('shows a More type as an extra tab only when it is active', () => {
+    expect(discoverMoreTypeTab('recipe', false)).toBe('recipe');
+    expect(discoverMoreTypeTab('product', false)).toBeNull();
+    expect(discoverMoreTypeTab('all', false)).toBeNull();
+    expect(discoverMoreTypeTab('not-a-type', false)).toBeNull();
+    expect(discoverMoreTypeTab(null, false)).toBeNull();
+    expect(discoverMoreTypeTab('recipe', true)).toBeNull();
   });
 
   it('matches type search against key and spaced label', () => {

@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { DISCOVER_ACTIVE_CHIP_CLASS } from '@/modules/discover/presentation/components/discover-active-chips';
 import { CloseIcon } from '@/icons';
-import { useInstantNavigation } from '@/shared/presentation';
+import { ACTIVE_FILTER_CHIP_CLASS, useInstantNavigation } from '@/shared/presentation';
 
 import { buildProfilePostsHref } from '../../domain/profile-post-filters-url';
 import { fetchProfilePostObjectFilters } from '../../infrastructure/profile-post-filters.client';
@@ -88,7 +87,7 @@ export function ProfilePostFilterChips({ accountName, objectIds }: ProfilePostFi
       </div>
       <div className="flex flex-wrap gap-1.5">
         {labels.map(({ id, label }) => (
-          <span key={id} className={DISCOVER_ACTIVE_CHIP_CLASS}>
+          <span key={id} className={ACTIVE_FILTER_CHIP_CLASS}>
             <span className="truncate">{label}</span>
             <button
               type="button"

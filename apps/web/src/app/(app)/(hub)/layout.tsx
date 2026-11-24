@@ -4,6 +4,7 @@ import { HubStickySectionNav } from '@/modules/app-header';
 import { HubMarketTabBandUser } from './hub-market-tab-band-user.server';
 
 import { HubMarketTabBand } from '@/modules/business';
+import { HubDiscoverTabBand } from '@/modules/discover';
 import { HubFeedTabBand } from '@/modules/home';
 import {
   InstantNavigationProvider,
@@ -23,6 +24,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
           <HubStickySectionNav />
           {/* Outside the content clip below so the full-bleed bands span the viewport. */}
           <HubFeedTabBand />
+          <HubDiscoverTabBand />
           {/* Viewer-dependent like the app header: guest band first, then the signed-in one. */}
           <Suspense fallback={<HubMarketTabBand signedIn={false} />}>
             <HubMarketTabBandUser />

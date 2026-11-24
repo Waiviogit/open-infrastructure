@@ -32,6 +32,9 @@ export type DiscoverPageState = {
   map: DiscoverMapView | null;
 };
 
+/** Discover route pathname. */
+export const DISCOVER_PATH = '/discover';
+
 /** URL value for mixed object-type discover results. */
 export const DISCOVER_ALL_OBJECT_TYPES = 'all';
 
@@ -203,7 +206,7 @@ export function buildDiscoverHref(params: DiscoverUrlParams): string {
     sp.set('map', formatDiscoverMapParam(params.map));
   }
   const qs = sp.toString();
-  return qs.length > 0 ? `/discover?${qs}` : '/discover';
+  return qs.length > 0 ? `${DISCOVER_PATH}?${qs}` : DISCOVER_PATH;
 }
 
 export function parseDiscoverTagsParam(raw: string | string[] | undefined): string[] {

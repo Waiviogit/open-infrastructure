@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { MobileFilterButton } from '@/shared/presentation';
 
 import type { DiscoverBox, DiscoverMapView } from '../../domain/discover-url';
 import { DiscoverActiveChips } from './discover-active-chips';
@@ -28,7 +29,6 @@ export type DiscoverFeedProps = {
   showMap: boolean;
   mobileTab: DiscoverMobileTab;
   onMobileTabChange: (tab: DiscoverMobileTab) => void;
-  onOpenTypeDrawer: () => void;
   onOpenFilterSheet: () => void;
   onApplyMapArea: (box: DiscoverBox) => void;
   onMapViewChange?: (view: DiscoverMapView) => void;
@@ -50,7 +50,6 @@ export function DiscoverFeed({
   showMap,
   mobileTab,
   onMobileTabChange,
-  onOpenTypeDrawer,
   onOpenFilterSheet,
   onApplyMapArea,
   onMapViewChange,
@@ -66,22 +65,6 @@ export function DiscoverFeed({
 
   return (
     <main className="min-w-0">
-      <DiscoverMobileHeader
-        usersMode={usersMode}
-        objectType={objectType}
-        q={q}
-        tags={tags}
-        sort={sort}
-        box={box}
-        map={map}
-        showFilters={showFilters}
-        showMap={showMap}
-        mobileTab={mobileTab}
-        onMobileTabChange={onMobileTabChange}
-        onOpenTypeDrawer={onOpenTypeDrawer}
-        onOpenFilterSheet={onOpenFilterSheet}
-      />
-
       <div className="mb-4 hidden items-center justify-between gap-3 lg:flex">
         <h1 className="text-heading font-weight-label text-fg">{t('discover_page_title')}</h1>
         {!usersMode ? (
@@ -97,17 +80,35 @@ export function DiscoverFeed({
         ) : null}
       </div>
 
-      <div className="hidden lg:block">
-        <DiscoverActiveChips
-          usersMode={usersMode}
-          objectType={objectType}
-          q={q}
-          tags={tags}
-          sort={sort}
-          box={box}
-          map={map}
-        />
-      </div>
+      <DiscoverActiveChips
+        usersMode={usersMode}
+        objectType={objectType}
+        q={q}
+        tags={tags}
+        sort={sort}
+        box={box}
+        map={map}
+        filterButton={
+          showFilters ? (
+            <span className="shrink-0 lg:hidden">
+              <MobileFilterButton onClick={onOpenFilterSheet} />
+            </span>
+          ) : null
+        }
+      />
+
+      <DiscoverMobileHeader
+        usersMode={usersMode}
+        objectType={objectType}
+        q={q}
+        tags={tags}
+        sort={sort}
+        box={box}
+        map={map}
+        showMap={showMap}
+        mobileTab={mobileTab}
+        onMobileTabChange={onMobileTabChange}
+      />
 
       {usersMode ? (
         <DiscoverUserFeed q={q} />

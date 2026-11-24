@@ -1,14 +1,9 @@
 'use client';
 
-import { useCallback } from 'react';
-
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { formatObjectTypeLabel } from '@/modules/app-header/domain/search-nav-list';
-import { ChevronDownIcon, CloseIcon } from '@/icons';
-import { MobileFilterButton, profileSectionTabClass, useInstantNavigation } from '@/shared/presentation';
+import { profileSectionTabClass } from '@/shared/presentation';
 
-import { buildDiscoverHref, decodeTagFilter, type DiscoverBox, type DiscoverMapView } from '../../domain/discover-url';
-import { DISCOVER_ACTIVE_CHIP_CLASS } from './discover-active-chips';
+import type { DiscoverBox, DiscoverMapView } from '../../domain/discover-url';
 import { DiscoverSortSelect } from './discover-sort-select';
 
 export type DiscoverMobileTab = 'list' | 'map';
@@ -21,14 +16,15 @@ export type DiscoverMobileHeaderProps = {
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
   map: DiscoverMapView | null;
-  showFilters: boolean;
   showMap: boolean;
   mobileTab: DiscoverMobileTab;
   onMobileTabChange: (tab: DiscoverMobileTab) => void;
-  onOpenTypeDrawer: () => void;
-  onOpenFilterSheet: () => void;
 };
 
+/**
+ * Below `lg`, under the filter chips: the List / Map switch (geo types) and the sort. Types are
+ * picked in the hub's Discover band, filters through the Filter pill next to the chips.
+ */
 export function DiscoverMobileHeader({
   usersMode,
   objectType,
@@ -37,119 +33,21 @@ export function DiscoverMobileHeader({
   sort,
   box,
   map,
-  showFilters,
   showMap,
   mobileTab,
   onMobileTabChange,
-  onOpenTypeDrawer,
-  onOpenFilterSheet,
 }: DiscoverMobileHeaderProps) {
   const { t } = useI18n();
-  const { navigateInstant } = useInstantNavigation();
-  const trimmedQ = q.trim();
 
-  const typeLabel = usersMode
-    ? t('discover_all_users')
-    : objectType === 'all'
-      ? t('discover_type_all')
-      : objectType
-        ? formatObjectTypeLabel(objectType)
-        : t('discover_select_type');
+  const showSort =
+    !usersMode && objectType != null && (!showMap || mobileTab === 'list');
 
-  const pushHref = useCallback(
-    (nextTags: string[], nextQ = q, nextBox: DiscoverBox | null = box) => {
-      const href = buildDiscoverHref({
-        users: usersMode,
-        type: objectType ?? undefined,
-        q: nextQ,
-        tags: nextTags,
-        sort,
-        box: nextBox,
-        map: map ?? undefined,
-      });
-      navigateInstant({ href, method: 'replace', scroll: false });
-    },
-    [navigateInstant, usersMode, objectType, q, sort, box, map],
-  );
-
-  const removeQuery = () => {
-    pushHref(tags, '');
-  };
-
-  const removeTag = (tag: string) => {
-    pushHref(tags.filter((item) => item !== tag));
-  };
-
-  const removeMapArea = () => {
-    pushHref(tags, q, null);
-  };
-
-  const showFilterRow =
-    showFilters || trimmedQ.length > 0 || tags.length > 0 || box != null;
-
-  const showSort = !usersMode && objectType && (!showMap || mobileTab === 'list');
+  if (!showMap && !showSort) {
+    return null;
+  }
 
   return (
     <div className="mb-4 space-y-3 lg:hidden">
-      <button
-        type="button"
-        className="inline-flex items-center gap-1 text-section font-weight-label text-accent"
-        onClick={onOpenTypeDrawer}
-      >
-        {typeLabel}
-        <ChevronDownIcon size={16} className="shrink-0" />
-      </button>
-
-      {showFilterRow ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {trimmedQ.length > 0 ? (
-            <span className={DISCOVER_ACTIVE_CHIP_CLASS}>
-              <span className="truncate font-weight-label">{trimmedQ}</span>
-              <button
-                type="button"
-                aria-label={t('discover_remove_search').replace('{query}', trimmedQ)}
-                className="shrink-0 rounded-circle p-0.5 text-fg-secondary hover:bg-ghost-surface hover:text-fg"
-                onClick={removeQuery}
-              >
-                <CloseIcon size={16} />
-              </button>
-            </span>
-          ) : null}
-          {tags.map((tag) => {
-            const label = decodeTagFilter(tag)?.value ?? tag;
-            return (
-              <span key={tag} className={DISCOVER_ACTIVE_CHIP_CLASS}>
-                <span className="truncate font-weight-label">{label}</span>
-                <button
-                  type="button"
-                  aria-label={t('discover_remove_filter').replace('{tag}', label)}
-                  className="shrink-0 rounded-circle p-0.5 text-fg-secondary hover:bg-ghost-surface hover:text-fg"
-                  onClick={() => removeTag(tag)}
-                >
-                  <CloseIcon size={16} />
-                </button>
-              </span>
-            );
-          })}
-          {box ? (
-            <span className={DISCOVER_ACTIVE_CHIP_CLASS}>
-              <span className="truncate font-weight-label">{t('discover_map_area_filter')}</span>
-              <button
-                type="button"
-                aria-label={t('discover_remove_map_area')}
-                className="shrink-0 rounded-circle p-0.5 text-fg-secondary hover:bg-ghost-surface hover:text-fg"
-                onClick={removeMapArea}
-              >
-                <CloseIcon size={16} />
-              </button>
-            </span>
-          ) : null}
-          {showFilters ? (
-            <MobileFilterButton onClick={onOpenFilterSheet} />
-          ) : null}
-        </div>
-      ) : null}
-
       {showMap ? (
         <nav
           aria-label={t('discover_map_view_nav_aria')}

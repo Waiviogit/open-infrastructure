@@ -4,7 +4,6 @@ import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { OptimisticNavSync, useInstantNavigation } from '@/shared/presentation';
-import { useMediaQuery } from '@/shared/presentation/layout';
 import { useLoginModal } from '@/modules/auth';
 
 import {
@@ -24,8 +23,6 @@ import { DiscoverFilters } from './discover-filters';
 import { DiscoverFilterSheet } from './discover-filter-sheet';
 import { DiscoverMapModal } from './discover-map-modal';
 import { DiscoverMapRail } from './discover-map-rail';
-import { DiscoverSidebar } from './discover-sidebar';
-import { DiscoverTypeDrawer } from './discover-type-drawer';
 import { ObjectPageCenterSkeleton } from '@/modules/object/presentation/components/object-page-loading-skeleton';
 
 export type DiscoverPageClientProps = {
@@ -39,13 +36,11 @@ function DiscoverPageContent({
 }: DiscoverPageClientProps) {
   const searchParams = useSearchParams();
   const { isNavigating, navigateInstant } = useInstantNavigation();
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const { usersMode, objectType, q, tags, sort, box, map: mapFromUrl } = useMemo(
     () => parseDiscoverPageState(searchParams),
     [searchParams],
   );
   const { openLogin } = useLoginModal();
-  const [typeDrawerOpen, setTypeDrawerOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [lastMapView, setLastMapView] = useState<DiscoverMapView | null>(null);
@@ -74,12 +69,6 @@ function DiscoverPageContent({
       setMobileTab('list');
     }
   }, [showMap, mobileTab]);
-
-  useEffect(() => {
-    if (isDesktop) {
-      setTypeDrawerOpen(false);
-    }
-  }, [isDesktop]);
 
   useEffect(() => {
     if (!mounted || usersMode || objectType != null) {
@@ -163,8 +152,9 @@ function DiscoverPageContent({
 
   return (
     <div className="mx-auto w-full max-w-container-page px-1 pt-section-y-sm max-lg:-mx-gutter max-lg:w-[calc(100%+2*var(--spacing-gutter))] sm:max-lg:-mx-gutter-sm sm:max-lg:w-[calc(100%+2*var(--spacing-gutter-sm))] lg:px-gutter">
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(12rem,14rem)_minmax(0,1fr)_minmax(12rem,15rem)]">
-        <DiscoverSidebar usersMode={usersMode} objectType={objectType} q={q} sort={sort} />
+      <div className="grid items-start gap-card-padding lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)_minmax(0,var(--shell-right-width))]">
+        {/* Reserved for the active type's categories (types are in the hub's Discover band). */}
+        <aside className="hidden min-w-0 lg:block" aria-hidden />
         <div className="relative z-10 min-w-0">
           {isNavigating ? (
             <div className="mb-4" aria-busy="true" aria-live="polite">
@@ -186,7 +176,6 @@ function DiscoverPageContent({
             showMap={showMap}
             mobileTab={mobileTab}
             onMobileTabChange={setMobileTab}
-            onOpenTypeDrawer={() => setTypeDrawerOpen(true)}
             onOpenFilterSheet={() => setFilterSheetOpen(true)}
             onApplyMapArea={applyMapArea}
             onMapViewChange={handleMapViewChange}
@@ -194,7 +183,7 @@ function DiscoverPageContent({
           />
         </div>
         {showMap || showFilters ? (
-          <aside className="relative z-0 hidden min-w-0 self-start lg:sticky lg:top-[calc(var(--app-header-height,4rem)+1rem)] lg:block lg:max-h-[calc(100dvh-var(--app-header-height,4rem)-2rem)] lg:overflow-y-auto">
+          <aside className="relative z-0 hidden min-w-0 self-start lg:sticky lg:top-[calc(var(--shell-header-height)+var(--hub-section-nav-height,0px)+var(--spacing-card))] lg:block lg:max-h-[calc(100dvh-var(--shell-header-height)-var(--hub-section-nav-height,0px)-2*var(--spacing-card))] lg:overflow-y-auto">
             {mapObjectType ? (
               <DiscoverMapRail
                 objectType={mapObjectType}
@@ -223,15 +212,6 @@ function DiscoverPageContent({
           <div className="hidden min-w-0 self-start lg:block" aria-hidden />
         )}
       </div>
-
-      <DiscoverTypeDrawer
-        open={typeDrawerOpen}
-        onClose={() => setTypeDrawerOpen(false)}
-        usersMode={usersMode}
-        objectType={objectType}
-        q={q}
-        sort={sort}
-      />
 
       {filterSheetOpen && filterObjectType ? (
         <DiscoverFilterSheet

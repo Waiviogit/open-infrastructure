@@ -14,12 +14,14 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@/shared/presentation', () => ({
+  ActiveFilterChips: jest.requireActual('@/shared/presentation/components/active-filter-chips')
+    .ActiveFilterChips,
   useInstantNavigation: () => ({ navigateInstant: jest.fn() }),
 }));
 
 const messages = {
-  profile_active_filters: 'Active filters ({count})',
-  profile_clear_all_filters: 'Clear all',
+  discover_active_filters: 'Active filters ({count})',
+  discover_clear_all: 'Clear all',
   profile_rating_filter_chip: '{stars}+ stars',
   profile_remove_rating_filter: 'Remove rating filter',
   discover_remove_filter: 'Remove {tag}',

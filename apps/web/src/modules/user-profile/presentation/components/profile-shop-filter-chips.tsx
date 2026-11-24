@@ -4,10 +4,12 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, type ReactNode } from 'react';
 
 import { decodeTagFilter } from '@/modules/discover/domain/discover-url';
-import { DISCOVER_ACTIVE_CHIP_CLASS } from '@/modules/discover/presentation/components/discover-active-chips';
-import { CloseIcon } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { useInstantNavigation } from '@/shared/presentation';
+import {
+  ActiveFilterChips,
+  useInstantNavigation,
+  type ActiveFilterChipItem,
+} from '@/shared/presentation';
 
 import {
   buildProfileShopHref,
@@ -22,20 +24,14 @@ export type ProfileShopFilterChipsProps = {
   filterButton?: ReactNode;
 };
 
-/**
- * Active Favorites filters as removable chips. From `lg` up they sit under an
- * `Active filters · Clear all` heading; below `lg` they share one wrapping row with the Filter
- * button (the sheet has its own Clear).
- */
-export function ProfileShopFilterChips({ filters, filterButton }: ProfileShopFilterChipsProps) {
+/** Active Favorites filters (rating, tags) as {@link ActiveFilterChips}. */
+export function ProfileShopFilterChips({
+  filters,
+  filterButton,
+}: ProfileShopFilterChipsProps) {
   const { t } = useI18n();
   const { navigateInstant } = useInstantNavigation();
   const pathname = usePathname();
-
-  const activeCount = useMemo(
-    () => filters.tags.length + (filters.rating != null ? 1 : 0),
-    [filters.tags.length, filters.rating],
-  );
 
   const pushFilters = useCallback(
     (next: ProfileShopFiltersState) => {
@@ -47,7 +43,10 @@ export function ProfileShopFilterChips({ filters, filterButton }: ProfileShopFil
 
   const removeTag = useCallback(
     (tag: string) => {
-      pushFilters({ tags: filters.tags.filter((t) => t !== tag), rating: filters.rating });
+      pushFilters({
+        tags: filters.tags.filter((t) => t !== tag),
+        rating: filters.rating,
+      });
     },
     [pushFilters, filters.tags, filters.rating],
   );
@@ -60,68 +59,46 @@ export function ProfileShopFilterChips({ filters, filterButton }: ProfileShopFil
     pushFilters({ tags: [], rating: null });
   }, [pushFilters]);
 
-  if (activeCount === 0) {
-    return filterButton ? <div className="mb-card-padding lg:hidden">{filterButton}</div> : null;
-  }
+  const items = useMemo((): ActiveFilterChipItem[] => {
+    const chips: ActiveFilterChipItem[] = [];
+    if (filters.rating != null) {
+      chips.push({
+        key: 'rating',
+        label: t('profile_rating_filter_chip').replace(
+          '{stars}',
+          String(shopRatingThresholdToStars(filters.rating)),
+        ),
+        removeLabel: t('profile_remove_rating_filter'),
+        onRemove: removeRating,
+      });
+    }
+    for (const tag of filters.tags) {
+      const decoded = decodeTagFilter(tag);
+      const label = decoded ? `${decoded.category}: ${decoded.value}` : tag;
+      chips.push({
+        key: `tag:${tag}`,
+        label,
+        removeLabel: t('discover_remove_filter').replace('{tag}', label),
+        onRemove: () => removeTag(tag),
+      });
+    }
+    return chips;
+  }, [filters.rating, filters.tags, removeRating, removeTag, t]);
 
   return (
-    <div className="mb-4">
-      <div className="mb-1.5 hidden items-center justify-between gap-2 lg:flex">
-        <span className="text-caption font-weight-label text-fg-tertiary">
-          {t('profile_active_filters').replace('{count}', String(activeCount))}
-        </span>
-        <button
-          type="button"
-          className="shrink-0 text-caption text-accent underline-offset-2 hover:underline"
-          onClick={clearAll}
-        >
-          {t('profile_clear_all_filters')}
-        </button>
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {filters.rating != null ? (
-          <span className={DISCOVER_ACTIVE_CHIP_CLASS}>
-            <span className="truncate font-weight-label">
-              {t('profile_rating_filter_chip').replace(
-                '{stars}',
-                String(shopRatingThresholdToStars(filters.rating)),
-              )}
-            </span>
-            <button
-              type="button"
-              aria-label={t('profile_remove_rating_filter')}
-              className="shrink-0 rounded-circle p-0.5 text-fg-secondary hover:bg-ghost-surface hover:text-fg"
-              onClick={removeRating}
-            >
-              <CloseIcon size={16} />
-            </button>
-          </span>
-        ) : null}
-        {filters.tags.map((tag) => {
-          const decoded = decodeTagFilter(tag);
-          const label = decoded ? `${decoded.category}: ${decoded.value}` : tag;
-          return (
-            <span key={tag} className={DISCOVER_ACTIVE_CHIP_CLASS}>
-              <span className="truncate font-weight-label">{label}</span>
-              <button
-                type="button"
-                aria-label={t('discover_remove_filter').replace('{tag}', label)}
-                className="shrink-0 rounded-circle p-0.5 text-fg-secondary hover:bg-ghost-surface hover:text-fg"
-                onClick={() => removeTag(tag)}
-              >
-                <CloseIcon size={16} />
-              </button>
-            </span>
-          );
-        })}
-        {filterButton}
-      </div>
-    </div>
+    <ActiveFilterChips
+      items={items}
+      onClearAll={clearAll}
+      trailing={filterButton}
+    />
   );
 }
 
 export function ProfileShopFilterChipsFromUrl() {
   const searchParams = useSearchParams();
-  const filters = useMemo(() => parseProfileShopFilters(searchParams), [searchParams]);
+  const filters = useMemo(
+    () => parseProfileShopFilters(searchParams),
+    [searchParams],
+  );
   return <ProfileShopFilterChips filters={filters} />;
 }

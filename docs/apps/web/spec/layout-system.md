@@ -61,7 +61,7 @@ Override grid with `gridTemplateClassName` on `AppShell` when a route needs a no
 | `StickyRegion` | `position: sticky` with configurable `offset` (CSS length). |
 | `FixedRegion` | Sticky + `h-[100dvh]` + `overflow-y-auto overflow-x-hidden` (twitter-mode left rail). |
 | `CollapsibleRegion` | Client: toggle on small screens; always visible on `lg+`. Optional `localStorage` via `storageKey`. |
-| `DrawerRegion` | Client: fixed overlay + panel; backdrop and `Escape` close. `belowHeader` starts overlay and panel under the app header sticky slot (measured, so the safe-area inset counts); `size`: `rail` (default, `--shell-left-width`) or `wide` (`min(17rem, 85vw)`, mobile menus: hub feed filters, discover types). |
+| `DrawerRegion` | Client: fixed overlay + panel; backdrop and `Escape` close. `belowHeader` starts overlay and panel under the app header sticky slot (measured, so the safe-area inset counts); `size`: `rail` (default, `--shell-left-width`) or `wide` (`min(17rem, 85vw)`, mobile menus: hub feed filters, Favorites categories). |
 | `ShellInset` | Constrained app column (`max-w-container-page` + `px-gutter`). Use for chrome and hero content that must align with the main grid. |
 | `ShellFullBleedBand` | Viewport-width background band; `breakout` (default) escapes a constrained parent for profile/object heroes; `breakout={false}` when already outside the page column (rare). Do not wrap in `overflow-hidden` ancestors — breakout is clipped. Inside an app column, do **not** nest `ShellInset` (content is already guttered). |
 

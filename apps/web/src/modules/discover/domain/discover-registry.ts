@@ -4,7 +4,7 @@ import { UPDATE_TYPES } from '@opden-data-layer/core/update-types';
 /** Implicit type for bare `/discover` when no remembered cookie exists. */
 export const DEFAULT_DISCOVER_OBJECT_TYPE = 'product';
 
-/** Curated Popular order for the desktop discover sidebar (not the object-create group). */
+/** Leading tabs of the discover type menu, in menu order (not the object-create group). */
 export const DISCOVER_POPULAR_OBJECT_TYPES = [
   'product',
   'business',
@@ -13,17 +13,34 @@ export const DISCOVER_POPULAR_OBJECT_TYPES = [
   'book',
 ] as const;
 
-/** Object types shown in discover sidebar (registry keys, sorted). */
+/** Every registry object type (keys, sorted). */
 export function listDiscoverObjectTypes(): string[] {
   return Object.keys(OBJECT_TYPE_REGISTRY).sort((a, b) => a.localeCompare(b));
 }
 
-/** Popular types that still exist in the registry, in sidebar order. */
+/** Popular types that still exist in the registry, in menu order. */
 export function listDiscoverPopularObjectTypes(): string[] {
   return DISCOVER_POPULAR_OBJECT_TYPES.filter((type) => type in OBJECT_TYPE_REGISTRY);
 }
 
-/** Label/key match used by the desktop sidebar and mobile type sheet search. */
+/** Types listed under the menu's More button: every registry type except the popular tabs. */
+export function listDiscoverMoreObjectTypes(): string[] {
+  const popular = new Set<string>(DISCOVER_POPULAR_OBJECT_TYPES);
+  return listDiscoverObjectTypes().filter((type) => !popular.has(type));
+}
+
+/**
+ * The active type when it is picked from More: the menu shows it as an extra tab before More.
+ * `null` in users mode, for popular types, `all` (mixed search results) and unknown types.
+ */
+export function discoverMoreTypeTab(objectType: string | null, usersMode: boolean): string | null {
+  if (usersMode || !objectType) {
+    return null;
+  }
+  return listDiscoverMoreObjectTypes().includes(objectType) ? objectType : null;
+}
+
+/** Label/key match used by the type search under the menu's More button. */
 export function matchesDiscoverTypeSearch(type: string, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) {

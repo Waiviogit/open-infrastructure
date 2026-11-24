@@ -58,6 +58,8 @@ export type {
   MobileFilterButtonProps,
   MobileFilterSheetProps,
 } from './components/mobile-filter-sheet';
+export { ActiveFilterChips, ACTIVE_FILTER_CHIP_CLASS } from './components/active-filter-chips';
+export type { ActiveFilterChipItem, ActiveFilterChipsProps } from './components/active-filter-chips';
 export {
   MODAL_Z_INDEX_DEFAULT,
   MODAL_Z_INDEX_EDITOR_OVERLAY,

@@ -1,16 +1,20 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { useInstantNavigation } from '@/shared/presentation';
-import { CloseIcon } from '@/icons';
+import {
+  ActiveFilterChips,
+  useInstantNavigation,
+  type ActiveFilterChipItem,
+} from '@/shared/presentation';
 
-import { buildDiscoverHref, decodeTagFilter, type DiscoverBox, type DiscoverMapView } from '../../domain/discover-url';
-
-/** Pill style for active search / tag filters in the feed column (matches header search chips, denser padding). */
-export const DISCOVER_ACTIVE_CHIP_CLASS =
-  'inline-flex max-w-full items-center gap-1 rounded-pill border border-border bg-surface-control px-2 py-0.5 text-caption text-fg';
+import {
+  buildDiscoverHref,
+  decodeTagFilter,
+  type DiscoverBox,
+  type DiscoverMapView,
+} from '../../domain/discover-url';
 
 export type DiscoverActiveChipsProps = {
   usersMode: boolean;
@@ -20,8 +24,11 @@ export type DiscoverActiveChipsProps = {
   sort: 'newest' | 'oldest' | 'rank';
   box: DiscoverBox | null;
   map: DiscoverMapView | null;
+  /** Below `lg`: the Filter button, after the chips (alone on its row when no filter is active). */
+  filterButton?: ReactNode;
 };
 
+/** Active Discover filters (search, tags, map area) as {@link ActiveFilterChips}, like Favorites. */
 export function DiscoverActiveChips({
   usersMode,
   objectType,
@@ -30,18 +37,14 @@ export function DiscoverActiveChips({
   sort,
   box,
   map,
+  filterButton,
 }: DiscoverActiveChipsProps) {
   const { t } = useI18n();
   const { navigateInstant } = useInstantNavigation();
   const trimmedQ = q.trim();
 
-  const activeCount = useMemo(
-    () => (trimmedQ.length > 0 ? 1 : 0) + tags.length + (box ? 1 : 0),
-    [trimmedQ, tags, box],
-  );
-
   const pushHref = useCallback(
-    (nextTags: string[], nextQ = q, nextBox: DiscoverBox | null = box) => {
+    (nextTags: string[], nextQ: string, nextBox: DiscoverBox | null) => {
       const href = buildDiscoverHref({
         users: usersMode,
         type: objectType ?? undefined,
@@ -53,92 +56,54 @@ export function DiscoverActiveChips({
       });
       navigateInstant({ href, method: 'replace', scroll: false });
     },
-    [navigateInstant, usersMode, objectType, q, sort, box, map],
-  );
-
-  const removeQuery = useCallback(() => {
-    pushHref(tags, '');
-  }, [pushHref, tags]);
-
-  const removeTag = useCallback(
-    (tag: string) => {
-      pushHref(tags.filter((item) => item !== tag));
-    },
-    [pushHref, tags],
+    [navigateInstant, usersMode, objectType, sort, map],
   );
 
   const clearAll = useCallback(() => {
     pushHref([], '', null);
   }, [pushHref]);
 
-  const removeMapArea = useCallback(() => {
-    pushHref(tags, q, null);
-  }, [pushHref, tags, q]);
-
-  if (activeCount === 0) {
-    return null;
-  }
+  const items = useMemo((): ActiveFilterChipItem[] => {
+    const chips: ActiveFilterChipItem[] = [];
+    if (trimmedQ.length > 0) {
+      chips.push({
+        key: 'q',
+        label: t('discover_active_search_chip').replace('{query}', trimmedQ),
+        removeLabel: t('discover_remove_search').replace('{query}', trimmedQ),
+        onRemove: () => pushHref(tags, '', box),
+      });
+    }
+    for (const tag of tags) {
+      const decoded = decodeTagFilter(tag);
+      const label = decoded ? `${decoded.category}: ${decoded.value}` : tag;
+      chips.push({
+        key: `tag:${tag}`,
+        label,
+        removeLabel: t('discover_remove_filter').replace('{tag}', label),
+        onRemove: () =>
+          pushHref(
+            tags.filter((item) => item !== tag),
+            q,
+            box,
+          ),
+      });
+    }
+    if (box) {
+      chips.push({
+        key: 'box',
+        label: t('discover_map_area_filter'),
+        removeLabel: t('discover_remove_map_area'),
+        onRemove: () => pushHref(tags, q, null),
+      });
+    }
+    return chips;
+  }, [trimmedQ, tags, box, q, pushHref, t]);
 
   return (
-    <div className="mb-4">
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <span className="text-caption font-weight-label text-fg-tertiary">
-          {t('discover_active_filters').replace('{count}', String(activeCount))}
-        </span>
-        <button
-          type="button"
-          className="shrink-0 text-caption text-accent underline-offset-2 hover:underline"
-          onClick={clearAll}
-        >
-          {t('discover_clear_all')}
-        </button>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {trimmedQ.length > 0 ? (
-          <span className={DISCOVER_ACTIVE_CHIP_CLASS}>
-            <span className="truncate font-weight-label">
-              {t('discover_active_search_chip').replace('{query}', trimmedQ)}
-            </span>
-            <button
-              type="button"
-              aria-label={t('discover_remove_search').replace('{query}', trimmedQ)}
-              className="shrink-0 rounded-circle p-0.5 text-fg-secondary hover:bg-ghost-surface hover:text-fg"
-              onClick={removeQuery}
-            >
-              <CloseIcon size={16} />
-            </button>
-          </span>
-        ) : null}
-        {tags.map((tag) => {
-          const label = decodeTagFilter(tag)?.value ?? tag;
-          return (
-            <span key={tag} className={DISCOVER_ACTIVE_CHIP_CLASS}>
-              <span className="truncate font-weight-label">{label}</span>
-              <button
-                type="button"
-                aria-label={t('discover_remove_filter').replace('{tag}', label)}
-                className="shrink-0 rounded-circle p-0.5 text-fg-secondary hover:bg-ghost-surface hover:text-fg"
-                onClick={() => removeTag(tag)}
-              >
-                <CloseIcon size={16} />
-              </button>
-            </span>
-          );
-        })}
-        {box ? (
-          <span className={DISCOVER_ACTIVE_CHIP_CLASS}>
-            <span className="truncate font-weight-label">{t('discover_map_area_filter')}</span>
-            <button
-              type="button"
-              aria-label={t('discover_remove_map_area')}
-              className="shrink-0 rounded-circle p-0.5 text-fg-secondary hover:bg-ghost-surface hover:text-fg"
-              onClick={removeMapArea}
-            >
-              <CloseIcon size={16} />
-            </button>
-          </span>
-        ) : null}
-      </div>
-    </div>
+    <ActiveFilterChips
+      items={items}
+      onClearAll={clearAll}
+      trailing={filterButton}
+    />
   );
 }

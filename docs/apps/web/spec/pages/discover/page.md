@@ -8,14 +8,14 @@ related:
 type: spec
 status: active
 scope: web
-updated_at: 2026-11-09
+updated_at: 2026-11-24
 ---
 
 # Discover page (`/discover`)
 
 Browse objects by type or users with optional text search and tag-category filters (AND semantics).
 
-Hub chrome: under `(app)/(hub)` with FEED / DISCOVER / MARKET section nav (`AppSectionNav`). DISCOVER is active on this route. See [home](../home/page.md).
+Hub chrome: under `(app)/(hub)` with FEED / DISCOVER / MARKET section nav (`AppSectionNav`). DISCOVER is active on this route, and the hub's second-level band is the [type menu](#type-menu). See [home](../home/page.md).
 
 ## Routes
 
@@ -51,25 +51,39 @@ Geo-capable registry types (`restaurant`, `place`, `business`, `person`, `servic
 
 ### Remembered object type
 
-Cookie `discover_object_type` stores the last picked registry object type (client write on type selection in the desktop sidebar or mobile type drawer; server read on page load). Returning visitors with a valid cookie are redirected to `/discover?type={remembered}`. The cookie is never set for `users` mode, `type=all`, or the automatic Product default.
+Cookie `discover_object_type` stores the last picked registry object type (client write on type selection in the type menu, tab or More row; server read on page load). Returning visitors with a valid cookie are redirected to `/discover?type={remembered}`. The cookie is never set for `users` mode, `type=all`, or the automatic Product default.
 
-## Mobile layout (< `lg`)
+## Type menu
 
-- **Type button** — accent label (`text-section`) in feed header; opens a left drawer (`DiscoverTypeDrawer` → `DrawerRegion belowHeader size="wide"`) that starts under the app header and leaves it visible; same pattern as the hub feed filter drawer. Same sections as the desktop sidebar: Popular, Users, All types, each row with the same glyph. Active row uses `bg-accent-soft`. Search filters Popular and All types; Users stays visible. Picking a row navigates and closes the drawer. No duplicate "Discover" label on mobile.
-- **Filters** — the `Filter` pill (shared `MobileFilterButton`, filter glyph) opens the filter bottom sheet (shared `MobileFilterSheet`) (tag categories only; same data as desktop right column). Active chips shown inline; toggles apply immediately via URL replace. No "Filters" section heading.
-- **List / Map** — geo types show underline sub-nav (`List` | `Map`) below filters. **List** shows the object feed + `Sort: …` dropdown. **Map** shows inline map (`DiscoverMapPanel variant="feed"`) with Search area, zoom, locate, and expand-to-fullscreen. Expanding opens the fullscreen map modal; **Search area** writes `box` to the URL.
-- Desktop three-column layout (sidebar / feed / filters) at `lg+`; sidebar and desktop filter column hidden on mobile. Map rail stacks above the filters column when the type supports geo.
+`HubDiscoverTabBand` (`modules/discover`), mounted in `(hub)/layout.tsx` next to the Feed and Market bands: a full-width band under the hub section nav with the same chrome (`ScrollableHorizontalTabNav`, primary tabs with a glyph from `@/icons`, centred when it fits, horizontal scroll with arrows when it does not). It follows the optimistic navigation target, so the active tab switches on click.
 
-## Desktop sidebar (`lg+`)
+Tabs, in order:
 
-Left column, top to bottom:
+1. **Popular types** — `product`, `business`, `restaurant`, `person`, `book` (`DISCOVER_POPULAR_OBJECT_TYPES`). No "Popular" heading.
+2. **Users** — `?users=1`.
+3. **Active More type** — when the active type was picked from More (e.g. `recipe`), it shows as an active tab here. Picking a popular type removes it.
+4. **More ▾** — popover with a type search (`discover_search_object_types`) and every other registry type, alphabetical, each with its glyph. The active type uses `bg-accent-soft`. Escape, an outside click or a pick closes it. It is portaled with fixed positioning so the scrollable tab row does not clip it.
 
-1. **Find object type** — filters Popular and All types by label. While searching, the 15-item All types cap is skipped and empty type sections hide. Users stays visible. No matches show `discover_no_results`.
-2. **Popular** — `product`, `business`, `restaurant`, `person`, `book`.
-3. **Users** — All users (above the full type list).
-4. **All types** — alphabetical registry list, first 15, then Show more. The column scrolls inside the viewport (`max-h` + `overflow-y-auto`, scrollbar hidden) so the expanded list is reachable without scrolling the feed to its end. A type can appear in both Popular and All types; the active row is accent in both when both are visible. Selecting a Popular type does not expand All types. Selecting a type that exists only in the hidden tail does expand All types.
+Type links replace the URL and keep `q` and `sort`; `tags`, `box` and `map` are dropped (they are type-specific). Mixed search results (`type=all`, from header search) leave every tab inactive.
 
-Each type row and the Users row show a 14px glyph from `@/icons`. The active row uses `bg-accent-soft` (`--color-accent-soft`, 10% accent) with `text-accent`. `bg-accent/10` does not paint because `--color-accent` is a hex CSS variable.
+## Layout
+
+Three columns from `lg` up, on the hub shell grid (`--shell-left-width` / feed / `--shell-right-width`):
+
+- **Left** — reserved for the active type's categories (next step: category tree for registry types with the `category` update, breadcrumbs from `All`, `?cat=` lineage in the URL). Empty until then.
+- **Center** — `Discover` title + sort, active-filter chips, then the object or user feed.
+- **Right** — map rail (geo types) above the tag-category filters; sticky under the hub section nav.
+
+### Active filters
+
+Shared `ActiveFilterChips` (`@/shared/presentation`), the same component as profile Favorites. Chips: `Search: {q}`, each tag as `Category: value`, `Map area`. From `lg` up they sit under `Active filters (n) · Clear all`; Clear all drops `q`, `tags` and `box` and keeps the type and sort.
+
+### Mobile (< `lg`)
+
+- **Type** — the same band; it scrolls horizontally, More opens the same popover.
+- **Filters** — the chips wrap in one row with the `Filter` pill (shared `MobileFilterButton`) after them; with no active filter the pill is alone in its row. It opens the filter bottom sheet (shared `MobileFilterSheet`, tag categories only; same data as the desktop right column); toggles apply immediately via URL replace. No heading above the chips (the sheet has its own Clear).
+- **List / Map** — geo types show underline sub-nav (`List` | `Map`) below the chips. **List** shows the object feed + `Sort: …` dropdown. **Map** shows the inline map (`DiscoverMapPanel variant="feed"`) with Search area, zoom, locate and expand-to-fullscreen; **Search area** writes `box` to the URL.
+- No page title and no left or right column on mobile.
 
 ## API (via BFF)
 

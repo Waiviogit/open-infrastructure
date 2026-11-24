@@ -55,7 +55,9 @@ test.describe('Discover mobile', () => {
 
     await expect(page).toHaveURL(/type=product/);
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /Product/i })).toBeVisible();
+    await expect(
+      page.getByRole('navigation', { name: 'Object types' }).getByRole('link', { name: 'Product' }),
+    ).toHaveAttribute('aria-current', 'page');
   });
 
   test('skips picker for returning visitor with remembered type cookie', async ({ page, context }) => {
@@ -86,7 +88,7 @@ test.describe('Discover mobile', () => {
 
     await filterSheet.getByRole('button', { name: 'Show results' }).click();
     await expect(filterSheet).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Remove filter Sushi' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove filter Cuisine: Sushi' })).toBeVisible();
 
     await page.goBack();
     await expect(page).not.toHaveURL(/tags=/);
@@ -127,13 +129,31 @@ test.describe('Discover desktop', () => {
     await expect(page.getByText('E2E Discover Restaurant')).toBeVisible();
   });
 
-  test('defaults to product and shows Popular above Users', async ({ page }) => {
+  test('defaults to product and shows the type menu: popular types, Users, More', async ({
+    page,
+  }) => {
     await page.goto('/discover');
 
     await expect(page).toHaveURL(/type=product/);
-    await expect(page.getByRole('heading', { name: 'Popular', level: 2 })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Users', level: 2 })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'All types', level: 2 })).toBeVisible();
-    await expect(page.getByPlaceholder('Find object type')).toBeVisible();
+    const menu = page.getByRole('navigation', { name: 'Object types' });
+    await expect(menu.getByRole('link', { name: 'Product' })).toHaveAttribute('aria-current', 'page');
+    for (const name of ['Business', 'Restaurant', 'Person', 'Book', 'Users']) {
+      await expect(menu.getByRole('link', { name })).toBeVisible();
+    }
+    await expect(menu.getByRole('button', { name: /More/ })).toBeVisible();
+  });
+
+  test('a type picked from More becomes an active tab', async ({ page }) => {
+    await page.goto('/discover?type=product');
+
+    const menu = page.getByRole('navigation', { name: 'Object types' });
+    await menu.getByRole('button', { name: /More/ }).click();
+    await page.getByRole('searchbox', { name: 'Search object types' }).fill('reci');
+    const more = page.getByRole('navigation', { name: 'More object types' });
+    await more.getByRole('link', { name: 'Recipe' }).click();
+
+    await expect(page).toHaveURL(/type=recipe/);
+    await expect(menu.getByRole('link', { name: 'Recipe' })).toHaveAttribute('aria-current', 'page');
+    await expect(more).toHaveCount(0);
   });
 });
