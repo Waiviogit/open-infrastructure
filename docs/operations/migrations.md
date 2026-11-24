@@ -299,7 +299,7 @@ docker run --rm \
   pnpm migrate:mongo-objects /data/wobjects.json
 ```
 
-Other package scripts from the root `package.json` work the same way (e.g. `pnpm migrate:mongo-users`, `pnpm backfill:threads`) as long as their inputs are passed via mounted paths or env.
+Other package scripts from the root `package.json` work the same way (e.g. `pnpm migrate:mongo-users`, `pnpm backfill:threads`, [`pnpm categories:rebuild`](category-scopes-rebuild.md)) as long as their inputs are passed via mounted paths or env.
 
 ### Local manual stack
 

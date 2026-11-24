@@ -105,7 +105,8 @@
       ],
       "@opden-data-layer/test-postgres": ["./libs/test-postgres/src/index.ts"],
       "@opden-data-layer/hive-account": ["./libs/hive-account/src/index.ts"],
-      "@opden-data-layer/common": ["./libs/common/src/index.ts"]
+      "@opden-data-layer/common": ["./libs/common/src/index.ts"],
+      "@opden-data-layer/category-scopes": ["./libs/category-scopes/src/index.ts"]
     },
     "strict": false,
     "noUncheckedSideEffectImports": false,

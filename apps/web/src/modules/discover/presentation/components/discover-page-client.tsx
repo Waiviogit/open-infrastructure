@@ -24,7 +24,10 @@ import {
   objectTypeSupportsGeo,
 } from '../../domain/discover-registry';
 import { resolveInitialDiscoverType } from '../../domain/resolve-initial-discover-type';
-import { useDiscoverCategoryNav } from '../hooks/use-discover-category-nav';
+import {
+  isDiscoverCategoryTreeVisible,
+  useDiscoverCategoryNav,
+} from '../hooks/use-discover-category-nav';
 import { DiscoverCategoryDrawer, DiscoverCategoryRail } from './discover-category-nav';
 import { DiscoverFeed, type DiscoverCenterMode } from './discover-feed';
 import type { DiscoverMobileTab } from './discover-mobile-header';
@@ -138,10 +141,8 @@ function DiscoverPageContent({
     tags,
     box,
   });
-  // While the root level loads the tree is assumed (skeleton); an empty root hides it.
   const showCategoryTree =
-    categoryType != null &&
-    (categoryPath.length > 0 || categoryNav.status !== 'ready' || categoryNav.items.length > 0);
+    categoryType != null && isDiscoverCategoryTreeVisible(categoryNav, categoryPath);
 
   const filtersActive = q.trim().length > 0 || tags.length > 0 || box != null;
   // Blocks per subcategory inside a category that has subcategories, without filters (like

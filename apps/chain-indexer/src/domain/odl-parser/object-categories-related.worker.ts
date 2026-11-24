@@ -3,16 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { ObjectCategoriesRelatedSyncQueueRow } from '@opden-data-layer/odl-db-types';
 
-import {
-  CATEGORY_OBJECT_TYPES,
-  objectTypeSupportsCategories,
-  parseUserCategoryScopeKey,
-  resolvePostLinkedObjectTypes,
-} from '@opden-data-layer/core';
-import { ObjectCategoriesRelatedRepository } from '../../repositories/object-categories-related.repository';
+import { CategoryScopeRebuildService } from '@opden-data-layer/category-scopes';
+import { CATEGORY_OBJECT_TYPES } from '@opden-data-layer/core';
 import { ObjectCategoriesRelatedSyncQueueRepository } from '../../repositories/object-categories-related-sync-queue.repository';
-import { UserMetadataRepository } from '../../repositories/user-metadata.repository';
-import { UserShopDeselectRepository } from '../../repositories/user-shop-deselect.repository';
 import { CategoryTypeScopeThrottleService } from './category-type-scope-throttle.service';
 import {
   OBJECT_CATEGORIES_RELATED_WORKER_BATCH_SIZE,
@@ -26,7 +19,8 @@ const DEFAULT_MAX_ATTEMPTS = 10;
 /**
  * Drains `object_categories_related_sync_queue`: rebuilds the global scope, one type scope
  * (all active objects of a category type, rate limited) or one per-type user scope
- * (`account:objectType`).
+ * (`account:objectType`). The rebuild itself is `CategoryScopeRebuildService`
+ * (`@opden-data-layer/category-scopes`), shared with the `categories:rebuild` script.
  * @see docs/apps/chain-indexer/spec/object-categories.md
  */
 @Injectable()
@@ -37,9 +31,7 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
     private readonly configService: ConfigService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly relatedSyncQueueRepository: ObjectCategoriesRelatedSyncQueueRepository,
-    private readonly objectCategoriesRelatedRepository: ObjectCategoriesRelatedRepository,
-    private readonly userMetadataRepository: UserMetadataRepository,
-    private readonly userShopDeselectRepository: UserShopDeselectRepository,
+    private readonly scopeRebuild: CategoryScopeRebuildService,
     private readonly typeScopeThrottle: CategoryTypeScopeThrottleService,
   ) {}
 
@@ -92,7 +84,7 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
   ): Promise<void> {
     try {
       if (task.scope_type === 'global') {
-        await this.objectCategoriesRelatedRepository.replaceGlobalScope();
+        await this.scopeRebuild.rebuildGlobalScope();
       } else if (task.scope_type === 'type') {
         await this.rebuildTypeScope(task.scope_key);
       } else {
@@ -114,37 +106,21 @@ export class ObjectCategoriesRelatedWorker implements OnModuleInit, OnModuleDest
   }
 
   private async rebuildTypeScope(objectType: string): Promise<void> {
-    if (!objectTypeSupportsCategories(objectType)) {
+    const outcome = await this.scopeRebuild.rebuildTypeScope(objectType);
+    if (outcome === 'not_category_type') {
       this.logger.warn(`object_categories_related: '${objectType}' is not a category type; skipped`);
       return;
     }
-    await this.objectCategoriesRelatedRepository.replaceTypeCategoryScope(objectType);
     await this.typeScopeThrottle.markRebuilt(objectType);
   }
 
   private async rebuildUserScope(scopeKey: string): Promise<void> {
-    const parsed = parseUserCategoryScopeKey(scopeKey);
-    if (!parsed) {
+    const outcome = await this.scopeRebuild.rebuildUserScope(scopeKey);
+    if (outcome === 'legacy_deleted') {
       this.logger.warn(
-        `object_categories_related: legacy or non-category user scope '${scopeKey}'; deleting its rows`,
+        `object_categories_related: legacy or non-category user scope '${scopeKey}'; rows deleted`,
       );
-      await this.objectCategoriesRelatedRepository.deleteUserScope(scopeKey);
-      return;
     }
-    const { account, objectType } = parsed;
-
-    const [meta, deselectIds] = await Promise.all([
-      this.userMetadataRepository.findByAccount(account),
-      this.userShopDeselectRepository.findObjectIdsByAccount(account),
-    ]);
-    const includePostObjects = resolvePostLinkedObjectTypes([objectType], meta).length > 0;
-
-    await this.objectCategoriesRelatedRepository.replaceUserCategoryScope(scopeKey, {
-      account,
-      objectType,
-      includePostObjects,
-      deselectIds,
-    });
   }
 
   /**

@@ -29,7 +29,11 @@ export function filterSubDepartments(params: {
  * majority of each. The majority condition keeps two small, mostly disjoint categories (a few
  * units each) apart: with the 3-unit display minimum they are always under the tolerance.
  */
-export function isNearDuplicateByCounts(a: number, b: number, both: number): boolean {
+export function isNearDuplicateByCounts(
+  a: number,
+  b: number,
+  both: number,
+): boolean {
   return (
     2 * both > a &&
     2 * both > b &&
@@ -39,7 +43,10 @@ export function isNearDuplicateByCounts(a: number, b: number, both: number): boo
 }
 
 /** Near-duplicate test on precomputed `group_keys` (user scopes store them). */
-export function isNearDuplicateByGroupKeys(aKeys: readonly string[], bKeys: readonly string[]): boolean {
+export function isNearDuplicateByGroupKeys(
+  aKeys: readonly string[],
+  bKeys: readonly string[],
+): boolean {
   const bs = new Set(bKeys);
   const both = aKeys.filter((key) => bs.has(key)).length;
   return isNearDuplicateByCounts(aKeys.length, bKeys.length, both);

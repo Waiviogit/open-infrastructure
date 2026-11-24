@@ -5,7 +5,11 @@ import {
 } from './level2-filter';
 import type { CategoryNavigationRow } from './category-navigation.types';
 
-function nav(name: string, count: number, related: string[]): CategoryNavigationRow {
+function nav(
+  name: string,
+  count: number,
+  related: string[],
+): CategoryNavigationRow {
   return {
     category_name: name,
     objects_count: count,

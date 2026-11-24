@@ -5,17 +5,19 @@ import {
   type CategoryCountScope,
   type CategoryNamePair,
 } from '../../repositories';
-import { passesCategoryDisplayRules } from './category-display-rules';
-import { NEAR_DUPLICATE_MAX_CANDIDATES, ROOT_DEPARTMENTS_LIMIT } from './category-navigation.constants';
-import type { CategoryNavigationRow } from './category-navigation.types';
-import type { UserCategoryNavItem } from './categories-query.schema';
 import {
+  filterShownCategories,
+  isNearDuplicateByCounts,
+  isNearDuplicateByGroupKeys,
+  NEAR_DUPLICATE_MAX_CANDIDATES,
+  passesCategoryDisplayRules,
   precomputedTypeTotal,
   selectCategoryCandidates,
+  selectRootCategories,
   toCategoryNavigationRows,
-} from './category-candidates';
-import { greedyRootDepartments } from './level1-filter';
-import { isNearDuplicateByCounts, isNearDuplicateByGroupKeys } from './level2-filter';
+  type CategoryNavigationRow,
+} from '@opden-data-layer/category-scopes';
+import type { UserCategoryNavItem } from './categories-query.schema';
 
 export type CategoryNavigationInput = {
   scope: CategoryCountScope;
@@ -75,16 +77,20 @@ export class CategoryNavigationService {
             categoryNames: candidates,
           });
     const countOf = (name: string) => level.counts.get(name) ?? 0;
-    const shown = candidates
-      .filter((name) => passesCategoryDisplayRules(countOf(name), level.total))
-      .sort((a, b) => countOf(b) - countOf(a));
-
-    const isRoot = input.lineage.length === 0;
-    const kept = isRoot
-      ? dominantRootNames(navRows, shown, countOf)
-      : await this.dropNearDuplicates(input.scope, navRows, input.lineage, shown, countOf);
-    const visible = isRoot ? kept.slice(0, ROOT_DEPARTMENTS_LIMIT) : kept;
-    const show_other = isRoot && kept.length > ROOT_DEPARTMENTS_LIMIT;
+    const root =
+      input.lineage.length === 0
+        ? selectRootCategories(navRows, candidates, countOf, level.total)
+        : null;
+    const visible =
+      root?.names ??
+      (await this.dropNearDuplicates(
+        input.scope,
+        navRows,
+        input.lineage,
+        filterShownCategories(candidates, countOf, level.total),
+        countOf,
+      ));
+    const show_other = root?.showOther ?? false;
 
     const pairCountsFor = (pairs: CategoryNamePair[]): Promise<PairCounts> =>
       precomputedTotal != null
@@ -232,21 +238,4 @@ function keepDistinct(
     }
   }
   return kept;
-}
-
-/**
- * Root: greedy dominance among the names that passed the display rules, by live count. A hidden
- * catch-all category (over 60%) therefore never suppresses the categories it co-occurs with.
- */
-function dominantRootNames(
-  navRows: CategoryNavigationRow[],
-  shownNames: readonly string[],
-  countOf: (name: string) => number,
-): string[] {
-  const rowByName = new Map(navRows.map((row) => [row.category_name, row]));
-  const shownRows = shownNames.flatMap((name) => {
-    const row = rowByName.get(name);
-    return row ? [{ ...row, objects_count: countOf(name) }] : [];
-  });
-  return greedyRootDepartments(shownRows).map((row) => row.category_name);
 }

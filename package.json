@@ -45,6 +45,7 @@
     "backfill:threads": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-threads.ts",
     "backfill:user-object-powers": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-user-object-powers.ts",
     "backfill:object-categories": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-object-categories.ts",
+    "categories:rebuild": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/rebuild-category-scopes.ts",
     "backfill:object-statuses": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-object-statuses.ts",
     "backfill:user-account-auths": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-user-account-auths.ts",
     "backfill:reblog-timestamps": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-reblog-timestamps.ts",

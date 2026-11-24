@@ -46,7 +46,7 @@ Response: `{ items: { name, objects_count, has_children }[], uncategorized_count
 
 ## Display rules (client)
 
-Applied at **every level**, Favorites and Discover alike (`passesCategoryDisplayRules`, [`category-display-rules.ts`](../../../../apps/query-api/src/domain/categories/category-display-rules.ts)):
+Applied at **every level**, Favorites and Discover alike (`passesCategoryDisplayRules`, [`category-display-rules.ts`](../../../../libs/category-scopes/src/lib/navigation/category-display-rules.ts)):
 
 1. A category with **fewer than 3** units (`CATEGORY_MIN_OBJECTS`) is not shown.
 2. A category covering **more than 60%** (`CATEGORY_MAX_SHARE`) of the level's units is not shown.
@@ -72,7 +72,7 @@ Let `lineage = [...path, name]` (empty at the root).
 Implementation:
 
 - [`GetUserCategoriesEndpoint`](../../../../apps/query-api/src/domain/categories/get-user-categories.endpoint.ts); `shop-sections` and `favorites/types` use the same service.
-- Candidate selection: [`category-candidates.ts`](../../../../apps/query-api/src/domain/categories/category-candidates.ts), [`level1-filter.ts`](../../../../apps/query-api/src/domain/categories/level1-filter.ts), [`level2-filter.ts`](../../../../apps/query-api/src/domain/categories/level2-filter.ts).
+- Candidate selection and the root (pure, in [`@opden-data-layer/category-scopes`](../../../../libs/category-scopes/src/lib/navigation/index.ts), shared with the [`categories:rebuild`](../../../operations/category-scopes-rebuild.md) report): [`category-candidates.ts`](../../../../libs/category-scopes/src/lib/navigation/category-candidates.ts), [`category-level-view.ts`](../../../../libs/category-scopes/src/lib/navigation/category-level-view.ts) (`selectRootCategories`), [`level1-filter.ts`](../../../../libs/category-scopes/src/lib/navigation/level1-filter.ts), [`level2-filter.ts`](../../../../libs/category-scopes/src/lib/navigation/level2-filter.ts).
 
 ## Candidates: root (no `name`)
 

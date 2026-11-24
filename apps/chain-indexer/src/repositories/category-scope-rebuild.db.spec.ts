@@ -1,6 +1,14 @@
-import type { Kysely } from 'kysely';
+import type { Kysely, Transaction } from 'kysely';
 import { sql } from 'kysely';
-import { TYPE_SCOPE_TOTAL_SENTINEL, UNCATEGORIZED_CATEGORY_SENTINEL } from '@opden-data-layer/core';
+import {
+  CategoryScopeRebuildService,
+  CategoryScopeRepository,
+  type UserCategoryScopeAggOptions,
+} from '@opden-data-layer/category-scopes';
+import {
+  TYPE_SCOPE_TOTAL_SENTINEL,
+  UNCATEGORIZED_CATEGORY_SENTINEL,
+} from '@opden-data-layer/core';
 import { migrateToLatest } from '@opden-data-layer/migrations';
 import type { OdlDatabase } from '@opden-data-layer/odl-db-types';
 import {
@@ -9,18 +17,13 @@ import {
   withRollback,
 } from '@opden-data-layer/test-postgres';
 
-import type { Database } from '../database';
-import { ObjectCategoriesRelatedRepository } from './object-categories-related.repository';
-import { ObjectCategoriesRelatedSyncQueueRepository } from './object-categories-related-sync-queue.repository';
-import { ObjectCategoriesSyncQueueRepository } from './object-categories-sync-queue.repository';
 
-const describeDb = process.env.POSTGRES_TEST_URL ? describe : describe.skip;
+const describeDb = process.env['POSTGRES_TEST_URL'] ? describe : describe.skip;
 
-/** Fixture prefix; rows are committed (the repository opens its own transaction) and removed after. */
+/** Fixture prefix; rows are committed (each rebuild opens its own transaction) and removed after. */
 const P = 'ocrdb';
 const ACCOUNT = `${P}-alice`;
 const SCOPE_KEY = `${ACCOUNT}:recipe`;
-const RETRY_AFTER_SEC = 60;
 
 type Db = Kysely<OdlDatabase>;
 
@@ -42,14 +45,23 @@ async function insertObject(
   }
 }
 
-async function favorite(db: Db, objectId: string, account: string): Promise<void> {
+async function favorite(
+  db: Db,
+  objectId: string,
+  account: string,
+): Promise<void> {
   await sql`
     INSERT INTO object_favorite (object_id, account, event_seq, created_at)
     VALUES (${objectId}, ${account}, 1, NOW())
   `.execute(db);
 }
 
-async function linkFromPost(db: Db, objectId: string, author: string, permlink: string): Promise<void> {
+async function linkFromPost(
+  db: Db,
+  objectId: string,
+  author: string,
+  permlink: string,
+): Promise<void> {
   await sql`
     INSERT INTO posts (author, permlink, created_unix) VALUES (${author}, ${permlink}, 1)
     ON CONFLICT DO NOTHING
@@ -59,32 +71,62 @@ async function linkFromPost(db: Db, objectId: string, author: string, permlink: 
   `.execute(db);
 }
 
-async function scopeCounts(db: Db, scopeKey: string): Promise<Record<string, number>> {
+async function scopeCounts(
+  db: Db,
+  scopeKey: string,
+): Promise<Record<string, number>> {
   const { rows } = await sql<{ category_name: string; objects_count: string }>`
     SELECT category_name, objects_count
     FROM object_categories_related
     WHERE scope_type = 'user' AND scope_key = ${scopeKey}
   `.execute(db);
-  return Object.fromEntries(rows.map((r) => [r.category_name, Number(r.objects_count)]));
-}
-
-/** The single row a claim returned. */
-function onlyRow<T>(rows: T[]): T {
-  const [row] = rows;
-  if (rows.length !== 1 || row === undefined) {
-    throw new Error(`expected exactly one claimed row, got ${rows.length}`);
-  }
-  return row;
+  return Object.fromEntries(
+    rows.map((r) => [r.category_name, Number(r.objects_count)]),
+  );
 }
 
 async function cleanup(db: Db): Promise<void> {
-  await sql`DELETE FROM object_categories_related WHERE scope_key LIKE ${`${P}-%`}`.execute(db);
+  await sql`DELETE FROM object_categories_related WHERE scope_key LIKE ${`${P}-%`}`.execute(
+    db,
+  );
   await sql`DELETE FROM posts WHERE author LIKE ${`${P}-%`}`.execute(db);
-  await sql`DELETE FROM objects_core WHERE object_id LIKE ${`${P}-%`}`.execute(db);
+  await sql`DELETE FROM objects_core WHERE object_id LIKE ${`${P}-%`}`.execute(
+    db,
+  );
 }
 
-describeDb('object categories repositories (db)', () => {
+describeDb('category scope rebuild (db)', () => {
   const db = createTestDb();
+  const repository = () => new CategoryScopeRepository(db);
+  const rebuild = () => new CategoryScopeRebuildService(repository());
+
+  /** Aggregation + replace with explicit options (the service derives them from user data). */
+  async function replaceUserScope(
+    opts: Omit<UserCategoryScopeAggOptions, 'account' | 'objectType'> &
+      Partial<UserCategoryScopeAggOptions>,
+  ): Promise<void> {
+    const repo = repository();
+    await repo.runInTransaction(async (trx) => {
+      const rows = await repo.aggregateUserScope(
+        SCOPE_KEY,
+        { account: ACCOUNT, objectType: 'recipe', ...opts },
+        trx,
+      );
+      await repo.replaceScopeRows('user', SCOPE_KEY, rows, trx);
+    });
+  }
+
+  async function replaceTypeScope(objectType: string): Promise<void> {
+    const repo = repository();
+    await repo.runInTransaction(async (trx) => {
+      await repo.replaceScopeRows(
+        'type',
+        objectType,
+        await repo.aggregateTypeScope(objectType, trx),
+        trx,
+      );
+    });
+  }
 
   beforeAll(async () => {
     await migrateToLatest({ connectionString: resolveTestPostgresUrl() });
@@ -99,15 +141,18 @@ describeDb('object categories repositories (db)', () => {
     await db.destroy();
   });
 
-  describe('ObjectCategoriesRelatedRepository.replaceUserCategoryScope', () => {
-    const repo = () => new ObjectCategoriesRelatedRepository(db as unknown as Kysely<Database>);
-
+  describe('user scope', () => {
     it('aggregates favorites ∪ authored posts of the one type, active only, without ownership', async () => {
       await insertObject(db, `${P}-fav`, 'recipe', { categories: ['Soups'] });
-      await insertObject(db, `${P}-post`, 'recipe', { categories: ['Soups', 'Comfort'] });
+      await insertObject(db, `${P}-post`, 'recipe', {
+        categories: ['Soups', 'Comfort'],
+      });
       await insertObject(db, `${P}-plain`, 'recipe');
       await insertObject(db, `${P}-owned`, 'recipe', { categories: ['Owned'] });
-      await insertObject(db, `${P}-dead`, 'recipe', { status: 'unavailable', categories: ['Dead'] });
+      await insertObject(db, `${P}-dead`, 'recipe', {
+        status: 'unavailable',
+        categories: ['Dead'],
+      });
       await insertObject(db, `${P}-book`, 'book', { categories: ['Fiction'] });
       await favorite(db, `${P}-fav`, ACCOUNT);
       await favorite(db, `${P}-plain`, ACCOUNT);
@@ -119,7 +164,7 @@ describeDb('object categories repositories (db)', () => {
         VALUES (${`${P}-owned`}, ${ACCOUNT}, 'exclusive', 1, NOW())
       `.execute(db);
 
-      await repo().replaceUserCategoryScope(SCOPE_KEY, {
+      await replaceUserScope({
         account: ACCOUNT,
         objectType: 'recipe',
         includePostObjects: true,
@@ -134,13 +179,15 @@ describeDb('object categories repositories (db)', () => {
     });
 
     it('drops post-linked objects when hidden or deselected, but keeps favorites', async () => {
-      await insertObject(db, `${P}-post`, 'recipe', { categories: ['Comfort'] });
+      await insertObject(db, `${P}-post`, 'recipe', {
+        categories: ['Comfort'],
+      });
       await insertObject(db, `${P}-both`, 'recipe', { categories: ['Soups'] });
       await favorite(db, `${P}-both`, ACCOUNT);
       await linkFromPost(db, `${P}-post`, ACCOUNT, 'p1');
       await linkFromPost(db, `${P}-both`, ACCOUNT, 'p1');
 
-      await repo().replaceUserCategoryScope(SCOPE_KEY, {
+      await replaceUserScope({
         account: ACCOUNT,
         objectType: 'recipe',
         includePostObjects: true,
@@ -148,7 +195,7 @@ describeDb('object categories repositories (db)', () => {
       });
       expect(await scopeCounts(db, SCOPE_KEY)).toEqual({ Soups: 1 });
 
-      await repo().replaceUserCategoryScope(SCOPE_KEY, {
+      await replaceUserScope({
         account: ACCOUNT,
         objectType: 'recipe',
         includePostObjects: false,
@@ -163,7 +210,7 @@ describeDb('object categories repositories (db)', () => {
         VALUES ('user', ${SCOPE_KEY}, 'Stale', 29), ('user', ${SCOPE_KEY}, ${UNCATEGORIZED_CATEGORY_SENTINEL}, 0)
       `.execute(db);
 
-      await repo().replaceUserCategoryScope(SCOPE_KEY, {
+      await replaceUserScope({
         account: ACCOUNT,
         objectType: 'recipe',
         includePostObjects: true,
@@ -173,21 +220,22 @@ describeDb('object categories repositories (db)', () => {
       expect(await scopeCounts(db, SCOPE_KEY)).toEqual({});
     });
 
-    it('deleteUserScope removes a legacy key', async () => {
+    it('a legacy key only loses its rows', async () => {
       const legacy = `${ACCOUNT}:book,product`;
       await sql`
         INSERT INTO object_categories_related (scope_type, scope_key, category_name, objects_count)
         VALUES ('user', ${legacy}, 'Fiction', 3)
       `.execute(db);
 
-      await repo().deleteUserScope(legacy);
+      await expect(rebuild().rebuildUserScope(legacy)).resolves.toBe(
+        'legacy_deleted',
+      );
 
       expect(await scopeCounts(db, legacy)).toEqual({});
     });
   });
 
-  describe('ObjectCategoriesRelatedRepository.replaceTypeCategoryScope', () => {
-    const repo = () => new ObjectCategoriesRelatedRepository(db as unknown as Kysely<Database>);
+  describe('type scope', () => {
     /** Fixture-only type, so rows of other specs never join the scope. */
     const TYPE = `${P}-type`;
 
@@ -229,7 +277,10 @@ describeDb('object categories repositories (db)', () => {
         WHERE scope_type = 'type' AND scope_key = ${TYPE}
         ORDER BY category_name COLLATE "C"
       `.execute(db);
-      return rows.map((r) => ({ ...r, objects_count: Number(r.objects_count) }));
+      return rows.map((r) => ({
+        ...r,
+        objects_count: Number(r.objects_count),
+      }));
     }
 
     it('counts groups and shared groups per related name, plus the type total; no group_keys', async () => {
@@ -237,10 +288,14 @@ describeDb('object categories repositories (db)', () => {
       await insertGrouped(`${P}-v2`, `${P}-grp`, ['Audio']);
       await insertGrouped(`${P}-h1`, null, ['Audio', 'Headphones']);
       await insertGrouped(`${P}-none`, null, []);
-      await insertGrouped(`${P}-dead`, null, ['Dead'], { status: 'unavailable' });
-      await insertGrouped(`${P}-other`, null, ['Audio', 'Other'], { objectType: `${P}-else` });
+      await insertGrouped(`${P}-dead`, null, ['Dead'], {
+        status: 'unavailable',
+      });
+      await insertGrouped(`${P}-other`, null, ['Audio', 'Other'], {
+        objectType: `${P}-else`,
+      });
 
-      await repo().replaceTypeCategoryScope(TYPE);
+      await replaceTypeScope(TYPE);
 
       expect(await typeRows()).toEqual([
         {
@@ -280,13 +335,13 @@ describeDb('object categories repositories (db)', () => {
 
     it('replaces the previous rows of the scope', async () => {
       await insertGrouped(`${P}-a`, null, ['Old']);
-      await repo().replaceTypeCategoryScope(TYPE);
+      await replaceTypeScope(TYPE);
       await sql`
         UPDATE object_categories SET category_names = ARRAY['New']::text[]
         WHERE object_id = ${`${P}-a`}
       `.execute(db);
 
-      await repo().replaceTypeCategoryScope(TYPE);
+      await replaceTypeScope(TYPE);
 
       expect((await typeRows()).map((r) => r.category_name)).toEqual([
         'New',
@@ -295,54 +350,75 @@ describeDb('object categories repositories (db)', () => {
     });
   });
 
-  describe('sync queues: enqueue during a claimed task is not lost', () => {
-    it('related queue keeps a scope re-enqueued after the claim, in the same second', async () => {
-      await withRollback(db, async (trx) => {
-        await sql`DELETE FROM object_categories_related_sync_queue`.execute(trx);
-        const queue = new ObjectCategoriesRelatedSyncQueueRepository(
-          trx as unknown as Kysely<Database>,
+  describe('CategoryScopeRebuildService.rebuildUserScope', () => {
+    it('reads the hide flags and deselected objects of the account', async () => {
+      await insertObject(db, `${P}-fav`, 'recipe', { categories: ['Soups'] });
+      await insertObject(db, `${P}-post`, 'recipe', {
+        categories: ['Comfort'],
+      });
+      await favorite(db, `${P}-fav`, ACCOUNT);
+      await linkFromPost(db, `${P}-post`, ACCOUNT, 'p1');
+
+      await expect(rebuild().rebuildUserScope(SCOPE_KEY)).resolves.toBe(
+        'rebuilt',
+      );
+      expect(await scopeCounts(db, SCOPE_KEY)).toEqual({
+        Soups: 1,
+        Comfort: 1,
+      });
+
+      await sql`
+        INSERT INTO user_shop_deselect (account, object_id) VALUES (${ACCOUNT}, ${`${P}-post`})
+      `.execute(db);
+      try {
+        await rebuild().rebuildUserScope(SCOPE_KEY);
+        expect(await scopeCounts(db, SCOPE_KEY)).toEqual({ Soups: 1 });
+      } finally {
+        await sql`DELETE FROM user_shop_deselect WHERE account = ${ACCOUNT}`.execute(
+          db,
         );
-        await queue.enqueueMany('user', [SCOPE_KEY, SCOPE_KEY, `${ACCOUNT}:book`], 1000);
-
-        const claimed = await queue.claimBatch(10, RETRY_AFTER_SEC);
-        expect(claimed).toHaveLength(2);
-        const task = onlyRow(claimed.filter((t) => t.scope_key === SCOPE_KEY));
-
-        await queue.enqueue('user', SCOPE_KEY, 1000);
-
-        await expect(queue.deleteClaimed('user', SCOPE_KEY, task.enqueued_at)).resolves.toBe(false);
-        await queue.resetAttempt('user', SCOPE_KEY);
-        const again = await queue.claimBatch(10, RETRY_AFTER_SEC);
-        const retried = onlyRow(again);
-        expect(retried.scope_key).toBe(SCOPE_KEY);
-        expect(retried.attempts).toBe(1);
-
-        await expect(queue.deleteClaimed('user', SCOPE_KEY, retried.enqueued_at)).resolves.toBe(true);
-      });
+      }
     });
 
-    it('object queue deletes the claimed row when nothing was enqueued meanwhile', async () => {
-      await withRollback(db, async (trx) => {
-        await sql`DELETE FROM object_categories_sync_queue`.execute(trx);
-        const queue = new ObjectCategoriesSyncQueueRepository(trx as unknown as Kysely<Database>);
-        await queue.enqueue(`${P}-o1`, 1000);
-        const task = onlyRow(await queue.claimBatch(10, RETRY_AFTER_SEC));
+    it("rolls back with the caller's transaction (dry run)", async () => {
+      await insertObject(db, `${P}-fav`, 'recipe', { categories: ['Soups'] });
+      await favorite(db, `${P}-fav`, ACCOUNT);
 
-        await expect(queue.deleteClaimed(`${P}-o1`, task.enqueued_at)).resolves.toBe(true);
+      await withRollback(db, async (trx) => {
+        // withRollback hands out its transaction typed as Kysely.
+        await rebuild().rebuildUserScope(SCOPE_KEY, trx as Transaction<OdlDatabase>);
+        const inside = await repository().findScopeRows('user', SCOPE_KEY, trx);
+        expect(inside.map((r) => r.category_name)).toEqual(['Soups']);
       });
+
+      expect(await scopeCounts(db, SCOPE_KEY)).toEqual({});
     });
+  });
 
-    it('object queue keeps a row re-enqueued after the claim', async () => {
-      await withRollback(db, async (trx) => {
-        await sql`DELETE FROM object_categories_sync_queue`.execute(trx);
-        const queue = new ObjectCategoriesSyncQueueRepository(trx as unknown as Kysely<Database>);
-        await queue.enqueue(`${P}-o1`, 1000);
-        const task = onlyRow(await queue.claimBatch(10, RETRY_AFTER_SEC));
+  describe('CategoryScopeRepository.listUserScopeKeys', () => {
+    it('lists account:type of members and stored scopes of category types, optionally per account', async () => {
+      await insertObject(db, `${P}-r`, 'recipe', { categories: ['Soups'] });
+      await insertObject(db, `${P}-p`, 'product', { categories: ['Audio'] });
+      await insertObject(db, `${P}-x`, 'restaurant');
+      await favorite(db, `${P}-r`, ACCOUNT);
+      await favorite(db, `${P}-x`, ACCOUNT);
+      await linkFromPost(db, `${P}-p`, `${P}-bob`, 'p1');
+      await sql`
+        INSERT INTO object_categories_related (scope_type, scope_key, category_name, objects_count)
+        VALUES ('user', ${`${P}-carol:book`}, 'Fiction', 3), ('user', ${`${P}-carol`}, 'Legacy', 3)
+      `.execute(db);
 
-        await queue.enqueue(`${P}-o1`, 999);
-
-        await expect(queue.deleteClaimed(`${P}-o1`, task.enqueued_at)).resolves.toBe(false);
-      });
+      const all = (await repository().listUserScopeKeys(null)).filter((key) =>
+        key.startsWith(P),
+      );
+      expect(all).toEqual([
+        `${P}-alice:recipe`,
+        `${P}-bob:product`,
+        `${P}-carol:book`,
+      ]);
+      await expect(
+        repository().listUserScopeKeys(`${P}-carol`),
+      ).resolves.toEqual([`${P}-carol:book`]);
     });
   });
 });

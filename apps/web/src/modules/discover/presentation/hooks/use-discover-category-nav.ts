@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { CategoryNavItem } from '@/shared/domain/category-nav';
 
@@ -8,8 +8,13 @@ import type { DiscoverBox } from '../../domain/discover-url';
 import { fetchDiscoverCategories } from '../../infrastructure/discover.client';
 
 export type DiscoverCategoryNavState =
-  | { status: 'loading' }
-  | { status: 'error' }
+  /**
+   * `treeKnown`: the previous answer was a tree of this same type (the rail is on screen), so the
+   * rail keeps its frame (skeleton) while the level reloads. Otherwise nothing is drawn until the
+   * answer says whether the type has categories.
+   */
+  | { status: 'loading'; treeKnown: boolean }
+  | { status: 'error'; treeKnown: boolean }
   | {
       status: 'ready';
       items: CategoryNavItem[];
@@ -37,7 +42,12 @@ export function useDiscoverCategoryNav({
   tags,
   box,
 }: UseDiscoverCategoryNavParams): DiscoverCategoryNavState {
-  const [state, setState] = useState<DiscoverCategoryNavState>({ status: 'loading' });
+  const [state, setState] = useState<DiscoverCategoryNavState>({
+    status: 'loading',
+    treeKnown: false,
+  });
+  /** Type of the previous answer when it had a tree (categories, or a category lineage). */
+  const treeTypeRef = useRef<string | null>(null);
   const pathKey = categoryPath.join('\u0001');
   const tagsKey = tags.join('\u0001');
 
@@ -54,7 +64,12 @@ export function useDiscoverCategoryNav({
       box: box ?? undefined,
       signal: ac.signal,
     };
-    setState({ status: 'loading' });
+    const treeKnown = treeTypeRef.current === objectType;
+    setState({ status: 'loading', treeKnown });
+    const settle = (items: CategoryNavItem[], navLineage: string[]) => {
+      treeTypeRef.current = items.length > 0 || navLineage.length > 0 ? objectType : null;
+      setState({ status: 'ready', items, navLineage });
+    };
 
     void (async () => {
       const level = await fetchDiscoverCategories(objectType, { ...filters, categoryPath: lineage });
@@ -62,11 +77,11 @@ export function useDiscoverCategoryNav({
         return;
       }
       if (level === null) {
-        setState({ status: 'error' });
+        setState({ status: 'error', treeKnown });
         return;
       }
       if (level.items.length > 0 || lineage.length === 0) {
-        setState({ status: 'ready', items: level.items, navLineage: lineage });
+        settle(level.items, lineage);
         return;
       }
       const parentLineage = lineage.slice(0, -1);
@@ -77,15 +92,30 @@ export function useDiscoverCategoryNav({
       if (ac.signal.aborted) {
         return;
       }
-      setState(
-        parent
-          ? { status: 'ready', items: parent.items, navLineage: parentLineage }
-          : { status: 'ready', items: [], navLineage: lineage },
-      );
+      if (parent) {
+        settle(parent.items, parentLineage);
+      } else {
+        settle([], lineage);
+      }
     })();
 
     return () => ac.abort();
   }, [objectType, pathKey, q, tagsKey, box]);
 
   return state;
+}
+
+/**
+ * Whether the category tree (rail, crumbs, drawer) is drawn. It appears once the answer says the
+ * type has categories, so there is no skeleton that then vanishes; a category lineage in the URL,
+ * or a tree already on screen for the type, keeps it while a level reloads.
+ */
+export function isDiscoverCategoryTreeVisible(
+  nav: DiscoverCategoryNavState,
+  categoryPath: readonly string[],
+): boolean {
+  if (categoryPath.length > 0) {
+    return true;
+  }
+  return nav.status === 'ready' ? nav.items.length > 0 : nav.treeKnown;
 }

@@ -19,7 +19,8 @@ import { CanonicalRecomputeRepository } from './canonical-recompute.repository';
 import { SiteRegistryRepository } from './site-registry.repository';
 import { ObjectCategoriesRepository } from './object-categories.repository';
 import { ObjectCategoriesSyncQueueRepository } from './object-categories-sync-queue.repository';
-import { ObjectCategoriesRelatedRepository } from './object-categories-related.repository';
+import { CategoryScopeRebuildService } from '@opden-data-layer/category-scopes';
+import { CategoryScopeRebuildProvider } from './category-scope-rebuild.provider';
 import { ObjectCategoriesRelatedSyncQueueRepository } from './object-categories-related-sync-queue.repository';
 import { ObjectTagCategoryItemsRepository } from './object-tag-category-items.repository';
 import { ObjectTagCategoriesSyncQueueRepository } from './object-tag-categories-sync-queue.repository';
@@ -60,7 +61,7 @@ import { MessagesRepository } from './messages.repository';
     SiteRegistryRepository,
     ObjectCategoriesRepository,
     ObjectCategoriesSyncQueueRepository,
-    ObjectCategoriesRelatedRepository,
+    CategoryScopeRebuildProvider,
     ObjectCategoriesRelatedSyncQueueRepository,
     ObjectTagCategoryItemsRepository,
     ObjectTagCategoriesSyncQueueRepository,
@@ -100,7 +101,7 @@ import { MessagesRepository } from './messages.repository';
     SiteRegistryRepository,
     ObjectCategoriesRepository,
     ObjectCategoriesSyncQueueRepository,
-    ObjectCategoriesRelatedRepository,
+    CategoryScopeRebuildService,
     ObjectCategoriesRelatedSyncQueueRepository,
     ObjectTagCategoryItemsRepository,
     ObjectTagCategoriesSyncQueueRepository,

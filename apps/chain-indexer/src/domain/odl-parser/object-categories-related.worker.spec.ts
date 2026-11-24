@@ -3,18 +3,6 @@ import { ObjectCategoriesRelatedWorker } from './object-categories-related.worke
 
 const MAX_ATTEMPTS = 3;
 
-type Flags = {
-  hide_linked_objects: boolean;
-  hide_recipe_objects: boolean;
-  hide_favorite_objects: boolean;
-};
-
-const NO_HIDE: Flags = {
-  hide_linked_objects: false,
-  hide_recipe_objects: false,
-  hide_favorite_objects: false,
-};
-
 function task(
   scopeKey: string,
   overrides: Partial<ObjectCategoriesRelatedSyncQueueRow> = {},
@@ -29,28 +17,21 @@ function task(
   };
 }
 
-function setup(opts: {
-  tasks: ObjectCategoriesRelatedSyncQueueRow[];
-  flags?: Flags | undefined;
-  throttled?: string[];
-}) {
+function setup(opts: { tasks: ObjectCategoriesRelatedSyncQueueRow[]; throttled?: string[] }) {
   const queue = {
     claimBatch: jest.fn().mockResolvedValue(opts.tasks),
     deleteClaimed: jest.fn().mockResolvedValue(true),
     resetAttempt: jest.fn().mockResolvedValue(undefined),
   };
-  const related = {
-    replaceGlobalScope: jest.fn().mockResolvedValue(undefined),
-    replaceUserCategoryScope: jest.fn().mockResolvedValue(undefined),
-    replaceTypeCategoryScope: jest.fn().mockResolvedValue(undefined),
-    deleteUserScope: jest.fn().mockResolvedValue(undefined),
+  const rebuild = {
+    rebuildGlobalScope: jest.fn().mockResolvedValue('rebuilt'),
+    rebuildUserScope: jest.fn().mockResolvedValue('rebuilt'),
+    rebuildTypeScope: jest.fn().mockResolvedValue('rebuilt'),
   };
   const throttle = {
     throttledTypes: jest.fn().mockResolvedValue(opts.throttled ?? []),
     markRebuilt: jest.fn().mockResolvedValue(undefined),
   };
-  const userMetadata = { findByAccount: jest.fn().mockResolvedValue(opts.flags) };
-  const deselect = { findObjectIdsByAccount: jest.fn().mockResolvedValue(['gone']) };
   const config = {
     get: jest.fn((key: string, fallback: number) =>
       key === 'objectCategoriesRelated.maxAttempts' ? MAX_ATTEMPTS : fallback,
@@ -60,113 +41,63 @@ function setup(opts: {
     config as never,
     {} as never,
     queue as never,
-    related as never,
-    userMetadata as never,
-    deselect as never,
+    rebuild as never,
     throttle as never,
   );
-  return { worker, queue, related, userMetadata, throttle };
+  return { worker, queue, rebuild, throttle };
 }
 
 describe('ObjectCategoriesRelatedWorker', () => {
-  describe('per-type user scope', () => {
-    it('rebuilds account:type with the deselected ids and drops the queue row', async () => {
-      const { worker, queue, related } = setup({ tasks: [task('alice:recipe')], flags: NO_HIDE });
-
-      await worker.runBatch();
-
-      expect(related.replaceUserCategoryScope).toHaveBeenCalledWith('alice:recipe', {
-        account: 'alice',
-        objectType: 'recipe',
-        includePostObjects: true,
-        deselectIds: ['gone'],
-      });
-      expect(queue.deleteClaimed).toHaveBeenCalledWith('user', 'alice:recipe', 100);
-      expect(queue.resetAttempt).not.toHaveBeenCalled();
-    });
-
-    it.each([
-      ['book', { ...NO_HIDE, hide_linked_objects: true }, false],
-      ['product', { ...NO_HIDE, hide_linked_objects: true }, false],
-      ['recipe', { ...NO_HIDE, hide_linked_objects: true }, true],
-      ['recipe', { ...NO_HIDE, hide_recipe_objects: true }, false],
-      ['service', { ...NO_HIDE, hide_favorite_objects: true }, false],
-      ['service', { ...NO_HIDE, hide_recipe_objects: true }, true],
-    ])(
-      'type %s with flags %j → includePostObjects %s',
-      async (objectType, flags, expected) => {
-        const { worker, related } = setup({ tasks: [task(`alice:${objectType}`)], flags });
-
-        await worker.runBatch();
-
-        expect(related.replaceUserCategoryScope).toHaveBeenCalledWith(
-          `alice:${objectType}`,
-          expect.objectContaining({ objectType, includePostObjects: expected }),
-        );
-      },
-    );
-
-    it('includes post-linked objects when the account has no user_metadata row', async () => {
-      const { worker, related } = setup({ tasks: [task('alice:book')], flags: undefined });
-
-      await worker.runBatch();
-
-      expect(related.replaceUserCategoryScope).toHaveBeenCalledWith(
-        'alice:book',
-        expect.objectContaining({ includePostObjects: true }),
-      );
-    });
-  });
-
-  describe('legacy or invalid user scope keys', () => {
-    it.each(['alice', 'alice:book,product', 'alice:place', ':recipe'])(
-      'deletes the rows of %s, does not rebuild it and drops the task',
-      async (scopeKey) => {
-        const { worker, queue, related, userMetadata } = setup({ tasks: [task(scopeKey)] });
-
-        await worker.runBatch();
-
-        expect(related.deleteUserScope).toHaveBeenCalledWith(scopeKey);
-        expect(related.replaceUserCategoryScope).not.toHaveBeenCalled();
-        expect(userMetadata.findByAccount).not.toHaveBeenCalled();
-        expect(queue.deleteClaimed).toHaveBeenCalledWith('user', scopeKey, 100);
-      },
-    );
-  });
-
-  it('rebuilds the global scope', async () => {
-    const { worker, queue, related } = setup({
-      tasks: [task('_', { scope_type: 'global' })],
-    });
+  it('rebuilds a user scope and drops the queue row', async () => {
+    const { worker, queue, rebuild } = setup({ tasks: [task('alice:recipe')] });
 
     await worker.runBatch();
 
-    expect(related.replaceGlobalScope).toHaveBeenCalledTimes(1);
-    expect(related.replaceUserCategoryScope).not.toHaveBeenCalled();
+    expect(rebuild.rebuildUserScope).toHaveBeenCalledWith('alice:recipe');
+    expect(queue.deleteClaimed).toHaveBeenCalledWith('user', 'alice:recipe', 100);
+    expect(queue.resetAttempt).not.toHaveBeenCalled();
+  });
+
+  it('drops the task of a legacy user key once its rows are deleted', async () => {
+    const { worker, queue, rebuild } = setup({ tasks: [task('alice:book,product')] });
+    rebuild.rebuildUserScope.mockResolvedValue('legacy_deleted');
+
+    await worker.runBatch();
+
+    expect(queue.deleteClaimed).toHaveBeenCalledWith('user', 'alice:book,product', 100);
+  });
+
+  it('rebuilds the global scope', async () => {
+    const { worker, queue, rebuild } = setup({ tasks: [task('_', { scope_type: 'global' })] });
+
+    await worker.runBatch();
+
+    expect(rebuild.rebuildGlobalScope).toHaveBeenCalledTimes(1);
+    expect(rebuild.rebuildUserScope).not.toHaveBeenCalled();
     expect(queue.deleteClaimed).toHaveBeenCalledWith('global', '_', 100);
   });
 
   describe('type scope', () => {
     it('rebuilds a category type scope and marks it rebuilt', async () => {
-      const { worker, queue, related, throttle } = setup({
+      const { worker, queue, rebuild, throttle } = setup({
         tasks: [task('product', { scope_type: 'type' })],
       });
 
       await worker.runBatch();
 
-      expect(related.replaceTypeCategoryScope).toHaveBeenCalledWith('product');
+      expect(rebuild.rebuildTypeScope).toHaveBeenCalledWith('product');
       expect(throttle.markRebuilt).toHaveBeenCalledWith('product');
       expect(queue.deleteClaimed).toHaveBeenCalledWith('type', 'product', 100);
     });
 
-    it('skips a non-category type and drops the task', async () => {
-      const { worker, queue, related, throttle } = setup({
+    it('does not mark a skipped non-category type and drops the task', async () => {
+      const { worker, queue, rebuild, throttle } = setup({
         tasks: [task('restaurant', { scope_type: 'type' })],
       });
+      rebuild.rebuildTypeScope.mockResolvedValue('not_category_type');
 
       await worker.runBatch();
 
-      expect(related.replaceTypeCategoryScope).not.toHaveBeenCalled();
       expect(throttle.markRebuilt).not.toHaveBeenCalled();
       expect(queue.deleteClaimed).toHaveBeenCalledWith('type', 'restaurant', 100);
     });
@@ -184,7 +115,7 @@ describe('ObjectCategoriesRelatedWorker', () => {
 
   describe('queue race and retries', () => {
     it('releases the row instead of losing it when the scope was re-enqueued during processing', async () => {
-      const { worker, queue } = setup({ tasks: [task('alice:recipe')], flags: NO_HIDE });
+      const { worker, queue } = setup({ tasks: [task('alice:recipe')] });
       queue.deleteClaimed.mockResolvedValue(false);
 
       await worker.runBatch();
@@ -193,8 +124,8 @@ describe('ObjectCategoriesRelatedWorker', () => {
     });
 
     it('keeps the row for retry when the rebuild fails below max attempts', async () => {
-      const { worker, queue, related } = setup({ tasks: [task('alice:recipe')], flags: NO_HIDE });
-      related.replaceUserCategoryScope.mockRejectedValue(new Error('boom'));
+      const { worker, queue, rebuild } = setup({ tasks: [task('alice:recipe')] });
+      rebuild.rebuildUserScope.mockRejectedValue(new Error('boom'));
 
       await worker.runBatch();
 
@@ -203,11 +134,10 @@ describe('ObjectCategoriesRelatedWorker', () => {
     });
 
     it('drops the row after max attempts unless it was re-enqueued', async () => {
-      const { worker, queue, related } = setup({
+      const { worker, queue, rebuild } = setup({
         tasks: [task('alice:recipe', { attempts: MAX_ATTEMPTS })],
-        flags: NO_HIDE,
       });
-      related.replaceUserCategoryScope.mockRejectedValue(new Error('boom'));
+      rebuild.rebuildUserScope.mockRejectedValue(new Error('boom'));
 
       await worker.runBatch();
 

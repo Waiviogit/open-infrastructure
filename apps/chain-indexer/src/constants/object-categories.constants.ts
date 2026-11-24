@@ -18,12 +18,6 @@ export const OBJECT_CATEGORIES_RELATED_WORKER_INTERVAL_NAME =
   'objectCategoriesRelatedWorker';
 
 /**
- * Rows per INSERT when replacing an `object_categories_related` scope. Each row binds 6 values;
- * 1000 rows stay far below the Postgres limit of 65535 bind parameters.
- */
-export const OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS = 1000;
-
-/**
  * Minimum seconds between two rebuilds of one type scope (`scope_type = 'type'`). A type scope
  * aggregates every active object of the type; without this a busy type would be rebuilt on every
  * worker tick. Changes in between stay queued and are picked up by the next rebuild.

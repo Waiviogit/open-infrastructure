@@ -93,7 +93,7 @@ describe('DiscoverCategoryRail', () => {
     const { container, rerender } = wrap(
       <DiscoverCategoryRail
         objectType="product"
-        nav={{ status: 'loading' }}
+        nav={{ status: 'loading', treeKnown: true }}
         categoryPath={[]}
         activeLineage={[]}
         hrefFor={hrefFor}
@@ -105,7 +105,7 @@ describe('DiscoverCategoryRail', () => {
       <I18nProvider locale={'en-US' as LocaleId} messages={messages}>
         <DiscoverCategoryRail
           objectType="product"
-          nav={{ status: 'error' }}
+          nav={{ status: 'error', treeKnown: true }}
           categoryPath={[]}
           activeLineage={[]}
           hrefFor={hrefFor}

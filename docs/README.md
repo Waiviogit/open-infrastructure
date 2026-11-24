@@ -37,6 +37,7 @@ Entry point for Open Data Layer documentation.
 | [Testing rules](standards/testing-rules.md) | Agent rules for writing tests |
 | [ODL skills](https://github.com/Waiviogit/skills) | Agent playbooks (`npx skills add https://github.com/Waiviogit/skills`) |
 | [Migrations](operations/migrations.md) | Kysely migrator, CLI, snapshots |
+| [Category scopes rebuild](operations/category-scopes-rebuild.md) | `pnpm categories:rebuild`: rebuild Discover / Favorites category trees and report changes |
 | [Portainer (VPS deploy)](deployment/portainer.md) | Docker UI (localhost-only); optional manual `apps` updates alongside stack-watchdog |
 
 ## Apps

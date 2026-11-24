@@ -1,85 +1,97 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import type { Kysely, Transaction } from 'kysely';
-import { sql } from 'kysely';
-import type { Database } from '../database';
-import { KYSELY } from '../database';
+import { Logger } from '@nestjs/common';
 import {
+  CATEGORY_OBJECT_TYPES,
   TYPE_SCOPE_TOTAL_SENTINEL,
   UNCATEGORIZED_CATEGORY_SENTINEL,
+  type UserFavoritesVisibilityFlags,
 } from '@opden-data-layer/core';
-import type { NewObjectCategoriesRelatedRow, ObjectCategoriesRelatedScopeType } from '@opden-data-layer/odl-db-types';
-import { OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS } from '../constants/object-categories.constants';
+import type {
+  NewObjectCategoriesRelatedRow,
+  ObjectCategoriesRelatedRow,
+  ObjectCategoriesRelatedScopeType,
+  OdlDatabase,
+} from '@opden-data-layer/odl-db-types';
+import { sql, type Kysely, type Transaction } from 'kysely';
 
-type DbExecutor = Kysely<Database> | Transaction<Database>;
+import {
+  GLOBAL_CATEGORY_SCOPE_KEY,
+  RELATED_INSERT_CHUNK_ROWS,
+  SCOPE_LOCK_PREFIX,
+} from './category-scope.constants';
+import type { UserCategoryScopeAggOptions } from './category-scope.types';
+
+export type CategoryScopeDbExecutor =
+  | Kysely<OdlDatabase>
+  | Transaction<OdlDatabase>;
 
 type AggregationRowRaw = {
   category_name: string;
-  objects_count: bigint;
+  objects_count: bigint | string | number;
   group_keys: string[];
   related_names: string[];
 };
 
-export type UserCategoryScopeAggOptions = {
-  account: string;
-  /** The single category object type of this scope (`objects_core.object_type`). */
-  objectType: string;
-  /** When false, the post-linked branch contributes no rows. */
-  includePostObjects: boolean;
-  /** `user_shop_deselect` object ids; excluded from the post-linked branch only. */
-  deselectIds: readonly string[];
-};
-
 /**
- * Aggregation SQL and replace for `object_categories_related` rows (per-scope full refresh).
+ * Data access for `object_categories_related` scopes: the aggregation SQL of each scope kind,
+ * the row replace, and the reads a rebuild needs. Shared by chain-indexer (queue worker) and the
+ * `categories:rebuild` script; transaction boundaries belong to `CategoryScopeRebuildService`.
+ * @see docs/apps/chain-indexer/spec/object-categories.md
  */
-@Injectable()
-export class ObjectCategoriesRelatedRepository {
-  private readonly logger = new Logger(ObjectCategoriesRelatedRepository.name);
+export class CategoryScopeRepository {
+  private readonly logger = new Logger(CategoryScopeRepository.name);
 
-  constructor(@Inject(KYSELY) private readonly db: Kysely<Database>) {}
+  constructor(private readonly db: Kysely<OdlDatabase>) {}
 
-  private executor(trx?: DbExecutor): DbExecutor {
+  private executor(trx?: CategoryScopeDbExecutor): CategoryScopeDbExecutor {
     return trx ?? this.db;
   }
 
+  /** The single transaction boundary for a scope rebuild. */
+  runInTransaction<T>(
+    work: (trx: Transaction<OdlDatabase>) => Promise<T>,
+  ): Promise<T> {
+    return this.db.transaction().execute(work);
+  }
+
   /**
-   * Replaces one user category scope (`account:objectType`) in a single transaction: deletes
-   * its rows, then inserts the aggregation over `object_favorite(account)` ∪
-   * `post_objects(author = account)`, restricted to active objects of `objectType`.
-   * An empty scope leaves no rows; the uncategorized sentinel is written only when its count > 0.
-   * @see docs/apps/query-api/spec/users-favorites-endpoint.md
+   * Deletes every row of one scope, then inserts `rows` in chunks (bind-parameter limit). A
+   * transaction-scoped advisory lock on the scope serializes concurrent replaces (queue worker and
+   * `categories:rebuild`); without it the second insert hits the primary key.
    */
-  async replaceUserCategoryScope(
-    scopeKeyFull: string,
-    opts: UserCategoryScopeAggOptions,
+  async replaceScopeRows(
+    scopeType: ObjectCategoriesRelatedScopeType,
+    scopeKey: string,
+    rows: readonly NewObjectCategoriesRelatedRow[],
+    trx: Transaction<OdlDatabase>,
   ): Promise<void> {
-    const key = scopeKeyFull.trim();
-    if (
-      key.length === 0 ||
-      opts.account.trim().length === 0 ||
-      opts.objectType.trim().length === 0
-    ) {
-      return;
-    }
     try {
-      await this.db.transaction().execute(async (trx) => {
-        await this.deleteUserScope(key, trx);
-        const rows = await this.loadUserCategoryScopeRows(trx, key, opts);
-        await this.insertRows(trx, rows);
-      });
+      await sql`SELECT pg_advisory_xact_lock(hashtext(${`${SCOPE_LOCK_PREFIX}:${scopeType}:${scopeKey}`}))`.execute(
+        trx,
+      );
+      await this.deleteScope(scopeType, scopeKey, trx);
+      for (let i = 0; i < rows.length; i += RELATED_INSERT_CHUNK_ROWS) {
+        const chunk = rows.slice(i, i + RELATED_INSERT_CHUNK_ROWS);
+        await trx
+          .insertInto('object_categories_related')
+          .values(chunk)
+          .execute();
+      }
     } catch (e) {
       this.logger.error((e as Error).message);
       throw e;
     }
   }
 
-  /** Deletes every row of one user scope (canonical or legacy key). */
-  async deleteUserScope(scopeKeyFull: string, trx?: DbExecutor): Promise<void> {
+  async deleteScope(
+    scopeType: ObjectCategoriesRelatedScopeType,
+    scopeKey: string,
+    trx?: CategoryScopeDbExecutor,
+  ): Promise<void> {
     try {
       await this.executor(trx)
         .deleteFrom('object_categories_related')
-        .where('scope_type', '=', 'user')
-        .where('scope_key', '=', scopeKeyFull)
+        .where('scope_type', '=', scopeType)
+        .where('scope_key', '=', scopeKey)
         .execute();
     } catch (e) {
       this.logger.error((e as Error).message);
@@ -87,19 +99,57 @@ export class ObjectCategoriesRelatedRepository {
     }
   }
 
-  /** Global catalogue scope (`group_keys` stored empty arrays). */
-  async replaceGlobalScope(): Promise<void> {
+  async findScopeRows(
+    scopeType: ObjectCategoriesRelatedScopeType,
+    scopeKey: string,
+    trx?: CategoryScopeDbExecutor,
+  ): Promise<ObjectCategoriesRelatedRow[]> {
     try {
-      await this.db.transaction().execute(async (trx) => {
-        await trx
-          .deleteFrom('object_categories_related')
-          .where('scope_type', '=', 'global')
-          .where('scope_key', '=', '_')
-          .execute();
+      return await this.executor(trx)
+        .selectFrom('object_categories_related')
+        .selectAll()
+        .where('scope_type', '=', scopeType)
+        .where('scope_key', '=', scopeKey)
+        .execute();
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
+  }
 
-        const rows = await this.loadGlobalScopeRows(trx);
-        await this.insertRows(trx, rows);
-      });
+  /** `user_metadata` post-linked visibility flags; `null` when the account has no row. */
+  async findUserVisibilityFlags(
+    account: string,
+    trx?: CategoryScopeDbExecutor,
+  ): Promise<UserFavoritesVisibilityFlags | null> {
+    try {
+      const row = await this.executor(trx)
+        .selectFrom('user_metadata')
+        .select([
+          'hide_linked_objects',
+          'hide_recipe_objects',
+          'hide_favorite_objects',
+        ])
+        .where('account', '=', account)
+        .executeTakeFirst();
+      return row ?? null;
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      throw e;
+    }
+  }
+
+  async findDeselectedObjectIds(
+    account: string,
+    trx?: CategoryScopeDbExecutor,
+  ): Promise<string[]> {
+    try {
+      const rows = await this.executor(trx)
+        .selectFrom('user_shop_deselect')
+        .select('object_id')
+        .where('account', '=', account)
+        .execute();
+      return rows.map((r) => r.object_id);
     } catch (e) {
       this.logger.error((e as Error).message);
       throw e;
@@ -107,59 +157,55 @@ export class ObjectCategoriesRelatedRepository {
   }
 
   /**
-   * Replaces one type scope (`scope_type = 'type'`, key = object type) in a single transaction:
-   * all active objects of `objectType`, counts in groups (`COALESCE(meta_group_id, object_id)`),
-   * `related_names` by co-occurrence with `related_counts` = shared groups per related name, plus
-   * a `__total__` row (every active group of the type, uncategorized included). With these the
-   * query-api serves the unfiltered root without live counts. `group_keys` are not stored (a whole
-   * type is too large) and there is no uncategorized sentinel.
-   * @see docs/apps/chain-indexer/spec/object-categories.md
+   * Every user scope key (`account:type`) with members (`object_favorite` ∪ `post_objects`
+   * authors) of a category type, plus every stored user scope of a category type (so a scope
+   * that lost its members is rebuilt empty). Optionally one account. Sorted.
    */
-  async replaceTypeCategoryScope(objectType: string): Promise<void> {
-    const type = objectType.trim();
-    if (type.length === 0) {
-      return;
-    }
+  async listUserScopeKeys(account: string | null): Promise<string[]> {
+    const types = [...CATEGORY_OBJECT_TYPES];
+    const memberFilter = account
+      ? sql`WHERE members.account = ${account}`
+      : sql``;
+    const storedFilter = account
+      ? sql`AND split_part(scope_key, ':', 1) = ${account}`
+      : sql``;
     try {
-      await this.db.transaction().execute(async (trx) => {
-        await trx
-          .deleteFrom('object_categories_related')
-          .where('scope_type', '=', 'type')
-          .where('scope_key', '=', type)
-          .execute();
-
-        const rows = await this.loadTypeScopeRows(trx, type);
-        await this.insertRows(trx, rows);
-      });
+      const { rows } = await sql<{ scope_key: string }>`
+        SELECT members.account || ':' || oc.object_type AS scope_key
+        FROM (
+          SELECT object_id, account FROM object_favorite
+          UNION
+          SELECT object_id, author AS account FROM post_objects
+        ) members
+        INNER JOIN objects_core oc
+          ON oc.object_id = members.object_id AND oc.object_type = ANY(${types}::text[])
+        ${memberFilter}
+        UNION
+        SELECT scope_key
+        FROM object_categories_related
+        WHERE scope_type = 'user'
+          AND regexp_replace(scope_key, '^.*:', '') = ANY(${types}::text[])
+          AND strpos(scope_key, ':') > 1
+          ${storedFilter}
+        ORDER BY 1
+      `.execute(this.db);
+      return rows.map((r) => r.scope_key);
     } catch (e) {
       this.logger.error((e as Error).message);
       throw e;
     }
   }
 
-  /** Inserts in chunks so a large scope stays under the Postgres bind-parameter limit. */
-  private async insertRows(
-    trx: DbExecutor,
-    rows: readonly NewObjectCategoriesRelatedRow[],
-  ): Promise<void> {
-    for (let i = 0; i < rows.length; i += OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS) {
-      const chunk = rows.slice(i, i + OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS);
-      await trx.insertInto('object_categories_related').values(chunk).execute();
-    }
-  }
-
-  private postLinkedPredicate(opts: UserCategoryScopeAggOptions) {
-    if (!opts.includePostObjects) {
-      return sql`FALSE`;
-    }
-    const deselectIds = [...opts.deselectIds];
-    return sql`po.author = ${opts.account.trim()} AND po.object_id <> ALL(${deselectIds}::text[])`;
-  }
-
-  private async loadUserCategoryScopeRows(
-    trx: DbExecutor,
-    scopeKeyFull: string,
+  /**
+   * One user category scope (`account:objectType`): `object_favorite(account)` ∪
+   * `post_objects(author = account)`, active objects of `objectType` only. The uncategorized
+   * sentinel is written only when its count > 0.
+   * @see docs/apps/query-api/spec/users-favorites-endpoint.md
+   */
+  async aggregateUserScope(
+    scopeKey: string,
     opts: UserCategoryScopeAggOptions,
+    trx: CategoryScopeDbExecutor,
   ): Promise<NewObjectCategoriesRelatedRow[]> {
     const account = opts.account.trim();
     const objectType = opts.objectType.trim();
@@ -237,9 +283,9 @@ export class ObjectCategoriesRelatedRepository {
     `.execute(trx);
 
     return rows.map((r) =>
-      this.rowToInsert(
+      toInsertRow(
         'user',
-        scopeKeyFull,
+        scopeKey,
         r.category_name,
         r.objects_count,
         r.group_keys,
@@ -248,8 +294,9 @@ export class ObjectCategoriesRelatedRepository {
     );
   }
 
-  private async loadGlobalScopeRows(
-    trx: DbExecutor,
+  /** Global catalogue scope (`group_keys` stored empty arrays). */
+  async aggregateGlobalScope(
+    trx: CategoryScopeDbExecutor,
   ): Promise<NewObjectCategoriesRelatedRow[]> {
     const sentinel = UNCATEGORIZED_CATEGORY_SENTINEL;
     const { rows } = await sql<AggregationRowRaw>`
@@ -311,9 +358,9 @@ export class ObjectCategoriesRelatedRepository {
     `.execute(trx);
 
     return rows.map((r) =>
-      this.rowToInsert(
+      toInsertRow(
         'global',
-        '_',
+        GLOBAL_CATEGORY_SCOPE_KEY,
         r.category_name,
         r.objects_count,
         r.group_keys,
@@ -322,11 +369,20 @@ export class ObjectCategoriesRelatedRepository {
     );
   }
 
-  private async loadTypeScopeRows(
-    trx: DbExecutor,
+  /**
+   * One type scope (key = object type): all active objects of the type, counts in groups
+   * (`COALESCE(meta_group_id, object_id)`), `related_names` by co-occurrence with
+   * `related_counts` = shared groups per related name, plus a `__total__` row (every active group
+   * of the type, uncategorized included). `group_keys` are not stored (a whole type is too large)
+   * and there is no uncategorized sentinel.
+   */
+  async aggregateTypeScope(
     objectType: string,
+    trx: CategoryScopeDbExecutor,
   ): Promise<NewObjectCategoriesRelatedRow[]> {
-    const { rows } = await sql<AggregationRowRaw & { related_counts: number[] }>`
+    const { rows } = await sql<
+      AggregationRowRaw & { related_counts: number[] }
+    >`
       WITH exploded AS (
         SELECT DISTINCT
           COALESCE(oc.meta_group_id, oc.object_id) AS group_key,
@@ -377,29 +433,41 @@ export class ObjectCategoriesRelatedRepository {
     `.execute(trx);
 
     return rows.map((r) => ({
-      ...this.rowToInsert('type', objectType, r.category_name, r.objects_count, r.group_keys, r.related_names),
+      ...toInsertRow(
+        'type',
+        objectType,
+        r.category_name,
+        r.objects_count,
+        r.group_keys,
+        r.related_names,
+      ),
       related_counts: r.related_counts.map(Number),
     }));
   }
 
-  private rowToInsert(
-    scopeType: ObjectCategoriesRelatedScopeType,
-    scopeKey: string,
-    categoryName: string,
-    objectsCount: bigint,
-    groupKeys: string[],
-    relatedNames: string[],
-  ): NewObjectCategoriesRelatedRow {
-    return {
-      scope_type: scopeType,
-      scope_key: scopeKey,
-      category_name: categoryName,
-      objects_count:
-        typeof objectsCount === 'bigint'
-          ? Number(objectsCount)
-          : Number(objectsCount),
-      group_keys: groupKeys,
-      related_names: relatedNames,
-    };
+  private postLinkedPredicate(opts: UserCategoryScopeAggOptions) {
+    if (!opts.includePostObjects) {
+      return sql`FALSE`;
+    }
+    const deselectIds = [...opts.deselectIds];
+    return sql`po.author = ${opts.account.trim()} AND po.object_id <> ALL(${deselectIds}::text[])`;
   }
+}
+
+function toInsertRow(
+  scopeType: ObjectCategoriesRelatedScopeType,
+  scopeKey: string,
+  categoryName: string,
+  objectsCount: bigint | string | number,
+  groupKeys: string[],
+  relatedNames: string[],
+): NewObjectCategoriesRelatedRow {
+  return {
+    scope_type: scopeType,
+    scope_key: scopeKey,
+    category_name: categoryName,
+    objects_count: Number(objectsCount),
+    group_keys: groupKeys,
+    related_names: relatedNames,
+  };
 }

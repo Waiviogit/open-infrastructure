@@ -1,0 +1,9 @@
+{
+  "name": "category-scopes",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/category-scopes/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:domain"],
+  "// targets": "to see all targets run: nx show project category-scopes --web",
+  "targets": {}
+}

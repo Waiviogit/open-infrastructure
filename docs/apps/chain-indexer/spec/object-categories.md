@@ -87,11 +87,13 @@ Constants: [`object-categories.constants.ts`](../../../../apps/chain-indexer/src
 
 ### Per-scope (`ObjectCategoriesRelatedWorker`)
 
+The rebuild of one scope lives in the lib [`@opden-data-layer/category-scopes`](../../../../libs/category-scopes/src/index.ts) (`CategoryScopeRebuildService` + `CategoryScopeRepository`), shared with the manual [`pnpm categories:rebuild`](../../../operations/category-scopes-rebuild.md) script. The worker only drains the queue.
+
 1. Claim rows from `object_categories_related_sync_queue`.
-2. **Global:** aggregate all active `objects_core`.
-3. **Type:** a non-category type is skipped (warn, finish). Otherwise aggregate all active objects of the type (`replaceTypeCategoryScope`), then mark it rebuilt (Throttling).
-4. **User:** `parseUserCategoryScopeKey`; `null` → `deleteUserScope(key)`, warn, finish the task. Otherwise load `user_metadata` flags and `user_shop_deselect` ids and aggregate the scope membership above.
-5. `related_names` = co-occurrence on the same `group_key`. Replace all rows of the scope in one transaction (delete + insert, inserted in chunks of `OBJECT_CATEGORIES_RELATED_INSERT_CHUNK_ROWS` = 1000 rows to stay under the Postgres bind-parameter limit).
+2. **Global:** aggregate all active `objects_core` (`rebuildGlobalScope`).
+3. **Type:** `rebuildTypeScope`; a non-category type returns `not_category_type` (warn, finish). Otherwise aggregate all active objects of the type, then mark it rebuilt (Throttling).
+4. **User:** `rebuildUserScope`; a key `parseUserCategoryScopeKey` rejects only loses its rows (`legacy_deleted`, warn, finish). Otherwise load `user_metadata` flags and `user_shop_deselect` ids and aggregate the scope membership above.
+5. `related_names` = co-occurrence on the same `group_key`. Replace all rows of the scope in one transaction: a transaction-scoped advisory lock on the scope (so the worker and the script never insert the same scope at once), delete, insert in chunks of `RELATED_INSERT_CHUNK_ROWS` = 1000 rows (Postgres bind-parameter limit).
 
 ### Throttling (type scopes)
 
@@ -111,9 +113,11 @@ A type scope aggregates every active object of the type, so it is rebuilt at mos
 - Migration **`00073_object_categories_related_per_type_scopes`** deletes legacy user scope rows and queue rows (no `:`, empty account, or a type outside the frozen list book, product, recipe, service, service_offer, service_request) and enqueues every `account:type` pair from favorites ∪ post authors plus every surviving per-type user scope.
 - Migration **`00077_object_categories_related_type_scope`** adds `'type'` to the `scope_type` CHECK, adds `related_counts INTEGER[]` (empty for global and user scopes), and enqueues one type scope per category type (frozen list book, link, person, product, recipe, service, service_offer, service_request).
 - [`scripts/backfill-object-categories.ts`](../../../../scripts/backfill-object-categories.ts): enqueues category objects, the global scope, every type scope and every `(account, type)` scope with one `INSERT … SELECT` (`--user` limits to one account, `--only-objects` / `--only-scopes`, `--dry-run`). `--cleanup-legacy-scopes` deletes user scope rows and queue rows whose key `parseUserCategoryScopeKey` rejects. Run chain-indexer until both queues drain.
+- [`pnpm categories:rebuild`](../../../operations/category-scopes-rebuild.md): rebuilds type / user / global scopes directly (no queue, no throttle) and reports which root categories appeared or disappeared; `--dry-run` rolls back.
 
 ## Verification
 
 - `pnpm nx test chain-indexer --testPathPatterns="category-sync|object-categories|object-status"`
-- `pnpm test:db:up`, then `POSTGRES_TEST_URL=postgres://test:test@127.0.0.1:55432/test pnpm nx test chain-indexer --testPathPatterns=object-categories-related.repository.db` (scope SQL and queue race; skipped without `POSTGRES_TEST_URL`)
+- `pnpm nx test category-scopes` (rebuild rules, report)
+- `pnpm test:db:up`, then with `POSTGRES_TEST_URL=postgres://test:test@127.0.0.1:55432/test`: `pnpm nx test chain-indexer --testPathPatterns="category-scope-rebuild.db|object-categories-sync-queues"` (scope SQL through the lib, dry-run rollback, scope keys, queue race); skipped without `POSTGRES_TEST_URL`
 - `pnpm test:db` (migration `00073` and `00077` specs)

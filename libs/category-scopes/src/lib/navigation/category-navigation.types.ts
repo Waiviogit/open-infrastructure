@@ -10,9 +10,13 @@ export interface CategoryNavigationRow {
   related_counts: number[];
 }
 
-export function toNavigationRow(row: ObjectCategoriesRelatedRow): CategoryNavigationRow {
+export function toNavigationRow(
+  row: ObjectCategoriesRelatedRow,
+): CategoryNavigationRow {
   const oc =
-    typeof row.objects_count === 'bigint' ? Number(row.objects_count) : row.objects_count;
+    typeof row.objects_count === 'bigint'
+      ? Number(row.objects_count)
+      : row.objects_count;
   return {
     category_name: row.category_name,
     objects_count: Number(oc),
