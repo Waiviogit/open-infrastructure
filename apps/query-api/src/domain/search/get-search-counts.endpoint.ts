@@ -11,10 +11,14 @@ export class GetSearchCountsEndpoint {
   constructor(private readonly searchRepo: SearchRepository) {}
 
   async execute(input: GetSearchCountsInput): Promise<SearchCountsResponseDto> {
-    const [type_counts, total_users] = await Promise.all([
+    const [objectCounts, total_users] = await Promise.all([
       this.searchRepo.countObjectsByType(input.q),
       this.searchRepo.countUsers(input.q),
     ]);
-    return { type_counts, total_users };
+    return {
+      type_counts: objectCounts.counts,
+      counts_capped: objectCounts.capped,
+      total_users,
+    };
   }
 }

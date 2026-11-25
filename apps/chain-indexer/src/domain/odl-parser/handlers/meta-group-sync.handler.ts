@@ -1,7 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { UPDATE_TYPES } from '@opden-data-layer/core';
 import { ObjectViewService } from '@opden-data-layer/objects-domain';
+import { ObjectSearchQueueRepository } from '@opden-data-layer/object-search';
+import type { Kysely } from 'kysely';
+import { KYSELY, type Database } from '../../../database';
 import {
   AggregatedObjectRepository,
   ObjectsCoreRepository,
@@ -26,6 +29,8 @@ export class MetaGroupSyncHandler {
     private readonly governanceCacheService: GovernanceCacheService,
     private readonly objectsCoreRepository: ObjectsCoreRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly objectSearchQueueRepository: ObjectSearchQueueRepository,
+    @Inject(KYSELY) private readonly db: Kysely<Database>,
   ) {}
 
   @OnEvent(GROUP_ID_MUTATED_EVENT)
@@ -60,7 +65,12 @@ export class MetaGroupSyncHandler {
         return;
       }
 
-      await this.objectsCoreRepository.update(objectId, { meta_group_id: winningGroupId });
+      const enqueuedAt = Math.floor(Date.now() / 1000);
+      // The search document groups by `meta_group_id`: enqueue its recompute with the write.
+      await this.db.transaction().execute(async (trx) => {
+        await this.objectsCoreRepository.update(objectId, { meta_group_id: winningGroupId }, trx);
+        await this.objectSearchQueueRepository.enqueue(objectId, enqueuedAt, trx);
+      });
       this.eventEmitter.emit(CATEGORY_MUTATED_EVENT, new CategoryMutatedEvent(objectId));
     } catch (error) {
       this.logger.error(

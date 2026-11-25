@@ -44,9 +44,31 @@ describe('ObjectStatusHandler', () => {
   };
 
   const emit = jest.fn();
+  const TRX = { kind: 'trx' };
+  /** Records whether a call ran inside `db.transaction().execute`. */
+  let inTransaction = false;
+  const db = {
+    transaction: () => ({
+      execute: async (fn: (trx: unknown) => Promise<void>) => {
+        inTransaction = true;
+        try {
+          await fn(TRX);
+        } finally {
+          inTransaction = false;
+        }
+      },
+    }),
+  };
+  const searchEnqueuedInTransaction: boolean[] = [];
+  const searchQueue = {
+    enqueue: jest.fn(async () => {
+      searchEnqueuedInTransaction.push(inTransaction);
+    }),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    searchEnqueuedInTransaction.length = 0;
   });
 
   it('updates objects_core when materialized status differs', async () => {
@@ -69,13 +91,17 @@ describe('ObjectStatusHandler', () => {
       { update } as never,
       { enqueue } as never,
       { emit } as never,
+      searchQueue as never,
+      db as never,
     );
 
     await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));
 
     expect(governanceCacheService.resolvePlatform).toHaveBeenCalledTimes(1);
     expect(materializeMock).toHaveBeenCalledTimes(1);
-    expect(update).toHaveBeenCalledWith('o1', { status: 'unavailable' });
+    expect(update).toHaveBeenCalledWith('o1', { status: 'unavailable' }, TRX);
+    expect(searchQueue.enqueue).toHaveBeenCalledWith('o1', expect.any(Number), TRX);
+    expect(searchEnqueuedInTransaction).toEqual([true]);
     expect(enqueue).toHaveBeenCalledWith('o1', expect.any(Number));
     expect(emit).toHaveBeenCalledWith(
       OBJECT_ACTIVE_STATE_CHANGED_EVENT,
@@ -103,11 +129,15 @@ describe('ObjectStatusHandler', () => {
       { update } as never,
       { enqueue } as never,
       { emit } as never,
+      searchQueue as never,
+      db as never,
     );
 
     await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));
 
-    expect(update).toHaveBeenCalledWith('o1', { status: 'active' });
+    expect(update).toHaveBeenCalledWith('o1', { status: 'active' }, TRX);
+    expect(searchQueue.enqueue).toHaveBeenCalledWith('o1', expect.any(Number), TRX);
+    expect(searchEnqueuedInTransaction).toEqual([true]);
     expect(enqueue).toHaveBeenCalledWith('o1', expect.any(Number));
     expect(emit).toHaveBeenCalledWith(
       OBJECT_ACTIVE_STATE_CHANGED_EVENT,
@@ -130,11 +160,73 @@ describe('ObjectStatusHandler', () => {
       { update } as never,
       { enqueue: jest.fn() } as never,
       { emit } as never,
+      searchQueue as never,
+      db as never,
     );
 
     await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));
 
     expect(update).not.toHaveBeenCalled();
+    expect(searchQueue.enqueue).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it('does not enqueue the search document when the status stays non-active', async () => {
+    materializeMock.mockReturnValue('closed');
+    const aggregatedUnavailable = {
+      ...aggregated,
+      core: { ...aggregated.core, status: 'unavailable' as const },
+    };
+    const update = jest.fn().mockResolvedValue(undefined);
+    const enqueue = jest.fn().mockResolvedValue(undefined);
+    const handler = new ObjectStatusHandler(
+      { resolvePlatform: jest.fn().mockResolvedValue({}) } as never,
+      {
+        loadByObjectIds: jest.fn().mockResolvedValue({
+          objects: [aggregatedUnavailable],
+          voterWaivPowers: new Map(),
+        }),
+      } as never,
+      new ObjectViewService(),
+      { update } as never,
+      { enqueue } as never,
+      { emit } as never,
+      searchQueue as never,
+      db as never,
+    );
+
+    await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));
+
+    expect(update).toHaveBeenCalledWith('o1', { status: 'closed' }, TRX);
+    expect(searchQueue.enqueue).not.toHaveBeenCalled();
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it('fails the status transaction when the search enqueue fails', async () => {
+    materializeMock.mockReturnValue('unavailable');
+    const update = jest.fn().mockResolvedValue(undefined);
+    const failingQueue = { enqueue: jest.fn().mockRejectedValue(new Error('queue down')) };
+    const handler = new ObjectStatusHandler(
+      { resolvePlatform: jest.fn().mockResolvedValue({}) } as never,
+      {
+        loadByObjectIds: jest.fn().mockResolvedValue({
+          objects: [aggregated],
+          voterWaivPowers: new Map(),
+        }),
+      } as never,
+      new ObjectViewService(),
+      { update } as never,
+      { enqueue: jest.fn() } as never,
+      { emit } as never,
+      failingQueue as never,
+      db as never,
+    );
+
+    await expect(
+      handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1')),
+    ).rejects.toThrow('queue down');
+    expect(update).toHaveBeenCalledWith('o1', { status: 'unavailable' }, TRX);
     expect(emit).not.toHaveBeenCalled();
   });
 
@@ -153,10 +245,12 @@ describe('ObjectStatusHandler', () => {
       { update } as never,
       { enqueue: jest.fn().mockResolvedValue(undefined) } as never,
       { emit } as never,
+      searchQueue as never,
+      db as never,
     );
 
     await handler.handleObjectStatusRecompute(new ObjectStatusRecomputeEvent('o1'));
 
-    expect(update).toHaveBeenCalledWith('o1', { status: 'unavailable' });
+    expect(update).toHaveBeenCalledWith('o1', { status: 'unavailable' }, TRX);
   });
 });

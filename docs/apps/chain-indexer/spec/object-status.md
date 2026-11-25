@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: chain-indexer
 tags: [chain-indexer, object-status]
-updated_at: 2026-11-11
+updated_at: 2026-11-25
 related:
   - docs/apps/chain-indexer/spec/overview.md
   - docs/apps/query-api/spec/objects-resolve.md
@@ -71,7 +71,7 @@ Object removed or redacted because it may contain personal or business-identifyi
 1. ODL **`update_create`** with `update_type: 'status'` and `value_json: { title: '...', link?: '...' }` — row appended to **`object_updates`** (append-only history).
 2. **`UpdateCreateHandler`** persists the update, emits **`OBJECT_STATUS_RECOMPUTE_EVENT`** (`ObjectStatusRecomputeEvent` with `objectId` only), and may emit **`object_status_change`** notification (payload title may be `protected`).
 3. **`UpdateVoteHandler`** on status rows (`for` / `against` / `remove`) also emits **`OBJECT_STATUS_RECOMPUTE_EVENT`**.
-4. **`ObjectStatusHandler`** loads aggregated object data, resolves the winning status via `ObjectViewService` + `materializeObjectCoreStatus()`, and updates **`objects_core.status`** only when the value changes. When the status crosses the active boundary it enqueues tag-category sync and emits **`ObjectActiveStateChangedEvent`** (`odl.object.active_state_changed`), which rebuilds the category scopes that contain the object ([object-categories.md](object-categories.md#triggers)).
+4. **`ObjectStatusHandler`** loads aggregated object data, resolves the winning status via `ObjectViewService` + `materializeObjectCoreStatus()`, and updates **`objects_core.status`** only when the value changes. When the status crosses the active boundary, the status write and the enqueue of the object's [search document](object-search-docs.md#status) share one transaction (a status change is never stored without its recompute); after the commit it enqueues tag-category sync and emits **`ObjectActiveStateChangedEvent`** (`odl.object.active_state_changed`), which rebuilds the category scopes that contain the object ([object-categories.md](object-categories.md#triggers)).
 
 Shared helper: `materializeObjectCoreStatus()` in `@opden-data-layer/objects-domain`.
 
@@ -89,6 +89,8 @@ CLI: `pnpm backfill:object-statuses [--dry-run] [--batch-size 200] [--object-id 
 Requires `POSTGRES_*` and optionally **`GOVERNANCE_OBJECT_ID`** (same as chain-indexer). Empty `GOVERNANCE_OBJECT_ID` → `DEFAULT_GOVERNANCE_SNAPSHOT`.
 
 Default scope: distinct `object_id` from `object_updates` where `update_type = 'status'`.
+
+Every object whose status the backfill changes is enqueued for its search document; run `pnpm search-docs:rebuild --queued` to apply them at once ([runbook](../../../operations/object-search-docs-rebuild.md)).
 
 ## Query API visibility
 

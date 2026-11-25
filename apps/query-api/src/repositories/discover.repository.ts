@@ -15,12 +15,8 @@ import {
   encodeDiscoverUserCursor,
 } from '../domain/discover/discover-cursor';
 import type { DiscoverSort, DiscoverBox } from '../domain/discover/discover-query.schema';
-import {
-  buildDiscoverObjectFilters,
-  escapeIlikePattern,
-  type DiscoverTagFilter,
-} from './discover-object-filters.sql';
-import { prefixUpperBound } from './search-prefix.utils';
+import { buildDiscoverObjectFilters, type DiscoverTagFilter } from './discover-object-filters.sql';
+import { escapeIlikePattern, prefixUpperBound } from './search-prefix.utils';
 
 export type { DiscoverTagFilter } from './discover-object-filters.sql';
 

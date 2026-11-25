@@ -28,6 +28,8 @@ export const searchObjectsByIdsResponseSchema = z.object({
 
 export const searchCountsResponseSchema = z.object({
   type_counts: z.record(z.string(), z.number()),
+  /** Object type counts are lower bounds (shown as `N+`); older APIs omit it. */
+  counts_capped: z.boolean().optional().default(false),
   total_users: z.number(),
 });
 

@@ -89,7 +89,7 @@ describe('TopNav search Clear vs Close', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     fetchSearchResults.mockResolvedValue({ objects: [], users: [] });
-    fetchSearchCounts.mockResolvedValue({ objectTypes: [], users: 0 });
+    fetchSearchCounts.mockResolvedValue({ type_counts: {}, counts_capped: false, total_users: 0 });
   });
 
   it('shows Clear when typing and clears query without closing search', async () => {

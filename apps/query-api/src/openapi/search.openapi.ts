@@ -41,10 +41,14 @@ const searchCountsResponseDtoSchema = registry.register(
   z.object({
     type_counts: z.record(z.string(), z.number().int()).openapi({
       description:
-        'Global count of unique active objects per `object_type` for query `q` (meta_group deduped).',
+        'Active objects per `object_type` matching query `q`, counted in product groups (one per `meta_group_id`). Lower bounds when `counts_capped` is true.',
+    }),
+    counts_capped: z.boolean().openapi({
+      description:
+        'True when more objects match than the server counts (100,000): `type_counts` are then lower bounds — show them as `N+`. `total_users` is never capped.',
     }),
     total_users: z.number().int().openapi({
-      description: 'Total users matching the name prefix for query `q` (not capped).',
+      description: 'Total users matching the name prefix for query `q` (exact, never capped).',
     }),
   }),
 );
@@ -55,7 +59,7 @@ registry.registerPath({
   tags: [queryApiOpenApiTags.search],
   summary: 'Predictive search (objects + users)',
   description:
-    'Objects: autocomplete FTS on `name`, `title`, or `description` updates (`search_vector`); object_id prefix (≥3 chars, btree range); identifier `value` and address `locality` prefix (≥3 chars); optional substring on `object_id` when id-shaped (≥8 chars + hyphen); `status = active`; collapsed to one hit per `meta_group_id` (highest `weight`). Results are projected via `ObjectProjectionService` (`name`, `image`, `parent`). Users: prefix btree range on `accounts_current.name`, exact name match first, then Waiv object weight and followers (max 5). Optional `X-Viewer` sets `is_following` via `user_subscriptions`. Respects `X-Governance-Object-Id` and locale like other read endpoints. Tab counts: use `GET /search/counts`.',
+    'Objects come from the search read model (one document per active object, kept current by the indexer). The query is normalized (lower case, punctuation as word breaks, apostrophes inside a word dropped, no stemming, no accent folding) and every word must be a word prefix of the winning names, titles, identifiers, address locality, object id words or descriptions; a one-letter word is ignored while it is the last one, and a query without a word of 2+ letters (one CJK character counts) returns no objects. One hit per product group (`meta_group_id`). Order: exact `object_id`, exact name, name starts with the query, then `weight`. Hits are projected via `ObjectProjectionService` (`name`, `image`, `parent`) over active objects only. Users: prefix btree range on `accounts_current.name`, exact name match first, then Waiv object weight and followers (max 5). Optional `X-Viewer` sets `is_following` via `user_subscriptions`. Respects `X-Governance-Object-Id` and locale like other read endpoints. Tab counts: use `GET /search/counts`.',
   request: {
     query: z.object({
       q: z.string().min(1).max(100).openapi({ description: 'Search text.' }),
@@ -64,7 +68,7 @@ registry.registerPath({
       }),
       type: z.enum(['all', 'objects', 'users']).default('all').openapi({
         description:
-          'Restrict results: `objects` skips user search; `users` skips object FTS/projection.',
+          'Restrict results: `objects` skips user search; `users` skips object search and projection.',
       }),
     }),
     headers: z.object({
@@ -101,7 +105,7 @@ registry.registerPath({
   tags: [queryApiOpenApiTags.search],
   summary: 'Resolve object card display by ids',
   description:
-    'Loads active objects by primary key (`object_id`) via `AggregatedObjectRepository.loadByObjectIds`, then projects `name`, `image`, and `parent` like `GET /search`. No FTS or `meta_group_id` dedup. Missing or inactive ids are omitted. Used by the post editor to hydrate linked objects after draft reload.',
+    'Loads active objects by primary key (`object_id`) via `AggregatedObjectRepository.loadByObjectIds`, then projects `name`, `image`, and `parent` like `GET /search`. No text match or `meta_group_id` dedup. Missing or inactive ids are omitted. Used by the post editor to hydrate linked objects after draft reload.',
   request: {
     body: {
       content: {
@@ -143,7 +147,7 @@ registry.registerPath({
   tags: [queryApiOpenApiTags.search],
   summary: 'Predictive search global counts',
   description:
-    'Returns global `type_counts` (unique active objects per `object_type`, meta_group deduped) and `total_users` for query `q`. Same FTS / id-substring / name-prefix rules as `GET /search`. Intended for header tab badges loaded after the main search response.',
+    'Returns `type_counts` (active objects per `object_type`, counted in product groups) and `total_users` for query `q`. Objects match by the same word-prefix rules as `GET /search`. Object counts stop at a cap: when more objects match, `counts_capped` is true and every `type_counts` value is a lower bound. A just-deactivated object can be counted until the indexer removes its document (one worker tick). Intended for header tab badges loaded after the main search response.',
   request: {
     query: z.object({
       q: z.string().min(1).max(100).openapi({ description: 'Search text.' }),

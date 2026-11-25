@@ -6,7 +6,7 @@ type: overview
 status: active
 scope: query-api
 tags: [query-api, overview]
-updated_at: 2026-11-24
+updated_at: 2026-11-25
 related:
   - docs/README.md
   - docs/spec/objects-domain.md
@@ -35,6 +35,7 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [OSL messaging](osl-messaging.md) | Channels, object activity, `POST .../:name/following-objects/messages` |
 | [User account authority lists](user-account-auths-endpoint.md) | `GET .../:name/authority-grantors`, `/authority-grantees` |
 | [Categories](categories.md) | `GET /query/v1/users/:name/categories` (one category type, live counts, display rules) |
+| [Discover](discover.md) | `GET /query/v1/discover/objects`, `/discover/users`, `/discover/tag-categories`; text and box filters on `object_search_docs` |
 | [Discover categories](discover-categories.md) | `GET /query/v1/discover/categories`; `category_path` on Discover objects and facets |
 | [The Other category](category-other.md) | Objects of a category level in none of its shown children: `other_count`, `other`, the last-page block |
 | [Category objects feed](category-objects.md) | `GET /query/v1/categories/objects` |

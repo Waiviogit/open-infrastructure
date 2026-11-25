@@ -50,6 +50,10 @@ import {
   OBJECT_STATUS_RECOMPUTE_EVENT,
   ObjectStatusRecomputeEvent,
 } from '../object-status-created.event';
+import {
+  OBJECT_UPDATE_MUTATED_EVENT,
+  ObjectUpdateMutatedEvent,
+} from '../object-update-mutated.event';
 import { NotificationEmitterService } from '../../notification-adapter/notification-emitter.service';
 
 @Injectable()
@@ -285,6 +289,10 @@ export class UpdateCreateHandler implements OdlActionHandler {
         new SiteCanonicalRecomputeEvent(object_id),
       );
     }
+    this.eventEmitter.emit(
+      OBJECT_UPDATE_MUTATED_EVENT,
+      new ObjectUpdateMutatedEvent(object_id, update_type),
+    );
     this.eventEmitter.emit(
       GOVERNANCE_OBJECT_MUTATED_EVENT,
       new GovernanceObjectMutatedEvent(object_id),

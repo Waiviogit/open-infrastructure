@@ -80,6 +80,16 @@ Do not parse `profile_image` inline. Use `avatarUrlFromJoinedAccountRow` (`apps/
 
 `objects_core.meta_group_id` is maintained by `chain-indexer` (`MetaGroupSyncHandler`) and reflects the winning `group_id` update value for each object.
 
-When building product search endpoints that must collapse variants into one result per group, use `DISTINCT ON (COALESCE(oc.meta_group_id, oc.object_id))` ordered by `oc.weight DESC NULLS LAST` so the highest-weight representative is kept per group.
+- **Text search** (`GET /search`, `/search/counts`) collapses on `object_search_docs.group_key` (= `COALESCE(meta_group_id, object_id)`, written by the indexer).
+- **Discover** and other listings collapse with `DISTINCT ON (COALESCE(oc.meta_group_id, oc.object_id))` ordered by `oc.weight DESC NULLS LAST`, so the highest-weight representative is kept per group.
 
-Objects without a `group_id` update each appear as their own group (`COALESCE` falls back to `object_id`).
+Objects without a `group_id` update each appear as their own group.
+
+## Object search read model
+
+See [ADR: search read model](../../docs/architecture/adr/search-read-model.md) and [object search documents](../../docs/apps/chain-indexer/spec/object-search-docs.md).
+
+- Text search, the Discover text and map filters and the Favorites map read `object_search_docs`. Only `repositories/search.repository.ts` and `repositories/object-search-filters.sql.ts` may name that table or build a tsquery (a spec enforces it).
+- Search text is tokenized only with `buildPrefixTsQuery` from `@opden-data-layer/object-search` — the function whose normalization also builds the index.
+- A new searchable field is added to the document builder in `libs/object-search`, not as a new lookup in query-api.
+- Counts over a text-filtered set may be capped and are returned with a `*_capped` flag. Do not add totals, page numbers or deep sorted pagination that need every match.

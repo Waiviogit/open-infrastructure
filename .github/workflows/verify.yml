@@ -129,6 +129,7 @@ jobs:
               - 'apps/query-api/**'
               - 'libs/currency/**'
               - 'libs/objects-domain/**'
+              - 'libs/object-search/**'
 
       - uses: pnpm/action-setup@v4
         if: steps.paths.outputs.query_api == 'true'
@@ -142,6 +143,10 @@ jobs:
       - name: Install dependencies
         if: steps.paths.outputs.query_api == 'true'
         run: pnpm install --frozen-lockfile
+
+      - name: Unit tests (object-search)
+        if: steps.paths.outputs.query_api == 'true'
+        run: pnpm nx test object-search
 
       - name: Unit tests (query-api)
         if: steps.paths.outputs.query_api == 'true'
@@ -208,6 +213,7 @@ jobs:
               - 'apps/stack-watchdog/**'
               - 'libs/clients/**'
               - 'libs/odl-db-types/**'
+              - 'libs/object-search/**'
               - 'libs/system-alerts/**'
               - 'libs/common/**'
               - 'tsconfig.base.json'
@@ -290,6 +296,7 @@ jobs:
               - 'libs/migrations/**'
               - 'libs/test-postgres/**'
               - 'libs/odl-db-types/**'
+              - 'libs/object-search/**'
               - 'apps/scheduler/**'
               - 'docker-compose.test.yml'
 
@@ -341,6 +348,7 @@ jobs:
               - 'apps/query-api-e2e/**'
               - 'libs/migrations/**'
               - 'libs/odl-db-types/**'
+              - 'libs/object-search/**'
               - 'libs/test-postgres/**'
               - 'docker-compose.test.yml'
               - 'scripts/e2e-query-api.cjs'

@@ -5,6 +5,10 @@ import { NotificationEmitterService } from '../../notification-adapter/notificat
 import type { OdlEventContext } from '../odl-action-handler';
 import { WriteGuardRunner } from '../guards';
 import { UpdateVoteHandler } from './update-vote.handler';
+import {
+  OBJECT_UPDATE_MUTATED_EVENT,
+  ObjectUpdateMutatedEvent,
+} from '../object-update-mutated.event';
 
 describe('UpdateVoteHandler posting auth', () => {
   const ctx: OdlEventContext = {
@@ -117,5 +121,80 @@ describe('UpdateVoteHandler posting auth', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({ voter: 'bob', vote: 'for' }),
     );
+  });
+});
+
+describe('UpdateVoteHandler object update mutated event', () => {
+  const ctx: OdlEventContext = {
+    action: 'update_vote',
+    creator: 'bob',
+    blockNum: 10,
+    transactionIndex: 0,
+    operationIndex: 0,
+    odlEventIndex: 0,
+    transactionId: 'trx-vote',
+    timestamp: '2026-01-01T00:00:00.000Z',
+    eventSeq: BigInt(1),
+    eventIdIndexMap: new Map(),
+  };
+
+  function setup(existingVote?: 'for' | 'against') {
+    const emit = jest.fn();
+    const handler = new UpdateVoteHandler(
+      {
+        create: jest.fn().mockResolvedValue(undefined),
+        delete: jest.fn().mockResolvedValue(undefined),
+        findByUpdateIdAndVoter: jest
+          .fn()
+          .mockResolvedValue(existingVote ? { vote: existingVote } : undefined),
+        update: jest.fn().mockResolvedValue(undefined),
+      } as unknown as import('../../../repositories').ValidityVotesRepository,
+      {
+        findByUpdateId: jest.fn().mockResolvedValue({
+          update_id: 'upd-1',
+          object_id: 'obj-1',
+          update_type: UPDATE_TYPES.NAME,
+        }),
+      } as unknown as import('../../../repositories').ObjectUpdatesRepository,
+      {
+        findByObjectId: jest
+          .fn()
+          .mockResolvedValue({ object_id: 'obj-1', object_type: 'place', creator: 'owner' }),
+      } as unknown as import('../../../repositories').ObjectsCoreRepository,
+      { check: jest.fn().mockReturnValue(null) } as unknown as WriteGuardRunner,
+      { emit } as unknown as EventEmitter2,
+      {
+        odlContext: jest.fn().mockReturnValue({}),
+        emitWithContext: jest.fn(),
+        emitTrxProcessedOdl: jest.fn(),
+      } as unknown as NotificationEmitterService,
+    );
+    return { handler, emit };
+  }
+
+  const mutated = new ObjectUpdateMutatedEvent('obj-1', UPDATE_TYPES.NAME);
+
+  it('emits on a new vote', async () => {
+    const { handler, emit } = setup();
+
+    await handler.handle({ update_id: 'upd-1', vote: 'for' }, ctx);
+
+    expect(emit).toHaveBeenCalledWith(OBJECT_UPDATE_MUTATED_EVENT, mutated);
+  });
+
+  it('emits on a vote removal', async () => {
+    const { handler, emit } = setup('for');
+
+    await handler.handle({ update_id: 'upd-1', vote: 'remove' }, ctx);
+
+    expect(emit).toHaveBeenCalledWith(OBJECT_UPDATE_MUTATED_EVENT, mutated);
+  });
+
+  it('does not emit when the same vote is cast again', async () => {
+    const { handler, emit } = setup('for');
+
+    await handler.handle({ update_id: 'upd-1', vote: 'for' }, ctx);
+
+    expect(emit).not.toHaveBeenCalledWith(OBJECT_UPDATE_MUTATED_EVENT, expect.anything());
   });
 });

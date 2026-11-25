@@ -3,6 +3,10 @@ import { OBJECT_TYPES } from '@opden-data-layer/core';
 
 import { UpdateCreateHandler } from './update-create.handler';
 import {
+  OBJECT_UPDATE_MUTATED_EVENT,
+  ObjectUpdateMutatedEvent,
+} from '../object-update-mutated.event';
+import {
   defaultNotificationEmitter,
   defaultUpdateCreateUserRefDeps,
   defaultUpdateCreateValidityVotesDeps,
@@ -432,6 +436,10 @@ describe('UpdateCreateHandler write guard', () => {
         (c: unknown[]) => c[0] === OBJECT_STATUS_RECOMPUTE_EVENT,
       );
       expect(statusEmit?.[1]).toBeInstanceOf(ObjectStatusRecomputeEvent);
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        OBJECT_UPDATE_MUTATED_EVENT,
+        new ObjectUpdateMutatedEvent('place1', 'status'),
+      );
     });
 
   it('emits TAG_CATEGORY_ITEM_MUTATED_EVENT after persisting tagCategoryItem', async () => {

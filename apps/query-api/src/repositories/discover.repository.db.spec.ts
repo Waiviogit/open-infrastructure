@@ -10,6 +10,7 @@ import type { RedisClientFactory } from '@opden-data-layer/clients';
 
 import type { Database } from '../database';
 import { DiscoverRepository } from './discover.repository';
+import { searchDocFixture, seedSearchDocs } from './object-search-docs.spec-helpers';
 
 const describeDb = process.env.POSTGRES_TEST_URL ? describe : describe.skip;
 
@@ -143,6 +144,37 @@ async function seedShared(trx: Trx): Promise<void> {
   await insertName(trx, 'ov-c', 'Overmont Camping Chair');
 }
 
+/** Map box around Vancouver; `INSIDE` lies in it, `OUTSIDE` does not. */
+const BOX = { swLng: -123.2, swLat: 49.1, neLng: -123.0, neLat: 49.3 };
+const INSIDE = { longitude: -123.1, latitude: 49.2 };
+const OUTSIDE = { longitude: 2.35, latitude: 48.85 };
+
+/**
+ * Search documents for the shared seed: `ov-c` carries the name; `ov-x` is a document left behind
+ * for an object that is no longer active (not yet removed by the indexer).
+ */
+async function seedSharedSearchDocs(trx: Trx): Promise<void> {
+  await seedSearchDocs(trx, [
+    searchDocFixture('ov-a', { objectType: 'product', groupKey: 'overmont', name: 'Overmont Stove', geo: OUTSIDE }),
+    searchDocFixture('ov-b', { objectType: 'product', groupKey: 'overmont', name: 'Overmont Tent', geo: OUTSIDE }),
+    searchDocFixture('ov-c', {
+      objectType: 'product',
+      groupKey: 'overmont',
+      name: 'Overmont Camping Chair',
+      geo: INSIDE,
+    }),
+    searchDocFixture('ov-x', {
+      objectType: 'product',
+      groupKey: 'overmont',
+      name: 'Overmont Camping Chair Deluxe',
+      weight: 100,
+      geo: INSIDE,
+    }),
+    searchDocFixture('solo-1', { objectType: 'product', name: 'Solo Lantern', geo: INSIDE }),
+    searchDocFixture('solo-2', { objectType: 'product', name: 'Solo Camping Mug', geo: null }),
+  ]);
+}
+
 function idsOf(rows: { object_id: string }[]): string[] {
   return rows.map((r) => r.object_id);
 }
@@ -217,6 +249,7 @@ describeDb('DiscoverRepository meta_group collapse', () => {
   it('TC-005 only SKUs that match the text query can represent the group', async () => {
     await withRollback(db, async (trx) => {
       await seedShared(trx);
+      await seedSharedSearchDocs(trx);
       const result = await repo(trx, stubRedis().factory).listObjects({
         objectType: 'product',
         q: 'overmont camping',
@@ -315,6 +348,7 @@ describeDb('DiscoverRepository meta_group collapse', () => {
   it('TC-011 facet counts with a text query count groups', async () => {
     await withRollback(db, async (trx) => {
       await seedShared(trx);
+      await seedSharedSearchDocs(trx);
       const redis = stubRedis();
       const rows = await repo(trx, redis.factory).getTagCategories('product', [], 'overmont camping');
       expect(rows).toEqual(
@@ -476,6 +510,88 @@ describeDb('DiscoverRepository meta_group collapse', () => {
         limit: 20,
       });
       expect(result).toEqual({ rows: [], hasMore: false });
+    });
+  });
+
+  it('TC-029 untyped Discover text search matches across types without a type condition', async () => {
+    await withRollback(db, async (trx) => {
+      await seedShared(trx);
+      await insertObject(trx, {
+        objectId: 'rest-1',
+        weight: 1,
+        createdAt: '2026-01-07T00:00:00.000Z',
+        objectType: 'restaurant',
+      });
+      await seedSharedSearchDocs(trx);
+      await seedSearchDocs(trx, [searchDocFixture('rest-1', { name: 'Camping Diner' })]);
+      const result = await repo(trx, stubRedis().factory).listObjects({
+        q: 'camping',
+        tags: [],
+        sort: 'rank',
+        limit: 20,
+      });
+      expect(idsOf(result.rows)).toEqual(['ov-c', 'solo-2', 'rest-1']);
+    });
+  });
+
+  it('TC-030 a text query without a searchable word returns an empty page', async () => {
+    await withRollback(db, async (trx) => {
+      await seedShared(trx);
+      await seedSharedSearchDocs(trx);
+      const result = await repo(trx, stubRedis().factory).listObjects({
+        objectType: 'product',
+        q: 'c',
+        tags: [],
+        sort: 'rank',
+        limit: 20,
+      });
+      expect(result).toEqual({ rows: [], hasMore: false });
+    });
+  });
+
+  it('TC-031 the map box keeps objects whose document point lies inside it', async () => {
+    await withRollback(db, async (trx) => {
+      await seedShared(trx);
+      await seedSharedSearchDocs(trx);
+      const result = await repo(trx, stubRedis().factory).listObjects({
+        objectType: 'product',
+        tags: [],
+        sort: 'rank',
+        limit: 20,
+        box: BOX,
+      });
+      expect(idsOf(result.rows)).toEqual(['solo-1', 'ov-c']);
+    });
+  });
+
+  it('TC-032 a stale document of a non-active object is never returned by text or box', async () => {
+    await withRollback(db, async (trx) => {
+      await seedShared(trx);
+      await seedSharedSearchDocs(trx);
+      const discover = repo(trx, stubRedis().factory);
+      const byText = await discover.listObjects({
+        objectType: 'product',
+        q: 'deluxe',
+        tags: [],
+        sort: 'rank',
+        limit: 20,
+      });
+      const byBox = await discover.listObjects({
+        objectType: 'product',
+        tags: [],
+        sort: 'rank',
+        limit: 20,
+        box: BOX,
+      });
+      const untypedByText = await discover.listObjects({
+        q: 'overmont camping',
+        tags: [],
+        sort: 'rank',
+        limit: 20,
+      });
+      expect(idsOf(byText.rows)).toEqual([]);
+      expect(idsOf(byBox.rows)).not.toContain('ov-x');
+      expect(idsOf(untypedByText.rows)).toEqual(['ov-c']);
     });
   });
 

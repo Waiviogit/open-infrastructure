@@ -77,6 +77,8 @@ export interface OdlDatabase {
   object_categories_related_sync_queue: ObjectCategoriesRelatedSyncQueueTable;
   object_tag_category_items: ObjectTagCategoryItemsTable;
   object_tag_categories_sync_queue: ObjectTagCategoriesSyncQueueTable;
+  object_search_docs: ObjectSearchDocsTable;
+  object_search_docs_sync_queue: ObjectSearchDocsSyncQueueTable;
   currency_rates: CurrencyRatesTable;
   currency_statistics: CurrencyStatisticsTable;
   hive_engine_rates: HiveEngineRatesTable;
@@ -1046,6 +1048,48 @@ export interface ObjectTagCategoriesSyncQueueTable {
 
 export type ObjectTagCategoriesSyncQueueRow = Selectable<ObjectTagCategoriesSyncQueueTable>;
 export type NewObjectTagCategoriesSyncQueueRow = Insertable<ObjectTagCategoriesSyncQueueTable>;
+
+// ---------------------------------------------------------------------------
+// object_search_docs (one search document per active object; chain-indexer)
+// ---------------------------------------------------------------------------
+
+/** @see docs/apps/chain-indexer/spec/object-search-docs.md */
+export interface ObjectSearchDocsTable {
+  object_id: string;
+  object_type: string;
+  /** `COALESCE(meta_group_id, object_id)`, `COLLATE "C"`. */
+  group_key: string;
+  /** Copy of `objects_core.weight` for sorting; not indexed. */
+  weight: number | null;
+  created_at: ColumnType<Date, Date | string, Date | string>;
+  name: string | null;
+  /** `normalizeSearchText(name)` from `@opden-data-layer/object-search`. */
+  name_norm: string | null;
+  /** `tsvector` (`simple` configuration); written in SQL by the Postgres sink. */
+  search_vector: unknown;
+  /** `GEOMETRY(Point, 4326)` or null. */
+  geo: unknown;
+  content_hash: string;
+  updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+export type ObjectSearchDocsRow = Selectable<ObjectSearchDocsTable>;
+export type NewObjectSearchDocsRow = Insertable<ObjectSearchDocsTable>;
+
+// ---------------------------------------------------------------------------
+// object_search_docs_sync_queue
+// ---------------------------------------------------------------------------
+
+/** `enqueued_at = 0` marks bulk rows (migration, rebuild); live events use the unix time. */
+export interface ObjectSearchDocsSyncQueueTable {
+  object_id: string;
+  enqueued_at: number;
+  attempts: ColumnType<number, number | undefined, number>;
+  last_attempt_at: number | null;
+}
+
+export type ObjectSearchDocsSyncQueueRow = Selectable<ObjectSearchDocsSyncQueueTable>;
+export type NewObjectSearchDocsSyncQueueRow = Insertable<ObjectSearchDocsSyncQueueTable>;
 
 // ---------------------------------------------------------------------------
 // user_post_drafts

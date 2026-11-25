@@ -1,12 +1,12 @@
 ---
 id: docs-spec-data-model-flow
 title: PostgreSQL Concept: Collections and Flow
-description: "This document describes the PostgreSQL schema (four tables), write flow, read flow, and MongoDB comparison notes (historical evaluation). There is **no projection table** — the authoritative tables are queried directly using JOINs, `tsvector` full-text search, and PostGIS. For the storage decision, see ADR: PostgreSQL over Mongo."
+description: "This document describes the PostgreSQL schema (four tables), write flow, read flow, and MongoDB comparison notes (historical evaluation). The authoritative tables are queried directly; a few materialized read models (search documents, categories, tags, status) serve listings and search. For the storage decision, see ADR: PostgreSQL over Mongo."
 type: spec
 status: active
 scope: platform
 tags: [platform, domain, data-model]
-updated_at: 2026-06-10
+updated_at: 2026-11-25
 related:
   - docs/spec/README.md
   - docs/apps/chain-indexer/spec/overview.md
@@ -17,7 +17,7 @@ related:
 
 # PostgreSQL Concept: Collections and Flow
 
-This document describes the PostgreSQL schema (four tables), write flow, read flow, and MongoDB comparison notes (historical evaluation). There is **no projection table** — the authoritative tables are queried directly using JOINs, `tsvector` full-text search, and PostGIS. For the storage decision, see [ADR: PostgreSQL over Mongo](../../architecture/adr/postgres-over-mongo.md).
+This document describes the PostgreSQL schema (four tables), write flow, read flow, and MongoDB comparison notes (historical evaluation). The authoritative tables are queried directly using JOINs; there is no general projection of resolved objects. A few narrow read models are materialized by chain-indexer (see [Step 3](#step-3-materialized-read-models)). For the storage decision, see [ADR: PostgreSQL over Mongo](../../architecture/adr/postgres-over-mongo.md).
 
 Related files:
 
@@ -176,9 +176,16 @@ When a user favorites an object (`object_favorite` add/remove), the Indexer upda
 
 See [social-account-ingestion.md § 4.2](../social-account-ingestion.md#42-object_reputation-maintenance) for the full maintenance algorithm and verification query.
 
-### Step 3: No projection
+### Step 3: Materialized read models
 
-The authoritative tables are the query surface. No separate projection table to maintain.
+The authoritative tables are the query surface for resolving an object; there is no general projection of resolved views. Listings and search read narrow read models that chain-indexer keeps current through queues (each resolved with platform governance):
+
+| Read model | Holds | Spec |
+|---|---|---|
+| `objects_core.status`, `objects_core.meta_group_id` | Winning status and product group | [object-status](../../apps/chain-indexer/spec/object-status.md), [meta-group-sync](../../apps/chain-indexer/spec/meta-group-sync.md) |
+| `object_search_docs` | One search document per active object: winning texts as `tsvector`, map point, sort fields | [object-search-docs](../../apps/chain-indexer/spec/object-search-docs.md) |
+| `object_categories`, `object_categories_related` | Winning categories per object; category trees per scope | [object-categories](../../apps/chain-indexer/spec/object-categories.md) |
+| `object_tag_category_items` | Winning tag items per object (Discover tag filters and facets) | — |
 
 ## Read flow to ResolvedView
 

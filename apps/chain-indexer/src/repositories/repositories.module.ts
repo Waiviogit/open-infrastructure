@@ -21,6 +21,11 @@ import { ObjectCategoriesRepository } from './object-categories.repository';
 import { ObjectCategoriesSyncQueueRepository } from './object-categories-sync-queue.repository';
 import { CategoryScopeRebuildService } from '@opden-data-layer/category-scopes';
 import { CategoryScopeRebuildProvider } from './category-scope-rebuild.provider';
+import {
+  ObjectSearchQueueRepository,
+  ObjectSearchRebuildService,
+} from '@opden-data-layer/object-search';
+import { ObjectSearchProviders } from './object-search.providers';
 import { ObjectCategoriesRelatedSyncQueueRepository } from './object-categories-related-sync-queue.repository';
 import { ObjectTagCategoryItemsRepository } from './object-tag-category-items.repository';
 import { ObjectTagCategoriesSyncQueueRepository } from './object-tag-categories-sync-queue.repository';
@@ -62,6 +67,7 @@ import { MessagesRepository } from './messages.repository';
     ObjectCategoriesRepository,
     ObjectCategoriesSyncQueueRepository,
     CategoryScopeRebuildProvider,
+    ...ObjectSearchProviders,
     ObjectCategoriesRelatedSyncQueueRepository,
     ObjectTagCategoryItemsRepository,
     ObjectTagCategoriesSyncQueueRepository,
@@ -102,6 +108,8 @@ import { MessagesRepository } from './messages.repository';
     ObjectCategoriesRepository,
     ObjectCategoriesSyncQueueRepository,
     CategoryScopeRebuildService,
+    ObjectSearchQueueRepository,
+    ObjectSearchRebuildService,
     ObjectCategoriesRelatedSyncQueueRepository,
     ObjectTagCategoryItemsRepository,
     ObjectTagCategoriesSyncQueueRepository,

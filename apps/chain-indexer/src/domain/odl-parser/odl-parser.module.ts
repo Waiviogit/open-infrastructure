@@ -26,6 +26,8 @@ import { UserCategoryScopeEnqueueService } from './user-category-scope-enqueue.s
 import { ObjectCategoriesRelatedWorker } from './object-categories-related.worker';
 import { CategoryTypeScopeThrottleService } from './category-type-scope-throttle.service';
 import { ObjectTagCategoriesWorker } from './object-tag-categories.worker';
+import { ObjectSearchSyncHandler } from './handlers/object-search-sync.handler';
+import { ObjectSearchDocsWorker } from './object-search-docs.worker';
 import { RankScoreModule } from '../rank-score/rank-score.module';
 import {
   GovernanceWriteGuard,
@@ -77,6 +79,8 @@ import {
     ObjectCategoriesRelatedWorker,
     CategoryTypeScopeThrottleService,
     ObjectTagCategoriesWorker,
+    ObjectSearchSyncHandler,
+    ObjectSearchDocsWorker,
   ],
   exports: [OdlCustomJsonParser],
 })

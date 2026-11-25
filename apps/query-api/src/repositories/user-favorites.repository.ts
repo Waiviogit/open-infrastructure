@@ -3,6 +3,7 @@ import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import type { Database } from '../database';
 import { KYSELY } from '../database';
+import { buildObjectSearchDocsFilter } from './object-search-filters.sql';
 import {
   isEmptyUserFavoritesScope,
   userFavoritesScopeCte,
@@ -105,7 +106,7 @@ export class UserFavoritesRepository {
     }
   }
 
-  /** Scope objects whose latest `geo` update lies inside `box` (scope types decide map types). */
+  /** Scope objects whose point (the winning `geo`, from the search document) lies inside `box`. */
   async findMapObjectIdsByScope(
     scope: UserFavoritesScope,
     box: MapBoundingBox,
@@ -118,6 +119,15 @@ export class UserFavoritesRepository {
 
     const [swLng, swLat] = box.bottomPoint;
     const [neLng, neLat] = box.topPoint;
+    const geoFilter = buildObjectSearchDocsFilter({
+      objectIdColumn: sql.ref('s.object_id'),
+      objectType: '',
+      q: '',
+      box: { swLng, swLat, neLng, neLat },
+    });
+    if (geoFilter == null) {
+      return [];
+    }
 
     try {
       const rows = await sql<{ object_id: string }>`
@@ -125,19 +135,8 @@ export class UserFavoritesRepository {
         geo_objects AS (
           SELECT s.object_id, s.weight
           FROM user_favorites_scope s
-          INNER JOIN LATERAL (
-            SELECT ou.value_geo
-            FROM object_updates ou
-            WHERE ou.object_id = s.object_id
-              AND ou.update_type = 'geo'
-              AND ou.value_geo IS NOT NULL
-            ORDER BY ou.rank_score DESC NULLS LAST, ou.created_at_unix DESC
-            LIMIT 1
-          ) geo ON TRUE
-          WHERE ST_Intersects(
-            geo.value_geo::geometry,
-            ST_MakeEnvelope(${swLng}, ${swLat}, ${neLng}, ${neLat}, 4326)
-          )
+          WHERE TRUE
+            ${geoFilter}
         )
         SELECT object_id
         FROM geo_objects

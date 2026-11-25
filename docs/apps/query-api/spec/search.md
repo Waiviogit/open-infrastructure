@@ -6,10 +6,12 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, search]
-updated_at: 2026-10-02
+updated_at: 2026-11-25
 related:
   - docs/apps/query-api/spec/overview.md
   - docs/README.md
+  - docs/apps/chain-indexer/spec/object-search-docs.md
+  - docs/architecture/adr/search-read-model.md
 ---
 
 # Search endpoints
@@ -77,19 +79,26 @@ No `type_counts` or `total_users` — use `/search/counts` for tab badges.
 
 `SearchCountsResponseDto`:
 
-- **`type_counts`**: Map of `object_type` → count of **all** unique active objects in the DB matching `q` (one per `meta_group_id`, highest weight representative semantics aligned with search dedup).
-- **`total_users`**: Total users matching the name prefix for `q` (not capped at 5).
+- **`type_counts`**: Map of `object_type` → number of matching active **groups** (one per `meta_group_id`).
+- **`counts_capped`**: `true` when the text matched more than `SEARCH_COUNTS_MATCH_CAP` (100 000) documents; counting stopped there, so `type_counts` are lower bounds and web shows `N+`. Clients must not rely on exact totals for broad queries ([ADR rule R3](../../../architecture/adr/search-read-model.md#3-rules)).
+- **`total_users`**: Total users matching the name prefix for `q` (exact, not capped at 5).
 
 ## Query plan — objects (`/search` and `/search/counts`)
 
-1. **FTS-first (autocomplete):** `object_updates` rows with `update_type` in (`name`, `title`, `description`) and `search_vector @@ to_tsquery('english', :ts_query)` (GIN on `search_vector`). `:ts_query` is built from `:q` so every token is required (`&`) and **each** token is a prefix (`:*`), e.g. `about waiv` → `about:* & waiv:*` (note: `english` stopwords like `about` are stripped, so this reduces to `waiv:*`). → distinct `object_id` candidates.
-2. **Name/title prefix (relevance boost):** `object_updates` rows with `update_type` in (`name`, `title`) where `value_text_normalized LIKE lower(trim(:q)) || '%'` (trigram GIN `idx_object_updates_name_title_value_norm_trgm`, only when `trim(q)` length ≥ 3). Unlike FTS this keeps stopwords, so `about wai` matches the object literally named "About Waivio".
-3. **Object id prefix** (when `trim(q)` length ≥ 3): `objects_core` with `status = 'active'` and `object_id COLLATE "C" >= lower(trim(:q)) AND object_id COLLATE "C" < upperBound(lower(trim(:q)))` (same `prefixUpperBound` as user search; `"C"` so kebab ids like `kvu-` are not an empty range under locale collation). Hyphens in `q` are also split before FTS (`kvu-` → `kvu:*`).
-4. **Identifier / address locality prefix** (when `trim(q)` length ≥ 3): `object_updates` with `update_type = 'identifier'` and `lower(value_json->>'value') LIKE lower(trim(:q)) || '%'`, or `update_type = 'address'` and `lower(value_json->>'locality') LIKE lower(trim(:q)) || '%'` (partial btree indexes `idx_object_updates_identifier_value_lower`, `idx_object_updates_address_locality_lower`).
-5. **Optional id substring** (only when `trim(q)` has length ≥ 8 and contains `-`): `objects_core` with `status = 'active'` and `object_id ILIKE '%' || escape(:q) || '%' ESCAPE '\'`. Omitted for short text queries (e.g. `grampo`, `kvu`) to avoid a full-table scan.
-6. Union FTS + name/title-prefix + id prefix + identifier/locality + optional id substring candidate ids; **join** `objects_core` on PK (`status = 'active'`).
-7. **`/search`:** Collapse variants with `DISTINCT ON (COALESCE(meta_group_id, object_id))`, keeping the highest-`weight` representative per group. Final order: **name/title prefix match** first, then **object_id prefix**, then **identifier/locality prefix**, then sort tier (multi-word / id-shaped queries only: exact object id > id prefix/substring > exact normalized text > FTS), then `objects_core.weight DESC NULLS LAST` (earned payouts), then `object_id` for deterministic paging. Ranking is viewer-independent. Single-token text queries use the fast FTS path (prefix flags, no sort tiers). No `ts_rank_cd` over the full GIN hit set. Then load aggregates, resolve, project.
-8. **`/search/counts`:** `GROUP BY object_type` with `COUNT(DISTINCT COALESCE(meta_group_id, object_id))` over FTS + id prefix + identifier + locality (+ optional id substring) candidates; the name/title-prefix boost in step 2 affects `/search` ordering, not counts.
+Objects are searched in the read model [`object_search_docs`](../../chain-indexer/spec/object-search-docs.md): one document per active object holding only resolver winners (old, losing and rejected values never match). Only `repositories/search.repository.ts` and `repositories/object-search-filters.sql.ts` name that table.
+
+**Tokenization** (`buildPrefixTsQuery` from `@opden-data-layer/object-search`, the same `normalizeSearchText` that builds the index): NFKC, lower case, format characters deleted, apostrophes inside words deleted (`women's` = `womens`), every other non-letter/digit/mark run is a space. Then, at most 10 tokens:
+
+| Token | Becomes | Example |
+|---|---|---|
+| 2+ characters, or one Han / Kana / Hangul character | prefix `tok:*` | `greek tav` → `greek:* & tav:*`; `kvu-kis` → `kvu:* & kis:*` |
+| one character, not last | exact `tok` | `iphone 5 pro` → `iphone:* & 5 & pro:*` |
+| one character, last | dropped (still being typed) | `vitamin c` → `vitamin:*` |
+
+No prefix term left (`c`, `c++`) → no object search (empty list, empty counts). Limits: no stemming, no accent folding (`café` ≠ `cafe`), no substring inside `object_id` (ids match by their words), CJK / Thai text without spaces is one word matched by prefix.
+
+1. **`/search`:** documents with `search_vector @@ to_tsquery('simple', :tsQuery)` (GIN `idx_object_search_docs_vector`); flags on the found rows: exact `object_id = :q`, exact `name_norm = normalize(:q)`, `name_norm LIKE normalize(:q) || '%'`. Collapse with `DISTINCT ON (group_key)` keeping the best row by those flags, then `weight DESC NULLS LAST`, then `object_id`. Final order: exact id, exact name, name prefix, weight, `object_id` (`COLLATE "C"`). Ranking is viewer-independent. Then `projectByObjectIds` loads **active** cores only, resolves and projects — a document left for a just-deactivated object is dropped there.
+2. **`/search/counts`:** the same text condition over at most `cap + 1` documents, `GROUP BY object_type` with `COUNT(DISTINCT group_key)`; `counts_capped` when more than the cap matched. For at most one indexer tick (3 s) after a status change a deactivated object can still be counted.
 
 Object SQL and user SQL for `/search` run **in parallel** in `GetSearchEndpoint`. `/search/counts` runs `countObjectsByType` and `countUsers` in parallel in `GetSearchCountsEndpoint`.
 
@@ -109,39 +118,6 @@ Object SQL and user SQL for `/search` run **in parallel** in `GetSearchEndpoint`
 
 Validation failures on query params return **400** (Zod pipe). Infrastructure failures in repositories log and return empty slices / zero counts where documented.
 
-## Discover endpoints
+## Discover
 
-Used by the web `/discover` page (BFF proxies under `/api/discover/*`).
-
-| Method | Path | Auth |
-|--------|------|------|
-| `GET` | `/query/v1/discover/objects` | Optional `X-Viewer` |
-| `GET` | `/query/v1/discover/users` | Optional `X-Viewer` |
-| `GET` | `/query/v1/discover/tag-categories` | None |
-
-### Query parameters — `GET /discover/objects`
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `object_type` | string | no | Registry object type filter |
-| `q` | string | no | Optional FTS within discover scope (max 100 chars) |
-| `tags` | string[] | no | Tag filters (`category:value`), AND semantics |
-| `sort` | `rank` \| `newest` \| `oldest` | no | Default `rank` |
-| `box` | string | no | Map bounding box: `swLng,swLat,neLng,neLat` (WGS84). Objects must have a latest `geo` update intersecting `ST_MakeEnvelope(..., 4326)`. |
-| `cursor` | string | no | Opaque pagination cursor |
-| `limit` | integer | no | Default 20, max 50 |
-
-Results collapse to **one row per `meta_group_id`** (`COALESCE(meta_group_id, object_id)`). The representative is the SKU that would appear first under the active sort among matching active objects: `rank` keeps highest `weight`, `newest`/`oldest` keep that group's newest or oldest `created_at`. Keyset cursor and `limit` apply after collapse.
-
-### Query parameters — `GET /discover/tag-categories`
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `object_type` | string | yes | Object type for facet listing |
-| `q` | string | no | Optional text filter (same FTS rules as objects) |
-| `tags` | string[] | no | Selected tags (AND) to narrow facets |
-| `box` | string | no | Same bounding box as objects; facet counts respect the geographic predicate |
-
-When `q`, any `tags`, or `box` is present, facet results are computed live and **not** read from or written to the per-`object_type` Redis cache key.
-
-Facet `count` is the number of **distinct active groups** (`COUNT(DISTINCT COALESCE(objects_core.meta_group_id, object_id))`), not SKU rows. Inactive objects are excluded.
+The Discover text and map filters use the same read model: [Discover endpoints](discover.md).

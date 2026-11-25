@@ -53,9 +53,10 @@ CREATE TABLE object_updates (
 CREATE INDEX idx_object_updates_object_id_update_type ON object_updates (object_id, update_type);
 CREATE INDEX idx_object_updates_search_vector ON object_updates USING GIN (search_vector);
 CREATE INDEX idx_object_updates_value_geo ON object_updates USING GIST (value_geo);
-CREATE INDEX idx_object_updates_update_type_value_text ON object_updates (update_type, value_text) WHERE value_text IS NOT NULL;
+-- LEFT(…, 2048): btree entries have a size limit; a query must compare LEFT(value_text, 2048) to use it.
+CREATE INDEX idx_object_updates_update_type_value_text ON object_updates (update_type, LEFT(value_text, 2048)) WHERE value_text IS NOT NULL;
 -- Case-insensitive exact match (uses the generated column; faster than LOWER(value_text) = $1).
-CREATE INDEX idx_object_updates_update_type_value_text_normalized ON object_updates (update_type, value_text_normalized) WHERE value_text_normalized IS NOT NULL;
+CREATE INDEX idx_object_updates_update_type_value_text_normalized ON object_updates (update_type, LEFT(value_text_normalized, 2048)) WHERE value_text_normalized IS NOT NULL;
 -- Trigram index for predictive-search name/title starts-with boost (LIKE 'query%'), incl. stopwords the english FTS strips.
 CREATE INDEX idx_object_updates_name_title_value_norm_trgm ON object_updates USING GIN (value_text_normalized gin_trgm_ops) WHERE update_type IN ('name', 'title') AND value_text_normalized IS NOT NULL;
 CREATE INDEX idx_object_updates_identifier_value_lower ON object_updates (lower(value_json->>'value') text_pattern_ops) WHERE update_type = 'identifier' AND value_json->>'value' IS NOT NULL;
@@ -859,3 +860,35 @@ CREATE TABLE feed_activity_presence (
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (tab, entity_kind, entity_id)
 );
+
+-- ---------------------------------------------------------------------------
+-- object_search_docs: one search document per active object (chain-indexer).
+-- @see docs/apps/chain-indexer/spec/object-search-docs.md
+-- ---------------------------------------------------------------------------
+CREATE TABLE object_search_docs (
+  object_id      TEXT PRIMARY KEY REFERENCES objects_core (object_id) ON DELETE CASCADE,
+  object_type    TEXT NOT NULL,
+  group_key      TEXT COLLATE "C" NOT NULL,   -- COALESCE(meta_group_id, object_id)
+  weight         DOUBLE PRECISION,            -- copy for sorting; deliberately not indexed (HOT updates)
+  created_at     TIMESTAMPTZ NOT NULL,
+  name           TEXT,
+  name_norm      TEXT,                        -- normalizeSearchText(name)
+  search_vector  TSVECTOR NOT NULL,           -- 'simple': A names, B titles, C identifiers/locality/id, D descriptions
+  geo            GEOMETRY(Point, 4326),       -- resolver winner of `geo`
+  content_hash   TEXT NOT NULL,               -- SHA-1 of format version + every field except weight
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+) WITH (fillfactor = 90);
+
+CREATE INDEX idx_object_search_docs_vector ON object_search_docs USING gin (search_vector);
+CREATE INDEX idx_object_search_docs_geo ON object_search_docs USING gist (geo) WHERE geo IS NOT NULL;
+CREATE INDEX idx_object_search_docs_type ON object_search_docs (object_type);
+
+-- enqueued_at = 0 for bulk rows (migration, rebuild); live events use unix time and are claimed first.
+CREATE TABLE object_search_docs_sync_queue (
+  object_id       TEXT PRIMARY KEY,
+  enqueued_at     BIGINT NOT NULL,
+  attempts        INTEGER NOT NULL DEFAULT 0,
+  last_attempt_at BIGINT NULL
+);
+CREATE INDEX idx_object_search_docs_sync_queue_pending
+  ON object_search_docs_sync_queue (last_attempt_at NULLS FIRST, enqueued_at DESC);

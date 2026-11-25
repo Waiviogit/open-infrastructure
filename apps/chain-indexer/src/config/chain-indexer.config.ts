@@ -87,5 +87,10 @@ export default () => {
       recomputeIntervalMs: env.CANONICAL_RECOMPUTE_INTERVAL_MS,
       recomputeBatchSize: env.CANONICAL_RECOMPUTE_BATCH_SIZE,
     },
+    objectSearchDocs: {
+      intervalMs: env.OBJECT_SEARCH_DOCS_INTERVAL_MS,
+      batchSize: env.OBJECT_SEARCH_DOCS_BATCH_SIZE,
+      maxBatchesPerTick: env.OBJECT_SEARCH_DOCS_MAX_BATCHES_PER_TICK,
+    },
   };
 };

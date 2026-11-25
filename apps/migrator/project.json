@@ -3,7 +3,14 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/migrator",
   "projectType": "application",
-  "implicitDependencies": ["migrations", "core", "scripts", "knowledge"],
+  "implicitDependencies": [
+    "migrations",
+    "core",
+    "scripts",
+    "knowledge",
+    "object-search",
+    "objects-domain"
+  ],
   "targets": {
     "docker-image": {
       "executor": "nx:run-commands",
@@ -11,6 +18,8 @@
         "{projectRoot}/Dockerfile",
         "{workspaceRoot}/libs/migrations/**/*",
         "{workspaceRoot}/libs/core/**/*",
+        "{workspaceRoot}/libs/object-search/**/*",
+        "{workspaceRoot}/libs/objects-domain/**/*",
         "{workspaceRoot}/scripts/**/*",
         "{workspaceRoot}/package.json",
         "{workspaceRoot}/pnpm-lock.yaml",

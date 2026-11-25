@@ -9,6 +9,7 @@ import {
   USER_OBJECT_POWERS_CREATE_EVENT,
   UserObjectPowersCreateEvent,
 } from '../../user-object-powers/user-object-powers.events';
+import { OBJECT_CREATED_EVENT, ObjectCreatedEvent } from '../object-created.event';
 
 @Injectable()
 export class ObjectCreateHandler implements OdlActionHandler {
@@ -54,6 +55,7 @@ export class ObjectCreateHandler implements OdlActionHandler {
       transaction_id: ctx.transactionId,
       created_at: hiveBlockTimestampToDate(ctx.timestamp),
     });
+    this.eventEmitter.emit(OBJECT_CREATED_EVENT, new ObjectCreatedEvent(object_id, object_type));
     this.eventEmitter.emit(
       USER_OBJECT_POWERS_CREATE_EVENT,
       new UserObjectPowersCreateEvent(creator),

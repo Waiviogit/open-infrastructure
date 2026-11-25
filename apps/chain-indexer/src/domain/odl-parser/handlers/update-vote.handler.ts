@@ -40,6 +40,10 @@ import {
   TagCategoryItemMutatedEvent,
   TAG_CATEGORY_ITEM_MUTATED_EVENT,
 } from '../tag-category-item-mutated.event';
+import {
+  OBJECT_UPDATE_MUTATED_EVENT,
+  ObjectUpdateMutatedEvent,
+} from '../object-update-mutated.event';
 import { NotificationEmitterService } from '../../notification-adapter/notification-emitter.service';
 
 @Injectable()
@@ -148,6 +152,10 @@ export class UpdateVoteHandler implements OdlActionHandler {
         );
       }
       this.eventEmitter.emit(
+        OBJECT_UPDATE_MUTATED_EVENT,
+        new ObjectUpdateMutatedEvent(object_id, votedUpdate.update_type),
+      );
+      this.eventEmitter.emit(
         GOVERNANCE_OBJECT_MUTATED_EVENT,
         new GovernanceObjectMutatedEvent(object_id),
       );
@@ -213,6 +221,10 @@ export class UpdateVoteHandler implements OdlActionHandler {
         new ObjectStatusRecomputeEvent(object_id),
       );
     }
+    this.eventEmitter.emit(
+      OBJECT_UPDATE_MUTATED_EVENT,
+      new ObjectUpdateMutatedEvent(object_id, votedUpdate.update_type),
+    );
     this.eventEmitter.emit(
       GOVERNANCE_OBJECT_MUTATED_EVENT,
       new GovernanceObjectMutatedEvent(object_id),

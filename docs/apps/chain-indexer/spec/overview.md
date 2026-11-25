@@ -6,7 +6,7 @@ type: overview
 status: active
 scope: chain-indexer
 tags: [chain-indexer, overview]
-updated_at: 2026-09-11
+updated_at: 2026-11-25
 related:
   - docs/README.md
   - docs/apps/chain-indexer/developer-guide.md
@@ -88,6 +88,7 @@ flowchart LR
 | [Account sync](account-sync.md) | `account_sync_queue`: `get_accounts` + followers/following/muted backfill when account is missing or on create |
 | [Meta group sync](meta-group-sync.md) | `meta_group_id` on `objects_core` synced from winning `group_id` via `ObjectViewService` + platform governance |
 | [Object categories](object-categories.md) | Materialized `category` per object + scoped `object_categories_related` for shop navigation queues |
+| [Object search documents](object-search-docs.md) | `object_search_docs`: one search document per active object (resolver winners, platform governance), queue + worker; read by query-api search and Discover |
 | [Object status](object-status.md) | `objects_core.status` materialized from vote-winning status updates + platform governance; `protected` is update-only; query-api exposes `active` only in discover/search |
 | [WAIV post reward](waiv-post-reward.md) | Root-post WAIV fields from HE `comments` parser; reconcile + finalize in scheduler |
 | [Hive Engine swaps](hive-engine-swaps.md) | Atomic `marketpools/swapTokens` rows in `hive_engine_swaps` from HE logs |

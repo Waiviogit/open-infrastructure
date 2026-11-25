@@ -46,6 +46,7 @@
     "backfill:user-object-powers": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-user-object-powers.ts",
     "backfill:object-categories": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-object-categories.ts",
     "categories:rebuild": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/rebuild-category-scopes.ts",
+    "search-docs:rebuild": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/rebuild-object-search-docs.ts",
     "backfill:object-statuses": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-object-statuses.ts",
     "backfill:user-account-auths": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-user-account-auths.ts",
     "backfill:reblog-timestamps": "tsx --tsconfig tsconfig.base.json --env-file=.env scripts/backfill-reblog-timestamps.ts",
@@ -64,7 +65,7 @@
     "fix:unused-imports": "node scripts/fix-unused-imports.mjs",
     "clean:cache": "node scripts/clean-cache.cjs",
     "typecheck:web": "pnpm nx run web:typecheck",
-    "typecheck:nest": "pnpm nx run-many -t typecheck -p auth-api chain-indexer query-api knowledge-api notifications ipfs-gateway scheduler stack-watchdog clients system-alerts odl-db-types",
+    "typecheck:nest": "pnpm nx run-many -t typecheck -p auth-api chain-indexer query-api knowledge-api notifications ipfs-gateway scheduler stack-watchdog clients system-alerts odl-db-types object-search",
     "scan:vulnerabilities": "osv-scanner scan source --config osv-scanner.toml -r . --format json --output-file osv-results.json",
     "verify:deps": "node scripts/verify-deps.cjs",
     "prepare": "husky"

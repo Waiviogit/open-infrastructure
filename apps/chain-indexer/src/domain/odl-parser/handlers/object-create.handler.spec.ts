@@ -1,6 +1,7 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OBJECT_TYPES } from '@opden-data-layer/core';
 import { ObjectCreateHandler } from './object-create.handler';
+import { OBJECT_CREATED_EVENT, ObjectCreatedEvent } from '../object-created.event';
 import type { OdlEventContext } from '../odl-action-handler';
 
 describe('ObjectCreateHandler', () => {
@@ -61,6 +62,10 @@ describe('ObjectCreateHandler', () => {
 
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({ creator: 'bob' }),
+    );
+    expect(emit).toHaveBeenCalledWith(
+      OBJECT_CREATED_EVENT,
+      new ObjectCreatedEvent('pgx-new', OBJECT_TYPES.RECIPE),
     );
   });
 

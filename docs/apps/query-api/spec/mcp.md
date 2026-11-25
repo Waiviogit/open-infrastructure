@@ -58,7 +58,7 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 |------|-----------------|------|
 | `search` | `GET /query/v1/search` | [search.md](search.md) |
 | `search_counts` | `GET /query/v1/search/counts` | [search.md](search.md) |
-| `discover_objects` | `GET /query/v1/discover/objects` | [search.md](search.md) |
+| `discover_objects` | `GET /query/v1/discover/objects` | [discover.md](discover.md) |
 | `discover_users` | `GET /query/v1/discover/users` | — |
 | `discover_tag_categories` | `GET /query/v1/discover/tag-categories` | — |
 | `resolve_object` | `POST /query/v1/objects/resolve` | [objects-resolve.md](objects-resolve.md) |

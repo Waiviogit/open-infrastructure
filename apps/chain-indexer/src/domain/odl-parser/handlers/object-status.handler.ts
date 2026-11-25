@@ -1,9 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import {
   materializeObjectCoreStatus,
   ObjectViewService,
 } from '@opden-data-layer/objects-domain';
+import { ObjectSearchQueueRepository } from '@opden-data-layer/object-search';
+import type { Kysely } from 'kysely';
+import { KYSELY, type Database } from '../../../database';
 import { GovernanceCacheService } from '../../governance/governance-cache.service';
 import {
   AggregatedObjectRepository,
@@ -19,6 +22,10 @@ import {
   ObjectActiveStateChangedEvent,
 } from '../object-active-state-changed.event';
 
+function nowUnixSec(): number {
+  return Math.floor(Date.now() / 1000);
+}
+
 @Injectable()
 export class ObjectStatusHandler {
   private readonly logger = new Logger(ObjectStatusHandler.name);
@@ -30,6 +37,8 @@ export class ObjectStatusHandler {
     private readonly objectsCoreRepository: ObjectsCoreRepository,
     private readonly objectTagCategoriesSyncQueueRepository: ObjectTagCategoriesSyncQueueRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly objectSearchQueueRepository: ObjectSearchQueueRepository,
+    @Inject(KYSELY) private readonly db: Kysely<Database>,
   ) {}
 
   @OnEvent(OBJECT_STATUS_RECOMPUTE_EVENT)
@@ -62,11 +71,20 @@ export class ObjectStatusHandler {
       return;
     }
 
-    await this.objectsCoreRepository.update(objectId, { status: nextStatus });
-
     const wasActive = previousStatus === 'active';
     const isActive = nextStatus === 'active';
-    if (wasActive !== isActive) {
+    const activeStateChanged = wasActive !== isActive;
+
+    // A search document exists only while the object is active: crossing that boundary enqueues
+    // its recompute in the same transaction, so the status is never stored without it.
+    await this.db.transaction().execute(async (trx) => {
+      await this.objectsCoreRepository.update(objectId, { status: nextStatus }, trx);
+      if (activeStateChanged) {
+        await this.objectSearchQueueRepository.enqueue(objectId, nowUnixSec(), trx);
+      }
+    });
+
+    if (activeStateChanged) {
       this.eventEmitter.emit(
         OBJECT_ACTIVE_STATE_CHANGED_EVENT,
         new ObjectActiveStateChangedEvent(objectId, aggregated.core.object_type, isActive),
@@ -74,7 +92,7 @@ export class ObjectStatusHandler {
       try {
         await this.objectTagCategoriesSyncQueueRepository.enqueue(
           objectId,
-          Math.floor(Date.now() / 1000),
+          nowUnixSec(),
         );
       } catch (error) {
         this.logger.error(

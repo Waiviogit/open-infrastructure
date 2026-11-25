@@ -2,6 +2,13 @@ import { calculatePostExpertiseDeltas } from '@opden-data-layer/core';
 import { PostExpertiseService } from './post-expertise.service';
 
 describe('PostExpertiseService', () => {
+  const trxMarker = { trx: true };
+
+  function queueOf(service: PostExpertiseService): { enqueueMany: jest.Mock } {
+    return (service as unknown as { objectSearchQueue: { enqueueMany: jest.Mock } })
+      .objectSearchQueue;
+  }
+
   const post: {
     author: string;
     permlink: string;
@@ -43,7 +50,7 @@ describe('PostExpertiseService', () => {
     );
     const applyExpertiseIncrements = jest.fn().mockResolvedValue(undefined);
     const execute = jest.fn(async (cb: (trx: object) => Promise<boolean>) =>
-      cb({}),
+      cb(trxMarker),
     );
     const transaction = jest.fn(() => ({ execute }));
 
@@ -69,6 +76,7 @@ describe('PostExpertiseService', () => {
         claimExpertiseApplied,
         applyExpertiseIncrements,
       },
+      objectSearchQueue: { enqueueMany: jest.fn().mockResolvedValue(undefined) },
       db: { transaction },
     });
     return service;
@@ -110,8 +118,36 @@ describe('PostExpertiseService', () => {
         0,
         [{ objectId: 'neoxian', percent: 100 }],
       ),
-      expect.anything(),
+      trxMarker,
     );
+  });
+
+  it('enqueues the objects whose weight changed inside the same transaction', async () => {
+    const service = makeService({
+      objectRows: [
+        { object_id: 'neoxian', percent: 60 },
+        { object_id: 'kvu-kis', percent: 40 },
+      ],
+    });
+    const ok = await service.applyForPost('alice', 'post-1');
+
+    expect(ok).toBe(true);
+    const [ids, enqueuedAt, trx] = queueOf(service).enqueueMany.mock.calls[0] as [
+      string[],
+      number,
+      object,
+    ];
+    expect([...ids].sort()).toEqual(['kvu-kis', 'neoxian']);
+    expect(Number.isInteger(enqueuedAt)).toBe(true);
+    expect(trx).toBe(trxMarker);
+  });
+
+  it('does not enqueue when the post was already claimed', async () => {
+    const service = makeService({ claimReturns: false });
+    const ok = await service.applyForPost('alice', 'post-1');
+
+    expect(ok).toBe(false);
+    expect(queueOf(service).enqueueMany).not.toHaveBeenCalled();
   });
 
   it('marks post without objects as applied without increments', async () => {
@@ -123,5 +159,6 @@ describe('PostExpertiseService', () => {
       postExpertiseRepository: { applyExpertiseIncrements: jest.Mock };
     }).postExpertiseRepository;
     expect(repo.applyExpertiseIncrements).not.toHaveBeenCalled();
+    expect(queueOf(service).enqueueMany).not.toHaveBeenCalled();
   });
 });

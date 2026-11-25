@@ -1,5 +1,7 @@
 /**
- * Recompute materialized `objects_core.status` from vote-winning status updates.
+ * Recompute materialized `objects_core.status` from vote-winning status updates. Every changed
+ * object is enqueued for its search document (`object_search_docs_sync_queue`) in the same
+ * transaction, so a deactivated object leaves search with the next chain-indexer worker tick.
  *
  * Usage:
  *   pnpm backfill:object-statuses [--dry-run] [--batch-size 200] [--object-id <id>]
@@ -12,11 +14,14 @@ import {
   materializeObjectCoreStatus,
   ObjectViewService,
 } from '@opden-data-layer/objects-domain';
+import { ObjectSearchQueueRepository } from '@opden-data-layer/object-search';
 import { resolveConnectionString } from '../libs/migrations/src/connection';
 import { Kysely, PostgresDialect } from 'kysely';
 import pg from 'pg';
 import { loadAggregatedByObjectIds } from './lib/load-aggregated-objects';
 import { resolvePlatformGovernance } from './lib/resolve-platform-governance';
+
+const MS_PER_SECOND = 1_000;
 
 interface CliOptions {
   dryRun: boolean;
@@ -73,6 +78,7 @@ async function main(): Promise<void> {
   const pool = new pg.Pool({ connectionString: resolveConnectionString() });
   const db = new Kysely<OdlDatabase>({ dialect: new PostgresDialect({ pool }) });
   const objectViewService = new ObjectViewService();
+  const objectSearchQueue = new ObjectSearchQueueRepository(db);
 
   const governanceObjectId = (process.env['GOVERNANCE_OBJECT_ID'] ?? '').trim();
   // eslint-disable-next-line no-console
@@ -144,14 +150,24 @@ async function main(): Promise<void> {
             continue;
           }
 
-          const result = await db
-            .updateTable('objects_core')
-            .set({ status: nextStatus })
-            .where('object_id', '=', objectId)
-            .where('status', 'is distinct from', nextStatus)
-            .executeTakeFirst();
-
-          const numUpdated = Number(result.numUpdatedRows ?? 0);
+          // The status write and its search-document recompute commit together, as in the indexer.
+          const numUpdated = await db.transaction().execute(async (trx) => {
+            const result = await trx
+              .updateTable('objects_core')
+              .set({ status: nextStatus })
+              .where('object_id', '=', objectId)
+              .where('status', 'is distinct from', nextStatus)
+              .executeTakeFirst();
+            const updated = Number(result.numUpdatedRows ?? 0);
+            if (updated > 0) {
+              await objectSearchQueue.enqueue(
+                objectId,
+                Math.floor(Date.now() / MS_PER_SECOND),
+                trx,
+              );
+            }
+            return updated;
+          });
           if (numUpdated > 0) {
             rowsWritten += 1;
             // eslint-disable-next-line no-console

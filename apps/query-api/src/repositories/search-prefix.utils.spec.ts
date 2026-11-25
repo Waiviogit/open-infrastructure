@@ -1,8 +1,4 @@
-import {
-  prefixUpperBound,
-  shouldSearchObjectIdSubstring,
-  shouldSearchPrefix,
-} from './search-prefix.utils';
+import { escapeIlikePattern, prefixUpperBound } from './search-prefix.utils';
 
 describe('prefixUpperBound', () => {
   it('increments last character for btree prefix upper bound', () => {
@@ -26,36 +22,12 @@ describe('prefixUpperBound', () => {
   });
 });
 
-describe('shouldSearchPrefix', () => {
-  it('returns true for three-character queries', () => {
-    expect(shouldSearchPrefix('kvu')).toBe(true);
-    expect(shouldSearchPrefix('abc')).toBe(true);
+describe('escapeIlikePattern', () => {
+  it('escapes backslash, percent and underscore', () => {
+    expect(escapeIlikePattern('a\\b%c_d')).toBe('a\\\\b\\%c\\_d');
   });
 
-  it('returns false below three characters after trim', () => {
-    expect(shouldSearchPrefix('ab')).toBe(false);
-    expect(shouldSearchPrefix('  ab  ')).toBe(false);
-  });
-
-  it('uses trimmed length', () => {
-    expect(shouldSearchPrefix('  kvu')).toBe(true);
-    expect(shouldSearchPrefix('kvu  ')).toBe(true);
-  });
-});
-
-describe('shouldSearchObjectIdSubstring', () => {
-  it('returns false for short text queries without hyphen', () => {
-    expect(shouldSearchObjectIdSubstring('grampo')).toBe(false);
-    expect(shouldSearchObjectIdSubstring('flowmaster')).toBe(false);
-    expect(shouldSearchObjectIdSubstring('kvu')).toBe(false);
-  });
-
-  it('returns true for id-shaped queries', () => {
-    expect(shouldSearchObjectIdSubstring('abc-12345-uuid')).toBe(true);
-    expect(shouldSearchObjectIdSubstring('kvu-kisa')).toBe(true);
-  });
-
-  it('returns false when hyphen present but too short', () => {
-    expect(shouldSearchObjectIdSubstring('ab-c')).toBe(false);
+  it('leaves other characters unchanged', () => {
+    expect(escapeIlikePattern('shadow.hunter-1')).toBe('shadow.hunter-1');
   });
 });

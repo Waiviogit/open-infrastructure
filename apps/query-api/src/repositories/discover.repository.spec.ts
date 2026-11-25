@@ -116,7 +116,7 @@ describe('DiscoverRepository', () => {
 
   const SAMPLE_BOX = { swLng: -123.2, swLat: 49.1, neLng: -123.0, neLat: 49.3 };
 
-  it('listObjects binds ST_MakeEnvelope when box is applied', async () => {
+  it('listObjects narrows by the search documents when box is applied', async () => {
     const executeQuery = jest.fn().mockResolvedValue({ rows: [] });
     const db = createQueryCapturingDb(executeQuery);
     const repo = new DiscoverRepository(db as never, emptyRedisFactory());
@@ -130,15 +130,17 @@ describe('DiscoverRepository', () => {
 
     expect(executeQuery).toHaveBeenCalledTimes(1);
     const compiled = executeQuery.mock.calls[0][0] as { sql: string; parameters: unknown[] };
-    expect(compiled.sql).toContain('ST_Intersects');
-    expect(compiled.sql).toContain('ST_MakeEnvelope');
+    expect(compiled.sql).toContain('object_search_docs');
+    expect(compiled.sql).toContain('d.geo && ST_MakeEnvelope');
+    expect(compiled.sql).not.toContain('ST_Intersects');
+    expect(compiled.sql).not.toContain('d.object_type =');
     expect(compiled.parameters).toEqual(
       expect.arrayContaining([-123.2, 49.1, -123.0, 49.3]),
     );
     expect(compiled.sql).toContain('4326');
   });
 
-  it('listObjects omits geographic predicate when no box is applied', async () => {
+  it('listObjects omits the search documents when neither text nor box is applied', async () => {
     const executeQuery = jest.fn().mockResolvedValue({ rows: [] });
     const db = createQueryCapturingDb(executeQuery);
     const repo = new DiscoverRepository(db as never, emptyRedisFactory());
@@ -146,7 +148,7 @@ describe('DiscoverRepository', () => {
     await repo.listObjects({ tags: [], sort: 'rank', limit: 20 });
 
     const compiled = executeQuery.mock.calls[0][0] as { sql: string };
-    expect(compiled.sql).not.toContain('ST_Intersects');
+    expect(compiled.sql).not.toContain('object_search_docs');
     expect(compiled.sql).not.toContain('ST_MakeEnvelope');
   });
 
@@ -164,31 +166,57 @@ describe('DiscoverRepository', () => {
       box: SAMPLE_BOX,
     });
 
-    const compiled = executeQuery.mock.calls[0][0] as { sql: string };
+    const compiled = executeQuery.mock.calls[0][0] as { sql: string; parameters: unknown[] };
     expect(compiled.sql).toContain('oc.object_type =');
     expect(compiled.sql).toContain('object_tag_category_items');
-    expect(compiled.sql).toContain('search_vector');
-    expect(compiled.sql).toContain('to_tsquery');
+    expect(compiled.sql).toContain('object_search_docs');
+    expect(compiled.sql).toContain('d.object_type =');
+    expect(compiled.sql).toContain("to_tsquery('simple'");
     expect(compiled.sql).toContain('ST_MakeEnvelope');
+    expect(compiled.parameters).toEqual(expect.arrayContaining(['sushi:*', 'restaurant']));
   });
 
-  it('listObjects text query includes name, identifier, and locality prefix paths', async () => {
+  it('listObjects text query reads the search documents only', async () => {
     const executeQuery = jest.fn().mockResolvedValue({ rows: [] });
     const db = createQueryCapturingDb(executeQuery);
     const repo = new DiscoverRepository(db as never, emptyRedisFactory());
 
     await repo.listObjects({
       objectType: 'restaurant',
-      q: 'agassiz',
+      q: 'Greek Tav',
       tags: [],
       sort: 'rank',
       limit: 20,
     });
 
-    const compiled = executeQuery.mock.calls[0][0] as { sql: string };
-    expect(compiled.sql).toContain('value_text_normalized');
-    expect(compiled.sql).toContain("value_json->>'value'");
-    expect(compiled.sql).toContain("value_json->>'locality'");
+    const compiled = executeQuery.mock.calls[0][0] as { sql: string; parameters: unknown[] };
+    expect(compiled.sql).toContain('d.search_vector @@');
+    expect(compiled.sql).not.toContain('object_updates');
+    expect(compiled.parameters).toContain('greek:* & tav:*');
+  });
+
+  it('untyped listObjects text query adds no type condition on the documents', async () => {
+    const executeQuery = jest.fn().mockResolvedValue({ rows: [] });
+    const db = createQueryCapturingDb(executeQuery);
+    const repo = new DiscoverRepository(db as never, emptyRedisFactory());
+
+    await repo.listObjects({ q: 'greek', tags: [], sort: 'rank', limit: 20 });
+
+    const compiled = executeQuery.mock.calls[0][0] as { sql: string; parameters: unknown[] };
+    expect(compiled.sql).toContain('object_search_docs');
+    expect(compiled.sql).not.toContain('object_type =');
+    expect(compiled.parameters).not.toContain('');
+  });
+
+  it('listObjects returns an empty page without querying when the text has no searchable word', async () => {
+    const executeQuery = jest.fn().mockResolvedValue({ rows: [] });
+    const db = createQueryCapturingDb(executeQuery);
+    const repo = new DiscoverRepository(db as never, emptyRedisFactory());
+
+    const result = await repo.listObjects({ q: 'c++', tags: [], sort: 'rank', limit: 20 });
+
+    expect(result).toEqual({ rows: [], hasMore: false });
+    expect(executeQuery).not.toHaveBeenCalled();
   });
 
   it('listObjects returns empty result when boxed query fails', async () => {
@@ -257,7 +285,7 @@ describe('DiscoverRepository', () => {
     }
   });
 
-  it('getTagCategories with box applies geographic predicate', async () => {
+  it('getTagCategories with box narrows by the search documents', async () => {
     const executeQuery = jest.fn().mockResolvedValue({ rows: [] });
     const db = createQueryCapturingDb(executeQuery);
     const repo = new DiscoverRepository(db as never, emptyRedisFactory());
@@ -266,6 +294,7 @@ describe('DiscoverRepository', () => {
 
     expect(executeQuery).toHaveBeenCalledTimes(1);
     const compiled = executeQuery.mock.calls[0][0] as { sql: string };
+    expect(compiled.sql).toContain('object_search_docs');
     expect(compiled.sql).toContain('ST_MakeEnvelope');
     expect(compiled.sql).toContain('objects_core');
   });

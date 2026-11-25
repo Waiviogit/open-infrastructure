@@ -6,11 +6,14 @@ import {
   calculatePostExpertiseDeltas,
   type PostObjectExpertiseShare,
 } from '@opden-data-layer/core';
+import { ObjectSearchQueueRepository } from '@opden-data-layer/object-search';
 import { KYSELY, type Database } from '../../database';
 import { HiveEngineRatesRepository } from '../../repositories/hive-engine-rates.repository';
 import { PostExpertiseRepository } from '../../repositories/post-expertise.repository';
 import { PostObjectsRepository } from '../../repositories/post-objects.repository';
 import { PostsRewardRepository } from '../../repositories/posts-reward.repository';
+
+const MS_PER_SECOND = 1_000;
 
 @Injectable()
 export class PostExpertiseService {
@@ -22,6 +25,7 @@ export class PostExpertiseService {
     private readonly postObjectsRepository: PostObjectsRepository,
     private readonly postExpertiseRepository: PostExpertiseRepository,
     private readonly hiveEngineRatesRepository: HiveEngineRatesRepository,
+    private readonly objectSearchQueue: ObjectSearchQueueRepository,
   ) {}
 
   async applyForPost(author: string, permlink: string): Promise<boolean> {
@@ -100,6 +104,12 @@ export class PostExpertiseService {
         await this.postExpertiseRepository.applyExpertiseIncrements(
           post.author,
           deltas,
+          trx,
+        );
+        // Weight is a search-document sort field: refresh the documents with the weight write.
+        await this.objectSearchQueue.enqueueMany(
+          deltas.map((d) => d.objectId),
+          Math.floor(Date.now() / MS_PER_SECOND),
           trx,
         );
       }

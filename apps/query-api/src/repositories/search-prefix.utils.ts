@@ -1,11 +1,3 @@
-/** Min trimmed query length for btree/LIKE prefix on object_id, name/title, identifier, locality. */
-export const SEARCH_PREFIX_MIN_LENGTH = 3;
-
-/** Enable prefix match (`>= prefix AND < upper` or `LIKE prefix%`) when trim(q) has enough chars. */
-export function shouldSearchPrefix(q: string): boolean {
-  return q.trim().length >= SEARCH_PREFIX_MIN_LENGTH;
-}
-
 /**
  * Prefix range upper bound for btree `col >= prefix AND col < upper`.
  * ASCII increment on last code unit (Hive account names; kebab `object_id` only with `COLLATE "C"` —
@@ -22,8 +14,7 @@ export function prefixUpperBound(prefix: string): string {
   return prefix.slice(0, -1) + String.fromCharCode(last + 1);
 }
 
-/** Enable expensive `object_id ILIKE '%q%'` only for id-shaped queries. */
-export function shouldSearchObjectIdSubstring(q: string): boolean {
-  const t = q.trim();
-  return t.length >= 8 && t.includes('-');
+/** Escapes `\`, `%` and `_` for `LIKE` / `ILIKE … ESCAPE '\'` and btree prefix ranges. */
+export function escapeIlikePattern(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 }

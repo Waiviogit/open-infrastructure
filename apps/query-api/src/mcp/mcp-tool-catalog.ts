@@ -41,7 +41,7 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   {
     name: 'search_counts',
     description:
-      'Tab counts for search (objects by type + users). Pair with search when UI needs totals.',
+      'Tab counts for search: objects by type (counted in product groups) + users. Object counts stop at a cap: when counts_capped is true every type count is a lower bound (show N+). Pair with search when UI needs tab badges.',
     httpEquivalent: 'GET /query/v1/search/counts',
     specPath: 'docs/apps/query-api/spec/search.md',
   },
@@ -50,7 +50,7 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     description:
       'Browse objects by type, tags (AND), sort, optional text query, optional map bounding box (swLng,swLat,neLng,neLat) and category_path; other=true lists the Other category of category_path (objects in none of its shown child categories). Use for catalog/discover pages, not quick search.',
     httpEquivalent: 'GET /query/v1/discover/objects',
-    specPath: 'docs/apps/query-api/spec/search.md',
+    specPath: 'docs/apps/query-api/spec/discover.md',
   },
   {
     name: 'discover_users',

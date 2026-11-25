@@ -56,7 +56,16 @@ function discoverChipClass(): string {
   ].join(' ');
 }
 
-function ChipCountSuffix({ loading, value }: { loading: boolean; value: number }) {
+function ChipCountSuffix({
+  loading,
+  value,
+  capped = false,
+}: {
+  loading: boolean;
+  value: number;
+  /** The count is a lower bound (`N+`). */
+  capped?: boolean;
+}) {
   if (loading) {
     return (
       <span
@@ -65,7 +74,7 @@ function ChipCountSuffix({ loading, value }: { loading: boolean; value: number }
       />
     );
   }
-  return <span className="tabular-nums"> ({value})</span>;
+  return <span className="tabular-nums"> ({value}{capped ? '+' : ''})</span>;
 }
 
 function DiscoverChipSkeletons() {
@@ -106,6 +115,7 @@ export function SearchDropdown({
         .map((ot) => [ot, results.objects.filter((o) => o.object_type === ot).length] as const);
 
   const usersChipCount = hasGlobalCounts ? counts.total_users : results.users.length;
+  const objectCountsCapped = hasGlobalCounts && counts.counts_capped;
   const showUsersChip = usersChipCount > 0;
 
   function navigateEntry(entry: SearchFlatEntry) {
@@ -144,7 +154,11 @@ export function SearchDropdown({
                   onClick={() => onClose()}
                 >
                   {formatObjectTypeLabel(ot)}
-                  <ChipCountSuffix loading={countsPending} value={count} />
+                  <ChipCountSuffix
+                    loading={countsPending}
+                    value={count}
+                    capped={objectCountsCapped}
+                  />
                 </Link>
               ))}
               {showUsersChip ? (

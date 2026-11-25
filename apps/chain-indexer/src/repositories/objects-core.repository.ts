@@ -1,14 +1,20 @@
 import { Injectable, Inject } from '@nestjs/common';
-import type { Kysely } from 'kysely';
+import type { Kysely, Transaction } from 'kysely';
 import type { Database } from '../database';
 import { KYSELY } from '../database';
 import { ObjectsCore, NewObjectsCore, ObjectsCoreUpdate } from '@opden-data-layer/odl-db-types';
 
 const OBJECT_ID_IN_CHUNK = 400;
 
+export type ObjectsCoreDbExecutor = Kysely<Database> | Transaction<Database>;
+
 @Injectable()
 export class ObjectsCoreRepository {
   constructor(@Inject(KYSELY) private readonly db: Kysely<Database>) {}
+
+  private executor(trx?: ObjectsCoreDbExecutor): ObjectsCoreDbExecutor {
+    return trx ?? this.db;
+  }
 
   /**
    * Returns object_type per existing object_id (batched). Unknown ids are omitted.
@@ -89,8 +95,8 @@ export class ObjectsCoreRepository {
     return query.selectAll().execute();
   }
 
-  async update(objectId: string, updateWith: ObjectsCoreUpdate) {
-    await this.db
+  async update(objectId: string, updateWith: ObjectsCoreUpdate, trx?: ObjectsCoreDbExecutor) {
+    await this.executor(trx)
       .updateTable('objects_core')
       .set(updateWith)
       .where('object_id', '=', objectId)
