@@ -10,7 +10,7 @@ import {
   type SearchResult,
 } from '../support/knowledge-fixtures';
 
-describe('POST /knowledge/mcp — read skills', () => {
+describe('POST /mcp — read skills', () => {
   async function searchTopPath(query: string): Promise<SearchResult> {
     const { data, isError } = await mcpCallTool<SearchKnowledgeResponse>(
       'search_knowledge',

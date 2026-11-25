@@ -6,15 +6,16 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, mcp, agent]
-updated_at: 2026-11-12
+updated_at: 2026-11-25
 related:
   - docs/apps/query-api/spec/overview.md
   - docs/apps/query-api/spec/geoip.md
+  - docs/deployment/mcp-endpoints.md
 ---
 
 # query-api MCP (agent mirror)
 
-Read-only **live data** MCP at `POST /query/mcp` (no URI version). Each tool delegates to the same `*Endpoint.execute()` used by HTTP controllers.
+Read-only **live data** MCP at `POST /query/mcp` (no URI version). Each tool delegates to the same `*Endpoint.execute()` used by HTTP controllers. A plain GET returns a markdown guide; GET with `Accept: text/event-stream` returns 405 — see [Public MCP endpoints](../../../deployment/mcp-endpoints.md).
 
 **Back:** [overview](overview.md) · **Routing skill:** `query-api-mcp-routing` (`npx skills add https://github.com/Waiviogit/skills`, or knowledge-api `get_file odl/query-api-mcp-routing/SKILL.md`).
 

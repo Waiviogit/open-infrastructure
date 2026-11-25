@@ -8,7 +8,7 @@ import {
 } from '../support/mcp-client';
 import { CORE_MCP_TOOLS } from '../support/knowledge-fixtures';
 
-describe('POST /knowledge/mcp — session', () => {
+describe('POST /mcp — session', () => {
   it('should initialize MCP and advertise knowledge-api server', async () => {
     const result = await mcpInitialize();
     expect(result?.instructions).toContain('knowledge-api-routing');

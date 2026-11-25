@@ -16,7 +16,7 @@ import {
   type SearchKnowledgeResponse,
 } from '../support/knowledge-fixtures';
 
-describe('POST /knowledge/mcp — skill discovery', () => {
+describe('POST /mcp — skill discovery', () => {
   describe('hive account signup', () => {
     it.each(HIVE_DISCOVERY_QUERIES)(
       'finds $expectedPath for "$query"',

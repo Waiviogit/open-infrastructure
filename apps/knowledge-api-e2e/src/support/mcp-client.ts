@@ -34,7 +34,7 @@ export async function mcpRequest(
   params: Record<string, unknown> = {},
   id: string | number = 1,
 ): Promise<McpRpcResponse> {
-  const res = await fetch(`${baseUrl()}/knowledge/mcp`, {
+  const res = await fetch(`${baseUrl()}/mcp`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',

@@ -10,3 +10,4 @@ export * from './ipfs-client';
 export * from './coingecko-client';
 export * from './exchange-rate-client';
 export * from './changelly-client';
+export * from './mcp-http';

@@ -6,10 +6,11 @@ type: overview
 status: active
 scope: knowledge-api
 tags: [knowledge-api, overview]
-updated_at: 2026-11-10
+updated_at: 2026-11-25
 related:
   - docs/README.md
   - docs/apps/knowledge-api/spec/search.md
+  - docs/deployment/mcp-endpoints.md
 ---
 
 # knowledge-api
@@ -34,7 +35,7 @@ Legacy `docs/skills/...` paths still resolve via `get_file` for one release (`mo
 ## Stack
 
 - NestJS, Kysely + Postgres (`knowledge_files`, `knowledge_chunks`)
-- `@modelcontextprotocol/sdk` — Streamable HTTP, stateless `POST /knowledge/mcp`
+- `@modelcontextprotocol/sdk` — Streamable HTTP, stateless `POST /mcp` (public `https://<site>/mcp`, outside the `/knowledge` prefix; GET returns a guide — see [Public MCP endpoints](../../../deployment/mcp-endpoints.md))
 - Default port **7400** (`KNOWLEDGE_API_PORT`)
 - Hybrid search: FTS (`to_tsquery` prefix) + `ts_rank_cd` + `pg_trgm` on `routing_text`
 
@@ -140,7 +141,7 @@ docker compose -p apps run --rm migrator pnpm exec tsx --tsconfig tsconfig.base.
 {
   "mcpServers": {
     "odl-knowledge": {
-      "url": "http://localhost:7400/knowledge/mcp"
+      "url": "http://localhost:7400/mcp"
     }
   }
 }

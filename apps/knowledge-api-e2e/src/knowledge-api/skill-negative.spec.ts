@@ -1,7 +1,7 @@
 import { mcpCallTool } from '../support/mcp-client';
 import { PATHS, type SearchKnowledgeResponse } from '../support/knowledge-fixtures';
 
-describe('POST /knowledge/mcp — negative search', () => {
+describe('POST /mcp — negative search', () => {
   it('does not surface hive signup skill for unrelated solana query', async () => {
     const { data, isError } = await mcpCallTool<SearchKnowledgeResponse>(
       'search_knowledge',

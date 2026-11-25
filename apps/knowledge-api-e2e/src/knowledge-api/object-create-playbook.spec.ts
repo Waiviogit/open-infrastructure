@@ -9,7 +9,7 @@ interface ObjectCreatePlaybookResponse {
   warnings: string[];
 }
 
-describe('POST /knowledge/mcp — get_object_create_playbook', () => {
+describe('POST /mcp — get_object_create_playbook', () => {
   it('returns recipe playbook with required updates and summaries', async () => {
     const { data, isError } = await mcpCallTool<ObjectCreatePlaybookResponse>(
       'get_object_create_playbook',

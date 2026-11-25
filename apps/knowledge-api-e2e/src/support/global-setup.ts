@@ -4,7 +4,7 @@ import { waitForPortOpen } from '@nx/node/utils';
 var __TEARDOWN_MESSAGE__: string;
 
 async function assertKnowledgeIndexPopulated(baseUrl: string): Promise<void> {
-  const res = await fetch(`${baseUrl}/knowledge/mcp`, {
+  const res = await fetch(`${baseUrl}/mcp`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',

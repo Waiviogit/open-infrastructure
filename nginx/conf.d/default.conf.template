@@ -52,6 +52,17 @@ upstream vip_tickets_app {
     server vip-tickets:7611 resolve;
 }
 
+# MCP endpoints accept GET, so an agent probing the URL learns what it is instead of a bare 403.
+# knowledge-api (/mcp) and query-api (/query/mcp) answer GET themselves. vip-tickets has no
+# source in this repo, so nginx answers its GET: Accept text/event-stream (an MCP client asking
+# for an SSE stream) -> 405 per MCP spec; any other GET/HEAD -> 200 markdown guide.
+# See docs/deployment/mcp-endpoints.md
+map "$request_method:$http_accept" $vip_tickets_mcp_get {
+    default                       "";
+    "~*^GET:.*text/event-stream"  sse;
+    "~^(GET|HEAD):"               guide;
+}
+
 # Per-IP rate limit for auth challenge/verify endpoints
 limit_req_zone $binary_remote_addr zone=auth_api_limit:10m rate=10r/s;
 
@@ -79,7 +90,7 @@ server {
     }
 
     location = /query/mcp {
-        limit_except POST { deny all; }
+        limit_except GET POST OPTIONS { deny all; }
         proxy_pass http://query_api_app;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -89,8 +100,9 @@ server {
         proxy_read_timeout 300s;
     }
 
-    location = /knowledge/mcp {
-        limit_except POST { deny all; }
+    # knowledge-api MCP lives at the site root. The old /knowledge/mcp path is gone.
+    location = /mcp {
+        limit_except GET POST OPTIONS { deny all; }
         proxy_pass http://knowledge_api_app;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -101,7 +113,15 @@ server {
     }
 
     location = /vip-tickets/mcp {
-        limit_except POST { deny all; }
+        limit_except GET POST OPTIONS { deny all; }
+        error_page 418 = @vip_tickets_mcp_sse;
+        error_page 419 = @vip_tickets_mcp_guide;
+        if ($vip_tickets_mcp_get = sse) {
+            return 418;
+        }
+        if ($vip_tickets_mcp_get = guide) {
+            return 419;
+        }
         proxy_pass http://vip_tickets_app;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -109,6 +129,38 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 300s;
+    }
+
+    location @vip_tickets_mcp_sse {
+        default_type application/json;
+        add_header Allow POST always;
+        return 405 '{"jsonrpc":"2.0","error":{"code":-32000,"message":"Method not allowed: stateless MCP server, no SSE stream. Send JSON-RPC with POST to this URL."},"id":null}';
+    }
+
+    location @vip_tickets_mcp_guide {
+        default_type "text/markdown; charset=utf-8";
+        add_header X-Robots-Tag noindex always;
+        return 200 '# VIP tickets MCP server
+
+You opened https://${DOMAIN}/vip-tickets/mcp with GET. This URL is an MCP server (Model Context Protocol, Streamable HTTP), not a web page or REST API. Nothing is wrong: send JSON-RPC 2.0 requests to this same URL with POST.
+
+## Connect an MCP client
+
+```json
+{ "mcpServers": { "vip-tickets": { "url": "https://${DOMAIN}/vip-tickets/mcp" } } }
+```
+
+Claude Code: `claude mcp add --transport http vip-tickets https://${DOMAIN}/vip-tickets/mcp`
+
+## Call it without an MCP client
+
+Every request: `POST`, `Content-Type: application/json`, `Accept: application/json, text/event-stream` (without `text/event-stream` the server answers 406). Start with the `initialize` method; its result carries the server instructions. Then `tools/list` and `tools/call`.
+
+## Related MCP servers
+
+- Docs, specs and skills (knowledge): https://${DOMAIN}/mcp
+- Live platform data: https://${DOMAIN}/query/mcp
+';
     }
 
     # ipfs-gateway (content/namespaces public; upload JWT in app)
