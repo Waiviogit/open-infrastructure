@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { useLoginModal } from '@/modules/auth';
+// Saving notes is paused (docs/apps/web/spec/activity-notes.md).
+// import { useLoginModal } from '@/modules/auth';
 
-import type { ActivityNote, ActivityNoteErrorCode } from '../domain/activity-note.types';
+// import type { ActivityNote, ActivityNoteErrorCode } from '../domain/activity-note.types';
 import { parseActivityNoteImportHash } from '../domain/parse-activity-note-import-hash';
-import { createActivityNoteAction } from '../infrastructure/activity-notes.actions';
+// import { createActivityNoteAction } from '../infrastructure/activity-notes.actions';
 import { ActivityNoteBody } from './activity-note-body';
-import { activityNoteErrorMessageKey } from './activity-note-error-message';
+// import { activityNoteErrorMessageKey } from './activity-note-error-message';
 
 /** Drops the import hash from the address bar and keeps Next's history state (`__NA`). */
 function clearImportHash(): void {
@@ -17,33 +18,30 @@ function clearImportHash(): void {
   window.history.replaceState(window.history.state, '', `${pathname}${search}`);
 }
 
-export type ActivityNoteImportBannerProps = {
-  messageId: string;
-  viewerUsername: string | null;
-  onSaved?: (note: ActivityNote) => void;
-};
+// Saving notes is paused: the banner only shows the note (docs/apps/web/spec/activity-notes.md).
+// export type ActivityNoteImportBannerProps = {
+//   messageId: string;
+//   viewerUsername: string | null;
+//   onSaved?: (note: ActivityNote) => void;
+// };
 
 /**
- * One-shot import from an agent link (`#note=…` or the legacy `#top=…&v=…`).
- * Shows the note; nothing is stored until the viewer clicks Save.
+ * One-shot view of a note from an agent link (`#note=…` or the legacy `#top=…&v=…`).
+ * Shows the note with Copy on its code blocks; nothing is stored.
  *
  * @see docs/apps/web/spec/activity-notes.md
  */
-export function ActivityNoteImportBanner({
-  messageId,
-  viewerUsername,
-  onSaved,
-}: ActivityNoteImportBannerProps) {
+export function ActivityNoteImportBanner() {
   const { t } = useI18n();
-  const { openLogin } = useLoginModal();
+  // const { openLogin } = useLoginModal();
   const [markdown, setMarkdown] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-  const [errorCode, setErrorCode] = useState<ActivityNoteErrorCode | null>(null);
+  // const [pending, setPending] = useState(false);
+  // const [errorCode, setErrorCode] = useState<ActivityNoteErrorCode | null>(null);
 
   useEffect(() => {
     const readHash = () => {
       setMarkdown(parseActivityNoteImportHash(window.location.hash));
-      setErrorCode(null);
+      // setErrorCode(null);
     };
     readHash();
     window.addEventListener('hashchange', readHash);
@@ -53,33 +51,33 @@ export function ActivityNoteImportBanner({
   const dismiss = useCallback(() => {
     clearImportHash();
     setMarkdown(null);
-    setErrorCode(null);
+    // setErrorCode(null);
   }, []);
 
-  const save = useCallback(async () => {
-    if (!markdown || pending) {
-      return;
-    }
-    if (!viewerUsername) {
-      openLogin();
-      return;
-    }
-    setPending(true);
-    setErrorCode(null);
-    try {
-      const result = await createActivityNoteAction(messageId, markdown);
-      if (!result.ok) {
-        setErrorCode(result.error.code);
-        return;
-      }
-      onSaved?.(result.value);
-      dismiss();
-    } catch {
-      setErrorCode('network');
-    } finally {
-      setPending(false);
-    }
-  }, [dismiss, markdown, messageId, onSaved, openLogin, pending, viewerUsername]);
+  // const save = useCallback(async () => {
+  //   if (!markdown || pending) {
+  //     return;
+  //   }
+  //   if (!viewerUsername) {
+  //     openLogin();
+  //     return;
+  //   }
+  //   setPending(true);
+  //   setErrorCode(null);
+  //   try {
+  //     const result = await createActivityNoteAction(messageId, markdown);
+  //     if (!result.ok) {
+  //       setErrorCode(result.error.code);
+  //       return;
+  //     }
+  //     onSaved?.(result.value);
+  //     dismiss();
+  //   } catch {
+  //     setErrorCode('network');
+  //   } finally {
+  //     setPending(false);
+  //   }
+  // }, [dismiss, markdown, messageId, onSaved, openLogin, pending, viewerUsername]);
 
   if (!markdown) {
     return null;
@@ -96,6 +94,7 @@ export function ActivityNoteImportBanner({
       <div className="rounded-card bg-surface p-card-padding">
         <ActivityNoteBody markdown={markdown} />
       </div>
+      {/* Saving notes is paused.
       {!viewerUsername ? (
         <p className="text-body-sm text-fg-secondary">{t('activity_notes_import_login')}</p>
       ) : null}
@@ -104,15 +103,16 @@ export function ActivityNoteImportBanner({
           {t(activityNoteErrorMessageKey(errorCode))}
         </p>
       ) : null}
+      */}
       <div className="flex flex-wrap justify-end gap-2">
         <button
           type="button"
           className="rounded-btn px-4 py-2 text-body-sm text-fg hover:bg-surface-control disabled:opacity-50"
-          disabled={pending}
           onClick={dismiss}
         >
           {t('activity_notes_import_dismiss')}
         </button>
+        {/* Saving notes is paused.
         <button
           type="button"
           className="rounded-btn bg-accent px-4 py-2 text-body-sm font-weight-label text-accent-fg disabled:opacity-50"
@@ -121,6 +121,7 @@ export function ActivityNoteImportBanner({
         >
           {t('activity_notes_import_save')}
         </button>
+        */}
       </div>
     </section>
   );

@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: query-api
 tags: [query-api, activity-message-notes, messaging]
-updated_at: 2026-11-12
+updated_at: 2026-11-25
 related:
   - docs/apps/query-api/spec/overview.md
   - docs/apps/query-api/spec/osl-messaging.md
@@ -14,6 +14,8 @@ related:
 ---
 
 # Activity message notes (authenticated)
+
+> **Paused (2026-11-25):** the notes routes are not registered — `ActivityMessageNotesController`, `ActivityNotesModule`, the `ActivityMessageNotesRepository` provider and the OpenAPI fragment are commented out in their modules, so `/query/v1/messages/:messageId/notes` returns **404**. The table `activity_message_notes` and its migration stay; existing rows are kept but never read.
 
 **Back:** [query-api overview](overview.md) · **Data model:** [messages.md](../../../spec/data-model/messages.md#activity-message-notes-private-per-account)
 

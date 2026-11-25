@@ -3,7 +3,9 @@
 import Link from 'next/link';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
-import { ActivityNotesPanel, type ActivityNote } from '@/modules/activity-notes';
+// Private notes are paused: only the note from an agent link is shown (docs/apps/web/spec/activity-notes.md).
+// import { ActivityNotesPanel, type ActivityNote } from '@/modules/activity-notes';
+import { ActivityNotesPanel } from '@/modules/activity-notes';
 import { buildObjectActivityFeedPath } from '@/modules/messaging/domain/activity-message-permalink';
 import type { MessageItem } from '@/modules/messaging/domain/messaging.types';
 import { ObjectActivityFeedList } from '@/modules/messaging/presentation/object-activity-feed-list';
@@ -14,10 +16,10 @@ export type ObjectPageActivityMessageClientProps = {
   /** Replied-to message (resolves the quote with full text and image). */
   parent: MessageItem | null;
   viewerUsername: string | null;
-  /** The viewer's private notes on this message; `null` when signed out. */
-  initialNotes: ActivityNote[] | null;
-  notesLimit: number;
-  notesLoadFailed: boolean;
+  // /** The viewer's private notes on this message; `null` when signed out. */
+  // initialNotes: ActivityNote[] | null;
+  // notesLimit: number;
+  // notesLoadFailed: boolean;
 };
 
 /** One activity message with a way back to the whole feed. Read-only, like the home feed rows. */
@@ -26,9 +28,9 @@ export function ObjectPageActivityMessageClient({
   message,
   parent,
   viewerUsername,
-  initialNotes,
-  notesLimit,
-  notesLoadFailed,
+  // initialNotes,
+  // notesLimit,
+  // notesLoadFailed,
 }: ObjectPageActivityMessageClientProps) {
   const { t } = useI18n();
 
@@ -49,11 +51,11 @@ export function ObjectPageActivityMessageClient({
         showOpenPermalink={false}
       />
       <ActivityNotesPanel
-        messageId={message.message_id}
-        viewerUsername={viewerUsername}
-        initialNotes={initialNotes}
-        limit={notesLimit}
-        loadFailed={notesLoadFailed}
+      // messageId={message.message_id}
+      // viewerUsername={viewerUsername}
+      // initialNotes={initialNotes}
+      // limit={notesLimit}
+      // loadFailed={notesLoadFailed}
       />
     </div>
   );

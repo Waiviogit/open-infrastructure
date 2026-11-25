@@ -57,10 +57,11 @@ export const queryApiOpenApiTagDefinitions = [
     name: queryApiOpenApiTags.userPostDrafts,
     description: 'JWT-authenticated post draft CRUD.',
   },
-  {
-    name: queryApiOpenApiTags.activityMessageNotes,
-    description: 'JWT-authenticated private notes on activity messages (owner only).',
-  },
+  // Activity notes are paused (docs/apps/query-api/spec/activity-message-notes.md).
+  // {
+  //   name: queryApiOpenApiTags.activityMessageNotes,
+  //   description: 'JWT-authenticated private notes on activity messages (owner only).',
+  // },
   {
     name: queryApiOpenApiTags.posts,
     description: 'Single post, voters, and discussion reads.',

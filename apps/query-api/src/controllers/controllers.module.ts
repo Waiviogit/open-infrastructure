@@ -37,8 +37,9 @@ import { OblController } from './obl.controller';
 import { ChannelsController } from './channels.controller';
 import { PlacesController } from './places.controller';
 import { PlacesModule } from '../domain/places';
-import { ActivityNotesModule } from '../domain/activity-notes';
-import { ActivityMessageNotesController } from './activity-message-notes.controller';
+// Activity notes are paused: not stored, listed or edited (docs/apps/query-api/spec/activity-message-notes.md).
+// import { ActivityNotesModule } from '../domain/activity-notes';
+// import { ActivityMessageNotesController } from './activity-message-notes.controller';
 import { HubFeedModule } from '../domain/hub-feed';
 import { HubFeedController } from './hub-feed.controller';
 import { HubFeedFiltersController } from './hub-feed-filters.controller';
@@ -64,7 +65,7 @@ import { HubFeedFiltersController } from './hub-feed-filters.controller';
     OblModule,
     MessagingModule,
     PlacesModule,
-    ActivityNotesModule,
+    // ActivityNotesModule,
     HubFeedModule,
   ],
   controllers: [
@@ -89,7 +90,7 @@ import { HubFeedFiltersController } from './hub-feed-filters.controller';
     OblController,
     ChannelsController,
     PlacesController,
-    ActivityMessageNotesController,
+    // ActivityMessageNotesController,
   ],
 })
 export class ControllersModule {}

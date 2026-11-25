@@ -41,7 +41,8 @@ import { ProfileFeedReadCursorRepository } from './profile-feed-read-cursor.repo
 import { PostRepliesRepository } from './post-replies.repository';
 import { ThreadRepliesRepository } from './thread-replies.repository';
 import { AffiliateObjectsRepository } from './affiliate-objects.repository';
-import { ActivityMessageNotesRepository } from './activity-message-notes.repository';
+// Activity notes are paused: not stored, listed or edited (docs/apps/query-api/spec/activity-message-notes.md).
+// import { ActivityMessageNotesRepository } from './activity-message-notes.repository';
 import { HubPostsFeedRepository } from './hub-posts-feed.repository';
 import { HubThreadsFeedRepository } from './hub-threads-feed.repository';
 import { HubActivityFeedRepository } from './hub-activity-feed.repository';
@@ -94,7 +95,7 @@ import { HubFeedPresenceRepository } from './hub-feed-presence.repository';
     PostRepliesRepository,
     ThreadRepliesRepository,
     AffiliateObjectsRepository,
-    ActivityMessageNotesRepository,
+    // ActivityMessageNotesRepository,
     HubPostsFeedRepository,
     HubThreadsFeedRepository,
     HubActivityFeedRepository,
@@ -146,7 +147,7 @@ import { HubFeedPresenceRepository } from './hub-feed-presence.repository';
     PostRepliesRepository,
     ThreadRepliesRepository,
     AffiliateObjectsRepository,
-    ActivityMessageNotesRepository,
+    // ActivityMessageNotesRepository,
     HubPostsFeedRepository,
     HubThreadsFeedRepository,
     HubActivityFeedRepository,

@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: agent-wallet
 tags: [agent-wallet, mcp, activity, notes, query-api]
-updated_at: 2026-11-12
+updated_at: 2026-11-25
 related:
   - docs/apps/agent-wallet/spec/overview.md
   - docs/apps/query-api/spec/activity-message-notes.md
@@ -15,14 +15,14 @@ related:
 
 # Activity notes
 
-Notes are private markdown notes attached to one object activity item (an OSL `messages` row). query-api stores them per author; the web shows them on the activity permalink.
+> **Paused (2026-11-25):** only `activity_note_import_link` is registered; the human opens the link, sees the note and copies a variant — nothing is stored. The `activity_notes_*` tools are commented out because the query-api notes routes are paused. The sections about the agent's own notes describe the feature for when it returns.
 
-Agent playbook: skill `activity-comment-drafts` (`npx skills add https://github.com/Waiviogit/skills`).
+Notes are private markdown notes attached to one object activity item (an OSL `messages` row). query-api stores them per author; the web shows them on the activity permalink.
 
 ## Account model
 
 - The agent works **only under its own account** (e.g. `neo.agent`). It never asks for, receives or uses the human's token, and never logs into the human's account.
-- **Handoff to a human = import link.** `activity_note_import_link` builds a URL; the human opens it, previews the note and clicks "Save to my notes", which stores a copy under the human's account. Nothing is saved until they click.
+- **Handoff to a human = import link.** `activity_note_import_link` builds a URL; the human opens it, sees the note on the activity item and copies a variant. Nothing is stored.
 - **Agent's own notes are optional** storage for the agent itself (`activity_notes_*`). They are private to the agent's account and invisible to humans.
 
 ## `activity_note_import_link`

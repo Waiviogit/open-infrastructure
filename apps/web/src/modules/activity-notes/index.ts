@@ -11,4 +11,5 @@ export {
 export { parseActivityNoteImportHash } from './domain/parse-activity-note-import-hash';
 
 export { ActivityNotesPanel } from './presentation/activity-notes-panel';
-export type { ActivityNotesPanelProps } from './presentation/activity-notes-panel';
+// Private notes are paused (docs/apps/web/spec/activity-notes.md).
+// export type { ActivityNotesPanelProps } from './presentation/activity-notes-panel';

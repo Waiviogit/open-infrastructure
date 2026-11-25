@@ -55,7 +55,7 @@ CI publishes a **portable archive** (`agent-wallet-portable.tar.gz`: `main.js`, 
 | Hive posting authority / act-as grantor | skill `hive-account-authority-for-agents` |
 | Hive account key generation (free name) | [hive-account-keys.md](hive-account-keys.md) |
 | Hive account profile (avatar, cover, name, bio) | [hive-profile-update.md](hive-profile-update.md) |
-| Activity notes: import link for a human, agent's own private notes | [activity-notes.md](activity-notes.md) · skill `activity-comment-drafts` |
+| Activity notes: import link for a human (agent's own notes paused) | [activity-notes.md](activity-notes.md) |
 | HAS login from chat (Telegram, Slack) | skill `has-login-from-chat` |
 | IPFS image upload + avatar/gallery policy | skill `ipfs-image-upload` |
 | IPFS file upload + ODL batch import | skill `ipfs-file-upload` |
@@ -100,7 +100,7 @@ Leo object threads (Social > Threads) are **not** built by agent-wallet — see 
 | `engine_build_token_delegation` | `ops`, `keyType: active`, `warnings` — WAIV/Engine delegate/undelegate |
 | `osl_build_hive_engine_deposit` | `ops`, `keyType: posting`, `warnings` — OSL `hive_engine_deposit` from query-api deposit routing |
 | `activity_note_import_link` | `{ url, urlLength, bodyLength }` — `#note=` link that hands a markdown note to a human (no auth, no network) |
-| `activity_notes_list` / `_create` / `_update` / `_delete` / `_delete_all` | agent's **own** private notes on an activity item via query-api (optional `account`) — [activity-notes.md](activity-notes.md) |
+| `activity_notes_list` / `_create` / `_update` / `_delete` / `_delete_all` | **Paused, not registered** — agent's own private notes via query-api — [activity-notes.md](activity-notes.md) |
 
 ## Environment
 

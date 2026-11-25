@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, messaging, notes, agent]
-updated_at: 2026-11-12
+updated_at: 2026-11-25
 related:
   - docs/apps/web/spec/pages/object/routes/social.md
   - docs/apps/web/spec/components/code-block-copy.md
@@ -14,6 +14,8 @@ related:
 ---
 
 # Private notes on activity messages
+
+> **Paused (2026-11-25):** saving, listing and editing notes is switched off. The permalink page does not load notes, the *My notes* section and the **Save to my notes** button are commented out, and the import banner only shows the note from the link (Copy on each code block, **Dismiss**). The code stays in place; the `activity_message_notes` table is not dropped. The sections below describe the full feature for when it returns.
 
 **Back:** [Social tab → Activity message permalink](pages/object/routes/social.md#activity-message-permalink)
 

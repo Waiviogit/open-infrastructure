@@ -63,7 +63,7 @@ Every activity message has a public URL: `/object/{objectId}/social/activity/{me
 | Full page | Direct visit or refresh: [`proxy.ts`](../../../../../apps/web/src/proxy.ts) rewrites to `?tab=social&social_sub=activity&activity_message_id=…`; the Activity slot renders [`ObjectPageActivityMessageSection`](../../../../../apps/web/src/app/(app)/object/[object-id]/object-page-activity-message-section.server.tsx) — **← All activity** link + the single message (read-only, Copy link kept). Unknown, unlinked or muted message → `notFound()`. Metadata: `{author} · {object} · Activity`, description = plain-text body excerpt; canonical and image stay the object's. |
 | Home Activity feed | Same open icon and preview; the row's own object (`source_object`) builds the URL. [`HomeFeedScrollReset`](../../../../../apps/web/src/modules/home/presentation/components/home-feed-scroll-reset.tsx) ignores permalink pathnames so the feed keeps its scroll position. |
 
-**Private notes:** the full page also shows the viewer's private notes on the message and the agent import banner (`#note=…`) — see [activity-notes.md](../../../activity-notes.md).
+**Agent link:** the full page shows the agent import banner (`#note=…`) with Copy on each code block; private notes are paused (not loaded, saved or edited) — see [activity-notes.md](../../../activity-notes.md).
 
 Data: `GET /query/v1/objects/{objectId}/channel/messages/{messageId}` ([osl-messaging.md](../../../../../query-api/spec/osl-messaging.md)), cache tag `objectChannelMessages(objectId)` (revalidated after edit/delete broadcasts).
 
