@@ -10,10 +10,6 @@ import type {
 } from '../../domain/search-response.schema';
 import { SearchDropdown, type SearchDropdownProps } from './search-dropdown';
 
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn() }),
-}));
-
 jest.mock('next/link', () => ({
   __esModule: true,
   default: ({
@@ -98,6 +94,18 @@ describe('SearchDropdown object rows', () => {
     const row = screen.getByRole('option', { name: /Greek Taverna/ });
     expect(row.tagName).toBe('A');
     expect(row).toHaveAttribute('href', '/object/obj-1');
+
+    fireEvent.click(row);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a user result as an option link to the profile', () => {
+    const onClose = jest.fn();
+    renderDropdown({ type_counts: { restaurant: 1 }, counts_capped: false, total_users: 1 }, onClose);
+
+    const row = screen.getByRole('option', { name: /alice/ });
+    expect(row.tagName).toBe('A');
+    expect(row).toHaveAttribute('href', '/@alice');
 
     fireEvent.click(row);
     expect(onClose).toHaveBeenCalledTimes(1);

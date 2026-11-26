@@ -44,11 +44,16 @@ export {
   ProfileFavoritesRailSkeleton,
   ProfileLeftRailSkeleton,
   ProfileMapSkeleton,
+  ProfilePageBodySkeleton,
   ProfileReblogsFeedSkeleton,
   ProfileSectionSkeleton,
   ProfileSocialListSkeleton,
 } from './components/profile-content-skeletons';
 export { ProfileMapSidebarListSkeleton } from './components/profile-map-sidebar-list-skeleton';
+export {
+  ProfileHeroSkeleton,
+  ProfilePrimaryNavSkeleton,
+} from './components/profile-hero-skeleton';
 export { UserMenuVerticalRail } from './components/user-menu-vertical-rail';
 export { UserProfileSubmenu } from './components/user-profile-submenu';
 export type { UserProfileSubmenuProps } from './components/user-profile-submenu';

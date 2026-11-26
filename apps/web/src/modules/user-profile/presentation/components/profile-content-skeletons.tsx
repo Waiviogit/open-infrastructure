@@ -3,7 +3,8 @@
  * Server/route `loading.tsx` only — do not import from client components
  * (pulls feed skeletons; use profile-map-sidebar-list-skeleton.tsx on the client).
  */
-import { FeedColumn } from '@/shared/presentation/layout';
+import { FeedColumn, ShellFullBleedBand, ShellInset } from '@/shared/presentation/layout';
+import { FeedPostsLoadingSkeleton } from '@/modules/feed/presentation/components/feed-posts-loading-skeleton';
 import { FeedListSkeleton } from '@/modules/feed/presentation/components/feed-skeletons';
 
 import { ProfileMapSidebarListSkeleton } from './profile-map-sidebar-list-skeleton';
@@ -105,6 +106,29 @@ export function ProfileMapSkeleton() {
       </aside>
       <div className="h-full min-h-0 flex-1 animate-pulse bg-surface-control max-lg:min-h-[240px]" />
     </div>
+  );
+}
+
+/** Profile body under the hero: left rail + posts feed placeholders (same grid as `(main)`). */
+export function ProfilePageBodySkeleton() {
+  return (
+    <ShellFullBleedBand className="shell-profile-content-band">
+      <ShellInset className="pt-0">
+        <div
+          className={[
+            'shell-profile-grid mt-card-padding grid grid-cols-1 gap-card-padding',
+            'lg:grid-cols-[minmax(0,var(--shell-left-width))_minmax(0,1fr)_minmax(0,var(--shell-right-width))]',
+          ].join(' ')}
+        >
+          <div className="hidden min-w-0 lg:block">
+            <ProfileLeftRailSkeleton />
+          </div>
+          <main className="min-h-[12rem] min-w-0">
+            <FeedPostsLoadingSkeleton />
+          </main>
+        </div>
+      </ShellInset>
+    </ShellFullBleedBand>
   );
 }
 

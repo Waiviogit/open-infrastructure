@@ -10,9 +10,11 @@ import {
 import type { UserMenuRows } from './user-menu';
 import { getSubmenuVariant } from './user-profile-subnav';
 import { useEffectiveProfileNav } from './user-profile-pending-nav-context';
+import {
+  PROFILE_TAB_SKELETON_CLASS as TAB_SKELETON_CLASS,
+  USER_MENU_PRIMARY_TAB_COUNT,
+} from './profile-hero-skeleton';
 
-const TAB_SKELETON_CLASS =
-  'inline-flex h-10 min-w-[3.5rem] shrink-0 animate-pulse border-b-2 border-transparent px-3 py-2.5';
 
 function NavSkeletonRow({
   rowClass,
@@ -95,7 +97,7 @@ export function UserMenuSkeleton({ rows = 'all' }: { rows?: UserMenuRows }) {
       <NavSkeletonShell
         rowClass={`${HORIZONTAL_TAB_NAV_PRIMARY_ROW_CLASS} mx-auto w-max`}
         bleed="gutter"
-        count={9}
+        count={USER_MENU_PRIMARY_TAB_COUNT}
         ariaLabel={t('user_profile_nav_aria')}
       />
     );
@@ -107,7 +109,7 @@ export function UserMenuSkeleton({ rows = 'all' }: { rows?: UserMenuRows }) {
         <NavSkeletonShell
           rowClass={HORIZONTAL_TAB_NAV_PRIMARY_ROW_CLASS}
           bleed="gutter"
-          count={9}
+          count={USER_MENU_PRIMARY_TAB_COUNT}
           ariaLabel={t('user_profile_nav_aria')}
         />
       ) : null}

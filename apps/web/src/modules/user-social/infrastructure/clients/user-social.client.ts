@@ -61,14 +61,16 @@ export async function fetchUserFollowing(
 export async function fetchUserFollowingObjects(
   accountName: string,
   args: { sort: UserObjectListSort; skip: number; limit: number },
-  locale: string,
+  locale?: string | null,
   init?: { viewer?: string | null },
 ): Promise<PaginatedFollowingObjectsView | null> {
   const qs = buildQuery({ sort: args.sort, skip: args.skip, limit: args.limit });
   const path = `/query/v1/users/${encodeURIComponent(accountName)}/following-objects${qs}`;
-  const headers: Record<string, string> = {
-    'Accept-Language': locale,
-  };
+  // A count-only call (`limit: 0`) passes no locale or viewer: one cache entry for everybody.
+  const headers: Record<string, string> = {};
+  if (locale) {
+    headers['Accept-Language'] = locale;
+  }
   const viewer = init?.viewer?.trim();
   if (viewer) {
     headers['X-Viewer'] = viewer;

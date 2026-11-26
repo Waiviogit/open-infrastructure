@@ -1,3 +1,8 @@
+/** Client-side pathname of an account profile (`proxy.ts` rewrites it to `/user-profile/…`). */
+export function profilePagePath(accountName: string): string {
+  return `/@${encodeURIComponent(accountName.trim())}`;
+}
+
 /**
  * True for the account-root profile URL (`/@account` or `/user-profile/account`).
  * Post permalinks (`/@account/permlink`) and reserved profile tabs are excluded.

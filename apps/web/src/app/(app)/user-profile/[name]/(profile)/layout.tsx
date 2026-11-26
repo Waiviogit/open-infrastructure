@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
 import {
   getUserAccountSidebarQuery,
   getUserProfileQuery,
@@ -28,8 +27,9 @@ type ProfileGroupLayoutProps = {
 };
 
 /**
- * Hero, providers and counters need the viewer and five queries: they stream behind the profile
- * skeleton, so entering the group from a post page (shared `[name]`) paints at once.
+ * Hero, providers and counters need the viewer and four queries: they stream behind the profile
+ * skeleton, so entering the group from a post page (shared `[name]`) paints at once. The account
+ * sidebar (live chain reads) is not awaited: the hero streams its reputation and mobile meta.
  */
 export default function ProfileGroupLayout({ children, params }: ProfileGroupLayoutProps) {
   return (
@@ -45,17 +45,11 @@ async function ProfileGroupContent({ children, params }: ProfileGroupLayoutProps
   const auth = createCookieAuthContextProvider();
   const viewerUser = await auth.getUser();
   const viewer = viewerUser?.username ?? null;
-  const locale = await getRequestLocale();
 
-  const [profileResult, sidebar, objectsHead, expertiseCounts, feedUnreadCounts] = await Promise.all([
-    getUserProfileQuery(decoded, viewer, locale),
-    getUserAccountSidebarQuery(decoded),
-    getUserFollowingObjectsPageQuery(
-      decoded,
-      { sort: 'weight', skip: 0, limit: 0 },
-      locale,
-      viewer,
-    ),
+  const sidebar = getUserAccountSidebarQuery(decoded);
+  const [profileResult, objectsHead, expertiseCounts, feedUnreadCounts] = await Promise.all([
+    getUserProfileQuery(decoded, viewer),
+    getUserFollowingObjectsPageQuery(decoded, { sort: 'weight', skip: 0, limit: 0 }),
     fetchExpertiseCountsForProfile(decoded),
     getUserFeedUnreadCountsQuery(decoded, viewer),
   ]);

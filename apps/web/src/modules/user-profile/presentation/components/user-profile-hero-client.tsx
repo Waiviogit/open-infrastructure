@@ -16,23 +16,25 @@ import type { UserAccountSidebarView } from '../../domain/types/user-account-sid
 import type { UserProfileShellUser } from './types';
 import { UserHero } from './user-hero';
 
-const HERO_FETCH_MS = 450;
-
 export type UserProfileHeroClientProps = {
   accountName: string;
   initialUser: UserProfileShellUser;
-  sidebar: UserAccountSidebarView | null;
+  /** Streams in (live chain reads); reputation and mobile meta wait for it, nothing else does. */
+  sidebar: Promise<UserAccountSidebarView | null> | null;
   viewerUsername: string | null;
+  /** Hero painted from the profile head: viewer unknown, controls hidden. */
+  pending?: boolean;
 };
 
 /**
- * Client boundary for profile hero: pathname/search for nav + hero loading affordance.
+ * Client boundary for profile hero: pathname/search for nav, follow / bell state.
  */
 export function UserProfileHeroClient({
   accountName,
   initialUser,
   sidebar,
   viewerUsername,
+  pending = false,
 }: UserProfileHeroClientProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -40,7 +42,6 @@ export function UserProfileHeroClient({
   const router = useRouter();
   const { openLogin } = useLoginModal();
   const odlCustomJsonId = useOdlCustomJsonId();
-  const [isHeroLoading, setIsHeroLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(initialUser.isFollowing);
   const [viewerBell, setViewerBell] = useState(initialUser.viewerBell);
   const [followPending, setFollowPending] = useState(false);
@@ -50,14 +51,6 @@ export function UserProfileHeroClient({
     setIsFollowing(initialUser.isFollowing);
     setViewerBell(initialUser.viewerBell);
   }, [initialUser.isFollowing, initialUser.viewerBell]);
-
-  useEffect(() => {
-    setIsHeroLoading(true);
-    const t = window.setTimeout(() => {
-      setIsHeroLoading(false);
-    }, HERO_FETCH_MS);
-    return () => window.clearTimeout(t);
-  }, [accountName]);
 
   const isSameUser =
     viewerUsername != null && viewerUsername.toLowerCase() === accountName.toLowerCase();
@@ -152,7 +145,7 @@ export function UserProfileHeroClient({
       isBell={viewerBell}
       hasCover={hasCover}
       coverImage={coverImage}
-      isHeroLoading={isHeroLoading}
+      pending={pending}
       onFollowClick={onFollowClick}
       onBellToggle={onBellToggle}
       followPending={followPending}

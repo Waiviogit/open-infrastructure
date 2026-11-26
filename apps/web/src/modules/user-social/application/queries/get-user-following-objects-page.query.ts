@@ -8,7 +8,7 @@ import { fetchUserFollowingObjects } from '../../infrastructure/clients/user-soc
 export async function getUserFollowingObjectsPageQuery(
   accountName: string,
   args: { sort: UserObjectListSort; skip: number; limit: number },
-  locale: string,
+  locale?: string | null,
   viewer?: string | null,
 ): Promise<PaginatedFollowingObjectsView> {
   const raw = await fetchUserFollowingObjects(accountName, args, locale, { viewer });

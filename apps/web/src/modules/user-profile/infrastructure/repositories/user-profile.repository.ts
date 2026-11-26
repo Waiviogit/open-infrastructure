@@ -28,21 +28,12 @@ function normalizeUserProfilePayload(data: unknown): unknown {
 
 export function createHttpUserProfileRepository(): UserProfileRepository {
   return {
-    async findByName(
-      name: string,
-      viewer?: string | null,
-      locale?: string | null,
-    ): Promise<UserProfileView | null> {
+    async findByName(name: string, viewer?: string | null): Promise<UserProfileView | null> {
       const path = `/query/v1/users/${encodeURIComponent(name)}/profile`;
       const viewerTrimmed = viewer?.trim();
       const headers: Record<string, string> = {};
       if (viewerTrimmed && viewerTrimmed.length > 0) {
         headers['X-Viewer'] = viewerTrimmed;
-      }
-      const localeTrimmed = locale?.trim();
-      if (localeTrimmed && localeTrimmed.length > 0) {
-        headers['X-Locale'] = localeTrimmed;
-        headers['Accept-Language'] = localeTrimmed;
       }
       const fetchOpts = {
         headers,

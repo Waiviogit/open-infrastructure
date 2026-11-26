@@ -17,6 +17,5 @@ export const getUserProfileQuery = cache(
 );
 
 export const getUserProfileViewQuery = cache(
-  async (name: string, viewer?: string | null, locale?: string | null) =>
-    userProfileRepository.findByName(name, viewer, locale),
+  async (name: string, viewer?: string | null) => userProfileRepository.findByName(name, viewer),
 );
