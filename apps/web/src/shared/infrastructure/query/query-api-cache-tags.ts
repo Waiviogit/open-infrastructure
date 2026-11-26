@@ -21,6 +21,8 @@ export const queryApiCacheTags = {
   objectFeaturedPost: (objectId: string) =>
     `query-api:object:${objectId.trim()}:featured-post`,
   objectThreadsFeed: (objectId: string) => `query-api:object:${objectId.trim()}:threads-feed`,
+  /** Profile hero (`GET /users/:name/head`). */
+  userHead: (accountName: string) => `query-api:user:${accountName.trim().toLowerCase()}:head`,
   userProfile: (accountName: string) =>
     `query-api:user:${accountName.trim().toLowerCase()}:profile`,
   userAccountSidebar: (accountName: string) =>

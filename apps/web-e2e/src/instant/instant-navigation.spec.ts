@@ -14,16 +14,36 @@ test.describe('instant navigation', () => {
     await signIn(context);
   });
 
+  // A DOM click (no pointer move) keeps the author link at the default shell prefetch.
   test('feed Threads → user profile paints the profile skeleton', async ({ page }) => {
     await page.goto('/feed/threads');
     const trigger = page.locator('main a[href="/@alice"]').first();
     await expect(trigger).toBeVisible();
 
     await instant(page, async () => {
-      await trigger.click();
+      await trigger.dispatchEvent('click');
       await expect(page.locator('[aria-label="Loading profile"]')).toBeVisible();
       await expect(page.locator('h1', { hasText: 'alice' })).toHaveCount(0);
     });
+    await expect(page.locator('h1', { hasText: 'alice' })).toBeVisible();
+  });
+
+  // Hover upgrades ProfilePageLink to `prefetch={true}`: the per-link prefetch carries the profile
+  // head, so the hero is there on click while the feed (below `navigation()`) is not.
+  test('feed Threads → hovered author link paints the profile hero before the feed', async ({ page }) => {
+    await page.goto('/feed/threads');
+    const trigger = page.locator('main a[href="/@alice"]').first();
+    await expect(trigger).toBeVisible();
+    const headShell = page.getByTestId('profile-head-shell');
+
+    await trigger.hover();
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('h1', { hasText: 'alice' })).toBeVisible();
+      await expect(headShell).toHaveCount(1);
+      await expect(page.locator('[aria-label="Loading profile posts"]')).toBeVisible();
+    });
+    await expect(headShell).toHaveCount(0);
     await expect(page.locator('h1', { hasText: 'alice' })).toBeVisible();
   });
 

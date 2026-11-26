@@ -11,12 +11,14 @@ jest.mock('next/link', () => ({
   default: ({
     children,
     href,
+    prefetch,
     ...rest
-  }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
-    <a href={href} {...rest}>
+  }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; prefetch?: unknown }) => (
+    <a href={href} data-prefetch={String(prefetch)} {...rest}>
       {children}
     </a>
   ),
+  useLinkStatus: () => ({ pending: false }),
 }));
 
 jest.mock('@/i18n/providers/i18n-provider', () => ({

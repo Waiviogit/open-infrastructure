@@ -37,8 +37,8 @@ Describe the App Router layout tree, public URLs, and persistent regions for eve
 ## Layout tree
 
 ```
-user-profile/[name]/layout.tsx          validate name + load profile (404 if missing)
-  (profile)/layout.tsx                  UserProfileHeroClient + social counts provider
+user-profile/[name]/layout.tsx          validate name on the profile head (not-found UI if missing)
+  (profile)/layout.tsx                  profile head → ProfileHeadShell, then profile-group-full (hero, providers, counters)
     (main)/layout.tsx                   three-column shell (left parallel route + main + right rail)
       @leftSidebar/*                    account panel; Favorites category nav (parallel route)
       page.tsx, threads/, followers/, transfers/, permissions/, …
@@ -76,7 +76,7 @@ user-profile/[name]/layout.tsx          validate name + load profile (404 if mis
 
 ## Data loading
 
-Shell profile fetch: [data-loading.md](data-loading.md). `(profile)/layout.tsx` also loads following-objects count head for hero badges.
+Loading order (entry skeleton → head shell → full profile): [data-loading.md](data-loading.md#when-data-loads).
 
 ## Route specs
 
@@ -107,4 +107,6 @@ Shell profile fetch: [data-loading.md](data-loading.md). `(profile)/layout.tsx` 
 |------|------|
 | `apps/web/src/proxy.ts` | `/@account` → `/user-profile/…` rewrites |
 | `apps/web/src/modules/user-profile/presentation/components/profile-path.ts` | Reserved segments + active nav helpers |
-| `apps/web/src/app/(app)/user-profile/[name]/layout.tsx` | Name validation + profile gate |
+| `apps/web/src/app/(app)/user-profile/[name]/layout.tsx` | Name validation + existence on the profile head |
+| `apps/web/src/app/(app)/user-profile/[name]/(profile)/profile-group-full.server.tsx` | Viewer, full profile, counters, hero |
+| `apps/web/src/modules/user-profile/presentation/components/profile-head-shell.tsx` | Hero from the profile head + skeletons |

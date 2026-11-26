@@ -94,6 +94,7 @@ export async function revalidateUserSocialAfterBroadcast(accountName: string): P
   }
   updateTag(queryApiCacheTags.homeFeed(name));
   updateTag(queryApiCacheTags.homeFeedFilters(name));
+  updateTag(queryApiCacheTags.userHead(name));
   updateTag(queryApiCacheTags.userProfile(name));
   updateTag(queryApiCacheTags.userAccountSidebar(name));
   updateTag(queryApiCacheTags.userFollowers(name));

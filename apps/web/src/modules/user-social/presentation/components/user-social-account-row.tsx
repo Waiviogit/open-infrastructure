@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -15,6 +14,7 @@ import { refreshAfterBroadcast } from '@/shared/infrastructure/query/refresh-aft
 import { revalidateUserSocialAfterBroadcast } from '@/shared/infrastructure/query/revalidate-after-broadcast.server';
 
 import { SocialFollowButton } from './social-follow-button';
+import { ProfilePageLink } from '@/shared/presentation/components/profile-page-link';
 
 export type UserSocialAccountRowProps = {
   row: UserFollowListView;
@@ -38,7 +38,6 @@ export function UserSocialAccountRow({
   const { t } = useI18n();
   const router = useRouter();
   const { openLogin } = useLoginModal();
-  const href = `/@${row.name}`;
   const isSelf =
     viewerUsername != null && viewerUsername.trim().toLowerCase() === row.name.toLowerCase();
   const showFollowControl = !isSelf;
@@ -90,13 +89,13 @@ export function UserSocialAccountRow({
 
   return (
     <li className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
-      <Link href={href} className="shrink-0" suppressHydrationWarning>
+      <ProfilePageLink accountName={row.name} className="shrink-0">
         <UserAvatar username={row.name} avatarUrl={row.avatarUrl} displayName={row.name} size={44} />
-      </Link>
+      </ProfilePageLink>
       <div className="min-w-0 flex-1">
-        <Link href={href} className="font-weight-label text-fg hover:underline" suppressHydrationWarning>
+        <ProfilePageLink accountName={row.name} className="font-weight-label text-fg hover:underline">
           {row.name}
-        </Link>
+        </ProfilePageLink>
         <p className="mt-0.5 flex flex-wrap items-center gap-2 text-caption text-fg-secondary">
           <StatHoverTooltip content={t(expertiseTooltipKey)}>
             <span className="rounded-btn border border-border bg-surface-control px-2 py-0.5 font-mono text-body-sm text-fg">

@@ -60,7 +60,7 @@ streams in behind `<Suspense>`. Two conditions, both required:
 
 | Entry | Shell painted on click | Where | Link |
 |-------|------------------------|-------|------|
-| `/@name` (profile) | profile skeleton | `user-profile/[name]/layout.tsx` — existence check (`ValidatedProfile`) inside `<Suspense fallback={<UserProfileNameLoading/>}>` | Story author `<Link>` (default prefetch) |
+| `/@name` (profile) | profile skeleton; **hero** (avatar, name, cover, tabs) when the link was intent-prefetched | `user-profile/[name]/layout.tsx` — existence on the profile head (`ValidatedProfile`) inside `<Suspense fallback={<UserProfileNameLoading/>}>`; `(profile)/layout.tsx` renders `ProfileHeadShell` as the fallback of the full profile ([data loading](pages/user-profile/data-loading.md#when-data-loads)) | `ProfilePageLink` (story and comment authors, social lists, discover users, object rails) and header search user rows: default prefetch while visible, `prefetch={true}` on intent |
 | `/`, `/feed/{threads,activity,updates}` | `<main>` + feed skeleton; rail skeleton in the `@filters` slot | each page renders `<Suspense fallback={<FeedPostsLoadingSkeleton/>}>` around the session + `searchParams` + data read; the rail streams in its own `<Suspense>` | `HomeFeedTabNav` → `OptimisticNavLink prefetchShell`; rail filters → `OptimisticNavLink method="replace"` |
 | `/object/:id` | object skeleton; **hero** (name, avatar, cover) when the link was intent-prefetched | `object/loading.tsx` sits above the `[object-id]` layout; the layout awaits only the cached object head and renders `ObjectHeadShell` as the fallback of the full page ([data loading](pages/object/data-loading.md)) | `ObjectPageLink` and header search rows: default prefetch while visible (one `/_tree` per distinct object, shared shell segment); `prefetch={true}` on hover / focus / touch (search: the pointed-at row) |
 | `/@name/<tab>` (profile tabs) | center skeleton overlay, then the tab's `loading.tsx` | `UserProfileMainContentPendingShell` overlays `ProfileMainPendingSkeleton` while the link is pending; `(profile)` and `(main)` layouts stream their viewer/account reads behind `<Suspense>`; `@leftSidebar` slot pages await `params` inside `<Suspense>` (rail skeleton fallback) | `UserProfileNavLink`, no prefetch needed (the overlay is client-side) |
@@ -108,7 +108,7 @@ per link (see `node_modules/next/dist/docs/01-app/02-guides/optimizing-prefetchi
 
 | Link | When `true` | What the per-link prefetch carries | Why |
 |------|-------------|-------------------------------------|-----|
-| `ObjectPageLink`, header search object rows | intent only (hover, focus, touch; search: the row under the pointer or arrow keys) — otherwise `'auto'` | the object head (hero); the full page sits below `navigation()` in the layout, page and `generateMetadata` | the hero was the 2–3 s wait on slow objects; the head is one cached, viewer-independent query |
+| `ObjectPageLink`, `ProfilePageLink` (both `IntentPrefetchLink`), header search object and user rows | intent only (hover, focus, touch; search: the row under the pointer or arrow keys) — otherwise `'auto'` | the object or profile head (hero); the full page sits below `navigation()` (object layout, page and `generateMetadata`; profile `profile-group-full`, `(main)/page` and its `generateMetadata`) | the hero was the 2–3 s wait on slow objects and profiles; each head is one cached, viewer-independent query |
 
 `router.prefetch()` is not used.
 

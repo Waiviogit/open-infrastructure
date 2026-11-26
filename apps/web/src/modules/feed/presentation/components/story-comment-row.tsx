@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
@@ -19,6 +18,7 @@ import { StoryRewardBadge } from './story-reward-badge';
 import { COMPACT_BODY_BLOCK_CLASSES } from './post-body-typography';
 import { formatRelativeFeedTime } from './story-utils';
 import { StoryVoteButton } from './story-vote-button';
+import { ProfilePageLink } from '@/shared/presentation/components/profile-page-link';
 
 type StoryCommentRowProps = {
   comment: DiscussionCommentView;
@@ -44,7 +44,6 @@ export function StoryCommentRow({
   const editing = isOwnComment && commentEdit.state.status !== 'idle';
   const childIds = discussion.childrenById[comment.id] ?? [];
   const displayAuthor = comment.authorDisplayName ?? comment.authorName;
-  const profileHref = `/@${encodeURIComponent(comment.authorName)}`;
 
   return (
     <li className="list-none">
@@ -53,9 +52,8 @@ export function StoryCommentRow({
         style={{ marginLeft: depth > 0 ? `${Math.min(depth, 6) * 1.25}rem` : undefined }}
       >
         <header className="flex gap-2">
-          <Link
-            href={profileHref}
-            suppressHydrationWarning
+          <ProfilePageLink
+            accountName={comment.authorName}
             className="shrink-0 rounded-circle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             <UserAvatar
@@ -64,16 +62,15 @@ export function StoryCommentRow({
               displayName={displayAuthor}
               size={32}
             />
-          </Link>
+          </ProfilePageLink>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <Link
-                href={profileHref}
-                suppressHydrationWarning
+              <ProfilePageLink
+                accountName={comment.authorName}
                 className="font-weight-label text-body-sm text-fg hover:underline"
               >
                 {displayAuthor}
-              </Link>
+              </ProfilePageLink>
               <time className="text-caption text-fg-tertiary" dateTime={comment.createdAt}>
                 {formatRelativeFeedTime(comment.createdAt, locale)}
               </time>

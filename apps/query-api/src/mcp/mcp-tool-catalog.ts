@@ -220,6 +220,13 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/users-profile-endpoint.md',
   },
   {
+    name: 'get_user_head',
+    description:
+      'Cheap viewer-independent profile head (display name, avatar, cover, bio, counters) from the indexed account row, without live Hive metadata. Use get_user_profile for follow state.',
+    httpEquivalent: 'GET /query/v1/users/:name/head',
+    specPath: 'docs/apps/query-api/spec/user-head.md',
+  },
+  {
     name: 'get_user_notification_settings',
     description:
       'Notification preference toggles for the authenticated viewer (X-Viewer must match account).',

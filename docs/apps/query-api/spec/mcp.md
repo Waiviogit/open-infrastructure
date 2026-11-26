@@ -77,6 +77,7 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 | `get_object_ownership` | `GET .../ownership` | [user-social-lists.md](user-social-lists.md) |
 | `get_object_updates` | `GET .../updates` | — |
 | `get_user_profile` | `GET .../profile` | [users-profile-endpoint.md](users-profile-endpoint.md) |
+| `get_user_head` | `GET .../head` | [user-head.md](user-head.md) |
 | `get_user_blog` | `POST .../blog` | [user-blog-feed-endpoint.md](user-blog-feed-endpoint.md) |
 | `get_user_mentions` | `POST .../mentions` | [user-mentions-feed-endpoint.md](user-mentions-feed-endpoint.md) |
 | `get_user_threads` | `POST .../threads` | [user-threads-feed-endpoint.md](user-threads-feed-endpoint.md) |

@@ -5,7 +5,8 @@ import { createContext, useContext, type ReactNode } from 'react';
 export type UserProfileSocialCounts = {
   followerCount: number;
   followingCount: number;
-  followingObjectsCount: number;
+  /** Absent while the hero is painted from the profile head (submenus are not shown yet). */
+  followingObjectsCount?: number;
   hashtagsExpCount?: number;
   objectsExpCount?: number;
 };

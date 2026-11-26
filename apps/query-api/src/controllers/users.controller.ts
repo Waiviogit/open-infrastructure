@@ -29,6 +29,8 @@ import {
 } from '../domain/feed';
 import {
   GetUserProfileEndpoint,
+  GetUserHeadEndpoint,
+  type UserHeadView,
   GetUserAccountSidebarEndpoint,
   type UserProfileView,
   type UserAccountSidebarView,
@@ -120,6 +122,7 @@ import {
 export class UsersController {
   constructor(
     private readonly getUserProfile: GetUserProfileEndpoint,
+    private readonly getUserHead: GetUserHeadEndpoint,
     private readonly getUserBlogFeed: GetUserBlogFeedEndpoint,
     private readonly getUserBlogObjectFilters: GetUserBlogObjectFiltersEndpoint,
     private readonly getUserMentionsFeed: GetUserMentionsFeedEndpoint,
@@ -457,6 +460,15 @@ export class UsersController {
     @ReqViewer() viewer: string | undefined,
   ): Promise<UserProfileView> {
     const view = await this.getUserProfile.execute(name, viewer);
+    if (!view) {
+      throw new NotFoundException(`User not found: ${name}`);
+    }
+    return view;
+  }
+
+  @Get(':name/head')
+  async getHead(@Param('name') name: string): Promise<UserHeadView> {
+    const view = await this.getUserHead.execute(name);
     if (!view) {
       throw new NotFoundException(`User not found: ${name}`);
     }

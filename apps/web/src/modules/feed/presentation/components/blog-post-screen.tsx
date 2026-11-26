@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 
 import { CommentIcon } from '@/icons';
@@ -26,6 +25,7 @@ import { StoryReblogButton } from './story-reblog-button';
 import { StoryStatButton } from './story-stat-button';
 import { StoryVoteButton } from './story-vote-button';
 import { StoryCommentEditor } from './story-comment-editor';
+import { ProfilePageLink } from '@/shared/presentation/components/profile-page-link';
 
 export type BlogPostScreenVariant = 'page' | 'modal';
 
@@ -61,7 +61,6 @@ export function BlogPostScreen({
   const editHref = isReplyFeedItem(story.parentAuthor, undefined)
     ? null
     : `/editor?${editorSearch.toString()}`;
-  const authorProfileHref = `/@${encodeURIComponent(story.authorName)}`;
 
   const isModal = variant === 'modal';
   const [commentsExpanded, setCommentsExpanded] = useState(false);
@@ -109,11 +108,10 @@ export function BlogPostScreen({
 
         {/* Author row */}
         <header className="mt-4 flex gap-3">
-          <Link
-            href={authorProfileHref}
-            suppressHydrationWarning
+          <ProfilePageLink
+            accountName={story.authorName}
             className="inline-flex shrink-0 self-start rounded-circle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-            aria-label={`View profile: @${story.authorName}`}
+            ariaLabel={`View profile: @${story.authorName}`}
           >
             <UserAvatar
               username={story.authorName}
@@ -121,16 +119,15 @@ export function BlogPostScreen({
               displayName={displayAuthor}
               size={40}
             />
-          </Link>
+          </ProfilePageLink>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <Link
-                href={authorProfileHref}
-                suppressHydrationWarning
+              <ProfilePageLink
+                accountName={story.authorName}
                 className="font-weight-label text-body-sm text-fg hover:underline focus-visible:rounded-btn focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               >
                 {displayAuthor}
-              </Link>
+              </ProfilePageLink>
               {repLabel != null ? (
                 <StatHoverTooltip content={t('stat_user_expertise_tooltip')}>
                   <span className="rounded-btn bg-surface-control px-1.5 py-0.5 text-caption font-weight-label text-fg-secondary tabular-nums">

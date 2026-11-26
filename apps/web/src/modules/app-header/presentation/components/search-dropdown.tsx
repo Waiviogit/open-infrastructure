@@ -21,8 +21,9 @@ export type SearchDropdownProps = {
   countsLoading: boolean;
   activeIndex: number;
   /**
-   * Row the user points at (hover or arrow keys), -1 before that. Its object link prefetches the
-   * object head (`prefetch={true}`), so the hero paints on click; other rows keep the shell prefetch.
+   * Row the user points at (hover or arrow keys), -1 before that. Its object or profile link
+   * prefetches the entity head (`prefetch={true}`), so the hero paints on click; other rows keep
+   * the shell prefetch.
    */
   intentIndex?: number;
   flatList: SearchFlatEntry[];
@@ -255,11 +256,13 @@ export function SearchDropdown({
               {results.users.map((u) => {
                 const flatIdx = pickFlatIndexForRow(flatList, 'user', u.name);
                 const active = flatIdx >= 0 && flatIdx === activeIndex;
+                const intent = flatIdx >= 0 && flatIdx === intentIndex;
                 return (
                   <li key={u.name}>
                     {/* A real link, like object rows: it prefetches the profile route shell. */}
                     <Link
                       href={profilePagePath(u.name)}
+                      prefetch={intent ? true : 'auto'}
                       role="option"
                       aria-selected={active}
                       suppressHydrationWarning

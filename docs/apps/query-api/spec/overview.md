@@ -29,6 +29,7 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | Feature | Description |
 |---------|-------------|
 | [User profile endpoint](users-profile-endpoint.md) | `GET /query/v1/users/:name/profile` |
+| [User head](user-head.md) | `GET /query/v1/users/:name/head` — viewer-independent hero fields from the indexed row |
 | [User notification settings](user-notification-settings.md) | `GET /query/v1/users/:name/notification-settings` |
 | [User account sidebar](users-account-sidebar.md) | `GET /query/v1/users/:name/account-sidebar` |
 | [User social lists](user-social-lists.md) | `GET .../:name/followers`, `/following`, `/following-objects` |

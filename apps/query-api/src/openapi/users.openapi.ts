@@ -92,6 +92,41 @@ registry.registerPath({
   },
 });
 
+const userHeadViewSchema = registry.register(
+  'UserHeadView',
+  userProfileViewSchema.omit({ is_following: true, viewer_bell: true }),
+);
+
+registry.registerPath({
+  method: 'get',
+  path: '/query/v1/users/{name}/head',
+  tags: [queryApiOpenApiTags.users],
+  summary: 'Profile head (hero fields, viewer-independent)',
+  description:
+    'Same fields as `/profile` without `is_following` / `viewer_bell`, mapped from the indexed `accounts_current` row only (no live Hive metadata call). Cheap and cacheable per account; the web profile hero paints from it before the full profile. Spec: `docs/apps/query-api/spec/user-head.md`.',
+  request: {
+    params: z.object({ name: accountNameParam }),
+  },
+  responses: {
+    200: {
+      description: 'Profile hero fields.',
+      content: {
+        'application/json': {
+          schema: userHeadViewSchema,
+        },
+      },
+    },
+    404: {
+      description: 'No row in `accounts_current` for `name`.',
+      content: {
+        'application/json': {
+          schema: notFoundSchema,
+        },
+      },
+    },
+  },
+});
+
 const userAccountSidebarWaivSchema = z.object({
   upvotingManaPercent: z.number(),
   downvotingManaPercent: z.number(),

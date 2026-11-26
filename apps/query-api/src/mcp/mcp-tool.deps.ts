@@ -100,7 +100,7 @@ import type { GetObjectActivityMessageEndpoint } from '../domain/messaging/get-o
 import type { GetFollowedObjectsMessagesEndpoint } from '../domain/messaging/get-followed-objects-messages.endpoint';
 import type { GetFollowedObjectsThreadsFeedEndpoint } from '../domain/feed/get-followed-objects-threads-feed.endpoint';
 import type { GetFollowedObjectsUpdatesFeedEndpoint } from '../domain/object-updates/get-followed-objects-updates-feed.endpoint';
-import type { GetUserProfileEndpoint, GetUserAccountSidebarEndpoint, GetUserNotificationSettingsEndpoint } from '../domain/users';
+import type { GetUserProfileEndpoint, GetUserHeadEndpoint, GetUserAccountSidebarEndpoint, GetUserNotificationSettingsEndpoint } from '../domain/users';
 import type {
   GetUserEngineTokenDelegationsEndpoint,
   GetUserHiveHpDelegationsEndpoint,
@@ -165,6 +165,7 @@ export interface McpToolDeps {
   getObjectThreadsFeed: GetObjectThreadsFeedEndpoint;
   getUpdateVoters: GetUpdateVotersEndpoint;
   getUserProfile: GetUserProfileEndpoint;
+  getUserHead: GetUserHeadEndpoint;
   getUserNotificationSettings: GetUserNotificationSettingsEndpoint;
   getUserAccountSidebar: GetUserAccountSidebarEndpoint;
   getUserBlogFeed: GetUserBlogFeedEndpoint;

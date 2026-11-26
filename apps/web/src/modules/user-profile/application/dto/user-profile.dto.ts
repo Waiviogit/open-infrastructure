@@ -17,4 +17,18 @@ export const userProfileViewSchema: z.ZodType<UserProfileView> = z.object({
   viewer_bell: z.boolean(),
 });
 
+/** `GET /users/:name/head` — the profile without viewer fields. */
+export const userHeadViewSchema = z.object({
+  name: z.string(),
+  displayName: z.string(),
+  bio: z.string(),
+  avatarUrl: z.string().nullable(),
+  coverImageUrl: z.string().nullable(),
+  followerCount: z.number().int(),
+  followingCount: z.number().int(),
+  postingCount: z.number().int(),
+  reputation: z.number().int(),
+  wobjectsWeight: z.number(),
+});
+
 export type { UserProfileView } from '../../domain/types/user-profile-view';

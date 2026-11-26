@@ -54,6 +54,8 @@ export {
   ProfileHeroSkeleton,
   ProfilePrimaryNavSkeleton,
 } from './components/profile-hero-skeleton';
+export { ProfileHeadShell } from './components/profile-head-shell';
+export type { ProfileHeadShellProps } from './components/profile-head-shell';
 export { UserMenuVerticalRail } from './components/user-menu-vertical-rail';
 export { UserProfileSubmenu } from './components/user-profile-submenu';
 export type { UserProfileSubmenuProps } from './components/user-profile-submenu';

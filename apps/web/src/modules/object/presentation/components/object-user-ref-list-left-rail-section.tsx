@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { UserAvatar } from '@/shared/presentation/avatar/user-avatar';
+import { ProfilePageLink } from '@/shared/presentation/components/profile-page-link';
 
 export const LEFT_RAIL_USER_REF_COLLAPSED_COUNT = 10;
 
@@ -21,15 +21,13 @@ function UserRefRow({ account }: { account: string }) {
   }
 
   return (
-    <Link
-      href={`/@${encodeURIComponent(trimmed)}`}
-      prefetch={false}
-      suppressHydrationWarning
+    <ProfilePageLink
+      accountName={trimmed}
       className="-mx-1 flex min-w-0 items-center gap-2 rounded-btn p-1 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       <UserAvatar username={trimmed} size={32} displayName={trimmed} />
       <span className="min-w-0 break-words text-accent">@{trimmed}</span>
-    </Link>
+    </ProfilePageLink>
   );
 }
 

@@ -1,25 +1,11 @@
-import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import {
-  getUserAccountSidebarQuery,
-  getUserProfileQuery,
-  UserProfileHeroClient,
-  UserProfilePendingNavRoot,
-  UserProfilePendingNavSync,
-  UserProfileSocialCountsProvider,
-} from '@/modules/user-profile';
-import { getUserFeedUnreadCountsQuery } from '@/modules/user-profile/application/queries/get-user-feed-unread-counts.query';
-import { ProfileFeedTabMarkReadEffect } from '@/modules/user-profile/presentation/components/profile-feed-tab-mark-read';
-import { UserProfileFeedUnreadProvider } from '@/modules/user-profile/presentation/components/user-profile-feed-unread-context';
-import { fetchExpertiseCountsForProfile } from '@/modules/user-profile/presentation/components/profile-expertise-main-content';
-import { getUserFollowingObjectsPageQuery } from '@/modules/user-social';
-import { createCookieAuthContextProvider } from '@/shared/infrastructure/auth/cookie-auth-context-provider';
+import { ProfileHeadShell } from '@/modules/user-profile';
+import { getUserHeadQuery } from '@/modules/user-profile/application/queries/get-user-head.query';
 import { ScrollToTopOnEnter } from '@/shared/presentation';
-import { ShellFullBleedBand, ShellInset } from '@/shared/presentation/layout';
 
 import UserProfileNameLoading from '../loading';
-import { getMockProfileShellUser } from '../mock-profile';
+import { ProfileGroupFull } from './profile-group-full.server';
 
 type ProfileGroupLayoutProps = {
   children: React.ReactNode;
@@ -27,68 +13,40 @@ type ProfileGroupLayoutProps = {
 };
 
 /**
- * Hero, providers and counters need the viewer and four queries: they stream behind the profile
- * skeleton, so entering the group from a post page (shared `[name]`) paints at once. The account
- * sidebar (live chain reads) is not awaited: the hero streams its reputation and mobile meta.
+ * Two stages behind the profile skeleton (entering the group from a post page, which shares
+ * `[name]`, paints at once):
+ * 1. the cached profile head (no viewer) → `ProfileHeadShell`, the real hero with inert controls;
+ *    a link prefetched on intent carries it, so the hero is there on click;
+ * 2. `ProfileGroupFull` — viewer, full profile, counters and the tab content.
  */
 export default function ProfileGroupLayout({ children, params }: ProfileGroupLayoutProps) {
   return (
     <Suspense fallback={<UserProfileNameLoading />}>
-      <ProfileGroupContent params={params}>{children}</ProfileGroupContent>
+      <ProfileGroupHead params={params}>{children}</ProfileGroupHead>
     </Suspense>
   );
 }
 
-async function ProfileGroupContent({ children, params }: ProfileGroupLayoutProps) {
+async function ProfileGroupHead({ children, params }: ProfileGroupLayoutProps) {
   const { name } = await params;
-  const decoded = decodeURIComponent(name);
-  const auth = createCookieAuthContextProvider();
-  const viewerUser = await auth.getUser();
-  const viewer = viewerUser?.username ?? null;
-
-  const sidebar = getUserAccountSidebarQuery(decoded);
-  const [profileResult, objectsHead, expertiseCounts, feedUnreadCounts] = await Promise.all([
-    getUserProfileQuery(decoded, viewer),
-    getUserFollowingObjectsPageQuery(decoded, { sort: 'weight', skip: 0, limit: 0 }),
-    fetchExpertiseCountsForProfile(decoded),
-    getUserFeedUnreadCountsQuery(decoded, viewer),
-  ]);
-  const profile = profileResult ?? getMockProfileShellUser(decoded);
-  if (!profile) {
-    notFound();
-  }
+  const accountName = decodeURIComponent(name);
+  const head = await getUserHeadQuery(accountName);
 
   return (
-    <UserProfileFeedUnreadProvider value={feedUnreadCounts}>
-    <ScrollToTopOnEnter routeKey={decoded.toLowerCase()} />
-    <UserProfileSocialCountsProvider
-      value={{
-        followerCount: profile.followerCount,
-        followingCount: profile.followingCount,
-        followingObjectsCount: objectsHead.total,
-        hashtagsExpCount: expertiseCounts.hashtagsExpCount,
-        objectsExpCount: expertiseCounts.objectsExpCount,
-      }}
-    >
-      <UserProfilePendingNavRoot>
-        <Suspense fallback={null}>
-          <UserProfilePendingNavSync />
-          <ProfileFeedTabMarkReadEffect
-            accountName={decoded}
-            viewerUsername={viewer}
-          />
-          <UserProfileHeroClient
-            accountName={decoded}
-            initialUser={profile}
-            sidebar={sidebar}
-            viewerUsername={viewer}
-          />
-          <ShellFullBleedBand className="shell-profile-content-band">
-            <ShellInset className="pt-0">{children}</ShellInset>
-          </ShellFullBleedBand>
-        </Suspense>
-      </UserProfilePendingNavRoot>
-    </UserProfileSocialCountsProvider>
-    </UserProfileFeedUnreadProvider>
+    <>
+      {/* Outside the full-page boundary: resets once when the hero appears, not again after it. */}
+      <ScrollToTopOnEnter routeKey={accountName.toLowerCase()} />
+      <Suspense
+        fallback={
+          head.kind === 'found' ? (
+            <ProfileHeadShell accountName={accountName} head={head.user} />
+          ) : (
+            <UserProfileNameLoading />
+          )
+        }
+      >
+        <ProfileGroupFull accountName={accountName}>{children}</ProfileGroupFull>
+      </Suspense>
+    </>
   );
 }

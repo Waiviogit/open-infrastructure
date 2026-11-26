@@ -45,6 +45,7 @@ import { StoryPinButton } from './story-pin-button';
 import { StoryReblogButton } from './story-reblog-button';
 import { StoryStatButton } from './story-stat-button';
 import { StoryVoteButton } from './story-vote-button';
+import { ProfilePageLink } from '@/shared/presentation/components/profile-page-link';
 
 type StoryProps = {
   story: FeedStoryView;
@@ -100,7 +101,6 @@ export function Story({
   const editHref = isReply ? null : `/editor?${editorSearch.toString()}`;
   const commentEdit = useCommentEditTarget(story.authorName, story.permlink);
   const editingInline = isReply && isOwnPost && currentUsername != null && commentEdit.state.status !== 'idle';
-  const authorProfileHref = `/@${encodeURIComponent(story.authorName)}`;
 
   return (
     <article
@@ -116,11 +116,10 @@ export function Story({
       ) : null}
 
       <header className="flex min-w-0 items-start gap-2 sm:gap-3">
-        <Link
-          href={authorProfileHref}
-          suppressHydrationWarning
+        <ProfilePageLink
+          accountName={story.authorName}
           className="inline-flex shrink-0 self-start rounded-circle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-          aria-label={`View profile: @${story.authorName}`}
+          ariaLabel={`View profile: @${story.authorName}`}
         >
           <UserAvatar
             username={story.authorName}
@@ -129,16 +128,15 @@ export function Story({
             size={40}
             className="max-sm:!h-9 max-sm:!w-9 max-sm:!min-h-9 max-sm:!min-w-9"
           />
-        </Link>
+        </ProfilePageLink>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
-            <Link
-              href={authorProfileHref}
-              suppressHydrationWarning
+            <ProfilePageLink
+              accountName={story.authorName}
               className="truncate font-weight-label text-body-sm text-fg hover:underline focus-visible:rounded-btn focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
               {displayAuthor}
-            </Link>
+            </ProfilePageLink>
             {repLabel != null ? (
               <StatHoverTooltip content={t('stat_user_expertise_tooltip')}>
                 <span className="shrink-0 rounded border border-border bg-surface-control px-1.5 py-0.5 text-caption font-weight-label text-fg-secondary tabular-nums">

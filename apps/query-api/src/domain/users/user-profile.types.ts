@@ -15,3 +15,9 @@ export interface UserProfileView {
   /** Bell flag on that subscription; false when not following or bell is null. */
   viewer_bell: boolean;
 }
+
+/**
+ * `GET /users/:name/head` — the profile without viewer fields, from the indexed account row only
+ * (no live Hive metadata).
+ */
+export type UserHeadView = Omit<UserProfileView, 'is_following' | 'viewer_bell'>;

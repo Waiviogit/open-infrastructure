@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
@@ -8,6 +7,7 @@ import { StatHoverTooltip, UserAvatar, useInfiniteScroll } from '@/shared/presen
 
 import { fetchDiscoverUsers } from '../../infrastructure/discover.client';
 import type { DiscoverUsersPage } from '../../domain/discover-response.schema';
+import { ProfilePageLink } from '@/shared/presentation/components/profile-page-link';
 
 const PAGE_LIMIT = 20;
 
@@ -98,8 +98,8 @@ export function DiscoverUserFeed({ q }: DiscoverUserFeedProps) {
           <ul className="divide-y divide-border rounded-card border border-border bg-surface">
             {items.map((u) => (
               <li key={u.name}>
-                <Link
-                  href={`/@${encodeURIComponent(u.name)}`}
+                <ProfilePageLink
+                  accountName={u.name}
                   className="flex items-center gap-3 px-3 py-2 hover:bg-ghost-surface"
                 >
                   <UserAvatar
@@ -128,7 +128,7 @@ export function DiscoverUserFeed({ q }: DiscoverUserFeedProps) {
                   {u.is_following ? (
                     <span className="text-caption text-fg-secondary">{t('search_user_following')}</span>
                   ) : null}
-                </Link>
+                </ProfilePageLink>
               </li>
             ))}
           </ul>

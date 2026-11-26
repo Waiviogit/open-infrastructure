@@ -10,7 +10,8 @@ Production `instant()` suite for the Cache Components / Partial Prefetching migr
 - TEST USER: `carol`, session = `odl_access` JWT minted by `src/instant/support/rig.ts` (`signIn`, cookie only, no page navigation) with the rig secret; state: `src/instant/support/seed.sql` — carol follows `cafe-1` and `park-2`; 30+ threads/updates; locale default (en-US).
 - DRIFT: seed is minimal — one post (`alice/espresso-review`), only one channel message; empty-state screens differ from production data. None known for the asserted skeletons.
 - CONTRACTS (one test each, `instant-navigation.spec.ts`):
-  - `/feed/threads` author link → `/@alice`: profile skeleton `[aria-label="Loading profile"]`, `h1 alice` gated — passing.
+  - `/feed/threads` author link → `/@alice` (DOM click, no hover): profile skeleton `[aria-label="Loading profile"]`, `h1 alice` gated — passing.
+  - same link hovered first (`ProfilePageLink` → `prefetch={true}`): `h1 alice`, `profile-head-shell` and `[aria-label="Loading profile posts"]` visible; after release the head shell is gone.
   - `/feed/updates` card header → `/object/cafe-1` (DOM click, no hover): object skeleton `[aria-label="Loading object"]`, `h1 Blue Cafe` gated — passing (route shell exists; a real click still needs the link to prefetch — see `nav-instant-trace.cjs`).
   - same link hovered first (`ObjectPageLink` → `prefetch={true}`): `h1 Blue Cafe` and `object-head-shell` visible, `nav[aria-label="Object sections"]` gated; after release the tabs appear and the head shell is gone.
   - `/feed/threads` rail → `/feed/updates`: `[aria-label="Loading posts"]`, `home-updates-feed` gated — passing.

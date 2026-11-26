@@ -6,7 +6,7 @@ type: spec
 status: active
 scope: web
 tags: [web, page, user-profile, data-loading]
-updated_at: 2026-11-11
+updated_at: 2026-11-26
 related:
   - docs/apps/web/spec/overview.md
   - docs/apps/web/spec/pages/user-profile/profile-shell.md
@@ -23,10 +23,22 @@ This document covers loading **shell profile** data (hero / header counts and di
 
 ## When data loads
 
+| Stage | Location | What |
+|-------|----------|------|
+| Entry skeleton | `[name]/loading.tsx` (prefetched by every profile link) | `ProfileHeroSkeleton` (same geometry as `UserHero`) + rail and feed skeletons |
+| Existence | `[name]/layout.tsx` (`ValidatedProfile`, inside `<Suspense>`) | `getUserHeadQuery` → `GET /users/:name/head` ([spec](../../../../apps/query-api/spec/user-head.md)); `notFound()` only on a definite 404 — an unavailable query-api renders on, so a failed read cached into a prefetch never becomes "not found" |
+| Head | `(profile)/layout.tsx` | the same head (React `cache`) → `ProfileHeadShell`: the real hero in `pending` mode (no follow / bell / edit / guest controls, reputation placeholder), the real primary tabs, rail and feed skeletons |
+| Full | `(profile)/profile-group-full.server.tsx` behind the head shell | `await navigation()`, viewer, `getUserProfileQuery(name, viewer)`, following-objects count (`limit=0`, no viewer / locale), expertise counters, owner unread counts; the account sidebar is passed to the hero as a promise |
+| Tab body | `(main)/page.tsx` etc. | `await navigation()` first; `generateMetadata` too |
+
+`navigation()` keeps the viewer read and the full profile out of link prefetches: `ProfilePageLink` (and header search user rows) switch to `prefetch={true}` on intent, and the per-link prefetch carries only the head — see [caching.md](../../caching.md#partial-prefetching).
+
+The hero never waits for the account sidebar (live Hive / Engine reads): reputation and the mobile meta read the promise with `use()` behind their own placeholders (`UserHeader` → `SidebarPart`).
+
+`/profile` is requested with the viewer only — query-api does not read the locale, so it is not part of the cache key.
+
 | Location | When |
 |----------|------|
-| `apps/web/src/app/(app)/user-profile/[name]/layout.tsx` | Validates `name` regex; `await getUserProfileQuery(decoded)` — `notFound()` if null |
-| `apps/web/src/app/(app)/user-profile/[name]/(profile)/layout.tsx` | Re-fetches profile with viewer + locale; loads following-objects count head and expertise counters for hero badges |
 | `apps/web/src/app/(app)/user-profile/[name]/(profile)/(main)/@leftSidebar/*` | `getUserAccountSidebarQuery` on default routes (not favorites — see [routes/favorites.md](routes/favorites.md)) |
 
 ### Left sidebar (account panel)
@@ -57,8 +69,7 @@ HTTP call (via `queryApiFetch` in `apps/web/src/modules/user-profile/infrastruct
 `GET {QUERY_API_URL}/query/v1/users/{name}/profile`
 
 - Cached for 60 s by `queryApiFetch` (`'use cache'`, keyed by URL, method, headers and body) — see [caching.md](../../caching.md).
-- Response `404` → `null` (user missing).
-- Other non-OK statuses throw (surfaced as render error unless handled).
+- Any non-OK status or network failure → `null` (`queryApiFetch` never throws); the head client distinguishes a 404 (`missing`) from the rest (`unavailable`) with `queryApiFetchOutcome`.
 
 ## `server-only` client and env
 

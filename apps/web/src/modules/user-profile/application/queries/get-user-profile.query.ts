@@ -15,7 +15,8 @@ export function createGetUserProfileQuery(repo: UserProfileRepository) {
   };
 }
 
-function mapViewToShellUser(view: UserProfileView): UserProfileShellUser {
+/** Profile view → hero props. The profile head goes through here too, so both paint the same hero. */
+export function mapViewToShellUser(view: UserProfileView): UserProfileShellUser {
   return {
     id: view.name,
     name: view.name,

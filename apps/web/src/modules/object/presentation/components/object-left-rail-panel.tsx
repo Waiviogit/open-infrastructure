@@ -74,6 +74,7 @@ import { ObjectMenuItemsStatic } from './object-menu-items-static';
 import { ObjectOptionsSection } from './object-options-section';
 import { optionPreviewImageSrc } from './object-options-section.utils';
 import { StarRating } from './star-rating';
+import { ProfilePageLink } from '@/shared/presentation/components/profile-page-link';
 
 function LeftRailIconShell({
   children,
@@ -1289,14 +1290,12 @@ export function ObjectLeftRailPanel({
                     <ul className="mt-1 list-none space-y-1 p-0">
                       {block.entries.map((entry) => (
                         <li key={`${entry.account}-${entry.timestamp}`} className="text-body-sm">
-                          <Link
-                            href={`/@${encodeURIComponent(entry.account)}`}
-                            prefetch={false}
-                            suppressHydrationWarning
+                          <ProfilePageLink
+                            accountName={entry.account}
                             className="text-accent hover:underline"
                           >
                             @{entry.account}
-                          </Link>
+                          </ProfilePageLink>
                           <span className="text-muted">
                             {' '}
                             · {new Date(entry.timestamp * 1000).toISOString().slice(0, 10)}

@@ -3,6 +3,8 @@ export {
   parsePostingMetadata,
   type UserProfileView,
 } from './get-user-profile.endpoint';
+export { GetUserHeadEndpoint } from './get-user-head.endpoint';
+export type { UserHeadView } from './user-profile.types';
 export { GetUserNotificationSettingsEndpoint } from './get-user-notification-settings.endpoint';
 export type { UserNotificationSettingsView } from './user-notification-settings.types';
 export { GetUserAccountSidebarEndpoint } from './get-user-account-sidebar.endpoint';

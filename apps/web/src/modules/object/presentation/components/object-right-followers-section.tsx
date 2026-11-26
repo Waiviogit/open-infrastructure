@@ -7,6 +7,7 @@ import type { PaginatedUserFollowListView } from '@/modules/user-social/applicat
 import { StatHoverTooltip, UserAvatar } from '@/shared/presentation';
 
 import { buildObjectFollowersPath } from '../../domain/object-page-url.constants';
+import { ProfilePageLink } from '@/shared/presentation/components/profile-page-link';
 
 const RIGHT_RAIL_MAX_ITEMS = 5;
 
@@ -29,10 +30,9 @@ export function ObjectRightFollowersSection({
       <ul className="mt-3 w-full space-y-2">
         {visible.map((row) => (
           <li key={row.name} className="w-full">
-            <Link
-              href={`/@${row.name}`}
+            <ProfilePageLink
+              accountName={row.name}
               className="flex w-full min-w-0 items-center gap-2 rounded-btn border border-border bg-bg p-2 transition-colors hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-              suppressHydrationWarning
             >
               <UserAvatar
                 username={row.name}
@@ -48,7 +48,7 @@ export function ObjectRightFollowersSection({
                   {row.wobjectsWeight.toFixed(2)}
                 </span>
               </StatHoverTooltip>
-            </Link>
+            </ProfilePageLink>
           </li>
         ))}
       </ul>

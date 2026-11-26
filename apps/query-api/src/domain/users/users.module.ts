@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { RepositoriesModule } from '../../repositories';
+import { GetUserHeadEndpoint } from './get-user-head.endpoint';
 import { GetUserProfileEndpoint } from './get-user-profile.endpoint';
 import { GetUserNotificationSettingsEndpoint } from './get-user-notification-settings.endpoint';
 import { GetUserAccountSidebarEndpoint } from './get-user-account-sidebar.endpoint';
@@ -12,6 +13,7 @@ import { WaivRewardPoolCache } from './waiv-reward-pool.cache';
   imports: [RepositoriesModule],
   providers: [
     GetUserProfileEndpoint,
+    GetUserHeadEndpoint,
     GetUserNotificationSettingsEndpoint,
     GetUserAccountSidebarEndpoint,
     HiveAccountsCache,
@@ -21,6 +23,7 @@ import { WaivRewardPoolCache } from './waiv-reward-pool.cache';
   ],
   exports: [
     GetUserProfileEndpoint,
+    GetUserHeadEndpoint,
     GetUserNotificationSettingsEndpoint,
     GetUserAccountSidebarEndpoint,
   ],
