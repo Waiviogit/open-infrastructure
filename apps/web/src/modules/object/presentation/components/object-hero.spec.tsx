@@ -195,6 +195,44 @@ describe('ObjectHero avatar gallery', () => {
   });
 });
 
+describe('ObjectHero pending (painted from the object head)', () => {
+  const photosAlbum = {
+    name: 'Photos',
+    items: [{ url: 'https://cdn.example.com/avatar.jpg', rankScore: null, isAvatar: true }],
+  };
+
+  it('keeps the heading and the same controls, but makes them inert', () => {
+    const onFollowToggle = jest.fn();
+    const onOpenGalleryPhoto = jest.fn();
+    render(
+      <ObjectHero
+        {...baseProps}
+        pending
+        avatarUrl="https://cdn.example.com/avatar.jpg"
+        galleryPhotosAlbum={photosAlbum}
+        onOpenGalleryPhoto={onOpenGalleryPhoto}
+        onFollowToggle={onFollowToggle}
+        showInstacartButton
+        objectId="obj-1"
+      />,
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Good Co.' })).toBeTruthy();
+    expect(screen.getByText('object_detail_follow').closest('[inert]')).not.toBeNull();
+    expect(screen.getByText(/Get Recipe Ingredients/).closest('[inert]')).not.toBeNull();
+
+    const avatarButton = screen.getByRole('button', { name: 'gallery' });
+    expect(avatarButton).toBeDisabled();
+    fireEvent.click(avatarButton);
+    expect(onOpenGalleryPhoto).not.toHaveBeenCalled();
+  });
+
+  it('is interactive when not pending', () => {
+    render(<ObjectHero {...baseProps} />);
+    expect(screen.getByText('object_detail_follow').closest('[inert]')).toBeNull();
+  });
+});
+
 describe('ObjectHero Instacart', () => {
   it('renders the Instacart button in the hero when flagged', () => {
     render(

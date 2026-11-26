@@ -383,6 +383,26 @@ export type ObjectPageSeoView = {
   keywords: string[] | null;
 };
 
+/**
+ * What the object hero paints. Built by one mapper from the head (`GET /objects/:id/head`) and from
+ * the full resolve, so the hero painted before the full model is the same hero after it.
+ */
+export type ObjectHeroIdentity = Pick<
+  ObjectPageViewModel,
+  | 'objectId'
+  | 'title'
+  | 'subtitleTitle'
+  | 'avatarUrl'
+  | 'coverImageUrl'
+  | 'kindLabel'
+  | 'lifecycleStatus'
+  | 'displayWeightLabel'
+  | 'objectTypeKey'
+  | 'showInstacartButton'
+  | 'previewGallery'
+  | 'galleryAlbums'
+>;
+
 export type ObjectPageViewModel = {
   objectId: string;
   /** Hero heading from `name` update. */

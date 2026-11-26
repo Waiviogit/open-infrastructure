@@ -1,6 +1,8 @@
 export { ObjectViewShell } from './components/object-view-shell';
 export type { ObjectViewShellProps } from './components/object-view-shell';
 export { ObjectHero } from './components/object-hero';
+export { ObjectHeadShell } from './components/object-head-shell';
+export type { ObjectHeadShellProps } from './components/object-head-shell';
 export type { ObjectHeroProps } from './components/object-hero';
 export { LeftObjectProfileSidebar } from './components/left-object-profile-sidebar';
 export type { LeftObjectProfileSidebarProps } from './components/left-object-profile-sidebar';

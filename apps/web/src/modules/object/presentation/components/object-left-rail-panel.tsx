@@ -21,7 +21,9 @@ import {
   WeightIcon,
 } from '@/icons';
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { ObjectPageLink } from '@/modules/feed/presentation/components/object-page-link';
 import { AddUpdateModal } from '@/modules/object-updates/presentation/components/add-update-modal';
+import { objectPagePath } from '@/shared/routes/object-page-path';
 import {
   getUpdateTypesForBlockKind,
   primaryUpdateTypeForBlockKind,
@@ -360,10 +362,8 @@ function LeftRailObjectRefLink({
   imageUrl: string | null;
 }) {
   return (
-    <Link
-      href={`/object/${encodeURIComponent(objectId)}`}
-      prefetch={false}
-      suppressHydrationWarning
+    <ObjectPageLink
+      href={objectPagePath(objectId)}
       className="-mx-1 -my-1 flex min-w-0 items-center gap-2.5 rounded-btn p-1 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       <div className="relative size-10 shrink-0 overflow-hidden rounded-card border border-border bg-surface">
@@ -386,7 +386,7 @@ function LeftRailObjectRefLink({
         )}
       </div>
       <span className="min-w-0 break-words text-accent">{name}</span>
-    </Link>
+    </ObjectPageLink>
   );
 }
 
@@ -1257,14 +1257,12 @@ export function ObjectLeftRailPanel({
                     <ul className="mt-1 list-none space-y-2 p-0">
                       {block.entries.map((entry) => (
                         <li key={entry.objectId} className="text-body-sm">
-                          <Link
-                            href={`/object/${encodeURIComponent(entry.objectId)}`}
-                            prefetch={false}
-                            suppressHydrationWarning
+                          <ObjectPageLink
+                            href={objectPagePath(entry.objectId)}
                             className="text-accent hover:underline"
                           >
                             {entry.objectId}
-                          </Link>
+                          </ObjectPageLink>
                           {entry.scope.length > 0 ? (
                             <p className="mt-0.5 text-muted">{entry.scope.join(', ')}</p>
                           ) : null}

@@ -103,6 +103,30 @@ export function registerObjectTools(server: McpServer, deps: McpToolDeps): void 
   );
 
   server.registerTool(
+    'get_object_head',
+    {
+      description: catalogDescription('get_object_head'),
+      inputSchema: withMcpLocaleContext(
+        z.object({
+          object_id: z.string().min(1).describe('Object id (author_permlink)'),
+        }),
+      ),
+    },
+    async (args) => {
+      const ctx = pickMcpContext(args);
+      const result = await deps.getObjectHead.execute({
+        objectId: args.object_id,
+        locale: ctx.locale,
+        governanceObjectIdFromHeader: ctx.governanceObjectIdFromHeader,
+      });
+      if (!result) {
+        return toolError(`Object not found: ${args.object_id}`);
+      }
+      return jsonToolResult(result);
+    },
+  );
+
+  server.registerTool(
     'check_object_exists',
     {
       description: catalogDescription('check_object_exists'),

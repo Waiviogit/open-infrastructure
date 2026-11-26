@@ -37,12 +37,14 @@ function mergePendingClass(className: string | undefined, pending: boolean): str
 /**
  * Client navigation to `/object/…` with instant pending feedback.
  *
- * Default prefetch: a visible link prefetches the route shell — `object/loading.tsx`, which sits
- * above the blocking `[object-id]` layout — so the click paints the object skeleton without a
- * round trip. Cost under Partial Prefetching: one small `/_tree` request per visible distinct
- * object; the shell segment is fetched once and shared by all object links. Hover-only
- * prefetch was not enough: those two requests do not finish between hover and click at real
- * network latency.
+ * Prefetch in two steps:
+ * - visible: the route shell (`prefetch="auto"`) — `object/loading.tsx`, above the blocking
+ *   `[object-id]` layout — so the click paints the object skeleton without a round trip. Cost under
+ *   Partial Prefetching: one small `/_tree` request per visible distinct object; the shell segment
+ *   is fetched once and shared by all object links.
+ * - intent (hover, focus, touch): `prefetch={true}` — the per-link prefetch adds the object head
+ *   (name, avatar, cover), so the hero paints on click. One server render per pointed-at link; the
+ *   full page stays out of it (`navigation()` in the object layout and page).
  */
 export function ObjectPageLink({
   href,
@@ -54,6 +56,8 @@ export function ObjectPageLink({
   onPendingChange,
 }: ObjectPageLinkProps) {
   const [pending, setPending] = useState(false);
+  const [intent, setIntent] = useState(false);
+  const showIntent = () => setIntent(true);
 
   const reportPending = (next: boolean) => {
     setPending(next);
@@ -64,6 +68,10 @@ export function ObjectPageLink({
     <Link
       href={href}
       replace={replace}
+      prefetch={intent ? true : 'auto'}
+      onMouseEnter={showIntent}
+      onFocus={showIntent}
+      onTouchStart={showIntent}
       aria-label={ariaLabel}
       title={title}
       aria-busy={pending || undefined}

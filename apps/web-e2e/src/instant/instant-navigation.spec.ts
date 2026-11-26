@@ -27,19 +27,40 @@ test.describe('instant navigation', () => {
     await expect(page.locator('h1', { hasText: 'alice' })).toBeVisible();
   });
 
-  // `object/loading.tsx` sits above the blocking object layout, so its skeleton is the route shell.
+  // `object/loading.tsx` sits above the object layout, so its skeleton is the route shell.
   // `instant()` waits for the route prefetch itself; whether a real click has that prefetch is the
   // link's prefetch policy (ObjectPageLink) — measured by the verify skill's nav-instant-trace.cjs.
+  // A DOM click (no pointer move) keeps the link at the default shell prefetch.
   test('feed Updates → object paints the object skeleton', async ({ page }) => {
     await page.goto('/feed/updates');
     const trigger = page.locator('main li > a[href="/object/cafe-1"]').first();
     await expect(trigger).toBeVisible();
 
     await instant(page, async () => {
-      await trigger.click();
+      await trigger.dispatchEvent('click');
       await expect(page.locator('[aria-label="Loading object"]')).toBeVisible();
       await expect(page.locator('h1', { hasText: 'Blue Cafe' })).toHaveCount(0);
     });
+    await expect(page.locator('h1', { hasText: 'Blue Cafe' })).toBeVisible();
+  });
+
+  // Hover upgrades ObjectPageLink to `prefetch={true}`: the per-link prefetch carries the object
+  // head, so the hero is there on click while tabs and rails (below `navigation()`) are not.
+  test('feed Updates → hovered object link paints the hero before the full page', async ({ page }) => {
+    await page.goto('/feed/updates');
+    const trigger = page.locator('main li > a[href="/object/cafe-1"]').first();
+    await expect(trigger).toBeVisible();
+    const tabs = page.locator('nav[aria-label="Object sections"]');
+
+    await trigger.hover();
+    await instant(page, async () => {
+      await trigger.click();
+      await expect(page.locator('h1', { hasText: 'Blue Cafe' })).toBeVisible();
+      await expect(page.getByTestId('object-head-shell')).toHaveCount(1);
+      await expect(tabs).toHaveCount(0);
+    });
+    await expect(tabs).toBeVisible();
+    await expect(page.getByTestId('object-head-shell')).toHaveCount(0);
     await expect(page.locator('h1', { hasText: 'Blue Cafe' })).toBeVisible();
   });
 

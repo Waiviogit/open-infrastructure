@@ -11,6 +11,7 @@ import { UPDATE_TYPES, type SupportedCurrency } from '@opden-data-layer/core';
 import {
   CheckObjectExistsEndpoint,
   GetObjectByIdEndpoint,
+  GetObjectHeadEndpoint,
   GetNestedObjectsEndpoint,
   GetObjectFollowersEndpoint,
   GetObjectExpertsEndpoint,
@@ -33,6 +34,7 @@ import {
   type RelatedAlbumPreviewQuery,
   type RelatedAlbumPreviewResponseDto,
   type ProjectedObjectWithCounts,
+  type ObjectHeadDto,
   type ResolveObjectBody,
   type ResolveNestedObjectsBody,
   type ResolveNestedObjectsResponse,
@@ -113,6 +115,7 @@ import { ZodBodyPipe, ZodQueryPipe } from '../pipes';
 export class ObjectsController {
   constructor(
     private readonly getObjectById: GetObjectByIdEndpoint,
+    private readonly getObjectHead: GetObjectHeadEndpoint,
     private readonly getNestedObjects: GetNestedObjectsEndpoint,
     private readonly getObjectUpdatesFeed: GetObjectUpdatesFeedEndpoint,
     private readonly getUpdateVoters: GetUpdateVotersEndpoint,
@@ -162,6 +165,20 @@ export class ObjectsController {
     const objectId = decodeURIComponent(rawObjectId);
     const exists = await this.checkObjectExists.execute(objectId);
     return { exists };
+  }
+
+  @Get(':objectId/head')
+  async getHead(
+    @Param('objectId') rawObjectId: string,
+    @ReqLocale() locale: string,
+    @ReqGovernanceObjectId() governanceObjectIdFromHeader: string | undefined,
+  ): Promise<ObjectHeadDto> {
+    const objectId = decodeURIComponent(rawObjectId);
+    const head = await this.getObjectHead.execute({ objectId, locale, governanceObjectIdFromHeader });
+    if (!head) {
+      throw new NotFoundException(`Object not found: ${objectId}`);
+    }
+    return head;
   }
 
   @Get(':objectId/gallery/related/preview')

@@ -70,6 +70,7 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [Search](search.md) | `GET /query/v1/search`, `GET /query/v1/search/counts` |
 | [Google Maps places](places.md) | `GET /query/v1/places/search`, `/places/:place_id`, `/places/:place_id/object` (IP-biased, dedup by `identifier googleMaps`) |
 | [Objects resolve](objects-resolve.md) | `POST /query/v1/objects/resolve` (`aggregateRating` semantics) |
+| [Object head](object-head.md) | `GET /query/v1/objects/:id/head` — viewer-independent hero fields for the object page |
 | [Objects resolve-nested](objects-resolve-nested.md) | `POST /query/v1/objects/resolve-nested` (optional `update_types`) |
 | [Object avatar fallback](object-avatar-fallback.md) | `fields.image` from parent when child has no `image` |
 | [Object ref lists](object-ref-list-endpoints.md) | `GET .../related`, `/similar`, `/add-on` |

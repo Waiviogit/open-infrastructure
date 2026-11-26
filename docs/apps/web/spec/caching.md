@@ -62,7 +62,7 @@ streams in behind `<Suspense>`. Two conditions, both required:
 |-------|------------------------|-------|------|
 | `/@name` (profile) | profile skeleton | `user-profile/[name]/layout.tsx` — existence check (`ValidatedProfile`) inside `<Suspense fallback={<UserProfileNameLoading/>}>` | Story author `<Link>` (default prefetch) |
 | `/`, `/feed/{threads,activity,updates}` | `<main>` + feed skeleton; rail skeleton in the `@filters` slot | each page renders `<Suspense fallback={<FeedPostsLoadingSkeleton/>}>` around the session + `searchParams` + data read; the rail streams in its own `<Suspense>` | `HomeFeedTabNav` → `OptimisticNavLink prefetchShell`; rail filters → `OptimisticNavLink method="replace"` |
-| `/object/:id` | object skeleton | `object/loading.tsx` sits above the blocking `[object-id]` layout | `ObjectPageLink` (default prefetch: one small `/_tree` request per visible distinct object; the shell segment is fetched once and shared) |
+| `/object/:id` | object skeleton; **hero** (name, avatar, cover) when the link was intent-prefetched | `object/loading.tsx` sits above the `[object-id]` layout; the layout awaits only the cached object head and renders `ObjectHeadShell` as the fallback of the full page ([data loading](pages/object/data-loading.md)) | `ObjectPageLink` and header search rows: default prefetch while visible (one `/_tree` per distinct object, shared shell segment); `prefetch={true}` on hover / focus / touch (search: the pointed-at row) |
 | `/@name/<tab>` (profile tabs) | center skeleton overlay, then the tab's `loading.tsx` | `UserProfileMainContentPendingShell` overlays `ProfileMainPendingSkeleton` while the link is pending; `(profile)` and `(main)` layouts stream their viewer/account reads behind `<Suspense>`; `@leftSidebar` slot pages await `params` inside `<Suspense>` (rail skeleton fallback) | `UserProfileNavLink`, no prefetch needed (the overlay is client-side) |
 | `/@name/<permlink>` (soft nav → `@modal` intercept) | post modal skeleton | `@modal/(...)user-profile/[name]/post/[permlink]/page.tsx` renders the post inside `<Suspense fallback={<ModalLoadingSkeleton/>}>` (`@modal/loading.tsx` sits in the slot shared with `default`, so it does not trigger) | post links (default prefetch) |
 | `/object/:id/<tab>` (tab buttons) | center skeleton overlay, then the tab chrome | `ObjectPageShellClient` overlays `ObjectPageCenterSkeleton` while `navigateInstant` is pending; `page.tsx` renders its body inside `<Suspense fallback={<ObjectDetailLoading/>}>` so the tab chrome streams before its data | buttons, no prefetch needed (the overlay is client-side) |
@@ -103,8 +103,13 @@ static shell shared by every URL of that route — plus a small per-URL route tr
 shell segment is fetched once and reused, e.g. all object links on a feed share one object shell.
 URL-specific data streams after the click.
 
-No link uses `prefetch={true}` (which would also resolve URL data before the click, at one server
-invocation per link — decide per link, see `node_modules/next/dist/docs/01-app/02-guides/optimizing-prefetching.md`).
+`prefetch={true}` resolves URL data before the click, at one server invocation per link — decided
+per link (see `node_modules/next/dist/docs/01-app/02-guides/optimizing-prefetching.md`). Decisions:
+
+| Link | When `true` | What the per-link prefetch carries | Why |
+|------|-------------|-------------------------------------|-----|
+| `ObjectPageLink`, header search object rows | intent only (hover, focus, touch; search: the row under the pointer or arrow keys) — otherwise `'auto'` | the object head (hero); the full page sits below `navigation()` in the layout, page and `generateMetadata` | the hero was the 2–3 s wait on slow objects; the head is one cached, viewer-independent query |
+
 `router.prefetch()` is not used.
 
 Under the flag a prefetch renders the shell at request time, so code reached there must not read
@@ -126,7 +131,7 @@ Deliberate Blocks keep `export const instant = false` with a reason comment:
 | Segment | Reason |
 |---------|--------|
 | `app/layout.tsx` (root) | `<html>` lang/dir/theme/shell-mode from cookies; affects full page loads only |
-| `object/[object-id]/layout.tsx` | existence check sends a real 404; entry shell is `object/loading.tsx` above it |
+| `object/[object-id]/layout.tsx` | awaits `params` + locale + the cached object head at its top so an intent prefetch carries the hero; entry shell is `object/loading.tsx` above it. Existence is decided behind the head shell (`notFound()` → not-found UI + `noindex`, HTTP 200 — with Cache Components the status is committed before the check, as it already was) |
 | `business/manage/{offers,requests}/new` | creates a draft on GET and answers with a 307 to its editor |
 
 A route counts as adopted when `next build` passes, the dev overlay is clean and

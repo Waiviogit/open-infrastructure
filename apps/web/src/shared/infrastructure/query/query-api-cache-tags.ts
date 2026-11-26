@@ -1,6 +1,8 @@
 /** Next.js Data Cache tags for query-api GET responses (see `revalidate-after-broadcast.server.ts`). */
 
 export const queryApiCacheTags = {
+  /** Object page hero (`GET /objects/:id/head`). */
+  objectHead: (objectId: string) => `query-api:object:${objectId.trim()}:head`,
   objectOwnership: (objectId: string) =>
     `query-api:object:${objectId.trim()}:ownership`,
   objectFavoritedBy: (objectId: string) =>

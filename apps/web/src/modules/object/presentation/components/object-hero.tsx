@@ -47,6 +47,11 @@ export type ObjectHeroProps = {
   editContext?: ObjectHeroEditContext;
   galleryPhotosAlbum?: ProjectedGalleryAlbumView | null;
   onOpenGalleryPhoto?: (album: ProjectedGalleryAlbumView, photoIndex: number) => void;
+  /**
+   * Painted from the object head before the full page model: same markup and geometry as the
+   * loaded hero, controls inert (follow / favorite / gallery act on state the full page owns).
+   */
+  pending?: boolean;
 };
 
 type HeroModalTarget = 'avatar-background' | 'name' | 'title';
@@ -213,6 +218,7 @@ export function ObjectHero({
   editContext,
   galleryPhotosAlbum = null,
   onOpenGalleryPhoto,
+  pending = false,
 }: ObjectHeroProps) {
   const { t } = useI18n();
   const { resolvedMode } = useShellMode();
@@ -304,6 +310,7 @@ export function ObjectHero({
                   type="button"
                   className="cursor-pointer rounded-card"
                   aria-label={t('gallery')}
+                  disabled={pending}
                   onClick={openAvatarGallery}
                 >
                   {avatarThumbnail}
@@ -456,7 +463,10 @@ export function ObjectHero({
               ) : null}
             </div>
 
-            <div className="col-start-2 row-start-1 justify-self-end sm:col-start-3 sm:row-start-1">
+            <div
+              className="col-start-2 row-start-1 justify-self-end sm:col-start-3 sm:row-start-1"
+              inert={pending}
+            >
               <ObjectHeroActionBar
                 hasCoverPhoto={hasCoverPhoto}
                 canEditBackground={Boolean(canEditBackground)}
@@ -473,7 +483,7 @@ export function ObjectHero({
             </div>
           </div>
           {showInstacartButton && objectId ? (
-            <div className="mt-5 flex justify-center">
+            <div className="mt-5 flex justify-center" inert={pending}>
               <InstacartButton
                 objectId={objectId}
                 variant="page"

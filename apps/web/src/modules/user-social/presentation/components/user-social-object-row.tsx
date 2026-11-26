@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
 import { objectFields, type ProjectedObjectView } from '@/modules/feed/application/dto/object-fields';
+import { ObjectPageLink } from '@/modules/feed/presentation/components/object-page-link';
 import type { SocialProjectedObjectView } from '@/modules/user-social/application/dto/user-social.dto';
 import { useOdlCustomJsonId } from '@/config/odl-network-provider';
 import { useLoginModal } from '@/modules/auth/presentation';
@@ -90,12 +90,10 @@ export function UserSocialObjectRow({
   return (
     <li className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
       <div className="shrink-0">
-        <Link
+        <ObjectPageLink
           href={href}
-          prefetch={false}
           className="inline-flex rounded-btn focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-          aria-label={`View object: ${name}`}
-          suppressHydrationWarning
+          ariaLabel={`View object: ${name}`}
         >
           <span className="flex size-11 items-center justify-center overflow-hidden rounded-card border border-border bg-surface ring-1 ring-border/60">
             <ObjectThumbnail
@@ -106,17 +104,15 @@ export function UserSocialObjectRow({
               sizes={`${THUMB}px`}
             />
           </span>
-        </Link>
+        </ObjectPageLink>
       </div>
       <div className="min-w-0 flex-1">
-        <Link
+        <ObjectPageLink
           href={href}
-          prefetch={false}
           className="block truncate font-weight-label text-fg underline-offset-2 hover:underline focus-visible:rounded-btn focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-          suppressHydrationWarning
         >
           {name}
-        </Link>
+        </ObjectPageLink>
       </div>
       <StatHoverTooltip content={t('stat_object_expertise_tooltip')}>
         <span className="shrink-0 rounded-btn border border-border bg-surface-control px-2 py-0.5 font-mono text-body-sm text-fg-secondary">

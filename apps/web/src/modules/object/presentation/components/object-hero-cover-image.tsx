@@ -1,12 +1,15 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 
 import { getImagePathPost } from '@/shared/infrastructure/image/get-proxy-image-url';
+import { createImageFallbackMemory } from '@/shared/presentation/image/image-fallback-memory';
 import { shouldUnoptimizeRemoteImage } from '@/shared/presentation/image/should-unoptimize-remote-image';
 
 type CoverLoadPhase = 'raw' | 'proxy' | 'hidden';
+
+const fallbackMemory = createImageFallbackMemory<CoverLoadPhase>();
 
 export type ObjectHeroCoverImageProps = {
   coverImageUrl: string;
@@ -28,19 +31,18 @@ export function ObjectHeroCoverImage({
 
   const [phase, setPhase] = useState<CoverLoadPhase>('raw');
 
-  useEffect(() => {
-    setPhase('raw');
+  // Same remount rule as ObjectThumbnail: resume a known fallback before paint.
+  useLayoutEffect(() => {
+    setPhase(fallbackMemory.get(normalizedRaw) ?? 'raw');
   }, [normalizedRaw]);
 
   const displaySrc = phase === 'proxy' ? proxySrc : normalizedRaw;
 
   const onError = useCallback(() => {
-    if (phase === 'raw' && hasProxyFallback) {
-      setPhase('proxy');
-      return;
-    }
-    setPhase('hidden');
-  }, [hasProxyFallback, phase]);
+    const next: CoverLoadPhase = phase === 'raw' && hasProxyFallback ? 'proxy' : 'hidden';
+    fallbackMemory.remember(normalizedRaw, next);
+    setPhase(next);
+  }, [hasProxyFallback, normalizedRaw, phase]);
 
   if (phase === 'hidden' || !displaySrc) {
     return <div className="absolute inset-0 bg-nav-bg" aria-hidden />;

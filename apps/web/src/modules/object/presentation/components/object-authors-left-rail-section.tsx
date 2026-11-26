@@ -1,10 +1,11 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { ObjectPageLink } from '@/modules/feed/presentation/components/object-page-link';
 import { shouldUnoptimizeRemoteImage } from '@/shared/presentation';
+import { objectPagePath } from '@/shared/routes/object-page-path';
 
 import type { ObjectRefItem } from '../../domain/object-page.types';
 
@@ -17,10 +18,8 @@ export type ObjectAuthorsLeftRailSectionProps = {
 
 function AuthorRefRow({ item }: { item: ObjectRefItem }) {
   return (
-    <Link
-      href={`/object/${encodeURIComponent(item.objectId)}`}
-      prefetch={false}
-      suppressHydrationWarning
+    <ObjectPageLink
+      href={objectPagePath(item.objectId)}
       className="-mx-1 -my-0.5 flex min-w-0 flex-1 items-center gap-2 rounded-btn p-1 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       {item.imageUrl ? (
@@ -36,7 +35,7 @@ function AuthorRefRow({ item }: { item: ObjectRefItem }) {
         </div>
       ) : null}
       <span className="min-w-0 break-words text-accent">{item.name}</span>
-    </Link>
+    </ObjectPageLink>
   );
 }
 

@@ -5,6 +5,7 @@ import { GovernanceModule } from '../governance';
 import { ObjectProjectionModule } from '../object-projection/object-projection.module';
 import { RepositoriesModule } from '../../repositories';
 import { GetObjectByIdEndpoint } from './get-object-by-id.endpoint';
+import { GetObjectHeadEndpoint } from './get-object-head.endpoint';
 import { GetNestedObjectsEndpoint } from './get-nested-objects.endpoint';
 import { GetObjectFollowersEndpoint } from './get-object-followers.endpoint';
 import { GetObjectExpertsEndpoint } from './get-object-experts.endpoint';
@@ -33,6 +34,7 @@ import { GetObjectOptionsEndpoint } from './get-object-options.endpoint';
   ],
   providers: [
     GetObjectByIdEndpoint,
+    GetObjectHeadEndpoint,
     GetNestedObjectsEndpoint,
     GetObjectFollowersEndpoint,
     GetObjectExpertsEndpoint,
@@ -49,6 +51,7 @@ import { GetObjectOptionsEndpoint } from './get-object-options.endpoint';
   ],
   exports: [
     GetObjectByIdEndpoint,
+    GetObjectHeadEndpoint,
     GetNestedObjectsEndpoint,
     GetObjectFollowersEndpoint,
     GetObjectExpertsEndpoint,

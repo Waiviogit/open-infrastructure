@@ -32,7 +32,7 @@ Layout, regions, and browse/edit modes for the object detail route. Tab URLs and
 | `/object/:id/<tab>` | Proxy rewrite → `?tab=<tab>` — [routing-proxy](../../routing-proxy.md) |
 | `/object/:id?path=a,b` | Nested catalog stack in center column |
 
-Single App Router entry: [`page.tsx`](../../../../../apps/web/src/app/(app)/object/[object-id]/page.tsx) + [`object-page-client.tsx`](../../../../../apps/web/src/app/(app)/object/[object-id]/object-page-client.tsx).
+App Router entry: [`layout.tsx`](../../../../../apps/web/src/app/(app)/object/[object-id]/layout.tsx) (object head → `ObjectHeadShell`, then the full page in [`object-page-full-section.server.tsx`](../../../../../apps/web/src/app/(app)/object/[object-id]/object-page-full-section.server.tsx) with [`object-page-shell-client.tsx`](../../../../../apps/web/src/app/(app)/object/[object-id]/object-page-shell-client.tsx)) + [`page.tsx`](../../../../../apps/web/src/app/(app)/object/[object-id]/page.tsx) (tab body). Loading order: [data-loading](data-loading.md#order).
 
 ## Layout regions
 
@@ -107,6 +107,9 @@ Gated by hero Edit toggle + `viewerUsername` from server.
 
 | Path | Role |
 |------|------|
-| `apps/web/src/app/(app)/object/[object-id]/page.tsx` | SSR orchestration |
-| `apps/web/src/app/(app)/object/[object-id]/object-page-client.tsx` | Client tab + path sync |
+| `apps/web/src/app/(app)/object/[object-id]/layout.tsx` | Head stage, Suspense boundary for the full page |
+| `apps/web/src/app/(app)/object/[object-id]/object-page-full-section.server.tsx` | Viewer, full model, rails |
+| `apps/web/src/app/(app)/object/[object-id]/page.tsx` | Tab body SSR orchestration |
+| `apps/web/src/app/(app)/object/[object-id]/object-page-shell-client.tsx` | Client shell: hero state, tab + path sync |
+| `apps/web/src/modules/object/presentation/components/object-head-shell.tsx` | Hero from the object head + skeletons |
 | `apps/web/src/modules/object/presentation/components/object-primary-content.tsx` | Center column |

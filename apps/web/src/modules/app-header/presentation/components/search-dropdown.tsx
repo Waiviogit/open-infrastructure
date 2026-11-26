@@ -20,6 +20,11 @@ export type SearchDropdownProps = {
   counts: SearchCountsResponse | null;
   countsLoading: boolean;
   activeIndex: number;
+  /**
+   * Row the user points at (hover or arrow keys), -1 before that. Its object link prefetches the
+   * object head (`prefetch={true}`), so the hero paints on click; other rows keep the shell prefetch.
+   */
+  intentIndex?: number;
   flatList: SearchFlatEntry[];
   onHighlightIndex: (index: number) => void;
   listId: string;
@@ -95,6 +100,7 @@ export function SearchDropdown({
   counts,
   countsLoading,
   activeIndex,
+  intentIndex = -1,
   flatList,
   onHighlightIndex,
   listId,
@@ -191,12 +197,14 @@ export function SearchDropdown({
               {results.objects.map((obj) => {
                 const flatIdx = pickFlatIndexForRow(flatList, 'object', obj.object_id);
                 const active = flatIdx >= 0 && flatIdx === activeIndex;
+                const intent = flatIdx >= 0 && flatIdx === intentIndex;
                 const title = obj.name?.trim() || obj.object_id;
                 return (
                   <li key={obj.object_id}>
                     {/* A real link: it prefetches the object route (shell) before the click. */}
                     <Link
                       href={objectPagePath(obj.object_id)}
+                      prefetch={intent ? true : 'auto'}
                       role="option"
                       aria-selected={active}
                       suppressHydrationWarning

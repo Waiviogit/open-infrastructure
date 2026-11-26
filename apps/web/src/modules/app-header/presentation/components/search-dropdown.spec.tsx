@@ -103,6 +103,44 @@ describe('SearchDropdown object rows', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('prefetches the object head only for the row the user points at', () => {
+    const flatList = [{ kind: 'object' as const, item: RESULTS.objects[0] }];
+    const { rerender } = render(
+      <SearchDropdown
+        results={RESULTS}
+        resultsLoading={false}
+        counts={null}
+        countsLoading={false}
+        activeIndex={0}
+        flatList={flatList}
+        onHighlightIndex={jest.fn()}
+        listId="search"
+        searchQuery="gre"
+        messages={MESSAGES}
+        onClose={jest.fn()}
+      />,
+    );
+    const row = () => screen.getByRole('option', { name: /Greek Taverna/ });
+    expect(row()).toHaveAttribute('data-prefetch', 'auto');
+
+    rerender(
+      <SearchDropdown
+        results={RESULTS}
+        resultsLoading={false}
+        counts={null}
+        countsLoading={false}
+        activeIndex={0}
+        intentIndex={0}
+        flatList={flatList}
+        onHighlightIndex={jest.fn()}
+        listId="search"
+        searchQuery="gre"
+        messages={MESSAGES}
+        onClose={jest.fn()}
+      />,
+    );
+    expect(row()).toHaveAttribute('data-prefetch', 'true');
+  });
 });
 
 describe('SearchDropdown chip counts', () => {

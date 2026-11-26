@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { navigation } from 'next/cache';
 import { notFound } from 'next/navigation';
 
 import { OBJECT_TYPE_REGISTRY } from '@opden-data-layer/core/object-type-registry';
@@ -204,6 +205,9 @@ export async function generateMetadata({
   params: Promise<{ 'object-id': string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
+  // Keeps the full resolve out of link prefetches; the page body defers the same way. On a full
+  // page load this resolves at once, so crawlers still get blocking metadata from `model.seo`.
+  await navigation();
   const { 'object-id': rawId } = await params;
   const objectId = decodeURIComponent(rawId);
   const locale = await getRequestLocale();
@@ -368,6 +372,8 @@ export default function ObjectDetailPage(props: ObjectDetailPageProps) {
 }
 
 async function ObjectDetailPageContent({ params, searchParams }: ObjectDetailPageProps) {
+  // Tab data waits for the navigation: a link prefetch carries only the layout's object head.
+  await navigation();
   const { 'object-id': rawId } = await params;
   const objectId = decodeURIComponent(rawId);
   const locale = await getRequestLocale();

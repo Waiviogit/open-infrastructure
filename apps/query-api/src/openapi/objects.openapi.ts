@@ -255,6 +255,63 @@ registry.registerPath({
   },
 });
 
+const objectHeadResponseSchema = registry.register(
+  'ObjectHeadResponse',
+  z.object({
+    object_id: z.string(),
+    object_type: z.string(),
+    semantic_type: z.string().nullable(),
+    status: z.string().openapi({ description: '`objects_core.status` (any status visible on the object page).' }),
+    weight: z.number().nullable(),
+    fields: z.record(z.string(), z.unknown()).openapi({
+      description:
+        'Resolved `name`, `title`, `image` (falls back to the parent object image), `imageBackground` and `identifier` — only the keys that have a winning value.',
+    }),
+    previewGallery: z.array(z.record(z.string(), z.unknown())),
+    galleryAlbums: z.array(z.record(z.string(), z.unknown())),
+  }),
+);
+
+registry.registerPath({
+  method: 'get',
+  path: '/query/v1/objects/{objectId}/head',
+  tags: [queryApiOpenApiTags.objects],
+  summary: 'Object page head (hero fields only)',
+  description:
+    'Viewer-independent subset of `POST /objects/resolve` for the object page hero: name, subtitle, avatar, cover, identifier, status, weight. No counts, SEO, affiliate links or viewer flags, so it is cheap and cacheable per object and locale. Returns 404 when the object does not exist or is not visible on the object page. Spec: `docs/apps/query-api/spec/object-head.md`.',
+  request: {
+    params: z.object({
+      objectId: z
+        .string()
+        .min(1)
+        .openapi({ param: { name: 'objectId', in: 'path', required: true } }),
+    }),
+    headers: z.object({
+      'accept-language': z.string().optional(),
+      'x-locale': z.string().optional(),
+      'x-governance-object-id': z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Hero fields of the object.',
+      content: {
+        'application/json': {
+          schema: objectHeadResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Object not found or not visible on the object page.',
+      content: {
+        'application/json': {
+          schema: notFoundSchema,
+        },
+      },
+    },
+  },
+});
+
 const objectOptionsOpenApiSchema = registry.register(
   'ObjectOptionsResponse',
   objectOptionsResponseSchema,

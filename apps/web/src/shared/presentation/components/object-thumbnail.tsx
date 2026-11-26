@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 
 import {
   getImagePathPost,
@@ -9,9 +9,12 @@ import {
   normalizeLegacyObjectImageUrl,
 } from '../../infrastructure/image/get-proxy-image-url';
 import { AVATAR_PLACEHOLDER_SRC } from '../avatar/resolve-avatar-url';
+import { createImageFallbackMemory } from '../image/image-fallback-memory';
 import { shouldUnoptimizeRemoteImage } from '../image/should-unoptimize-remote-image';
 
 type LoadPhase = 'raw' | 'proxy' | 'preview' | 'placeholder';
+
+const fallbackMemory = createImageFallbackMemory<LoadPhase>();
 
 export type ObjectThumbnailProps = {
   src: string | null | undefined;
@@ -56,8 +59,10 @@ export function ObjectThumbnail({
     normalizedRaw ? 'raw' : 'placeholder',
   );
 
-  useEffect(() => {
-    setPhase(normalizedRaw ? 'raw' : 'placeholder');
+  // Layout effect: a remount with a URL that already failed starts at its working fallback
+  // before paint (the server render always starts at `raw`, so hydration matches).
+  useLayoutEffect(() => {
+    setPhase(normalizedRaw ? (fallbackMemory.get(normalizedRaw) ?? 'raw') : 'placeholder');
   }, [normalizedRaw, src]);
 
   const displaySrc = useMemo(() => {
@@ -77,16 +82,17 @@ export function ObjectThumbnail({
   }, [normalizedRaw, phase, proxySrc]);
 
   const onError = useCallback(() => {
+    let next: LoadPhase = 'placeholder';
     if (phase === 'raw') {
-      setPhase(hasProxyFallback ? 'proxy' : 'preview');
-      return;
+      next = hasProxyFallback ? 'proxy' : 'preview';
+    } else if (phase === 'proxy') {
+      next = 'preview';
     }
-    if (phase === 'proxy') {
-      setPhase('preview');
-      return;
+    if (normalizedRaw) {
+      fallbackMemory.remember(normalizedRaw, next);
     }
-    setPhase('placeholder');
-  }, [hasProxyFallback, phase]);
+    setPhase(next);
+  }, [hasProxyFallback, normalizedRaw, phase]);
 
   const resolvedSizes = sizes ?? (fill ? `${size}px` : `${size}px`);
   const unoptimized =

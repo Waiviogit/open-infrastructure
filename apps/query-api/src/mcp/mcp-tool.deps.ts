@@ -44,6 +44,7 @@ import type {
   GetObjectFavoritedByEndpoint,
   GetObjectOwnershipEndpoint,
   GetObjectByIdEndpoint,
+  GetObjectHeadEndpoint,
   GetObjectFollowersEndpoint,
   GetObjectExpertsEndpoint,
   GetObjectRefListEndpoint,
@@ -141,6 +142,7 @@ export interface McpToolDeps {
   discoverCategories: GetDiscoverCategoriesEndpoint;
   discoverSections: GetDiscoverSectionsEndpoint;
   getObjectById: GetObjectByIdEndpoint;
+  getObjectHead: GetObjectHeadEndpoint;
   getNestedObjects: GetNestedObjectsEndpoint;
   checkObjectExists: CheckObjectExistsEndpoint;
   getObjectRefList: GetObjectRefListEndpoint;

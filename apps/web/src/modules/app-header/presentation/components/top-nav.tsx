@@ -426,6 +426,7 @@ export function TopNav({ user: _user, messagesUnreadCount = 0 }: TopNavProps) {
                 counts={searchCounts}
                 countsLoading={panelCountsLoading}
                 activeIndex={activeIndex}
+                intentIndex={highlightTouched ? activeIndex : -1}
                 flatList={flatList}
                 onHighlightIndex={(index) => {
                   setHighlightTouched(true);

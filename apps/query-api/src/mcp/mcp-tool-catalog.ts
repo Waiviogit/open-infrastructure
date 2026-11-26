@@ -89,6 +89,13 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
     specPath: 'docs/apps/query-api/spec/objects-resolve-nested.md',
   },
   {
+    name: 'get_object_head',
+    description:
+      'Cheap hero subset of one object (name, title, image with parent fallback, imageBackground, identifier, status, weight); viewer-independent. Use resolve_object for every field and counts.',
+    httpEquivalent: 'GET /query/v1/objects/:id/head',
+    specPath: 'docs/apps/query-api/spec/object-head.md',
+  },
+  {
     name: 'check_object_exists',
     description: 'Boolean existence check for an object id.',
     httpEquivalent: 'GET /query/v1/objects/:id/exists',

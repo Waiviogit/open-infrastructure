@@ -22,6 +22,7 @@ import {
 } from '../domain/resolve-object-default-landing';
 import type {
   ObjectFeedSubTabView,
+  ObjectHeroIdentity,
   ObjectLeftRailBlock,
   ObjectOptionValueView,
   ObjectPageSeoView,
@@ -1024,6 +1025,38 @@ function readExclusiveOwnershipCount(api: ProjectedObjectWithCountsView): number
   return typeof legacy === 'number' ? legacy : 0;
 }
 
+function readLifecycleStatus(status: string | undefined): string | undefined {
+  return typeof status === 'string' && status.trim().length > 0 ? status.trim() : undefined;
+}
+
+/**
+ * Hero fields of an object page. The head and the full model both go through here, so the hero
+ * painted from the head equals the hero of the loaded page.
+ */
+export function projectedObjectToHeroIdentity(view: ProjectedObjectView): ObjectHeroIdentity {
+  const fields = view.fields ?? {};
+  const objectTypeRaw = view.object_type?.trim() ?? '';
+  const subtitleTitleRaw = objectFields.titleUpdate(view)?.trim();
+  return {
+    objectId: view.object_id,
+    title: objectFields.name(view)?.trim() || view.object_id,
+    subtitleTitle: subtitleTitleRaw && subtitleTitleRaw.length > 0 ? subtitleTitleRaw : null,
+    avatarUrl: objectFields.image(view) ?? null,
+    coverImageUrl: coverImageUrl(fields),
+    kindLabel:
+      objectTypeRaw.length > 0 ? objectTypeRaw : kindLabelFallback(toSwitcherKind(view.object_type)),
+    lifecycleStatus: readLifecycleStatus(view.status) ?? 'active',
+    displayWeightLabel:
+      view.weight != null && Number.isFinite(view.weight)
+        ? formatObjectWeightForDisplay(view.weight)
+        : null,
+    objectTypeKey: objectTypeRaw,
+    showInstacartButton: objectHasInstacartRecipeButton(view),
+    previewGallery: projectedPreviewGallery(view),
+    galleryAlbums: projectedGalleryAlbums(view),
+  };
+}
+
 export function projectedObjectWithCountsToPageModel(
   api: ProjectedObjectWithCountsView,
   optionsApi?: ObjectOptionsApiResponse | null,
@@ -1042,10 +1075,7 @@ export function projectedObjectWithCountsToPageModel(
     object_id: api.object_id,
     object_type: api.object_type,
     semantic_type: api.semantic_type,
-    status:
-      typeof api.status === 'string' && api.status.trim().length > 0
-        ? api.status.trim()
-        : undefined,
+    status: readLifecycleStatus(api.status),
     weight: api.weight ?? null,
     fields,
     isFavorited: readIsFavorited(api),
@@ -1057,15 +1087,9 @@ export function projectedObjectWithCountsToPageModel(
     ...parentHoist,
   } as ProjectedObjectView;
 
-  const title = objectFields.name(viewLike)?.trim() || api.object_id;
-  const subtitleTitleRaw = objectFields.titleUpdate(viewLike)?.trim();
-  const subtitleTitle =
-    subtitleTitleRaw && subtitleTitleRaw.length > 0 ? subtitleTitleRaw : null;
+  const hero = projectedObjectToHeroIdentity(viewLike);
   const switcher = toSwitcherKind(api.object_type);
-
-  const objectTypeRaw = api.object_type?.trim() ?? '';
-  const kindLabel =
-    objectTypeRaw.length > 0 ? objectTypeRaw : kindLabelFallback(switcher);
+  const objectTypeRaw = hero.objectTypeKey;
 
   const tagLabels = objectFields.tagCategoryLabels(viewLike);
   const tagline =
@@ -1085,10 +1109,8 @@ export function projectedObjectWithCountsToPageModel(
   const htmlContent = projectedHtmlContent(viewLike);
   const widgetConfig = projectedWidgetConfig(viewLike);
   const descriptionContent = projectedDescriptionContent(viewLike);
-  const previewGallery = projectedPreviewGallery(viewLike);
-  const galleryAlbums = projectedGalleryAlbums(viewLike);
   const hasDescriptionPageContent =
-    Boolean(descriptionContent?.trim()) || previewGallery.length > 0;
+    Boolean(descriptionContent?.trim()) || hero.previewGallery.length > 0;
   const defaultLanding = applyDescriptionFallbackToDefaultLanding(
     resolveObjectDefaultLanding(
       viewLike,
@@ -1103,23 +1125,8 @@ export function projectedObjectWithCountsToPageModel(
   );
 
   return {
-    objectId: api.object_id,
-    title,
-    subtitleTitle,
-    avatarUrl: objectFields.image(viewLike) ?? null,
-    coverImageUrl: coverImageUrl(fields),
-    kindLabel,
-    lifecycleStatus:
-      typeof api.status === 'string' && api.status.trim().length > 0
-        ? api.status.trim()
-        : 'active',
+    ...hero,
     tagline,
-    displayWeightLabel:
-      api.weight != null && Number.isFinite(api.weight)
-        ? formatObjectWeightForDisplay(api.weight)
-        : null,
-    objectTypeKey: objectTypeRaw,
-    showInstacartButton: objectHasInstacartRecipeButton(viewLike),
     objectType: switcher,
     defaultLanding,
     listItems,
@@ -1130,8 +1137,6 @@ export function projectedObjectWithCountsToPageModel(
     htmlContent,
     widgetConfig,
     descriptionContent,
-    previewGallery,
-    galleryAlbums,
     onChainGalleryAlbumNames,
     rating01To5: objectFields.ratingStars01To5(viewLike),
     primaryTabs: buildPrimaryTabs({

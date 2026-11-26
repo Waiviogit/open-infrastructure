@@ -1,20 +1,17 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
 
 import { OptimisticNavProvider, OptimisticNavSync, ScrollToTopOnEnter } from '@/shared/presentation';
 import { getRequestLocale } from '@/i18n/runtime/get-request-locale';
-import { getRequestUser } from '@/shared/infrastructure/auth/get-request-user.server';
-import { JsonLdScript } from '@/seo';
-import { ObjectPageRightRailSkeleton } from '@/modules/object/presentation/components/object-page-loading-skeleton';
-import { objectTypeHasDetailsTab } from '@/modules/object/domain/object-page-url.constants';
+import { ObjectHeadShell } from '@/modules/object';
+import { ObjectPageLoadingSkeleton } from '@/modules/object/presentation/components/object-page-loading-skeleton';
 
-import { loadObjectPageModel } from './object-page-model.server';
-import { ObjectPageShellClient } from './object-page-shell-client';
-import { ObjectPageRightRailSection } from './object-page-right-rail-section.server';
-import { ObjectPageMobileSocialSection } from './object-page-mobile-social-section.server';
+import { loadObjectHead } from './object-page-model.server';
+import { ObjectPageFullSection } from './object-page-full-section.server';
 
-// Deliberate Block: object existence is checked here so `notFound()` sends a real 404. Entry stays
-// instant without a shell of its own: `object/loading.tsx` (parent segment) is the prefetched skeleton.
+// Deliberate Block: the layout awaits `params`, the locale and the cached object head at its top, so
+// a link prefetch (`prefetch={true}` on intent) carries the hero; a default link stops at the
+// `object/loading.tsx` skeleton above. The full page streams behind the head shell. Existence is
+// decided inside that boundary (`notFound()` streams the not-found UI with `noindex`, as before).
 export const instant = false;
 
 export default async function ObjectDetailLayout({
@@ -27,56 +24,21 @@ export default async function ObjectDetailLayout({
   const { 'object-id': rawId } = await params;
   const objectId = decodeURIComponent(rawId);
   const locale = await getRequestLocale();
-  const user = await getRequestUser();
-  const viewerUsername = user?.username ?? null;
-
-  const model = await loadObjectPageModel(objectId, locale, viewerUsername);
-  if (!model) {
-    notFound();
-  }
-
-  const followersTabCount =
-    model.primaryTabs.find((tab) => tab.segment === 'followers')?.count ?? 0;
-  const expertsTabCount =
-    model.primaryTabs.find((tab) => tab.segment === 'experts')?.count ?? 0;
-
-  const rightRailSlot = (
-    <Suspense fallback={<ObjectPageRightRailSkeleton />}>
-      <ObjectPageRightRailSection
-        objectId={objectId}
-        objectTypeKey={model.objectTypeKey}
-        locale={locale}
-        viewerUsername={viewerUsername}
-        followersTabCount={followersTabCount}
-        expertsTabCount={expertsTabCount}
-      />
-    </Suspense>
-  );
-
-  const mobileSocialSlot = objectTypeHasDetailsTab(model.objectTypeKey) ? (
-    <Suspense fallback={null}>
-      <ObjectPageMobileSocialSection
-        objectId={objectId}
-        viewerUsername={viewerUsername}
-      />
-    </Suspense>
-  ) : undefined;
+  // A failed head read is cached for a moment and may sit in a prefetch: it never decides 404,
+  // it only falls back to the generic skeleton.
+  const head = await loadObjectHead(objectId, locale);
 
   return (
     <OptimisticNavProvider>
       <ScrollToTopOnEnter routeKey={objectId} />
-      <JsonLdScript data={model.seo?.json_ld} />
       <Suspense fallback={null}>
         <OptimisticNavSync />
       </Suspense>
-      <ObjectPageShellClient
-        model={model}
-        viewerUsername={viewerUsername}
-        rightRailSlot={rightRailSlot}
-        mobileSocialSlot={mobileSocialSlot}
-      >
-        {children}
-      </ObjectPageShellClient>
+      <Suspense fallback={head ? <ObjectHeadShell head={head} /> : <ObjectPageLoadingSkeleton />}>
+        <ObjectPageFullSection objectId={objectId} locale={locale}>
+          {children}
+        </ObjectPageFullSection>
+      </Suspense>
     </OptimisticNavProvider>
   );
 }

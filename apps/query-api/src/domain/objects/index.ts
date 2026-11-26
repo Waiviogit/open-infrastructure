@@ -1,5 +1,7 @@
 export * from './check-object-exists.endpoint';
 export * from './get-object-by-id.endpoint';
+export * from './get-object-head.endpoint';
+export * from './object-head.types';
 export * from './get-nested-objects.endpoint';
 export * from './get-object-followers.endpoint';
 export * from './get-object-experts.endpoint';

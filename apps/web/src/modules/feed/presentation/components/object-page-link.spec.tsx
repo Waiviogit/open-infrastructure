@@ -2,20 +2,32 @@
  * @jest-environment jsdom
  */
 import type { ReactNode } from 'react';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 
 jest.mock('next/link', () => {
   function MockLink({
     children,
     prefetch,
     href,
+    onMouseEnter,
+    onFocus,
+    onTouchStart,
   }: {
     children: ReactNode;
-    prefetch?: boolean;
+    prefetch?: boolean | 'auto' | null;
     href: string;
+    onMouseEnter?: () => void;
+    onFocus?: () => void;
+    onTouchStart?: () => void;
   }) {
     return (
-      <a href={href} data-prefetch={String(prefetch)}>
+      <a
+        href={href}
+        data-prefetch={String(prefetch)}
+        onMouseEnter={onMouseEnter}
+        onFocus={onFocus}
+        onTouchStart={onTouchStart}
+      >
         {children}
       </a>
     );
@@ -29,13 +41,23 @@ jest.mock('next/link', () => {
 
 import { ObjectPageLink } from './object-page-link';
 
+function renderLink() {
+  const { container } = render(<ObjectPageLink href="/object/photography">photo</ObjectPageLink>);
+  return container.querySelector('a') as HTMLAnchorElement;
+}
+
 describe('ObjectPageLink', () => {
-  it('keeps Next.js default prefetch so a visible link warms the object skeleton', () => {
-    const { container } = render(
-      <ObjectPageLink href="/object/photography">photo</ObjectPageLink>,
-    );
-    expect(container.querySelector('a')?.getAttribute('data-prefetch')).toBe(
-      'undefined',
-    );
+  it('prefetches only the route shell while merely visible', () => {
+    expect(renderLink().getAttribute('data-prefetch')).toBe('auto');
+  });
+
+  it.each([
+    ['hover', (a: HTMLAnchorElement) => fireEvent.mouseEnter(a)],
+    ['focus', (a: HTMLAnchorElement) => fireEvent.focus(a)],
+    ['touch', (a: HTMLAnchorElement) => fireEvent.touchStart(a)],
+  ])('prefetches the object head on %s', (_name, signal) => {
+    const link = renderLink();
+    signal(link);
+    expect(link.getAttribute('data-prefetch')).toBe('true');
   });
 });

@@ -1,10 +1,17 @@
 import { cache } from 'react';
 
-import type { ObjectPageViewModel } from '@/modules/object';
+import type { ObjectHeroIdentity, ObjectPageViewModel } from '@/modules/object';
+import { fetchObjectHead } from '@/modules/object/infrastructure/fetch-object-head.server';
 import { fetchObjectOptions } from '@/modules/object/infrastructure/fetch-object-options.server';
 import { fetchProjectedObjectWithCounts } from '@/modules/object/infrastructure/fetch-object-resolve.server';
 import { projectedObjectWithCountsToPageModel } from '@/modules/object/infrastructure/projected-object-to-page-model';
 import { DEMO_OBJECT_IDS, mockModelFromDemoPreset } from './object-page-demo-data';
+
+/** Hero fields only — cheap, viewer-independent; painted before {@link loadObjectPageModel}. */
+export const loadObjectHead = cache(
+  async (objectId: string, locale: string): Promise<ObjectHeroIdentity | null> =>
+    fetchObjectHead(objectId, { locale }),
+);
 
 export const loadObjectPageModel = cache(
   async (
