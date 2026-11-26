@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OBJECT_PAGE_VISIBLE_STATUSES, UPDATE_TYPES } from '@opden-data-layer/core';
 import { ObjectViewService } from '@opden-data-layer/objects-domain';
+import { OBJECT_RESOLVE_SLOW_WARN_MS } from '../../constants/object-page.constants';
 import {
   AggregatedObjectRepository,
   ObjectFavoriteRepository,
   ObjectOwnershipRepository,
-  ObjectUpdatesRepository,
   PostsRepository,
   UserObjectFollowsRepository,
   UserObjectExpertiseRepository,
@@ -13,6 +13,7 @@ import {
 import { AffiliateLinksEnricher, flattenAffiliateTargets } from '../affiliate';
 import { GovernanceResolverService } from '../governance';
 import { ObjectProjectionService } from '../object-projection/object-projection.service';
+import { summarizeObjectUpdates } from './object-update-summary';
 import type { ProjectedObjectWithCounts } from './projected-object-with-counts.types';
 
 export interface GetObjectByIdInput {
@@ -29,6 +30,8 @@ export interface GetObjectByIdInput {
 
 @Injectable()
 export class GetObjectByIdEndpoint {
+  private readonly logger = new Logger(GetObjectByIdEndpoint.name);
+
   constructor(
     private readonly aggregatedObjectRepo: AggregatedObjectRepository,
     private readonly objectViewService: ObjectViewService,
@@ -36,7 +39,6 @@ export class GetObjectByIdEndpoint {
     private readonly objectProjectionService: ObjectProjectionService,
     private readonly userObjectFollowsRepo: UserObjectFollowsRepository,
     private readonly userObjectExpertiseRepo: UserObjectExpertiseRepository,
-    private readonly objectUpdatesRepo: ObjectUpdatesRepository,
     private readonly objectFavoriteRepo: ObjectFavoriteRepository,
     private readonly objectOwnershipRepo: ObjectOwnershipRepository,
     private readonly postsRepo: PostsRepository,
@@ -44,6 +46,7 @@ export class GetObjectByIdEndpoint {
   ) {}
 
   async execute(input: GetObjectByIdInput): Promise<ProjectedObjectWithCounts | null> {
+    const startedAt = Date.now();
     const { objects, voterWaivPowers, rankVoteProjection } = await this.aggregatedObjectRepo.loadByObjectIds(
       [input.objectId],
       {
@@ -55,6 +58,7 @@ export class GetObjectByIdEndpoint {
     if (!agg) {
       return null;
     }
+    const loadedAt = Date.now();
 
     const requested =
       input.updateTypes.length > 0
@@ -81,11 +85,10 @@ export class GetObjectByIdEndpoint {
     }
 
     const objectId = view.object_id;
+    const resolvedAt = Date.now();
 
     const [
       projected,
-      update_type_counts,
-      update_locales,
       followers_count,
       experts_count,
       posts_count,
@@ -102,8 +105,6 @@ export class GetObjectByIdEndpoint {
         rankVoteProjection,
         includeSeo: true,
       }),
-      this.objectUpdatesRepo.countByObjectIdGroupByUpdateType(objectId),
-      this.objectUpdatesRepo.findDistinctLocalesByObjectId(objectId),
       this.userObjectFollowsRepo.countByObjectId(objectId),
       this.userObjectExpertiseRepo.countByObjectId(objectId),
       this.postsRepo.countPostObjectsByObjectId(objectId),
@@ -115,13 +116,23 @@ export class GetObjectByIdEndpoint {
         : Promise.resolve(null),
     ]);
 
-    const updates_count = Object.values(update_type_counts).reduce((sum, n) => sum + n, 0);
+    const countedAt = Date.now();
+    const { update_type_counts, update_locales } = summarizeObjectUpdates(agg.updates);
+    const updates_count = agg.updates.length;
 
     await this.affiliateLinks.enrich(flattenAffiliateTargets([projected]), {
       countryCode: input.countryCode ?? null,
       governanceObjectIdFromHeader: input.governanceObjectIdFromHeader,
       governance,
     });
+
+    const totalMs = Date.now() - startedAt;
+    if (totalMs > OBJECT_RESOLVE_SLOW_WARN_MS) {
+      this.logger.warn(
+        `resolve ${objectId} ${totalMs}ms: load=${loadedAt - startedAt} governance+resolve=${resolvedAt - loadedAt} ` +
+          `project+counts=${countedAt - resolvedAt} affiliate=${Date.now() - countedAt} updates=${agg.updates.length}`,
+      );
+    }
 
     return {
       ...projected,

@@ -40,7 +40,7 @@ export interface LoadAggregatedObjectsOptions {
  *   3. validity_votes
  *   4. object_favorite + object_ownership
  *   5. user_object_powers — distinct validity voters from step 3
- *   6. rank_votes — optional aggregates for projection (counts, viewer ranks, AVG fallback)
+ *   6. rank_votes — AVG + COUNT per update (one query) and the viewer's ranks, in parallel with 1–4
  *
  * For `aggregateRating` rows with a null persisted `rank_score` (e.g. legacy migrate
  * only filled `rank_votes`), a read-time **mean rank per `update_id`** from `rank_votes`
@@ -229,7 +229,9 @@ export class AggregatedObjectRepository {
 
     try {
       const statuses = options?.statuses ?? (['active'] as const);
-      const [cores, updates, validityVotes, favorites, ownerships] = await Promise.all([
+      const includeVp = options?.includeRankVoteProjection !== false;
+      const viewer = includeVp ? options?.viewerAccount?.trim() : undefined;
+      const [cores, updates, validityVotes, favorites, ownerships, rankStats, viewerRows] = await Promise.all([
         this.db
           .selectFrom('objects_core')
           .where('object_id', 'in', objectIds)
@@ -256,17 +258,29 @@ export class AggregatedObjectRepository {
           .where('object_id', 'in', objectIds)
           .selectAll()
           .execute(),
+        // One pass over rank_votes: AVG feeds the rank_score fallback, COUNT the projection.
+        this.db
+          .selectFrom('rank_votes')
+          .where('object_id', 'in', objectIds)
+          .select(({ fn }) => [
+            'update_id',
+            fn.avg<number | null>('rank').as('avg_rank'),
+            fn.countAll<number>().as('n'),
+          ])
+          .groupBy('update_id')
+          .execute(),
+        viewer
+          ? this.db
+              .selectFrom('rank_votes')
+              .where('object_id', 'in', objectIds)
+              .where('voter', '=', viewer)
+              .select(['update_id', 'rank', 'event_seq'])
+              .execute()
+          : Promise.resolve([]),
       ]);
 
-      const rankMeans = await this.db
-        .selectFrom('rank_votes')
-        .where('object_id', 'in', objectIds)
-        .select(({ fn }) => ['update_id', fn.avg<number | null>('rank').as('avg_rank')])
-        .groupBy('update_id')
-        .execute();
-
       const meanRankByUpdateId = new Map<string, number>();
-      for (const row of rankMeans) {
+      for (const row of rankStats) {
         const raw = row.avg_rank;
         if (raw == null) {
           continue;
@@ -277,29 +291,9 @@ export class AggregatedObjectRepository {
         }
       }
 
-      const includeVp = options?.includeRankVoteProjection !== false;
-
-      let rankVoteProjection: RankVoteProjection = emptyRankVoteProjection();
-      if (includeVp) {
-        const viewer = options?.viewerAccount?.trim();
-        const [voteCounts, viewerRows] = await Promise.all([
-          this.db
-            .selectFrom('rank_votes')
-            .where('object_id', 'in', objectIds)
-            .select((eb) => ['update_id', eb.fn.countAll<number>().as('n')])
-            .groupBy('update_id')
-            .execute(),
-          viewer
-            ? this.db
-                .selectFrom('rank_votes')
-                .where('object_id', 'in', objectIds)
-                .where('voter', '=', viewer)
-                .select(['update_id', 'rank', 'event_seq'])
-                .execute()
-            : Promise.resolve([]),
-        ]);
-        rankVoteProjection = buildRankVoteProjection(voteCounts, viewerRows);
-      }
+      const rankVoteProjection: RankVoteProjection = includeVp
+        ? buildRankVoteProjection(rankStats, viewerRows)
+        : emptyRankVoteProjection();
 
       const updatesWithRankFallback = applyAggregateRatingRankScoreFallback(
         updates,

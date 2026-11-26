@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import type { ReactNode } from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import type {
   SearchCountsResponse,
@@ -12,6 +12,24 @@ import { SearchDropdown, type SearchDropdownProps } from './search-dropdown';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
+}));
+
+jest.mock('next/link', () => ({
+  __esModule: true,
+  default: ({
+    href,
+    prefetch,
+    children,
+    ...rest
+  }: {
+    href: string;
+    prefetch?: boolean | 'auto' | null;
+    children: ReactNode;
+  } & Record<string, unknown>) => (
+    <a href={href} data-prefetch={String(prefetch ?? 'auto')} {...rest}>
+      {children}
+    </a>
+  ),
 }));
 
 jest.mock('@/shared/presentation', () => ({
@@ -53,7 +71,7 @@ const MESSAGES: SearchDropdownProps['messages'] = {
   userFollowersTooltip: 'Followers',
 };
 
-function renderDropdown(counts: SearchCountsResponse) {
+function renderDropdown(counts: SearchCountsResponse, onClose: () => void = jest.fn()) {
   render(
     <SearchDropdown
       results={RESULTS}
@@ -66,11 +84,26 @@ function renderDropdown(counts: SearchCountsResponse) {
       listId="search"
       searchQuery="gre"
       messages={MESSAGES}
-      onClose={jest.fn()}
+      onClose={onClose}
     />,
   );
   return screen.getByRole('navigation', { name: 'Discover filters' });
 }
+
+describe('SearchDropdown object rows', () => {
+  it('renders an object result as an option link to the object page', () => {
+    const onClose = jest.fn();
+    renderDropdown({ type_counts: { restaurant: 1 }, counts_capped: false, total_users: 1 }, onClose);
+
+    const row = screen.getByRole('option', { name: /Greek Taverna/ });
+    expect(row.tagName).toBe('A');
+    expect(row).toHaveAttribute('href', '/object/obj-1');
+
+    fireEvent.click(row);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+});
 
 describe('SearchDropdown chip counts', () => {
   it('renders N+ on object type chips only when counts are capped', () => {

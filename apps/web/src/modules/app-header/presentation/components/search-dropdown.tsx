@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { StatHoverTooltip, UserAvatar } from '@/shared/presentation';
+import { objectPagePath } from '@/shared/routes/object-page-path';
 
 import type { SearchCountsResponse, SearchResponse } from '../../domain/search-response.schema';
 import type { SearchFlatEntry } from '../../domain/search-nav-list';
@@ -118,13 +119,9 @@ export function SearchDropdown({
   const objectCountsCapped = hasGlobalCounts && counts.counts_capped;
   const showUsersChip = usersChipCount > 0;
 
-  function navigateEntry(entry: SearchFlatEntry) {
+  function navigateUser(name: string) {
     onClose();
-    if (entry.kind === 'object') {
-      router.push(`/object/${encodeURIComponent(entry.item.object_id)}`);
-    } else {
-      router.push(`/@${encodeURIComponent(entry.item.name)}`);
-    }
+    router.push(`/@${encodeURIComponent(name)}`);
   }
 
   const hasResults = results.objects.length > 0 || results.users.length > 0;
@@ -197,10 +194,12 @@ export function SearchDropdown({
                 const title = obj.name?.trim() || obj.object_id;
                 return (
                   <li key={obj.object_id}>
-                    <button
-                      type="button"
+                    {/* A real link: it prefetches the object route (shell) before the click. */}
+                    <Link
+                      href={objectPagePath(obj.object_id)}
                       role="option"
                       aria-selected={active}
+                      suppressHydrationWarning
                       className={[
                         'flex w-full items-center gap-2 bg-surface px-2 py-2 text-start',
                         active ? 'bg-ghost-surface' : 'hover:bg-ghost-surface',
@@ -211,12 +210,7 @@ export function SearchDropdown({
                           onHighlightIndex(flatIdx);
                         }
                       }}
-                      onClick={() => {
-                        const entry = flatList[flatIdx];
-                        if (entry?.kind === 'object') {
-                          navigateEntry(entry);
-                        }
-                      }}
+                      onClick={() => onClose()}
                     >
                       <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-card bg-surface-control">
                         {obj.image_url ? (
@@ -243,7 +237,7 @@ export function SearchDropdown({
                       <span className="shrink-0 rounded-btn bg-surface-control px-1.5 py-0.5 text-caption text-fg-secondary">
                         {formatObjectTypeLabel(obj.object_type)}
                       </span>
-                    </button>
+                    </Link>
                   </li>
                 );
               })}
@@ -279,7 +273,7 @@ export function SearchDropdown({
                       onClick={() => {
                         const entry = flatList[flatIdx];
                         if (entry?.kind === 'user') {
-                          navigateEntry(entry);
+                          navigateUser(entry.item.name);
                         }
                       }}
                     >

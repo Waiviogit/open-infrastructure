@@ -209,8 +209,10 @@ export async function generateMetadata({
   const locale = await getRequestLocale();
   const messages = await loadMessages(locale);
   const sp = await searchParams;
+  // Same viewer as the layout and the page body, so `loadObjectPageModel` is one call per request.
+  const viewerUsername = (await getRequestUser())?.username ?? null;
 
-  const model = await loadObjectPageModel(objectId, locale, null);
+  const model = await loadObjectPageModel(objectId, locale, viewerUsername);
   if (!model) {
     return { title: objectId };
   }

@@ -114,8 +114,9 @@ export class UserObjectExpertiseRepository {
           sql<number>`ac.users_following_count`.as('users_following_count'),
           sql<number>`uoe.weight`.as('weight'),
         ])
+        // `uoe.account` (= `ac.name`) keeps the order inside idx_user_object_expertise_object_weight.
         .orderBy(sql`uoe.weight`, 'desc')
-        .orderBy(sql`ac.name`, 'asc')
+        .orderBy(sql`uoe.account`, 'asc')
         .offset(skip)
         .limit(limit)
         .execute();

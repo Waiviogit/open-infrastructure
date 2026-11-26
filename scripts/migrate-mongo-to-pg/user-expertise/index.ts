@@ -156,7 +156,7 @@ class MongoUserExpertiseMigrator {
 async function dropBulkIndexes(db: Kysely<OdlDatabase>): Promise<void> {
   console.log('Dropping user_object_expertise indexes...');
   await sql`DROP INDEX IF EXISTS idx_user_object_expertise_account_weight`.execute(db);
-  await sql`DROP INDEX IF EXISTS idx_user_object_expertise_object_id`.execute(db);
+  await sql`DROP INDEX IF EXISTS idx_user_object_expertise_object_weight`.execute(db);
 }
 
 async function recreateBulkIndexes(db: Kysely<OdlDatabase>): Promise<void> {
@@ -166,8 +166,8 @@ async function recreateBulkIndexes(db: Kysely<OdlDatabase>): Promise<void> {
     ON user_object_expertise (account, weight DESC)
   `.execute(db);
   await sql`
-    CREATE INDEX idx_user_object_expertise_object_id
-    ON user_object_expertise (object_id)
+    CREATE INDEX idx_user_object_expertise_object_weight
+    ON user_object_expertise (object_id, weight DESC, account)
   `.execute(db);
 }
 

@@ -413,7 +413,7 @@ CREATE TABLE user_object_expertise (
 );
 
 CREATE INDEX idx_user_object_expertise_account_weight ON user_object_expertise (account, weight DESC);
-CREATE INDEX idx_user_object_expertise_object_id ON user_object_expertise (object_id);
+CREATE INDEX idx_user_object_expertise_object_weight ON user_object_expertise (object_id, weight DESC, account);
 
 -- ---------------------------------------------------------------------------
 -- posts (Hive post; normalized from legacy Mongo PostSchema)

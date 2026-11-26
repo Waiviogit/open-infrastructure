@@ -1,7 +1,6 @@
 import type { GovernanceSnapshot, ResolvedObjectView } from '@opden-data-layer/objects-domain';
 import { DEFAULT_GOVERNANCE_SNAPSHOT, ObjectViewService } from '@opden-data-layer/objects-domain';
 import { AggregatedObjectRepository } from '../../repositories';
-import type { ObjectUpdatesRepository } from '../../repositories/object-updates.repository';
 import type { ObjectFavoriteRepository } from '../../repositories/object-favorite.repository';
 import type { ObjectOwnershipRepository } from '../../repositories/object-ownership.repository';
 import type { UserObjectFollowsRepository } from '../../repositories/user-object-follows.repository';
@@ -74,7 +73,6 @@ function makeEndpoint(
     projectionService: ObjectProjectionService;
     followsRepo: UserObjectFollowsRepository;
     expertiseRepo?: UserObjectExpertiseRepository;
-    updatesRepo: ObjectUpdatesRepository;
     favoriteRepo: ObjectFavoriteRepository;
     ownershipRepo: ObjectOwnershipRepository;
     postsRepo?: PostsRepository;
@@ -87,7 +85,6 @@ function makeEndpoint(
     deps.projectionService,
     deps.followsRepo,
     deps.expertiseRepo ?? createExpertiseRepo(),
-    deps.updatesRepo,
     deps.favoriteRepo,
     deps.ownershipRepo,
     deps.postsRepo ?? createPostsRepo(),
@@ -107,7 +104,6 @@ describe('GetObjectByIdEndpoint', () => {
     const viewService = { resolve: jest.fn() } as unknown as ObjectViewService;
     const projectionService = { project: jest.fn() } as unknown as ObjectProjectionService;
     const followsRepo = { countByObjectId: jest.fn() } as unknown as UserObjectFollowsRepository;
-    const updatesRepo = { countByObjectId: jest.fn() } as unknown as ObjectUpdatesRepository;
     const { governanceResolver } = createEndpointDeps();
 
     const endpoint = makeEndpoint({
@@ -116,7 +112,6 @@ describe('GetObjectByIdEndpoint', () => {
       governanceResolver,
       projectionService,
       followsRepo,
-      updatesRepo,
       favoriteRepo: createFavoriteRepo(),
       ownershipRepo: createOwnershipRepo(),
     });
@@ -149,7 +144,11 @@ describe('GetObjectByIdEndpoint', () => {
         objects: [
           {
             core: { object_id: 'o1', object_type: 'x', creator: 'c' },
-            updates: [],
+            updates: [
+              { update_id: 'u1', object_id: 'o1', update_type: 'name', creator: 'c', locale: 'ko-KR' },
+              { update_id: 'u2', object_id: 'o1', update_type: 'name', creator: 'c', locale: 'en-US' },
+              { update_id: 'u3', object_id: 'o1', update_type: 'menuItem', creator: 'c', locale: null },
+            ],
             validity_votes: [],
             favorites: [],
             ownerships: [],
@@ -173,12 +172,6 @@ describe('GetObjectByIdEndpoint', () => {
         created_at: new Date(),
       }),
     } as unknown as UserObjectFollowsRepository;
-    const updateTypeCounts = { name: 10, menuItem: 15 };
-    const updateLocales = ['en-US', 'ko-KR'];
-    const updatesRepo = {
-      countByObjectIdGroupByUpdateType: jest.fn().mockResolvedValue(updateTypeCounts),
-      findDistinctLocalesByObjectId: jest.fn().mockResolvedValue(updateLocales),
-    } as unknown as ObjectUpdatesRepository;
     const favoriteRepo = createFavoriteRepo(2);
     const ownershipRepo = createOwnershipRepo(2, 1);
     const postsRepo = createPostsRepo(4);
@@ -192,7 +185,6 @@ describe('GetObjectByIdEndpoint', () => {
       projectionService,
       followsRepo,
       expertiseRepo,
-      updatesRepo,
       favoriteRepo,
       ownershipRepo,
       postsRepo,
@@ -211,14 +203,14 @@ describe('GetObjectByIdEndpoint', () => {
       followers_count: 7,
       experts_count: 5,
       posts_count: 4,
-      updates_count: 25,
+      updates_count: 3,
       favorited_by_count: 2,
       supervised_count: 2,
       exclusive_count: 1,
       is_following: true,
       viewer_bell: true,
-      update_type_counts: updateTypeCounts,
-      update_locales: updateLocales,
+      update_type_counts: { name: 2, menuItem: 1 },
+      update_locales: ['en-US', 'ko-KR'],
     });
     expect(followsRepo.findByAccountAndObject).toHaveBeenCalledWith('alice', 'o1');
     expect(favoriteRepo.countByObjectId).toHaveBeenCalledWith('o1');
@@ -261,10 +253,6 @@ describe('GetObjectByIdEndpoint', () => {
       project: jest.fn().mockResolvedValue(projectedFixture('o1')),
     } as unknown as ObjectProjectionService;
     const followsRepo = { countByObjectId: jest.fn().mockResolvedValue(0) } as unknown as UserObjectFollowsRepository;
-    const updatesRepo = {
-      countByObjectIdGroupByUpdateType: jest.fn().mockResolvedValue({}),
-      findDistinctLocalesByObjectId: jest.fn().mockResolvedValue([]),
-    } as unknown as ObjectUpdatesRepository;
     const { governanceResolver } = createEndpointDeps();
 
     const endpoint = makeEndpoint({
@@ -273,7 +261,6 @@ describe('GetObjectByIdEndpoint', () => {
       governanceResolver,
       projectionService,
       followsRepo,
-      updatesRepo,
       favoriteRepo: createFavoriteRepo(),
       ownershipRepo: createOwnershipRepo(),
     });
@@ -321,10 +308,6 @@ describe('GetObjectByIdEndpoint', () => {
       project: jest.fn().mockResolvedValue(projectedFixture('o1')),
     } as unknown as ObjectProjectionService;
     const followsRepo = { countByObjectId: jest.fn().mockResolvedValue(0) } as unknown as UserObjectFollowsRepository;
-    const updatesRepo = {
-      countByObjectIdGroupByUpdateType: jest.fn().mockResolvedValue({}),
-      findDistinctLocalesByObjectId: jest.fn().mockResolvedValue([]),
-    } as unknown as ObjectUpdatesRepository;
     const { governanceResolver } = createEndpointDeps();
 
     const endpoint = makeEndpoint({
@@ -333,7 +316,6 @@ describe('GetObjectByIdEndpoint', () => {
       governanceResolver,
       projectionService,
       followsRepo,
-      updatesRepo,
       favoriteRepo: createFavoriteRepo(),
       ownershipRepo: createOwnershipRepo(),
     });
@@ -373,10 +355,6 @@ describe('GetObjectByIdEndpoint', () => {
       project: jest.fn().mockResolvedValue(projectedFixture('o1')),
     } as unknown as ObjectProjectionService;
     const followsRepo = { countByObjectId: jest.fn().mockResolvedValue(0) } as unknown as UserObjectFollowsRepository;
-    const updatesRepo = {
-      countByObjectIdGroupByUpdateType: jest.fn().mockResolvedValue({}),
-      findDistinctLocalesByObjectId: jest.fn().mockResolvedValue([]),
-    } as unknown as ObjectUpdatesRepository;
     const { governanceResolver } = createEndpointDeps({ resolveMerged: customGovernance });
 
     const endpoint = makeEndpoint({
@@ -385,7 +363,6 @@ describe('GetObjectByIdEndpoint', () => {
       governanceResolver,
       projectionService,
       followsRepo,
-      updatesRepo,
       favoriteRepo: createFavoriteRepo(),
       ownershipRepo: createOwnershipRepo(),
     });
@@ -422,10 +399,6 @@ describe('GetObjectByIdEndpoint', () => {
       project: jest.fn().mockResolvedValue(projectedFixture('o1')),
     } as unknown as ObjectProjectionService;
     const followsRepo = { countByObjectId: jest.fn().mockResolvedValue(0) } as unknown as UserObjectFollowsRepository;
-    const updatesRepo = {
-      countByObjectIdGroupByUpdateType: jest.fn().mockResolvedValue({}),
-      findDistinctLocalesByObjectId: jest.fn().mockResolvedValue([]),
-    } as unknown as ObjectUpdatesRepository;
     const { governanceResolver } = createEndpointDeps();
 
     const endpoint = makeEndpoint({
@@ -434,7 +407,6 @@ describe('GetObjectByIdEndpoint', () => {
       governanceResolver,
       projectionService,
       followsRepo,
-      updatesRepo,
       favoriteRepo: createFavoriteRepo(),
       ownershipRepo: createOwnershipRepo(),
     });
@@ -467,10 +439,6 @@ describe('GetObjectByIdEndpoint', () => {
     const viewService = { resolve: jest.fn().mockReturnValue([]) } as unknown as ObjectViewService;
     const projectionService = { project: jest.fn() } as unknown as ObjectProjectionService;
     const followsRepo = { countByObjectId: jest.fn() } as unknown as UserObjectFollowsRepository;
-    const updatesRepo = {
-      countByObjectIdGroupByUpdateType: jest.fn(),
-      findDistinctLocalesByObjectId: jest.fn(),
-    } as unknown as ObjectUpdatesRepository;
     const favoriteRepo = createFavoriteRepo();
     const ownershipRepo = createOwnershipRepo();
     const { governanceResolver } = createEndpointDeps();
@@ -481,7 +449,6 @@ describe('GetObjectByIdEndpoint', () => {
       governanceResolver,
       projectionService,
       followsRepo,
-      updatesRepo,
       favoriteRepo,
       ownershipRepo,
     });

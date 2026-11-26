@@ -22,7 +22,11 @@ export class AffiliateLinksEnricher {
     targets: AffiliateEnrichTarget[],
     ctx: AffiliateEnrichContext & { governance?: GovernanceSnapshot },
   ): Promise<void> {
-    if (targets.length === 0) {
+    const linkable = targets
+      .filter((target) => target.object_type !== OBJECT_TYPES.RECIPE)
+      .map((target) => ({ target, productIds: readProductIds(target.fields) }))
+      .filter(({ productIds }) => productIds.length > 0);
+    if (linkable.length === 0) {
       return;
     }
 
@@ -55,14 +59,7 @@ export class AffiliateLinksEnricher {
       return;
     }
 
-    for (const target of targets) {
-      if (target.object_type === OBJECT_TYPES.RECIPE) {
-        continue;
-      }
-      const productIds = readProductIds(target.fields);
-      if (productIds.length === 0) {
-        continue;
-      }
+    for (const { target, productIds } of linkable) {
       const links = buildAffiliateLinks(configs, productIds, ctx.countryCode);
       if (links.length > 0) {
         target.affiliateLinks = links;

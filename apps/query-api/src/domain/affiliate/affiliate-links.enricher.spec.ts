@@ -97,6 +97,19 @@ describe('AffiliateLinksEnricher', () => {
     expect(second.affiliateLinks?.[0]?.affiliateCode).toBe('B');
   });
 
+  it('loads neither governance nor configs when no target has product ids', async () => {
+    const getGovernanceConfigs = jest.fn().mockResolvedValue([config('aff-1', 'GOVERNANCE', 'G1')]);
+    const resolveMergedForObjectView = jest.fn().mockResolvedValue(DEFAULT_GOVERNANCE_SNAPSHOT);
+    const enricher = new AffiliateLinksEnricher(
+      { getGovernanceConfigs, getPersonalConfigs: jest.fn() } as unknown as AffiliateCodesService,
+      { resolveMergedForObjectView } as unknown as GovernanceResolverService,
+    );
+    const hashtag: AffiliateEnrichTarget = { object_id: 'hive', object_type: 'hashtag', fields: {} };
+    await enricher.enrich([hashtag, target(undefined)], { countryCode: null, personalAccount: 'alice' });
+    expect(getGovernanceConfigs).not.toHaveBeenCalled();
+    expect(resolveMergedForObjectView).not.toHaveBeenCalled();
+  });
+
   it('ignores malformed identifier entries', async () => {
     const enricher = makeEnricher({
       governance: [config('aff-1', 'GOVERNANCE', 'G1')],

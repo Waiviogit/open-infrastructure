@@ -25,40 +25,6 @@ export class ObjectUpdatesRepository {
     }
   }
 
-  async countByObjectIdGroupByUpdateType(objectId: string): Promise<Record<string, number>> {
-    try {
-      const rows = await this.db
-        .selectFrom('object_updates')
-        .select(['update_type', sql<number>`count(*)::int`.as('count')])
-        .where('object_id', '=', objectId)
-        .groupBy('update_type')
-        .execute();
-      return Object.fromEntries(rows.map((r) => [r.update_type, Number(r.count)]));
-    } catch (e) {
-      this.logger.error((e as Error).message);
-      return {};
-    }
-  }
-
-  async findDistinctLocalesByObjectId(objectId: string): Promise<string[]> {
-    try {
-      const rows = await this.db
-        .selectFrom('object_updates')
-        .select('locale')
-        .where('object_id', '=', objectId)
-        .where('locale', 'is not', null)
-        .distinct()
-        .orderBy('locale', 'asc')
-        .execute();
-      return rows
-        .map((r) => r.locale)
-        .filter((locale): locale is string => locale != null && locale.length > 0);
-    } catch (e) {
-      this.logger.error((e as Error).message);
-      return [];
-    }
-  }
-
   async countListItemsByObjectIds(objectIds: string[]): Promise<Map<string, number>> {
     if (objectIds.length === 0) {
       return new Map();
