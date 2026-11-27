@@ -14,6 +14,7 @@ import { FavoritesModule } from '../domain/favorites/favorites.module';
 import { ExpertiseModule } from '../domain/expertise/expertise.module';
 import { UsersModule } from '../domain/users';
 import { WalletModule } from '../domain/wallet';
+import { WaivModule } from '../domain/waiv';
 import { OblModule } from '../domain/obl';
 import { MessagingModule } from '../domain/messaging/messaging.module';
 import { McpController } from './mcp.controller';
@@ -36,6 +37,7 @@ import { HubFeedModule } from '../domain/hub-feed';
     DiscoverModule,
     GeoipModule,
     WalletModule,
+    WaivModule,
     OblModule,
     MessagingModule,
     PlacesModule,

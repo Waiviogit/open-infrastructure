@@ -54,7 +54,10 @@ export { UserDelegationsRepository } from './user-delegations.repository';
 export { UserRcDelegationsRepository } from './user-rc-delegations.repository';
 export { UserAccountAuthsRepository } from './user-account-auths.repository';
 export { WalletExemptionsRepository } from './wallet-exemptions.repository';
-export { HiveEngineSwapsRepository } from './hive-engine-swaps.repository';
+export {
+  HiveEngineSwapsRepository,
+  type HiveEngineSwapKeyset,
+} from './hive-engine-swaps.repository';
 export { HiveEngineWaivAirdropsRepository } from './hive-engine-waiv-airdrops.repository';
 export { HiveEngineDepositRecordsRepository } from './hive-engine-deposit-records.repository';
 export { WaivGeneratedReportsRepository } from './waiv-generated-reports.repository';

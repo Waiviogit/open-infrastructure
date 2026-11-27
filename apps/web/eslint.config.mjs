@@ -35,7 +35,7 @@ export default [
         {
           selector: 'JSXOpeningElement[name.name="svg"]',
           message:
-            'Use @/icons instead of inline <svg>. Allowed: src/icons/**, line-chart-svg.tsx, star-rating.tsx, src/modules/map/**.',
+            'Use @/icons instead of inline <svg>. Allowed: src/icons/**, line-chart-svg.tsx, star-rating.tsx, src/modules/map/**, src/modules/waiv-token/presentation/charts/**.',
         },
       ],
     },
@@ -50,6 +50,7 @@ export default [
     files: [
       'src/modules/currency/presentation/components/line-chart-svg.tsx',
       'src/modules/object/presentation/components/star-rating.tsx',
+      'src/modules/waiv-token/presentation/charts/**/*.tsx',
     ],
     rules: {
       'no-restricted-syntax': 'off',

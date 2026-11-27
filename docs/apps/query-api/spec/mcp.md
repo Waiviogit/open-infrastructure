@@ -123,8 +123,10 @@ Set `QUERY_API_DOCS_ROOT` to repo root in dev if `odl-query://routing` cannot re
 | `get_currency_fiat_rates` | `GET /query/v1/currency/rates/:base/latest` | — |
 | `get_engine_rates` | `GET /query/v1/currency/engine/rates` | — |
 | `get_engine_current` | `GET /query/v1/currency/engine/current` | — |
-| `get_engine_chart` | `GET /query/v1/currency/engine/chart` | — |
-| `get_engine_pools_usd` | `GET /query/v1/currency/engine/pools-usd` | — |
+| `get_engine_chart` | `GET /query/v1/currency/engine/chart` | [currency-engine-chart.md](currency-engine-chart.md) |
+| `get_engine_pools_usd` | `GET /query/v1/currency/engine/pools/usd` | — |
+| `get_waiv_stats` | `GET /query/v1/waiv/stats` | [waiv-endpoints.md](waiv-endpoints.md) |
+| `get_waiv_swaps` | `GET /query/v1/waiv/swaps` | [waiv-endpoints.md](waiv-endpoints.md) |
 | `search_obl_offers` | `GET /query/v1/obl/offers/search` | [obl.md](obl.md) |
 | `get_obl_offer` | `GET /query/v1/obl/offers/:offerId` | [obl.md](obl.md) |
 | `get_obl_ledger` | `GET /query/v1/obl/ledger` | [mutual-ledger.md](../../spec/obl/mutual-ledger.md) |

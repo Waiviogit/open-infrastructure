@@ -51,6 +51,10 @@
   --color-fg-disabled: #bfbfbf;
   --color-surface-control: #f5f6f7;
   --color-accent-alt: #fa9239;
+  /* Categorical chart slots (validated: dataviz validate_palette, light surface). */
+  --color-chart-1: #f87007;
+  --color-chart-2: #257de0;
+  --color-chart-3: #00b894;
   --color-accent-hover: #d96205;
 
   /** Tinted frost for bundled brand marks; alpha blends with sidebar surface (opaque logos). */
@@ -175,6 +179,10 @@
   --color-fg-disabled: #525252;
   --color-surface-control: #242424;
   --color-accent-alt: #fbab63;
+  /* Categorical chart slots (validated: dataviz validate_palette, dark surface). */
+  --color-chart-1: #f87007;
+  --color-chart-2: #338ced;
+  --color-chart-3: #00a888;
   --color-accent-hover: #fa9239;
 
   --color-external-brand-well: rgb(36 36 36 / 0.55);
@@ -294,6 +302,10 @@
   --color-fg-disabled: rgb(17 24 39 / 0.24);
   --color-surface-control: #f2f2f2;
   --color-accent-alt: #14b8a6;
+  /* Categorical chart slots (validated: dataviz validate_palette, light surface). */
+  --color-chart-1: #f87007;
+  --color-chart-2: #257de0;
+  --color-chart-3: #00b894;
   --color-accent-hover: #0b8577;
 
   --color-external-brand-well: rgb(255 255 255 / 0.42);
@@ -416,6 +428,10 @@
   --color-fg-disabled: rgb(243 244 246 / 0.24);
   --color-surface-control: #27272a;
   --color-accent-alt: #5eead4;
+  /* Categorical chart slots (validated: dataviz validate_palette, dark surface). */
+  --color-chart-1: #f87007;
+  --color-chart-2: #338ced;
+  --color-chart-3: #00a888;
   --color-accent-hover: #26c7b3;
 
   --color-external-brand-well: rgb(244 244 245 / 0.26);
@@ -537,6 +553,10 @@
   --color-fg-disabled: rgb(67 52 34 / 0.24);
   --color-surface-control: #e2d9c4;
   --color-accent-alt: #a87d22;
+  /* Categorical chart slots (validated: dataviz validate_palette, light surface). */
+  --color-chart-1: #f87007;
+  --color-chart-2: #257de0;
+  --color-chart-3: #00b894;
   --color-accent-hover: #9d7a1a;
 
   --font-display:
@@ -655,6 +675,10 @@
   --color-fg-disabled: rgb(0 0 0 / 0.48);
   --color-surface-control: #fafafc;
   --color-accent-alt: #2997ff;
+  /* Categorical chart slots (validated: dataviz validate_palette, light surface). */
+  --color-chart-1: #f87007;
+  --color-chart-2: #257de0;
+  --color-chart-3: #00b894;
   --color-accent-hover: #0077ed;
 
   --font-display:
@@ -767,6 +791,10 @@
   --color-fg-disabled: rgb(0 0 0 / 0.24);
   --color-surface-control: #f2f2f2;
   --color-accent-alt: #428bff;
+  /* Categorical chart slots (validated: dataviz validate_palette, light surface). */
+  --color-chart-1: #f87007;
+  --color-chart-2: #257de0;
+  --color-chart-3: #00b894;
   --color-accent-hover: #e00b41;
 
   --font-display:

@@ -77,6 +77,8 @@ import * as m00076 from './00076_feed_activity_presence';
 import * as m00077 from './00077_object_categories_related_type_scope';
 import * as m00078 from './00078_object_search_docs';
 import * as m00079 from './00079_user_object_expertise_object_weight';
+import * as m00080 from './00080_hive_engine_rates_ordinary_created_at';
+import * as m00081 from './00081_hive_engine_swaps_waiv_pool_time';
 import type { Migration } from 'kysely';
 
 /** Ordered migrations for OdlMigrationProvider. Schema matches @opden-data-layer/odl-db-types OdlDatabase and docs/spec/data-model/schema.sql */
@@ -169,4 +171,6 @@ export const MIGRATIONS: Record<string, Migration> = {
   '00077_object_categories_related_type_scope': { up: m00077.up, down: m00077.down },
   '00078_object_search_docs': { up: m00078.up, down: m00078.down },
   '00079_user_object_expertise_object_weight': { up: m00079.up, down: m00079.down },
+  '00080_hive_engine_rates_ordinary_created_at': { up: m00080.up, down: m00080.down },
+  '00081_hive_engine_swaps_waiv_pool_time': { up: m00081.up, down: m00081.down },
 };

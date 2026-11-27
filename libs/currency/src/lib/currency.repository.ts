@@ -343,6 +343,26 @@ export class CurrencyRepository {
     }
   }
 
+  /** Ordinary (~5 min) samples since `sinceUtc`, oldest first; reads the `created_at` instant. */
+  async listHiveEngineOrdinaryRatesSince(params: {
+    base: string;
+    sinceUtc: Date;
+  }): Promise<HiveEngineRatesRow[]> {
+    try {
+      return await this.db
+        .selectFrom('hive_engine_rates')
+        .selectAll()
+        .where('base', '=', params.base)
+        .where('is_daily', '=', false)
+        .where('created_at', '>=', params.sinceUtc)
+        .orderBy('created_at', 'asc')
+        .execute();
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      return [];
+    }
+  }
+
   async listHiveEngineRates(params: {
     base: string;
     isDaily: boolean;
@@ -362,7 +382,8 @@ export class CurrencyRepository {
       }
 
       const ord = params.orderAsc ? 'asc' : 'desc';
-      q = q.orderBy('date', ord);
+      // Ordinary rows share their day: `created_at` / `id` pick the actual latest sample.
+      q = q.orderBy('date', ord).orderBy('created_at', ord).orderBy('id', ord);
 
       if (params.limit !== undefined) {
         q = q.limit(params.limit);

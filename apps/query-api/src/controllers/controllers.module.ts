@@ -26,6 +26,8 @@ import { CategoriesController } from './categories.controller';
 import { DiscoverModule } from '../domain/discover';
 import { GeoipModule } from '../domain/geoip';
 import { WalletModule } from '../domain/wallet';
+import { WaivModule } from '../domain/waiv';
+import { WaivController } from './waiv.controller';
 import { OblModule } from '../domain/obl';
 import { UserWalletController } from './user-wallet.controller';
 import { HiveWalletAdvancedReportController } from './hive-wallet-advanced-report.controller';
@@ -62,6 +64,7 @@ import { HubFeedFiltersController } from './hub-feed-filters.controller';
     DiscoverModule,
     GeoipModule,
     WalletModule,
+    WaivModule,
     OblModule,
     MessagingModule,
     PlacesModule,
@@ -83,6 +86,7 @@ import { HubFeedFiltersController } from './hub-feed-filters.controller';
     HubFeedFiltersController,
     UserPostDraftsController,
     CurrencyController,
+    WaivController,
     SearchController,
     DiscoverController,
     CategoriesController,

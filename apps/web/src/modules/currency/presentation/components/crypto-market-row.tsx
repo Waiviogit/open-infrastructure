@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useId, useState } from 'react';
 
 import { useI18n } from '@/i18n/providers/i18n-provider';
+import { WAIV_PAGE_PATH } from '@/modules/waiv-token/constants';
 
 import type { TokenMarketRow } from '../../domain/currency-market.types';
 import { CryptoPriceDisplay } from './crypto-price-display';
@@ -53,6 +55,15 @@ export function CryptoMarketRow({ row }: CryptoMarketRowProps) {
       {expanded ? (
         <div id={panelId} className="relative z-30 mt-2 min-w-0 overflow-visible">
           <LineChartSvg points={row.sparkline} />
+          {row.symbol === 'WAIV' ? (
+            <Link
+              href={WAIV_PAGE_PATH}
+              className="mt-2 inline-block text-body-sm text-link hover:underline"
+              suppressHydrationWarning
+            >
+              {t('currency_market_view_detailed_charts')}
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </div>

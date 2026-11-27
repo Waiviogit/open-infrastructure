@@ -5,6 +5,7 @@ const SRC_ROOT = path.join(__dirname, '..');
 const ALLOWLIST = [
   'modules/currency/presentation/components/line-chart-svg.tsx',
   'modules/object/presentation/components/star-rating.tsx',
+  'modules/waiv-token/presentation/charts/',
   'modules/map/',
   'icons/',
 ];

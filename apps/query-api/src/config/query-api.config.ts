@@ -72,6 +72,10 @@ export default () => {
         baseUrl: env.ETH_GATEWAY_BASE_URL,
         requestTimeoutMs: externalTimeoutMs,
       },
+      engineStatisticClient: {
+        baseUrl: env.ENGINE_STATISTIC_BASE_URL,
+        requestTimeoutMs: externalTimeoutMs,
+      },
     },
     changelly: {
       privateKeyHex: env.CHANGELLY_PRIVATE_KEY,

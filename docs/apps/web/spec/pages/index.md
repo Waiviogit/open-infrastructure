@@ -56,6 +56,13 @@ Every App Router `page.tsx` under `apps/web/src/app/` maps to a **route area** f
 
 Cross-cutting: [object-card.md](../object-card.md), [object-follow.md](../object-follow.md), [routing-proxy.md](../routing-proxy.md), [seo.md](../seo.md).
 
+## WAIV token (`/waiv`)
+
+| Public route pattern | Route spec | Notes |
+|----------------------|------------|-------|
+| `/waiv` | [waiv/waiv-page.md](waiv/waiv-page.md) | price chart, stats, tokenomics |
+| `/waiv/swaps` | [waiv/waiv-page.md](waiv/waiv-page.md) | trading history (all accounts) |
+
 ## User profile (`/@:name`)
 
 | Public route pattern | Hub / route spec | Notes |

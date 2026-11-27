@@ -16,6 +16,7 @@ export const queryApiOpenApiTags = {
   places: 'Places',
   discover: 'Discover',
   currency: 'Currency',
+  waiv: 'WAIV',
   obl: 'OBL',
   oblOfferDrafts: 'OBL offer drafts',
 } as const;
@@ -85,6 +86,10 @@ export const queryApiOpenApiTagDefinitions = [
   {
     name: queryApiOpenApiTags.currency,
     description: 'Market, fiat, and Hive Engine rate reads.',
+  },
+  {
+    name: queryApiOpenApiTags.waiv,
+    description: 'WAIV token page: stats and pool-wide swap history.',
   },
   {
     name: queryApiOpenApiTags.obl,

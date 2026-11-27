@@ -1,9 +1,18 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 import { HiveEngineSwap } from '@opden-data-layer/odl-db-types';
 
 import type { Database } from '../database';
 import { KYSELY } from '../database';
+
+/**
+ * Swaps in the WAIV/SWAP.HIVE pool. Literal SQL on purpose: it must match the partial index predicate
+ * of migration `00081_hive_engine_swaps_waiv_pool_time` exactly (a bound parameter would not).
+ */
+const WAIV_POOL_SWAPS_PREDICATE = sql<boolean>`symbols @> ARRAY['WAIV', 'SWAP.HIVE']::text[]`;
+
+/** Keyset position: rows strictly older than this `(block_timestamp, id)` pair. */
+export type HiveEngineSwapKeyset = { blockTimestamp: Date; id: string };
 
 @Injectable()
 export class HiveEngineSwapsRepository {
@@ -37,6 +46,34 @@ export class HiveEngineSwapsRepository {
       limit,
       maxTimestampSeconds,
     );
+  }
+
+  /** Every account's WAIV/SWAP.HIVE pool swaps, newest first. */
+  async findWaivPoolSwaps(
+    limit: number,
+    before: HiveEngineSwapKeyset | null,
+  ): Promise<HiveEngineSwap[]> {
+    try {
+      let query = this.db
+        .selectFrom('hive_engine_swaps')
+        .selectAll()
+        .where(WAIV_POOL_SWAPS_PREDICATE);
+
+      if (before) {
+        query = query.where(
+          sql<boolean>`(block_timestamp, id) < (${before.blockTimestamp}, ${before.id}::bigint)`,
+        );
+      }
+
+      return await query
+        .orderBy('block_timestamp', 'desc')
+        .orderBy('id', 'desc')
+        .limit(limit)
+        .execute();
+    } catch (e) {
+      this.logger.error((e as Error).message);
+      return [];
+    }
   }
 
   private async findByAccountWithSymbolFilter(

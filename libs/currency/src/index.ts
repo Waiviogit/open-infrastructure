@@ -23,3 +23,12 @@ export {
   formatMoneyLabel,
   moneyLineFromUsd,
 } from './lib/currency-format';
+export {
+  ENGINE_CHART_DEFAULT_PERIOD,
+  ENGINE_CHART_WINDOWS,
+} from './lib/currency-engine-chart';
+export type {
+  EngineChartPeriod,
+  EngineChartPoint,
+  EngineChartRates,
+} from './lib/currency-engine-chart';

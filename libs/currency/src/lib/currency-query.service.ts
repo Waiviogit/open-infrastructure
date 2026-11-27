@@ -12,19 +12,16 @@ import {
   resolveHiveHistoricalUsdByDates,
   resolveEngineHistoricalUsdByDates,
 } from './currency-historical-rates';
+import {
+  engineChartPointFromRow,
+  intradayWindowStart,
+  keepLatestPerBucket,
+  mergeEngineChartHead,
+  resolveEngineChartWindow,
+  type EngineChartPoint,
+  type EngineChartWindow,
+} from './currency-engine-chart';
 import { CurrencyRepository } from './currency.repository';
-
-/** Chart window: days back + whether to read daily aggregates vs ordinary snapshots. */
-const CHART_WINDOWS: Record<string, { days: number; useDailyRows: boolean }> = {
-  '1d': { days: 1, useDailyRows: false },
-  '7d': { days: 7, useDailyRows: false },
-  '1m': { days: 31, useDailyRows: true },
-  '3m': { days: 93, useDailyRows: true },
-  '6m': { days: 186, useDailyRows: true },
-  '1y': { days: 372, useDailyRows: true },
-  '2y': { days: 744, useDailyRows: true },
-  all: { days: 0, useDailyRows: true },
-};
 
 const START_PRICE_WAIV_USD = 0.005;
 const START_PRICE_WAIV_HIVE = 0.01;
@@ -37,13 +34,6 @@ type EnginePoint = {
   rates: EngineRates;
   change24h?: EngineRates;
 };
-
-type LegacyEngineChartPoint = {
-  dateString: string;
-  rates: EngineRates;
-};
-
-const CHART_KEYS = { all: 'all' } as const;
 
 export type LegacyTokenPrices = {
   usd: number;
@@ -211,10 +201,15 @@ export class CurrencyQueryService {
       : undefined;
   }
 
+  /**
+   * Price series for `period` (`1d`, `7d`: intraday samples by `created_at`; `1m`…`all`: daily rows),
+   * newest first, with the period change and USD low/high.
+   */
   async engineChart(periodRaw: string, baseToken = ENGINE_BASE_WAIV) {
-    const win = normalizeChartWindow(periodRaw);
+    const window = resolveEngineChartWindow(periodRaw);
+    const now = new Date();
 
-    const fallbackHead = (
+    const headRow = (
       await this.repo.listHiveEngineRates({
         base: baseToken,
         isDaily: false,
@@ -223,71 +218,22 @@ export class CurrencyQueryService {
       })
     ).at(0);
 
-    const headPt: LegacyEngineChartPoint = fallbackHead
-      ? {
-          dateString: String(fallbackHead.date),
-          rates: {
-            HIVE: Number(fallbackHead.rate_hive),
-            USD: Number(fallbackHead.rate_usd),
-          },
-        }
+    const headPt: EngineChartPoint = headRow
+      ? engineChartPointFromRow(headRow)
       : {
-          dateString: utcYmd(new Date()),
+          dateString: utcYmd(now),
+          timestamp: now.toISOString(),
           rates: { HIVE: 0, USD: 0 },
         };
 
-    const sinceIso =
-      win.days <= 0
-        ? undefined
-        : utcYmdAddUtcDays(utcYmd(new Date()), -win.days);
+    const seriesAsc = await this.engineChartSeriesAsc(baseToken, window, now);
+    const mergedDescending = mergeEngineChartHead(headPt, seriesAsc, window);
 
-    const bulk = (
-      await this.repo.listHiveEngineRates({
-        base: baseToken,
-        isDaily: win.useDailyRows,
-        sinceDateInclusive: sinceIso,
-        limit: undefined,
-        orderAsc: true,
-      })
-    ).map(
-      (r): LegacyEngineChartPoint => ({
-        dateString: String(r.date),
-        rates: {
-          HIVE: Number(r.rate_hive),
-          USD: Number(r.rate_usd),
-        },
-      }),
-    );
-
-    const mergedSeen = new Set<string>();
-
-    mergedSeen.add(headPt.dateString);
-
-    /** Live head first, oldest tail last after sort desc. */
-
-    bulk.sort((pointA, pointB) => pointA.dateString.localeCompare(pointB.dateString));
-
-    const mergedDescending: LegacyEngineChartPoint[] = [headPt];
-
-    for (const pointBulk of [...bulk].reverse()) {
-      if (!mergedSeen.has(pointBulk.dateString)) {
-        mergedSeen.add(pointBulk.dateString);
-
-        mergedDescending.push(pointBulk);
-      }
-    }
-
-    mergedDescending.sort((pointA, pointB) =>
-      pointB.dateString.localeCompare(pointA.dateString),
-    );
-
-    let lowUsd = Math.min(
-      ...mergedDescending.map((each) => Number(each.rates.USD ?? 0)),
-      Number.POSITIVE_INFINITY,
-    );
-
-    if (!(Number.isFinite(lowUsd))) {
-      lowUsd = START_PRICE_WAIV_USD;
+    const usdValues = mergedDescending.map((each) => Number(each.rates.USD ?? 0));
+    const lowUsd = Math.min(...usdValues);
+    let highUsd = Math.max(...usdValues);
+    if (!(highUsd > 0) || !Number.isFinite(highUsd)) {
+      highUsd = START_PRICE_WAIV_USD;
     }
 
     const earliest = mergedDescending.at(-1);
@@ -308,27 +254,40 @@ export class CurrencyQueryService {
           }
         : { HIVE: 0, USD: 0 };
 
-    let highUsd = Math.max(
-      ...mergedDescending.map((each) => Number(each.rates.USD ?? 0)),
-    );
-
-    if (!(highUsd > 0) || !(Number.isFinite(highUsd))) {
-      highUsd = START_PRICE_WAIV_USD;
-    }
+    const isAllTime = window.kind === 'daily' && window.days <= 0;
 
     return {
       result: mergedDescending,
       change,
-
-      lowUSD:
-        normalizeChartRaw(periodRaw) === CHART_KEYS.all
-          ? START_PRICE_WAIV_USD
-          : Number.isFinite(lowUsd)
-            ? lowUsd
-            : START_PRICE_WAIV_USD,
-
+      lowUSD: isAllTime || !Number.isFinite(lowUsd) ? START_PRICE_WAIV_USD : lowUsd,
       highUSD: highUsd,
     };
+  }
+
+  private async engineChartSeriesAsc(
+    baseToken: string,
+    window: EngineChartWindow,
+    now: Date,
+  ): Promise<EngineChartPoint[]> {
+    if (window.kind === 'intraday') {
+      const rows = await this.repo.listHiveEngineOrdinaryRatesSince({
+        base: baseToken,
+        sinceUtc: intradayWindowStart(now, window.days),
+      });
+      return keepLatestPerBucket(rows.map(engineChartPointFromRow), window.bucketMinutes);
+    }
+
+    const rows = await this.repo.listHiveEngineRates({
+      base: baseToken,
+      isDaily: true,
+      sinceDateInclusive:
+        window.days <= 0 ? undefined : utcYmdAddUtcDays(utcYmd(now), -window.days),
+      limit: undefined,
+      orderAsc: true,
+    });
+    return rows
+      .map(engineChartPointFromRow)
+      .sort((pointA, pointB) => pointA.dateString.localeCompare(pointB.dateString));
   }
 
   async enginePoolsUsdCsv(csvSymbols: string): Promise<
@@ -548,21 +507,6 @@ function utcYmdAddUtcDays(ymd: string, deltaDays: number): string {
     Date.UTC(Number(yStr), Number(moStr) - 1, Number(dStr)) +
     deltaDays * 86_400_000;
   return utcYmd(new Date(ms));
-}
-
-function normalizeChartRaw(raw: string): string {
-  return raw.trim().toLowerCase();
-}
-
-function normalizeChartWindow(
-  rawPeriod: string,
-): { days: number; useDailyRows: boolean } {
-  const key = normalizeChartRaw(rawPeriod);
-  const fallback = CHART_WINDOWS['1m'];
-  if (!fallback) {
-    throw new Error('currency-query: chart window fallback 1m is missing');
-  }
-  return CHART_WINDOWS[key] ?? fallback;
 }
 
 function simplePricePayloadFromPgOrdinary(

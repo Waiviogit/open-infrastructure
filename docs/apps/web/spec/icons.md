@@ -80,6 +80,7 @@ Custom overrides of a Lucide key: `pin` — legacy Waivio diagonal push-pin (out
 | Asset | Reason |
 |-------|--------|
 | `line-chart-svg.tsx` | Data visualization, gradient + animation |
+| `modules/waiv-token/presentation/charts/**` | WAIV price chart (axes, crosshair, gradient area) |
 | `star-rating.tsx` | Half-star clipPath interaction |
 | `waivio-map-pin.ts` | Leaflet HTML string |
 | Crypto/social logos via `<img>` / `next/image` | Raster or static public SVG URLs |

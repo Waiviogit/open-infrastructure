@@ -63,6 +63,7 @@ import {
   GetPlaceDetailsEndpoint,
   GetPlacesSearchEndpoint,
 } from '../domain/places';
+import { GetWaivStatsEndpoint, GetWaivSwapsEndpoint } from '../domain/waiv';
 import { GetSearchCountsEndpoint } from '../domain/search/get-search-counts.endpoint';
 import { GetSearchEndpoint } from '../domain/search/get-search.endpoint';
 import {
@@ -234,6 +235,8 @@ export class McpService {
     private readonly getUserFeedFilterUsers: GetUserFeedFilterUsersEndpoint,
     private readonly getUserFeedFilterObjects: GetUserFeedFilterObjectsEndpoint,
     private readonly currencyQueries: CurrencyQueryService,
+    private readonly getWaivStats: GetWaivStatsEndpoint,
+    private readonly getWaivSwaps: GetWaivSwapsEndpoint,
     private readonly oblOffers: OblOffersService,
     private readonly oblLedger: OblLedgerService,
     private readonly oblConversion: OblConversionService,
@@ -349,6 +352,8 @@ export class McpService {
       getUserFeedFilterUsers: this.getUserFeedFilterUsers,
       getUserFeedFilterObjects: this.getUserFeedFilterObjects,
       currencyQueries: this.currencyQueries,
+      getWaivStats: this.getWaivStats,
+      getWaivSwaps: this.getWaivSwaps,
       oblOffers: this.oblOffers,
       oblLedger: this.oblLedger,
       oblConversion: this.oblConversion,

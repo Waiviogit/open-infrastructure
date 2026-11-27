@@ -51,6 +51,8 @@ The **query-api** application is the **read path**: it serves HTTP endpoints tha
 | [User activity endpoint](user-activity-endpoint.md) | `POST /query/v1/users/:name/activity` (Hive `get_account_history`) |
 | [User WAIV wallet](user-waiv-wallet-endpoint.md) | `GET /query/v1/users/:name/wallet/waiv`, `POST .../wallet/waiv/history`, `GET .../wallet/engine/:symbol/delegations` |
 | [User ENGINE wallet](user-engine-wallet-endpoint.md) | `GET /query/v1/users/:name/wallet/engine`, `POST .../wallet/engine/history` |
+| [WAIV token page](waiv-endpoints.md) | `GET /query/v1/waiv/stats`, `GET /query/v1/waiv/swaps` — WAIV stats and pool-wide swap history |
+| [Engine price chart](currency-engine-chart.md) | `GET /query/v1/currency/engine/chart` — periods `1d`…`all`, intraday by `created_at` |
 | [User ENGINE swap / deposit / withdraw](user-engine-swap-endpoints.md) | `GET .../engine/swap/list`, `POST .../engine/swap/quote`, `GET .../engine/deposit/list`, `GET .../engine/deposit/address`, `GET .../engine/withdraw/list`, `POST .../engine/withdraw/quote` |
 | [User HIVE wallet](user-hive-wallet-endpoint.md) | `GET .../wallet/hive`, `GET .../wallet/hive/delegations`, `GET .../wallet/hive/rc-delegations` |
 | [User HIVE Changelly withdraw](user-hive-changelly-withdraw.md) | `GET .../wallet/hive/withdraw/range`, `POST .../withdraw/estimate`, `POST .../withdraw/create` |

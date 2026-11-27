@@ -109,6 +109,7 @@ Each `[data-theme='…']` block in `apps/web/src/styles/theme.css` sets the same
 | `--color-accent-alt` | `text-accent-alt`, `bg-accent-alt` | Softer brand accent for links and secondary emphasis |
 | `--color-accent-hover` | `bg-accent-hover` | Hover tint of primary accent (interactive states) |
 | `--color-accent-soft` | `bg-accent-soft` | 10% tint of primary accent (`color-mix` on `--color-accent`); use for soft fills where Tailwind opacity modifiers do not work on hex CSS vars |
+| `--color-chart-1` … `--color-chart-3` | `bg-chart-1`, `text-chart-2`, … | Categorical chart slots (orange, blue, aqua), assigned in this fixed order; one set for light themes and one stepped for dark surfaces (`dark`, `midnight`), checked with the dataviz palette validator. Marks only — chart text stays in text tokens |
 
 Focus: `--color-focus` is for `outline-color` / focus rings (`outline outline-2 outline-offset-2 outline-focus`), not a general surface fill. Prefer `outline-focus` over `bg-focus` for focus-visible styling.
 

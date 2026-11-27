@@ -51,3 +51,9 @@ export const INSTACART_RECIPE_LINK_CACHE_TTL_SEC = 2_592_000;
  * scheduler refresh (30 minutes); the short TTL keeps a new follow from waiting that long.
  */
 export const HUB_FEED_FILTER_COUNTS_CACHE_TTL_SEC = 300;
+
+/** Redis TTL for the assembled WAIV page stats (seconds); the stored rate refreshes every ~5 min. */
+export const WAIV_STATS_CACHE_TTL_SEC = 300;
+
+/** Redis TTL for WAIV holder / monthly-active counts from engine-statistic (seconds). */
+export const WAIV_ACCOUNT_COUNTS_CACHE_TTL_SEC = 3600;

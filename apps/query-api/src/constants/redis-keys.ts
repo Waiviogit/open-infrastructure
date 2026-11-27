@@ -41,6 +41,8 @@ export const redisKey = {
   hiveAccount: (accountName: string) => sharedRedisKey.queryApiHiveAccount(accountName),
   waivRewardPool: () => buildRedisKey(APP, 'cache', 'waiv', 'reward-pool'),
   waivDieselPool: () => buildRedisKey(APP, 'cache', 'waiv', 'diesel-pool'),
+  waivStats: () => buildRedisKey(APP, 'cache', 'waiv', 'stats', 'v1'),
+  waivAccountCounts: () => buildRedisKey(APP, 'cache', 'waiv', 'account-counts', 'v1'),
   waivGeneratedReportLock: (reportId: string) =>
     buildRedisKey(APP, 'lock', 'waiv-generated-report', reportId),
   affiliateGovernanceCodes: (governanceObjectId: string, headerObjectId: string) =>

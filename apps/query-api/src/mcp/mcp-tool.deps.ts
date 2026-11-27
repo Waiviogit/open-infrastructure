@@ -1,4 +1,5 @@
 import type { CurrencyQueryService } from '@opden-data-layer/currency';
+import type { GetWaivStatsEndpoint, GetWaivSwapsEndpoint } from '../domain/waiv';
 import type { CountryResolverService } from '../domain/geoip';
 import type {
   OblConversionService,
@@ -225,6 +226,8 @@ export interface McpToolDeps {
   getPostDiscussion: GetPostDiscussionEndpoint;
   getPostVoters: GetPostVotersEndpoint;
   currencyQueries: CurrencyQueryService;
+  getWaivStats: GetWaivStatsEndpoint;
+  getWaivSwaps: GetWaivSwapsEndpoint;
   oblOffers: OblOffersService;
   oblLedger: OblLedgerService;
   oblConversion: OblConversionService;

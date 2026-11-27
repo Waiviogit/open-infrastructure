@@ -635,13 +635,29 @@ export const QUERY_MCP_TOOL_CATALOG: readonly QueryMcpToolCatalogEntry[] = [
   },
   {
     name: 'get_engine_chart',
-    description: 'Hive Engine price chart for a period.',
+    description:
+      'Hive Engine token price chart for a period (1d, 7d, 1m, 3m, 6m, 1y, 2y, all): points newest first with timestamp, period change, low/high USD.',
     httpEquivalent: 'GET /query/v1/currency/engine/chart',
+    specPath: 'docs/apps/query-api/spec/currency-engine-chart.md',
   },
   {
     name: 'get_engine_pools_usd',
     description: 'USD scaling for Hive Engine swap pool symbols.',
-    httpEquivalent: 'GET /query/v1/currency/engine/pools-usd',
+    httpEquivalent: 'GET /query/v1/currency/engine/pools/usd',
+  },
+  {
+    name: 'get_waiv_stats',
+    description:
+      'WAIV token stats: price, circulating/staked supply, market cap, tokenomics (inflation, rewards pool, development fund), holders and monthly active accounts.',
+    httpEquivalent: 'GET /query/v1/waiv/stats',
+    specPath: 'docs/apps/query-api/spec/waiv-endpoints.md',
+  },
+  {
+    name: 'get_waiv_swaps',
+    description:
+      'Swap history of every account in the WAIV/SWAP.HIVE pool, newest first (cursor pagination).',
+    httpEquivalent: 'GET /query/v1/waiv/swaps',
+    specPath: 'docs/apps/query-api/spec/waiv-endpoints.md',
   },
   {
     name: 'search_obl_offers',

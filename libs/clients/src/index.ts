@@ -5,6 +5,7 @@ export * from './hive-engine-client';
 export * from './hive-engine-history-client';
 export * from './hive-engine-convert-client';
 export * from './tribaldex-client';
+export * from './engine-statistic-client';
 export * from './eth-gateway-client';
 export * from './ipfs-client';
 export * from './coingecko-client';

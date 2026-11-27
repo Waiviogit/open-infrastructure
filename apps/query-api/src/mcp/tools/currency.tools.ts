@@ -80,7 +80,10 @@ export function registerCurrencyTools(server: McpServer, deps: McpToolDeps): voi
     {
       description: catalogDescription('get_engine_chart'),
       inputSchema: z.object({
-        period: z.string().min(1).describe('Chart period (e.g. 7d, 30d)'),
+        period: z
+          .string()
+          .min(1)
+          .describe('Chart period: 1d, 7d, 1m, 3m, 6m, 1y, 2y or all'),
         base: z.string().optional().describe('Base token symbol (e.g. WAIV)'),
       }),
     },

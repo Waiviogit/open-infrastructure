@@ -76,6 +76,11 @@ export const queryApiConfigSchema = z.object({
     .optional()
     .default('https://converter-api.hive-engine.com/api/convert/'),
   TRIBALDEX_BASE_URL: z.url().optional().default('https://api.tribaldex.com'),
+  /** Waivio engine-statistic service (WAIV holders / monthly active accounts). */
+  ENGINE_STATISTIC_BASE_URL: z
+    .url()
+    .optional()
+    .default('https://engine.waivio.com/engine-statistic'),
   ETH_GATEWAY_BASE_URL: z.url().optional().default('https://ethgw.hive-engine.com'),
   CHANGELLY_PRIVATE_KEY: z
     .string()

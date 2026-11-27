@@ -66,6 +66,9 @@ module.exports = {
         'surface-control': 'var(--color-surface-control)',
         'accent-alt': 'var(--color-accent-alt)',
         'accent-hover': 'var(--color-accent-hover)',
+        'chart-1': 'var(--color-chart-1)',
+        'chart-2': 'var(--color-chart-2)',
+        'chart-3': 'var(--color-chart-3)',
         /** Tile behind PNG/SVG social & wallet marks for contrast across themes */
         'external-brand-well': 'var(--color-external-brand-well)',
         'object-logo-well': 'var(--color-object-logo-well)',

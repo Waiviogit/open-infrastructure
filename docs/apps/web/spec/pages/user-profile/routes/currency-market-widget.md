@@ -88,10 +88,13 @@ WAIV spot is read from Postgres `hive_engine_rates` (scheduler refresh ~5 min), 
 
 Shared builder: `buildCurrencyMarketPanel()` in `apps/web/src/modules/currency/application/build-currency-market-panel.ts` (used by the BFF route handler).
 
+## Detailed charts link
+
+When the WAIV row is expanded, **View detailed charts** (`currency_market_view_detailed_charts`) under its sparkline links to [`/waiv`](../../waiv/waiv-page.md) — full period chart, stats, tokenomics and trading history.
+
 ## Out of scope
 
-- Full WAIV period chart (`GET /query/v1/currency/engine/chart`) — not in this widget.
-- Dedicated `/waiv-page` stats route.
+- Full WAIV period chart in the widget itself — lives on [`/waiv`](../../waiv/waiv-page.md).
 - SSR prefetch for market data (would require an RSC wrapper for the right rail).
 
 ## Verification

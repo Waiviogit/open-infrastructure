@@ -3,6 +3,7 @@ import type { McpRequestContext, McpToolDeps } from './mcp-tool.deps';
 import { registerChannelTools } from './tools/channels.tools';
 import { registerCategoryTools } from './tools/categories.tools';
 import { registerCurrencyTools } from './tools/currency.tools';
+import { registerWaivTools } from './tools/waiv.tools';
 import { registerDiscoverTools } from './tools/discover.tools';
 import { registerObjectTools } from './tools/objects.tools';
 import { registerPostTools } from './tools/posts.tools';
@@ -30,6 +31,7 @@ export function registerAllMcpTools(
   registerPostTools(server, deps);
   registerHubFeedTools(server, deps);
   registerCurrencyTools(server, deps);
+  registerWaivTools(server, deps);
   registerOblTools(server, deps);
   registerPlacesTools(server, deps);
 }

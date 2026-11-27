@@ -63,7 +63,10 @@ const currencyChartPeriodSchema = z.enum([
 ]);
 
 const currencyEngineChartPointSchema = z.object({
-  dateString: z.string(),
+  dateString: z.string().describe('UTC day of the point (YYYY-MM-DD)'),
+  timestamp: z
+    .string()
+    .describe('ISO instant: sample time for 1d/7d, 00:00Z of the day for 1m…all'),
   rates: z.object({
     HIVE: z.number(),
     USD: z.number(),
@@ -225,6 +228,8 @@ registry.registerPath({
   path: '/query/v1/currency/engine/chart',
   tags: [queryApiOpenApiTags.currency],
   summary: 'WAIV (or base) chart series and range metadata',
+  description:
+    '`1d` and `7d` read the ~5 min samples (`7d` keeps one per 30 min); `1m`…`all` read daily rows. Points are newest first; the first point is the latest stored rate. Unknown periods fall back to `1m`.',
   request: {
     query: z.object({
       period: currencyChartPeriodSchema.openapi({

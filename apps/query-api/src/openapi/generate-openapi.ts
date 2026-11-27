@@ -22,6 +22,7 @@ import './user-post-drafts.openapi';
 // import './activity-message-notes.openapi';
 import './categories.openapi';
 import './currency.openapi';
+import './waiv.openapi';
 import './search.openapi';
 import './places.openapi';
 import './discover.openapi';
