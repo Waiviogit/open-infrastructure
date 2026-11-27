@@ -399,7 +399,7 @@ describeDb('category scope rebuild (db)', () => {
     it('lists account:type of members and stored scopes of category types, optionally per account', async () => {
       await insertObject(db, `${P}-r`, 'recipe', { categories: ['Soups'] });
       await insertObject(db, `${P}-p`, 'product', { categories: ['Audio'] });
-      await insertObject(db, `${P}-x`, 'restaurant');
+      await insertObject(db, `${P}-x`, 'dish');
       await favorite(db, `${P}-r`, ACCOUNT);
       await favorite(db, `${P}-x`, ACCOUNT);
       await linkFromPost(db, `${P}-p`, `${P}-bob`, 'p1');

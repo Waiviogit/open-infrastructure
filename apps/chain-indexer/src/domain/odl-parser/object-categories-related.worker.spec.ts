@@ -92,14 +92,14 @@ describe('ObjectCategoriesRelatedWorker', () => {
 
     it('does not mark a skipped non-category type and drops the task', async () => {
       const { worker, queue, rebuild, throttle } = setup({
-        tasks: [task('restaurant', { scope_type: 'type' })],
+        tasks: [task('dish', { scope_type: 'type' })],
       });
       rebuild.rebuildTypeScope.mockResolvedValue('not_category_type');
 
       await worker.runBatch();
 
       expect(throttle.markRebuilt).not.toHaveBeenCalled();
-      expect(queue.deleteClaimed).toHaveBeenCalledWith('type', 'restaurant', 100);
+      expect(queue.deleteClaimed).toHaveBeenCalledWith('type', 'dish', 100);
     });
 
     it('does not claim type scopes rebuilt within the rate-limit interval', async () => {

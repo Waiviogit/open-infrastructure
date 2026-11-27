@@ -121,7 +121,7 @@ describe('discoverSectionsQuerySchema', () => {
     ).toBe(true);
     expect(discoverSectionsQuerySchema.safeParse({ object_type: 'product' }).success).toBe(false);
     expect(
-      discoverSectionsQuerySchema.safeParse({ object_type: 'restaurant', category_path: ['A'] })
+      discoverSectionsQuerySchema.safeParse({ object_type: 'dish', category_path: ['A'] })
         .success,
     ).toBe(false);
   });

@@ -126,7 +126,7 @@ describe('CategoryScopeRebuildService', () => {
     it('skips a type without category updates', async () => {
       const { service, repository } = setup();
 
-      await expect(service.rebuildTypeScope('restaurant')).resolves.toBe(
+      await expect(service.rebuildTypeScope('dish')).resolves.toBe(
         'not_category_type',
       );
 

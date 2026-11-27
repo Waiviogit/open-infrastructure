@@ -16,6 +16,6 @@ describe('userCategoriesQuerySchema: types', () => {
   });
 
   it('rejects a type without the category update', () => {
-    expect(userCategoriesQuerySchema.safeParse({ types: 'restaurant' }).success).toBe(false);
+    expect(userCategoriesQuerySchema.safeParse({ types: 'dish' }).success).toBe(false);
   });
 });

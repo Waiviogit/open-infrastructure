@@ -6,10 +6,12 @@ describe('CATEGORY_OBJECT_TYPES', () => {
   it('lists the registry types that support the category update', () => {
     expect(CATEGORY_OBJECT_TYPES).toEqual([
       'book',
+      'business',
       'link',
       'person',
       'product',
       'recipe',
+      'restaurant',
       'service',
       'service_offer',
       'service_request',
@@ -25,7 +27,7 @@ describe('CATEGORY_OBJECT_TYPES', () => {
   });
 
   it('rejects unknown types', () => {
-    expect(objectTypeSupportsCategories('restaurant')).toBe(false);
+    expect(objectTypeSupportsCategories('dish')).toBe(false);
     expect(objectTypeSupportsCategories('')).toBe(false);
   });
 });

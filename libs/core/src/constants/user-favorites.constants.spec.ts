@@ -61,7 +61,7 @@ describe('user category scope keys', () => {
     expect(parseUserCategoryScopeKey(key)).toEqual({ account: 'alice', objectType: 'recipe' });
   });
 
-  it.each(['alice', 'alice:book,product', 'alice:restaurant', ':recipe'])(
+  it.each(['alice', 'alice:book,product', 'alice:dish', ':recipe'])(
     'returns null for legacy or invalid key %s',
     (key) => {
       expect(parseUserCategoryScopeKey(key)).toBeNull();

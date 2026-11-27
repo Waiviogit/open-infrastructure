@@ -240,7 +240,7 @@ describe('GetUserShopSectionsEndpoint', () => {
     const { endpoint, resolver } = createEndpoint({ rows: ROOT_ROWS, liveCounts: {} });
 
     await expect(
-      endpoint.execute('alice', { ...query, types: ['restaurant'] }, 'en-US', undefined, undefined),
+      endpoint.execute('alice', { ...query, types: ['dish'] }, 'en-US', undefined, undefined),
     ).resolves.toEqual({ sections: [], cursor: null, hasMore: false, other: null });
     await expect(
       endpoint.execute('alice', { ...query, types: ['book', 'product'] }, 'en-US', undefined, undefined),

@@ -5,7 +5,7 @@ import type { UserFavoritesScopeResolver } from './user-favorites-scope.resolver
 
 const scope: UserFavoritesScope = {
   account: 'alice',
-  types: ['recipe', 'restaurant', 'book', 'product'],
+  types: ['recipe', 'dish', 'book', 'product'],
   postLinkedTypes: ['recipe', 'book'],
   deselectObjectIds: ['x'],
 };
@@ -25,7 +25,7 @@ describe('GetUserFavoritesTypesEndpoint', () => {
   it('flags has_categories only when the category root lists a category', async () => {
     const resolve = jest.fn().mockResolvedValue(scope);
     const findTypesByScope = jest.fn().mockResolvedValue([
-      { object_type: 'restaurant', objects_count: 7, categorized_count: 0 },
+      { object_type: 'dish', objects_count: 7, categorized_count: 0 },
       { object_type: 'recipe', objects_count: 3, categorized_count: 2 },
       { object_type: 'book', objects_count: 1, categorized_count: 0 },
       // Categorized objects but an empty root (e.g. scope rows not rebuilt yet).
@@ -42,10 +42,10 @@ describe('GetUserFavoritesTypesEndpoint', () => {
     );
 
     await expect(endpoint.execute('alice')).resolves.toEqual({
-      types: ['restaurant', 'recipe', 'book', 'product'],
+      types: ['dish', 'recipe', 'book', 'product'],
       items: [
         {
-          object_type: 'restaurant',
+          object_type: 'dish',
           objects_count: 7,
           supports_categories: false,
           has_categories: false,
