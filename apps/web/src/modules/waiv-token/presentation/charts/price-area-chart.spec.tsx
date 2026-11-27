@@ -26,7 +26,9 @@ describe('PriceAreaChart', () => {
       observe(element: Element) {
         this.entry.element = element;
       }
-      unobserve() {}
+      unobserve() {
+        this.entry.element = null;
+      }
       disconnect() {
         this.entry.element = null;
       }
